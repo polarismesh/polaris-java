@@ -1,0 +1,15 @@
+name: this
+age: 111
+sex: male
+mode: 0
+plugin:
+  errorRate:
+    # 只有请求数达到某个阈值才执行熔断计算，默认10
+    requestVolumeThreshold: 10
+    # 触发熔断的错误率阈值，默认0.5
+    errorRateThreshold: 0.5
+  errorCount:
+    # 只有请求数达到某个阈值才执行熔断计算，默认10
+    requestVolumeThreshold: 10
+    # 触发熔断的错误率阈值，默认0.5
+    errorRateThreshold: 0.5

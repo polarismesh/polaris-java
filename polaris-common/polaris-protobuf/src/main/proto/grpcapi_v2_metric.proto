@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package polaris.metric.v2;
+
+option go_package = "v2";
+
+import "ratelimit_v2.proto";
+
+option java_package = "com.tencent.polaris.ratelimit.client.pb";
+
+service RateLimitGRPCV2 {
+  // 限流接口
+  rpc Service(stream RateLimitRequest) returns(stream RateLimitResponse) {}
+
+  //时间对齐接口
+  rpc TimeAdjust(TimeAdjustRequest) returns(TimeAdjustResponse) {}
+}

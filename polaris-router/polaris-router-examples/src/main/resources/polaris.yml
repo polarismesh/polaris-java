@@ -1,0 +1,12 @@
+global:
+  # configuration for connecting the polaris server
+  serverConnector:
+    # target server address
+    addresses:
+      - 9.134.15.118:8091
+#描述:主调端配置
+consumer:
+  #描述:节点熔断相关配置
+  circuitBreaker:
+    #描述:是否启用节点熔断功能
+    enable: false

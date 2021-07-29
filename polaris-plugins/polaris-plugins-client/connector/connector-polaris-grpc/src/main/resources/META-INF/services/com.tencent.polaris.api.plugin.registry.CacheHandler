@@ -1,0 +1,4 @@
+com.tencent.polaris.plugins.connector.grpc.codec.ServiceInstancesCacheHandler
+com.tencent.polaris.plugins.connector.grpc.codec.RoutingCacheHandler
+com.tencent.polaris.plugins.connector.grpc.codec.CircuitBreakCacheHandler
+com.tencent.polaris.plugins.connector.grpc.codec.RateLimitingCacheHandler

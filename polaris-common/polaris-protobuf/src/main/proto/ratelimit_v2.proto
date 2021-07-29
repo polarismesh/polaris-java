@@ -1,0 +1,168 @@
+syntax = "proto3";
+
+package polaris.metric.v2;
+
+option go_package = "v2";
+
+option java_package = "com.tencent.polaris.ratelimit.client.pb";
+
+//命令字
+enum RateLimitCmd {
+  INIT = 0;
+  ACQUIRE = 1;
+}
+
+//限流请求
+message RateLimitRequest {
+  //命令字
+  RateLimitCmd cmd = 1;
+  //初始化请求
+  RateLimitInitRequest rateLimitInitRequest = 2;
+  //上报请求
+  RateLimitReportRequest rateLimitReportRequest = 3;
+}
+
+//限流应答
+message RateLimitResponse {
+  //命令字
+  RateLimitCmd cmd = 1;
+  //初始化请求
+  RateLimitInitResponse rateLimitInitResponse = 2;
+  //上报请求
+  RateLimitReportResponse rateLimitReportResponse = 3;
+}
+
+//限频模式
+enum Mode {
+  //自适应模式，根据历史流量自动调整
+  ADAPTIVE = 0;
+  //批量抢占模式，客户端进行拉取，Server返回全量剩余配额
+  BATCH_OCCUPY = 1;
+  //批量分摊模式，客户端进行拉取，Server按比例进行分摊
+  BATCH_SHARE = 2;
+}
+
+//初始化请求
+message RateLimitInitRequest {
+  //限流目标对象数据
+  LimitTarget target = 1;
+  //客户端唯一标识
+  string clientId = 2;
+  //限流规则信息
+  repeated QuotaTotal totals = 3;
+  //客户端可指定滑窗数，不指定用默认值
+  uint32 slideCount = 4;
+  //限流模式
+  Mode mode = 5;
+}
+
+//初始化应答
+message RateLimitInitResponse {
+  //应答错误码
+  uint32 code = 1;
+  //限流目标对象，回传给客户端
+  LimitTarget target = 2;
+  //客户端的标识，与clientId对应，一个server全局唯一，上报时候带入
+  uint32 clientKey = 3;
+  //计数器的标识
+  repeated QuotaCounter counters = 5;
+  //实际滑窗个数
+  uint32 slideCount = 6;
+  //限流server绝对时间，单位ms
+  int64 timestamp = 7;
+}
+
+//限流上报请求
+message RateLimitReportRequest {
+  //客户端标识
+  uint32 clientKey = 1;
+  //已使用的配额数
+  repeated QuotaSum quotaUses = 2;
+  //配额发生的时间，单位ms
+  int64 timestamp = 3;
+}
+
+//限流上报应答
+message RateLimitReportResponse {
+  uint32 code = 1;
+  //剩余配额数
+  repeated QuotaLeft quotaLefts = 2;
+  //限流server绝对时间，单位ms
+  int64 timestamp = 3;
+}
+
+//限流目标，针对哪部分数据进行限流
+message LimitTarget {
+  //命名空间
+  string namespace = 1;
+  //服务名
+  string service = 2;
+  //自定义标签
+  string labels = 3;
+}
+
+//阈值模式
+enum QuotaMode {
+  //整体阈值
+  WHOLE = 0;
+  //单机均分阈值
+  DIVIDE = 1;
+}
+
+//阈值配置的值
+message QuotaTotal {
+  //阈值模式
+  QuotaMode mode = 1;
+  //单位秒
+  uint32 duration = 2;
+  //限流阈值
+  uint32 maxAmount = 3;
+}
+
+//限流计数器
+message QuotaCounter {
+  //单位秒
+  uint32 duration = 1;
+  //bucket的标识，上报时候带入：namespace+service+labelStr+duration
+  uint32 counterKey = 2;
+  //剩余配额数，应答返回，允许为负数
+  int64 left = 3;
+  //实际限流模式
+  Mode mode = 4;
+  //接入的客户端数量
+  uint32 clientCount = 5;
+}
+
+//客户端阈值使用统计
+message QuotaSum {
+  //计数器的标识，一个server全局唯一，上报时候带入
+  uint32 counterKey = 1;
+  //已使用的配额数，上报时候带入
+  uint32 used = 2;
+  //被限流数，上报时候带入
+  uint32 limited = 3;
+}
+
+//客户端阈值使用统计，由服务端返回
+message QuotaLeft {
+  //计数器的标识，一个server全局唯一，上报时候带入
+  uint32 counterKey = 1;
+  //剩余配额数，应答返回，允许为负数
+  int64 left = 2;
+  //当前限流模式
+  Mode mode = 3;
+  //接入的客户端数量
+  uint32 clientCount = 4;
+}
+
+
+//时间点对齐的请求
+message TimeAdjustRequest {
+
+}
+
+//时间点对齐的应答
+message TimeAdjustResponse {
+  //服务器时间点，毫秒
+  int64 serverTimestamp = 1;
+}

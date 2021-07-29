@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package v1;
+
+import "service.proto";
+
+option java_package = "com.tencent.polaris.client.pb";
+option java_outer_classname = "RequestProto";
+
+message DiscoverRequest {
+  enum DiscoverRequestType {
+    UNKNOWN = 0;
+    INSTANCE = 1;
+    CLUSTER = 2;
+    ROUTING = 3;
+    RATE_LIMIT = 4;
+    CIRCUIT_BREAKER = 5;
+    SERVICES = 6;
+  }
+
+  DiscoverRequestType type = 1;
+  Service service = 2;
+}

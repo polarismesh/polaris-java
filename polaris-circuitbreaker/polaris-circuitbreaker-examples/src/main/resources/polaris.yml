@@ -1,0 +1,6 @@
+global:
+  # configuration for connecting the polaris server
+  serverConnector:
+    # target server address
+    addresses:
+      - 127.0.0.1:8091

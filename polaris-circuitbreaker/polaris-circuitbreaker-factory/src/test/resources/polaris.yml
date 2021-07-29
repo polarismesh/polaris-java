@@ -1,0 +1,17 @@
+global:
+  #描述:对接polaris server的相关配置
+  serverConnector:
+    addresses:
+      - 127.0.0.1:10081
+#描述:主调端配置
+consumer:
+  localCache:
+    persistEnable: false
+  #描述:节点熔断相关配置
+  circuitBreaker:
+    #描述:是否启用节点熔断功能
+    enable: true
+    #描述:定时熔断检测周期
+    checkPeriod: 1s
+    #描述:熔断周期
+    sleepWindow: 5s
