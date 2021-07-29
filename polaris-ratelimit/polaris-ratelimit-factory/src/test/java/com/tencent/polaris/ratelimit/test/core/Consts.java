@@ -32,11 +32,11 @@ public interface Consts {
 
     String METHOD_CASH = "cash";
 
-    int MAX_PAY_COUNT = 1000;
+    int MAX_PAY_COUNT = 2000;
 
-    int MAX_CASH_COUNT = 2000;
+    int MAX_CASH_COUNT = 4000;
 
-    int MAX_SERVICE_COUNT = 10000;
+    int MAX_SERVICE_COUNT = 15000;
 
     /**
      * 通过数组创建Map
