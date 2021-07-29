@@ -1,0 +1,40 @@
+{
+  "service": "svc1",
+  "namespace": "NAMESPACE-test",
+  "outbounds": [
+    {
+      "sources": [
+        {
+          "metadata": {
+            "env": {
+              "type": 0,
+              "value": "base"
+            }
+          }
+        }
+      ],
+      "destinations": [
+        {
+          "service": "*",
+          "metadata": {
+            "env": {
+              "type": 0,
+              "value": "base"
+            }
+          },
+          "priority": 0
+        },
+        {
+          "service": "*",
+          "metadata": {
+            "env": {
+              "type": 0,
+              "value": "test"
+            }
+          },
+          "priority": 1
+        }
+      ]
+    }
+  ]
+}

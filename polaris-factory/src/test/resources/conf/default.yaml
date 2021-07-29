@@ -1,0 +1,88 @@
+global:
+  #描述系统相关配置
+  system:
+    #描述:SDK运行模式
+    #类型:enum
+    #范围:0（直连模式，SDK直接对接server）; 1（代理模式，SDK只对接agent, 通过agent进行server的对接）
+    #默认值:0
+    mode: 0
+    #服务发现集群
+    discoverCluster:
+      namespace: Polaris
+      service: polaris.discover
+      #可选：服务刷新间隔
+      refreshInterval: 10m
+    #健康检查集群
+    healthCheckCluster:
+      namespace: Polaris
+      service: polaris.healthcheck
+      #可选：服务刷新间隔
+      refreshInterval: 10m
+    #监控上报集群
+    monitorCluster:
+      namespace: Polaris
+      service: polaris.monitor
+      #可选：服务刷新间隔
+      refreshInterval: 10m
+  api:
+    #客户端绑定的网卡地址，默认eth1
+    bindIf: eth1
+    #客户端上报周期，默认30s
+    reportInterval: 30s
+    #api超时时间
+    timeout: 1s
+    #最大重试次数，默认10次
+    maxRetryTimes: 10
+    #重试间隔，默认5ms
+    retryInterval: 5ms
+  flowCache:
+    enable: true
+    name: simpleCache
+    expireInterval: 60s
+  serverConnector:
+    mode: 0
+    addresses:
+      - 9.157.1.185:8090 #上海公共集群埋点
+      - 9.87.200.63:8090 #深圳公共集群埋点
+    protocol: grpc
+    connectTimeout: 50ms
+    connectionIdleTimeout: 100ms
+    #对接的polaris server节点切换周期
+    serverSwitchInterval: 10m
+    plugin: { }
+consumer:
+  localCache:
+    serviceExpireTime: 24h
+    serviceRefreshInterval: 2s
+    persistDir: $HOME/polaris/backup
+    type: inmemory
+    #最多隔离节点数的百分比
+    #当隔离节点数超过该阈值，负载均衡取消隔离不健康节点，默认90%
+    maxEjectPercentThreshold: 0.9
+    plugin: { }
+  serviceRouter:
+    chain:
+      - ruleBasedRouter
+  loadbalancer:
+    type: weightedRandom
+  circuitbreaker:
+    enable: false
+    checkPeriod: 5s
+    chain:
+      - errorCount
+      - errorRate
+    plugin:
+      errCount:
+        continuousErrorThreshold: 10
+        metricStatTimeWindow: 1s
+        requestCountAfterHalfOpen: 3
+        sleepWindow: 5s
+        successCountAfterHalfOpen: 2
+      errRate:
+        errorRateThreshold: 0.5
+        metricNumBuckets: 12
+        metricStatTimeWindow: 1m
+        requestCountAfterHalfOpen: 3
+        requestVolumeThreshold: 10
+        sleepWindow: 5s
+        successCountAfterHalfOpen: 2

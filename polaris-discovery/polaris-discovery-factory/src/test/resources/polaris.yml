@@ -1,0 +1,21 @@
+global:
+  #描述: 系统相关配置
+  system:
+    variables:
+      x: y
+      x1: y1
+  #描述:对接polaris server的相关配置
+  serverConnector:
+    addresses:
+      - 127.0.0.1:10081
+  api:
+    #api超时时间
+    timeout: 2s
+#描述:主调端配置
+consumer:
+  localCache:
+    persistEnable: false
+  #描述:节点熔断相关配置
+  circuitBreaker:
+    #描述:是否启用节点熔断功能
+    enable: false

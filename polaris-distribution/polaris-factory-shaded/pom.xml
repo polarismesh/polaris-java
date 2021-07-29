@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <artifactId>polaris-parent</artifactId>
+        <groupId>com.tencent.nameservice</groupId>
+        <version>${revision}</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>polaris-factory-shaded</artifactId>
+    <modelVersion>4.0.0</modelVersion>
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.nameservice</groupId>
+            <artifactId>polaris-factory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com.google</pattern>
+                                    <shadedPattern>shade.polaris.com.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>shade.polaris.com.fasterxml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>google</pattern>
+                                    <shadedPattern>shade.polaris.google</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.grpc.protobuf</pattern>
+                                    <shadedPattern>shade.polaris.io.grpc.protobuf</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>tencent_public_snapshots</id>
+            <name>tencent_public_snapshot</name>
+            <url>https://mirrors.tencent.com/repository/maven/tencent_public_snapshots/</url>
+        </snapshotRepository>
+        <repository>
+            <!--必须与 settings.xml 的 id 一致-->
+            <id>tencent_public</id>
+            <name>tencent_public_release</name>
+            <url>https://mirrors.tencent.com/repository/maven/tencent_public/</url>
+        </repository>
+    </distributionManagement>
+</project>
