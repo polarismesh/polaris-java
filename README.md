@@ -12,7 +12,7 @@ Add the below script into the root pom element <dependencyManagement></dependenc
 <dependencyManagement>        
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-dependencies</artifactId>
             <version>${version}</version>
             <type>pom</type>
@@ -24,28 +24,28 @@ Add the below script into the root pom element <dependencyManagement></dependenc
 #### Use all functions
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-factory</artifactId>
    </dependency>
    ```
 #### Use discovery only
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-discovery-factory</artifactId>
    </dependency>
    ```
 #### Use circuitbreak and degrade only
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-circuitbreaker-factory</artifactId>
    </dependency>
    ```
 #### Use ratelimit
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-ratelimit-factory</artifactId>
    </dependency>
    ```   

@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-parent</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -15,205 +15,205 @@
         <dependencies>
             <!-- polaris-common-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-protobuf</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-config</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-config-tencent</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-config-opensource</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <!-- polaris-factory-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-factory</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <!-- polaris-discovery-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-discovery-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-discovery-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-discovery-factory</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <!-- polaris-router-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-router-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-router-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-router-factory</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <!-- polaris-circuitbreaker-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-circuitbreaker-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-circuitbreaker-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-circuitbreaker-factory</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <!-- polaris-ratelimit-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-ratelimit-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-ratelimit-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-ratelimit-factory</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <!-- polaris-plugins-->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-plugin-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>connector-polaris-grpc</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>resource-cache-memory</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>flow-cache-expired</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-isolated</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-healthy</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-rule</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-metadata</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-nearby</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-set</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-canary</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>loadbalancer-random</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>loadbalancer-ringhash</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>circuitbreaker-errcount</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>circuitbreaker-errrate</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>ratelimiter-reject</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <!-- test -->
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-test-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-test-mock-discovery</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.tencent.nameservice</groupId>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>stat-prometheus</artifactId>
                 <version>${project.version}</version>
             </dependency>
