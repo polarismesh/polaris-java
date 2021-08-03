@@ -19,6 +19,7 @@ package com.tencent.polaris.discovery.client.flow;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.rpc.InstancesFuture;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * AsyncFlow.java
@@ -42,7 +43,7 @@ public class AsyncFlow {
      */
     public InstancesFuture commonAsyncGetOneInstance(CommonInstancesRequest request) {
         GetOneInstanceSupplier supplier = new GetOneInstanceSupplier(request, syncFlow);
-        return (InstancesFuture) InstancesFuture.supplyAsync(supplier);
+        return new InstancesFuture(CompletableFuture.supplyAsync(supplier));
     }
 
     /**
@@ -54,7 +55,7 @@ public class AsyncFlow {
      */
     public InstancesFuture commonAsyncGetInstances(CommonInstancesRequest request) throws PolarisException {
         GetInstancesSupplier supplier = new GetInstancesSupplier(request, syncFlow);
-        return (InstancesFuture) InstancesFuture.supplyAsync(supplier);
+        return new InstancesFuture(CompletableFuture.supplyAsync(supplier));
     }
 
     /**
@@ -66,6 +67,6 @@ public class AsyncFlow {
      */
     public InstancesFuture commonAsyncGetAllInstances(CommonInstancesRequest request) throws PolarisException {
         GetAllInstancesSupplier supplier = new GetAllInstancesSupplier(request, syncFlow);
-        return (InstancesFuture) InstancesFuture.supplyAsync(supplier);
+        return new InstancesFuture(CompletableFuture.supplyAsync(supplier));
     }
 }
