@@ -12,7 +12,7 @@ polaris-java
 <dependencyManagement>        
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-dependencies</artifactId>
             <version>${version}</version>
             <type>pom</type>
@@ -24,28 +24,28 @@ polaris-java
 #### 使用全量功能
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-factory</artifactId>
    </dependency>
    ```
 #### 仅服务注册发现
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-discovery-factory</artifactId>
    </dependency>
    ```
 #### 仅使用熔断降级
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-circuitbreaker-factory</artifactId>
    </dependency>
    ```
 #### 仅使用服务限流
    ```xml
    <dependency>
-       <groupId>com.tencent.nameservice</groupId>
+       <groupId>com.tencent.polaris</groupId>
        <artifactId>polaris-ratelimit-factory</artifactId>
    </dependency>
    ```   

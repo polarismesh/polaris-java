@@ -3,10 +3,49 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-    <groupId>com.tencent.nameservice</groupId>
+    <groupId>com.tencent.polaris</groupId>
     <artifactId>polaris-parent</artifactId>
     <packaging>pom</packaging>
     <version>${revision}</version>
+    <name>Polaris Parent</name>
+    <description>Polaris Parent POM</description>
+    <url>https://github.com/polarismesh/polaris-java</url>
+
+    <licenses>
+        <license>
+            <name>BSD 3-Clause License</name>
+            <url>https://opensource.org/licenses/BSD-3-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <url>https://github.com/polarismesh/polaris-java</url>
+        <connection>
+            scm:git:git://github.com/polarismesh/polaris-java.git
+        </connection>
+        <developerConnection>
+            scm:git:ssh://git@github.com/polarismesh/polaris-java.git
+        </developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <developers>
+        <developer>
+            <name>Andrew Shan</name>
+            <email>samshan08@126.com</email>
+            <organization>Tencent</organization>
+        </developer>
+        <developer>
+            <name>Haotian Zhang</name>
+            <email>928016560@qq.com</email>
+        </developer>
+        <developer>
+            <name>Thirteen Wang</name>
+            <email>779754345@qq.com</email>
+        </developer>
+    </developers>
+
     <modules>
         <module>polaris-client</module>
         <module>polaris-factory</module>
@@ -164,22 +203,12 @@
 
     <distributionManagement>
         <snapshotRepository>
-            <id>tencent_public_snapshots</id>
-            <name>tencent_public_snapshot</name>
-            <url>https://mirrors.tencent.com/repository/maven/tencent_public_snapshots/</url>
+            <id>nexus-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
         </snapshotRepository>
         <repository>
-            <!--必须与 settings.xml 的 id 一致-->
-            <id>tencent_public</id>
-            <name>tencent_public_release</name>
-            <url>https://mirrors.tencent.com/repository/maven/tencent_public/</url>
+            <id>nexus-releases</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
-
-        <!--<snapshotRepository>
-            <id>trpc_dev</id>
-            <name>snapshots</name>
-            <url>https://mirrors.tencent.com/repository/maven/trpc_dev</url>
-            <uniqueVersion>false</uniqueVersion>
-        </snapshotRepository>-->
     </distributionManagement>
 </project>

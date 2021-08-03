@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>router</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -12,9 +12,12 @@
 
     <artifactId>router-healthy</artifactId>
 
+    <name>Polaris Plugins Router Healthy</name>
+    <description>Polaris Plugins Router Healthy JAR</description>
+
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>router-common</artifactId>
             <version>${project.version}</version>
         </dependency>

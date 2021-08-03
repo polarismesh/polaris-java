@@ -97,7 +97,7 @@ public class ConfigurationImpl implements Configuration {
     }
 
     public ConfigurationImpl() {
-        defaultConfigName = Configuration.DEFAULT_CONFIG_TENCENT;
+        defaultConfigName = Configuration.DEFAULT_CONFIG_OPENSOURCE;
     }
 
     public ConfigurationImpl(String defaultConfigName) {

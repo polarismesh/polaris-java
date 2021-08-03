@@ -4,17 +4,20 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-common</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-config-opensource</artifactId>
+    <name>Polaris Common Config Opensource</name>
+    <description>Polaris Common Config Opensource JAR</description>
+
 
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-config</artifactId>
             <version>${project.version}</version>
         </dependency>

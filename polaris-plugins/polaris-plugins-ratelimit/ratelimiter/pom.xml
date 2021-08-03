@@ -4,15 +4,18 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-plugins-ratelimit</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ratelimiter</artifactId>
-
     <packaging>pom</packaging>
+
+    <name>Polaris Plugins Ratelimit Limiter</name>
+    <description>Polaris Plugins Ratelimit Limiters POM</description>
+
     <modules>
         <module>ratelimiter-common</module>
         <module>ratelimiter-reject</module>

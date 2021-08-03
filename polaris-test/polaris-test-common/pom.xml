@@ -4,13 +4,14 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-test</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-test-common</artifactId>
-
+    <name>Polaris Test Common</name>
+    <description>Polaris Test Common JAR</description>
 
 </project>

@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-ratelimit</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -12,14 +12,17 @@
 
     <artifactId>polaris-ratelimit-api</artifactId>
 
+    <name>Polaris Ratelimit API</name>
+    <description>Polaris Ratelimit API JAR</description>
+
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-plugin-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-protobuf</artifactId>
             <version>${project.version}</version>
         </dependency>

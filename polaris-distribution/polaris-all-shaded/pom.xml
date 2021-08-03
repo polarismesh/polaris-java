@@ -5,16 +5,20 @@
 
     <parent>
         <artifactId>polaris-parent</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>polaris-factory-shaded</artifactId>
+
+    <artifactId>polaris-all-shaded</artifactId>
+    <name>Polaris Distribution All Sharded</name>
+    <description>Polaris Distribution All Sharded JAR</description>
+
     <modelVersion>4.0.0</modelVersion>
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-factory</artifactId>
             <version>${project.version}</version>
         </dependency>

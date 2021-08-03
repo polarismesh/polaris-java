@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-circuitbreaker</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -12,89 +12,92 @@
 
     <artifactId>polaris-circuitbreaker-factory</artifactId>
 
+    <name>Polaris Circuitbreaker Factory</name>
+    <description>Polaris Circuitbreaker Factory JAR</description>
+
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-circuitbreaker-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖connector插件-->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>connector-polaris-grpc</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖resCache插件-->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>resource-cache-memory</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖flowCache插件-->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>flow-cache-expired</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖router插件-->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>router-isolated</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>router-healthy</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>router-nearby</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>router-metadata</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖负载均衡插件-->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>loadbalancer-random</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖熔断插件-->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>circuitbreaker-errrate</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>circuitbreaker-errcount</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <!-- 测试相关的依赖 -->
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-test-common</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-test-mock-discovery</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-discovery-factory</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>

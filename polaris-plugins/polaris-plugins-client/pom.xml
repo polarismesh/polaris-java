@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-plugins</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -12,6 +12,9 @@
 
     <artifactId>polaris-plugins-client</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Client</name>
+    <description>Polaris Plugins Client POM</description>
+
     <modules>
         <module>connector</module>
         <module>resource-cache</module>
@@ -20,17 +23,17 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-model</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-plugin-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-config</artifactId>
             <version>${project.version}</version>
         </dependency>

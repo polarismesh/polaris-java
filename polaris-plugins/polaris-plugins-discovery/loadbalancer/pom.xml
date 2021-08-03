@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-plugins-discovery</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -12,6 +12,10 @@
 
     <artifactId>loadbalancer</artifactId>
     <packaging>pom</packaging>
+
+    <name>Polaris Plugins Loadbalancer</name>
+    <description>Polaris Plugins Loadbalancer POM</description>
+
     <modules>
         <module>loadbalancer-random</module>
         <module>loadbalancer-ringhash</module>

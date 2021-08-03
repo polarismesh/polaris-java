@@ -4,7 +4,7 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-parent</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -12,6 +12,8 @@
 
     <artifactId>polaris-discovery</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Discovery</name>
+    <description>Polaris Discovery POM</description>
 
     <modules>
         <module>polaris-discovery-api</module>

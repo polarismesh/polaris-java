@@ -4,16 +4,18 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-plugins-observability</artifactId>
-        <groupId>com.tencent.nameservice</groupId>
+        <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>stat-prometheus</artifactId>
+    <name>Polaris Plugins Observability Prometheus</name>
+    <description>Polaris Plugins Observability Prometheus JAR</description>
     <dependencies>
         <dependency>
-            <groupId>com.tencent.nameservice</groupId>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>stat-common</artifactId>
             <version>${project.version}</version>
         </dependency>
