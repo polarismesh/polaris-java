@@ -28,7 +28,7 @@ public class PrometheusPushHandlerConfig implements Verifier {
     private String jobName;
 
     @JsonProperty
-    private String serviceName;
+    private String instanceName;
 
     @JsonProperty
     private Long pushInterval;
@@ -41,9 +41,7 @@ public class PrometheusPushHandlerConfig implements Verifier {
      */
     @Override
     public void verify() {
-        ConfigUtils.validateInterval(pushInterval, "prometheus push-gateway interval");
         ConfigUtils.validateString(jobName, "prometheus push-gateway job name");
-        ConfigUtils.validateString(serviceName, "prometheus push-gateway service name");
     }
 
     /**
@@ -58,8 +56,8 @@ public class PrometheusPushHandlerConfig implements Verifier {
             if (null == jobName) {
                 setJobName(config.getJobName());
             }
-            if (null == serviceName) {
-                setServiceName(config.getServiceName());
+            if (null == instanceName) {
+                setPushInterval(config.getPushInterval());
             }
             if (null == pushInterval) {
                 setPushInterval(config.getPushInterval());
@@ -75,19 +73,19 @@ public class PrometheusPushHandlerConfig implements Verifier {
         this.jobName = jobName;
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
     public Long getPushInterval() {
         return pushInterval;
     }
 
     public void setPushInterval(Long pushInterval) {
         this.pushInterval = pushInterval;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
     }
 }

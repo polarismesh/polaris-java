@@ -75,10 +75,10 @@ global:
       pushgatewayConfig:
         #描述: 上报给prometheus pushgateway的任务名称
         jobName: "defaultJob"
-        #描述: pushgateway的服务名称
-        serviceName: "polaris.monitor"
-        #描述: 上报给pushgateway的时间间隔
-        pushInterval: 10
+        #描述: 上报给pushgateway的实例标签名，可选，默认为实例ip
+        instanceName: "mockInstance"
+        #描述: 上报给pushgateway的时间间隔，单位：秒。可选，默认为30秒
+        pushInterval: 30
 #描述: 主调端配置
 consumer:
   #描述: 本地服务缓存相关配置

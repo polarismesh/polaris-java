@@ -67,6 +67,10 @@ public class StatMetric {
         return value.compareAndSet(expect, update);
     }
 
+    public Long getSignature() {
+        return signature;
+    }
+
     @Override
     public boolean equals(Object that) {
         if (this == that) {

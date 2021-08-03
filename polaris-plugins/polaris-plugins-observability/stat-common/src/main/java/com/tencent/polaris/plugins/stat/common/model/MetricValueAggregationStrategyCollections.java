@@ -24,7 +24,6 @@ import com.tencent.polaris.api.pojo.RetStatus;
 
 import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.OPEN;
 import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.HALF_OPEN;
-import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.CLOSE;
 
 public class MetricValueAggregationStrategyCollections {
     public static MetricValueAggregationStrategy<InstanceGauge>[] SERVICE_CALL_STRATEGY;
@@ -315,10 +314,24 @@ public class MetricValueAggregationStrategyCollections {
                 return;
             }
 
-            if (CLOSE == dataSource.getCircuitBreakStatus().getStatus()) {
-                targetValue.addValue(-1);
-            } else if (HALF_OPEN == dataSource.getCircuitBreakStatus().getStatus()) {
-                targetValue.incValue();
+            if (targetValue instanceof StatStatefulMetric) {
+                StatStatefulMetric markMetric = ((StatStatefulMetric)targetValue);
+                switch (dataSource.getCircuitBreakStatus().getStatus()) {
+                    case OPEN:
+                        if (markMetric.contain(dataSource.getCircuitBreakStatus().getCircuitBreaker())) {
+                            markMetric.addValue(-1);
+                        }
+                        break;
+                    case HALF_OPEN:
+                        markMetric.addMarkedName(dataSource.getCircuitBreakStatus().getCircuitBreaker());
+                        markMetric.incValue();
+                        break;
+                    case CLOSE:
+                        markMetric.removeMarkedName(dataSource.getCircuitBreakStatus().getCircuitBreaker());
+                        targetValue.addValue(-1);
+                        break;
+                    default:
+                }
             }
         }
 
