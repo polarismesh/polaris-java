@@ -13,7 +13,10 @@
     <artifactId>polaris-distribution</artifactId>
     <packaging>pom</packaging>
 
+    <name>Polaris Distribution</name>
+    <description>Polaris Distribution POM</description>
+
     <modules>
-        <module>polaris-factory-shaded</module>
+        <module>polaris-all-shaded</module>
     </modules>
 </project>

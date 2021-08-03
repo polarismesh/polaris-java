@@ -13,6 +13,9 @@
     <artifactId>connector-polaris-grpc</artifactId>
     <packaging>jar</packaging>
 
+    <name>Polaris Plugins Client Connector PolarisGRPC</name>
+    <description>Polaris Plugins Client Connector PolarisGRPC POM</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

@@ -12,5 +12,6 @@
 
     <artifactId>outlier-detector-tcp</artifactId>
 
-
+    <name>Polaris Plugins OutlierDetector TCP</name>
+    <description>Polaris Plugins OutlierDetector TCP JAR</description>
 </project>

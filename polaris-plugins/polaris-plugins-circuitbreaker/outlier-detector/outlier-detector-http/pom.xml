@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>outlier-detector-http</artifactId>
-
+    <name>Polaris Plugins OutlierDetector HTTP</name>
+    <description>Polaris Plugins OutlierDetector HTTP JAR</description>
 
 </project>

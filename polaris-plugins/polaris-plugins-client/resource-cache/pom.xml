@@ -12,6 +12,9 @@
 
     <artifactId>resource-cache</artifactId>
 
+    <name>Polaris Plugins Client ResourceCache</name>
+    <description>Polaris Plugins Client ResourceCache POM</description>
+
     <packaging>pom</packaging>
     <modules>
         <module>resource-cache-memory</module>

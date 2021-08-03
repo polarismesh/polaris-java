@@ -10,7 +10,11 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>polaris-factory-shaded</artifactId>
+
+    <artifactId>polaris-all-shaded</artifactId>
+    <name>Polaris Distribution All Sharded</name>
+    <description>Polaris Distribution All Sharded JAR</description>
+
     <modelVersion>4.0.0</modelVersion>
     <dependencies>
         <dependency>

@@ -12,4 +12,7 @@
 
     <artifactId>loadbalancer-random</artifactId>
 
+    <name>Polaris Plugins Loadbalancer Random</name>
+    <description>Polaris Plugins Loadbalancer Random JAR</description>
+
 </project>

@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-model</artifactId>
+    <name>Polaris Common Model</name>
+    <description>Polaris Common Model JAR</description>
 
     <dependencies>
         <dependency>

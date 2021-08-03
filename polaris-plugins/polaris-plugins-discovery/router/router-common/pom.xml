@@ -12,4 +12,7 @@
 
     <artifactId>router-common</artifactId>
 
+    <name>Polaris Plugins Router Common</name>
+    <description>Polaris Plugins Router Common JAR</description>
+
 </project>

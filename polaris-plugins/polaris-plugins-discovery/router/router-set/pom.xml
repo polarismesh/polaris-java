@@ -12,6 +12,9 @@
 
     <artifactId>router-set</artifactId>
 
+    <name>Polaris Plugins Router Set</name>
+    <description>Polaris Plugins Router Set JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

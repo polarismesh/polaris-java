@@ -12,6 +12,9 @@
 
     <artifactId>circuitbreaker-errcount</artifactId>
 
+    <name>Polaris Plugins Circuitbreaker Trigger ConsecutiveErrors</name>
+    <description>Polaris Plugins Circuitbreaker Trigger ConsecutiveErrors JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

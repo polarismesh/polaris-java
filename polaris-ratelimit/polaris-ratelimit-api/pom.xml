@@ -12,6 +12,9 @@
 
     <artifactId>polaris-ratelimit-api</artifactId>
 
+    <name>Polaris Ratelimit API</name>
+    <description>Polaris Ratelimit API JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

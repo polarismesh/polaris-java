@@ -12,6 +12,9 @@
 
     <artifactId>polaris-test</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Test</name>
+    <description>Polaris Test POM</description>
+
     <modules>
         <module>polaris-test-common</module>
         <module>polaris-test-mock-discovery</module>

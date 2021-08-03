@@ -12,6 +12,9 @@
 
     <artifactId>circuitbreaker-errrate</artifactId>
 
+    <name>Polaris Plugins Circuitbreaker Trigger ErrorRate</name>
+    <description>Polaris Plugins Circuitbreaker Trigger ErrorRate JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

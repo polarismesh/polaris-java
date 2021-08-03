@@ -11,8 +11,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ratelimiter</artifactId>
-
     <packaging>pom</packaging>
+
+    <name>Polaris Plugins Ratelimit Limiter</name>
+    <description>Polaris Plugins Ratelimit Limiters POM</description>
+
     <modules>
         <module>ratelimiter-common</module>
         <module>ratelimiter-reject</module>

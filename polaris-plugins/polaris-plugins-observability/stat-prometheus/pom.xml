@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>stat-prometheus</artifactId>
+    <name>Polaris Plugins Observability Prometheus</name>
+    <description>Polaris Plugins Observability Prometheus JAR</description>
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

@@ -12,5 +12,6 @@
 
     <artifactId>ratelimiter-common</artifactId>
 
-
+    <name>Polaris Plugins Ratelimit Limiter Common</name>
+    <description>Polaris Plugins Ratelimit Limiters Common JAR</description>
 </project>

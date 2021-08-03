@@ -12,6 +12,9 @@
 
     <artifactId>polaris-plugin-api</artifactId>
 
+    <name>Polaris Plugin API</name>
+    <description>Polaris Plugin API JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

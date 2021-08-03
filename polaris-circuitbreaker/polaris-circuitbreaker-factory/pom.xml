@@ -12,6 +12,9 @@
 
     <artifactId>polaris-circuitbreaker-factory</artifactId>
 
+    <name>Polaris Circuitbreaker Factory</name>
+    <description>Polaris Circuitbreaker Factory JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

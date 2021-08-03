@@ -13,6 +13,9 @@
     <artifactId>polaris-plugins-discovery</artifactId>
     <packaging>pom</packaging>
 
+    <name>Polaris Plugins Discovery</name>
+    <description>Polaris Plugins Discovery POM</description>
+
     <modules>
         <module>router</module>
         <module>loadbalancer</module>

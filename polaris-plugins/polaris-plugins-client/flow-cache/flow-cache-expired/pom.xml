@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>flow-cache-expired</artifactId>
-
+    <name>Polaris Plugins Client FlowCache Expired</name>
+    <description>Polaris Plugins Client FlowCache Expired JAR</description>
 
 </project>

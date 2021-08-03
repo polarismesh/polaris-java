@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-discovery-examples</artifactId>
+    <name>Polaris Discovery Examples</name>
+    <description>Polaris Discovery Examples JAR</description>
 
     <dependencies>
         <dependency>

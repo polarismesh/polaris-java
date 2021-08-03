@@ -12,6 +12,9 @@
 
     <artifactId>router-isolated</artifactId>
 
+    <name>Polaris Plugins Router Isolated</name>
+    <description>Polaris Plugins Router Isolated JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

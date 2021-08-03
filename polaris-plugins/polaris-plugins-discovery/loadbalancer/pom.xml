@@ -12,6 +12,10 @@
 
     <artifactId>loadbalancer</artifactId>
     <packaging>pom</packaging>
+
+    <name>Polaris Plugins Loadbalancer</name>
+    <description>Polaris Plugins Loadbalancer POM</description>
+
     <modules>
         <module>loadbalancer-random</module>
         <module>loadbalancer-ringhash</module>

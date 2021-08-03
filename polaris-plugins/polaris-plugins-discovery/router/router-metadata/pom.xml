@@ -12,6 +12,9 @@
 
     <artifactId>router-metadata</artifactId>
 
+    <name>Polaris Plugins Router Metadata</name>
+    <description>Polaris Plugins Router Metadata JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

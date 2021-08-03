@@ -12,6 +12,10 @@
 
     <artifactId>outlier-detector</artifactId>
     <packaging>pom</packaging>
+
+    <name>Polaris Plugins OutlierDetector</name>
+    <description>Polaris Plugins OutlierDetector POM</description>
+
     <modules>
         <module>outlier-detector-http</module>
         <module>outlier-detector-tcp</module>

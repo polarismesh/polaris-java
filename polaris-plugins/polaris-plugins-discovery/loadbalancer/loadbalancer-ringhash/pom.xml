@@ -12,5 +12,6 @@
 
     <artifactId>loadbalancer-ringhash</artifactId>
 
-
+    <name>Polaris Plugins Loadbalancer Ringhash</name>
+    <description>Polaris Plugins Loadbalancer Ringhash JAR</description>
 </project>

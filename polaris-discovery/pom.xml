@@ -12,6 +12,8 @@
 
     <artifactId>polaris-discovery</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Discovery</name>
+    <description>Polaris Discovery POM</description>
 
     <modules>
         <module>polaris-discovery-api</module>

@@ -12,6 +12,9 @@
 
     <artifactId>stat-common</artifactId>
 
+    <name>Polaris Plugins Observability Common</name>
+    <description>Polaris Plugins Observability Common JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

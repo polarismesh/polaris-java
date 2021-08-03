@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-protobuf</artifactId>
+    <name>Polaris Common Protobuf</name>
+    <description>Polaris Common Protobuf JAR</description>
 
     <dependencies>
         <dependency>

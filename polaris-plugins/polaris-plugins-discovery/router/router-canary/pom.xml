@@ -12,6 +12,9 @@
 
     <artifactId>router-canary</artifactId>
 
+    <name>Polaris Plugins Router Canary</name>
+    <description>Polaris Plugins Router Canary JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

@@ -12,6 +12,9 @@
     <artifactId>polaris-common</artifactId>
     <packaging>pom</packaging>
 
+    <name>Polaris Common</name>
+    <description>Polaris Common POM</description>
+
     <modules>
         <module>polaris-config</module>
         <module>polaris-model</module>

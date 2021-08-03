@@ -12,6 +12,9 @@
 
     <artifactId>polaris-circuitbreaker-examples</artifactId>
 
+    <name>Polaris Circuitbreaker Examples</name>
+    <description>Polaris Circuitbreaker Examples JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

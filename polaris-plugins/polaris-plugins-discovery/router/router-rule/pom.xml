@@ -12,6 +12,9 @@
 
     <artifactId>router-rule</artifactId>
 
+    <name>Polaris Plugins Router Rule</name>
+    <description>Polaris Plugins Router Rule JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

@@ -12,6 +12,9 @@
 
     <artifactId>polaris-plugins-ratelimit</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Ratelimit</name>
+    <description>Polaris Plugins Ratelimit POM</description>
+
     <modules>
         <module>ratelimiter</module>
     </modules>

@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-discovery-factory</artifactId>
+    <name>Polaris Discovery Factory</name>
+    <description>Polaris Discovery Factory JAR</description>
 
     <dependencies>
         <dependency>

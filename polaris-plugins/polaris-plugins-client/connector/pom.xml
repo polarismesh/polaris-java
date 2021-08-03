@@ -12,6 +12,9 @@
 
     <artifactId>connector</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Client Connector</name>
+    <description>Polaris Plugins Client Connector POM</description>
+
     <modules>
         <module>connector-polaris-grpc</module>
     </modules>

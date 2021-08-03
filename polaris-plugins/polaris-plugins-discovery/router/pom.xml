@@ -12,6 +12,9 @@
 
     <artifactId>router</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Router</name>
+    <description>Polaris Plugins Router POM</description>
+
 
     <modules>
         <module>router-set</module>

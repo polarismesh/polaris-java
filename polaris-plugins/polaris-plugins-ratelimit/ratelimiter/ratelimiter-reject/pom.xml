@@ -12,6 +12,9 @@
 
     <artifactId>ratelimiter-reject</artifactId>
 
+    <name>Polaris Plugins Ratelimit Limiter Reject</name>
+    <description>Polaris Plugins Ratelimit Limiters Reject JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

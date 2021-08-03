@@ -12,6 +12,9 @@
 
     <artifactId>polaris-plugins-observability</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Observability</name>
+    <description>Polaris Plugins Observability POM</description>
+
     <modules>
         <module>stat-prometheus</module>
         <module>stat-common</module>

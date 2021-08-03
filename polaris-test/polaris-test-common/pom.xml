@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-test-common</artifactId>
-
+    <name>Polaris Test Common</name>
+    <description>Polaris Test Common JAR</description>
 
 </project>

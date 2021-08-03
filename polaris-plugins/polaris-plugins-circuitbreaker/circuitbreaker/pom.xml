@@ -13,6 +13,9 @@
     <artifactId>circuitbreaker</artifactId>
     <packaging>pom</packaging>
 
+    <name>Polaris Plugins Circuitbreaker Trigger</name>
+    <description>Polaris Plugins Circuitbreaker Trigger POM</description>
+
     <modules>
         <module>circuitbreaker-common</module>
         <module>circuitbreaker-errrate</module>

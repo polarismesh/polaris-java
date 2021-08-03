@@ -12,6 +12,9 @@
 
     <artifactId>polaris-plugins-client</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Client</name>
+    <description>Polaris Plugins Client POM</description>
+
     <modules>
         <module>connector</module>
         <module>resource-cache</module>

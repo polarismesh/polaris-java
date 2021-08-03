@@ -11,6 +11,9 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <artifactId>polaris-dependencies</artifactId>
+    <name>Polaris Dependencies</name>
+    <description>Polaris Dependencies POM</description>
+
     <dependencyManagement>
         <dependencies>
             <!-- polaris-common-->

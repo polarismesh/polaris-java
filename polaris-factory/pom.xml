@@ -12,6 +12,9 @@
 
     <artifactId>polaris-factory</artifactId>
 
+    <name>Polaris Factory</name>
+    <description>Polaris Factory JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

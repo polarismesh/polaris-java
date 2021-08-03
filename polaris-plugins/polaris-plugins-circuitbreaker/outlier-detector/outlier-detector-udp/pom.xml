@@ -12,5 +12,6 @@
 
     <artifactId>outlier-detector-udp</artifactId>
 
-
+    <name>Polaris Plugins OutlierDetector UDP</name>
+    <description>Polaris Plugins OutlierDetector UDP JAR</description>
 </project>

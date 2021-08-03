@@ -11,6 +11,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>polaris-plugins</artifactId>
+
+    <name>Polaris Plugins</name>
+    <description>Polaris Plugins POM</description>
     <packaging>pom</packaging>
     <modules>
         <module>polaris-plugin-api</module>

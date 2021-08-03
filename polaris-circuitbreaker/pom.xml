@@ -12,6 +12,9 @@
 
     <artifactId>polaris-circuitbreaker</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Circuitbreaker</name>
+    <description>Polaris Circuitbreaker POM</description>
+
     <modules>
         <module>polaris-circuitbreaker-api</module>
         <module>polaris-circuitbreaker-client</module>

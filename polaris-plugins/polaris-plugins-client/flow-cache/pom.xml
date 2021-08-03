@@ -12,6 +12,9 @@
 
     <artifactId>flow-cache</artifactId>
     <packaging>pom</packaging>
+    <name>Polaris Plugins Client FlowCache</name>
+    <description>Polaris Plugins Client FlowCache POM</description>
+
     <modules>
         <module>flow-cache-expired</module>
     </modules>

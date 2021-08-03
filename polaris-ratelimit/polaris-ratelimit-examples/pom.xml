@@ -12,6 +12,9 @@
 
     <artifactId>polaris-ratelimit-examples</artifactId>
 
+    <name>Polaris Ratelimit Examples</name>
+    <description>Polaris Ratelimit Examples JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>commons-cli</groupId>

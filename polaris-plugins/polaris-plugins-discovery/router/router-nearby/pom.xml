@@ -12,6 +12,9 @@
 
     <artifactId>router-nearby</artifactId>
 
+    <name>Polaris Plugins Router Nearby</name>
+    <description>Polaris Plugins Router Nearby JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

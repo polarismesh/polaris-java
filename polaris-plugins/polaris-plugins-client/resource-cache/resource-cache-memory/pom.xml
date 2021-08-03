@@ -12,6 +12,9 @@
 
     <artifactId>resource-cache-memory</artifactId>
 
+    <name>Polaris Plugins Client ResourceCache Memory</name>
+    <description>Polaris Plugins Client ResourceCache Memory JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

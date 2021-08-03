@@ -12,6 +12,9 @@
 
     <artifactId>router-healthy</artifactId>
 
+    <name>Polaris Plugins Router Healthy</name>
+    <description>Polaris Plugins Router Healthy JAR</description>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
