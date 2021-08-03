@@ -204,7 +204,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
                     pushIntervalS,
                     pushIntervalS,
                     TimeUnit.SECONDS);
-            LOG.info("start schedule push task, {}", pushIntervalS);
+            LOG.info("start schedule push task, task interval {}", pushIntervalS);
         }
     }
 
@@ -221,14 +221,15 @@ public class PrometheusPushHandler implements StatInfoHandler {
                     SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
 
             try {
-                if (getPushGateway() == null) {
-                    if (null == pushAddress && null != addressProvider) {
-                        pushAddress = addressProvider.getAddress();
-                    }
-                    if (null == pushAddress) {
-                        pushAddress = PUSH_DEFAULT_ADDRESS;
-                    }
+                if (null == pushAddress && null != addressProvider) {
+                    setPushAddress(addressProvider.getAddress());
+                }
 
+                if (null == pushAddress) {
+                    setPushAddress(PUSH_DEFAULT_ADDRESS);
+                }
+
+                if (getPushGateway() == null) {
                     LOG.info("init push-gateway {} ", pushAddress);
                     setPushGateway(new PushGateway(pushAddress));
                 }
@@ -239,6 +240,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
                 LOG.error("push result to push-gateway {} encountered exception, exception:{}", pushAddress,
                         exception.getMessage());
                 setPushGateway(null);
+                setPushAddress(null);
                 return;
             }
 
@@ -421,6 +423,10 @@ public class PrometheusPushHandler implements StatInfoHandler {
         }
 
         return host + ":" + port;
+    }
+
+    protected void setPushAddress(String address) {
+        this.pushAddress = address;
     }
 
     protected void setPushGateway(PushGateway pushGateway) {
