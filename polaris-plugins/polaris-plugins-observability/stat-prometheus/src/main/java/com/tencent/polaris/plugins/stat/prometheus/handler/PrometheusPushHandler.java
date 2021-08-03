@@ -29,6 +29,8 @@ import com.tencent.polaris.plugins.stat.common.model.StatInfoRevisionCollector;
 import com.tencent.polaris.plugins.stat.common.model.StatInfoCollectorContainer;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
+import com.tencent.polaris.plugins.stat.common.model.AbstractSignatureStatInfoCollector;
+import com.tencent.polaris.plugins.stat.common.model.StatRevisionMetric;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
@@ -37,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -54,9 +57,11 @@ import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.Sy
 public class PrometheusPushHandler implements StatInfoHandler {
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandler.class);
 
-    public static final int PUSH_INTERVALS = 30;
+    public static final int PUSH_DEFAULT_INTERVALS = 30;
     public static final String PUSH_DEFAULT_ADDRESS = "127.0.0.1:9091";
     public static final String PUSH_DEFAULT_JOB_NAME = "defaultJobName";
+    public static final String PUSH_GROUP_KEY = "instance";
+    public static final int REVISION_MAX_SCOPE = 2;
 
     // schedule
     private final AtomicBoolean firstHandle = new AtomicBoolean(false);
@@ -67,11 +72,16 @@ public class PrometheusPushHandler implements StatInfoHandler {
     private final String callerIp;
     private final String jobName;
     private final long pushIntervalS;
-    private final String pushAddress;
     private final CollectorRegistry promRegistry;
     private final Map<String, Gauge> sampleMapping;
     private final PushAddressProvider addressProvider;
+    private final String instanceName;
+    private String pushAddress;
     private PushGateway pushGateway;
+
+    public PrometheusPushHandler(String callerIp, PrometheusPushHandlerConfig config, PushAddressProvider provider) {
+        this(callerIp, config.getJobName(), config.getPushInterval(), config.getInstanceName(), provider);
+    }
 
     /**
      * 构造函数
@@ -79,9 +89,14 @@ public class PrometheusPushHandler implements StatInfoHandler {
      * @param callerIp      调用者Ip
      * @param jobName       向PushGateWay推送使用任务名称
      * @param pushIntervalS 向PushGateWay推送的时间间隔
+     * @param instanceName  运行实例的Id
      * @param provider      push的地址提供者
      */
-    public PrometheusPushHandler(String callerIp, String jobName, Long pushIntervalS, PushAddressProvider provider) {
+    public PrometheusPushHandler(String callerIp,
+                                 String jobName,
+                                 Long pushIntervalS,
+                                 String instanceName,
+                                 PushAddressProvider provider) {
         this.callerIp = callerIp;
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
@@ -92,17 +107,16 @@ public class PrometheusPushHandler implements StatInfoHandler {
         } else {
             this.jobName = PUSH_DEFAULT_JOB_NAME;
         }
-        if (null != provider && null != provider.getAddress()) {
-            this.pushAddress = provider.getAddress();
-        } else {
-            this.pushAddress = PUSH_DEFAULT_ADDRESS;
-        }
         if (null != pushIntervalS) {
             this.pushIntervalS = pushIntervalS;
         } else {
-            this.pushIntervalS = PUSH_INTERVALS;
+            this.pushIntervalS = PUSH_DEFAULT_INTERVALS;
         }
-        this.pushGateway = new PushGateway(this.pushAddress);
+        if (null != instanceName) {
+            this.instanceName = instanceName;
+        } else {
+            this.instanceName = callerIp;
+        }
         this.scheduledPushTask = Executors.newSingleThreadScheduledExecutor();
 
         initSampleMapping(MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY,
@@ -185,36 +199,46 @@ public class PrometheusPushHandler implements StatInfoHandler {
     }
 
     private void startSchedulePushTask() {
-        if (null != container && null != scheduledPushTask && null != pushGateway && null != sampleMapping) {
+        if (null != container && null != scheduledPushTask && null != sampleMapping) {
             this.scheduledPushTask.scheduleWithFixedDelay(this::doPush,
                     pushIntervalS,
                     pushIntervalS,
                     TimeUnit.SECONDS);
+            LOG.info("start schedule push task, {}", pushIntervalS);
         }
     }
 
     private void doPush() {
         try {
-            putDataFromContainerInOrder(container.getInsCollector().getCollectedValues(),
+            putDataFromContainerInOrder(container.getInsCollector(),
+                    container.getInsCollector().getCurrentRevision(),
                     SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
-            putDataFromContainerInOrder(container.getRateLimitCollector().getCollectedValues(),
+            putDataFromContainerInOrder(container.getRateLimitCollector(),
+                    container.getRateLimitCollector().getCurrentRevision(),
                     SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
-            putDataFromContainerInOrder(container.getCircuitBreakerCollector().getCollectedValues(),
+            putDataFromContainerInOrder(container.getCircuitBreakerCollector(),
+                    0,
                     SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
 
             try {
-                pushGateway.pushAdd(promRegistry, jobName);
+                if (getPushGateway() == null) {
+                    if (null == pushAddress && null != addressProvider) {
+                        pushAddress = addressProvider.getAddress();
+                    }
+                    if (null == pushAddress) {
+                        pushAddress = PUSH_DEFAULT_ADDRESS;
+                    }
+
+                    LOG.info("init push-gateway {} ", pushAddress);
+                    setPushGateway(new PushGateway(pushAddress));
+                }
+
+                pushGateway.pushAdd(promRegistry, jobName, Collections.singletonMap(PUSH_GROUP_KEY, instanceName));
                 LOG.info("push result to push-gateway {} success", pushAddress);
             } catch (IOException exception) {
                 LOG.error("push result to push-gateway {} encountered exception, exception:{}", pushAddress,
                         exception.getMessage());
-
-                if (null != addressProvider) {
-                    String newAddress = addressProvider.getAddress();
-                    if (newAddress != null && !pushAddress.equals(newAddress)) {
-                        pushGateway = new PushGateway(newAddress);
-                    }
-                }
+                setPushGateway(null);
                 return;
             }
 
@@ -231,14 +255,32 @@ public class PrometheusPushHandler implements StatInfoHandler {
         }
     }
 
-    private void putDataFromContainerInOrder(Collection<? extends StatMetric> values, String[] order) {
-        if (null == values) {
-            return;
-        }
+    private void putDataFromContainerInOrder(AbstractSignatureStatInfoCollector<?, ? extends StatMetric> collector,
+                                             long currentRevision,
+                                             String[] order) {
+        Collection<? extends StatMetric> values = collector.getCollectedValues();
 
         for (StatMetric s : values) {
             Gauge gauge = sampleMapping.get(s.getMetricName());
             if (null != gauge) {
+                if (s instanceof StatRevisionMetric) {
+                    StatRevisionMetric rs = (StatRevisionMetric) s;
+                    if (rs.getRevision() < currentRevision - REVISION_MAX_SCOPE) {
+                        // 如果连续两个版本还没有数据，就清除该数据
+                        gauge.remove(getOrderedMetricLabelValues(s.getLabels(), order));
+                        collector.getMetricContainer().remove(s.getSignature());
+                        continue;
+                    } else if (rs.getRevision() < currentRevision) {
+                        // 如果版本为老版本，则清零数据
+                        gauge.remove(getOrderedMetricLabelValues(s.getLabels(), order));
+                        Gauge.Child child = gauge.labels(getOrderedMetricLabelValues(s.getLabels(), order));
+                        if (null != child) {
+                            child.set(0);
+                        }
+                        continue;
+                    }
+                }
+
                 Gauge.Child child = gauge.labels(getOrderedMetricLabelValues(s.getLabels(), order));
                 if (null != child) {
                     child.set(s.getValue());
@@ -375,7 +417,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
 
     private static String buildAddress(String host, int port) {
         if (null == host) {
-            host = NULL_VALUE;
+            host = "";
         }
 
         return host + ":" + port;
@@ -383,6 +425,10 @@ public class PrometheusPushHandler implements StatInfoHandler {
 
     protected void setPushGateway(PushGateway pushGateway) {
         this.pushGateway = pushGateway;
+    }
+
+    protected PushGateway getPushGateway() {
+        return this.pushGateway;
     }
 
     protected CollectorRegistry getPromRegistry() {

@@ -1,6 +1,10 @@
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
-import com.tencent.polaris.api.plugin.stat.*;
+import com.tencent.polaris.api.plugin.stat.StatInfo;
+import com.tencent.polaris.api.plugin.stat.DefaultRateLimitResult;
+import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
+import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
+import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -8,7 +12,6 @@ import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
-import com.tencent.polaris.plugins.stat.common.model.StatRevisionMetric;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
 import io.prometheus.client.Collector;
@@ -20,11 +23,15 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Random;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
+
+import static com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandler.REVISION_MAX_SCOPE;
 
 public class PrometheusPushHandlerTest {
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandlerTest.class);
@@ -38,7 +45,11 @@ public class PrometheusPushHandlerTest {
         String callerIp = "127.0.0.1";
         MockPushGateway pgw = new MockPushGateway(PrometheusPushHandler.PUSH_DEFAULT_ADDRESS);
         pushInterval = 2L;
-        handler = new PrometheusPushHandler(callerIp, null, pushInterval, new MockAddressProvider());
+        handler = new PrometheusPushHandler(callerIp,
+                null,
+                pushInterval,
+                "mockInstanceName",
+                new MockAddressProvider());
         handler.setPushGateway(pgw);
     }
 
@@ -48,8 +59,20 @@ public class PrometheusPushHandlerTest {
         handler.handle(statInfo);
         handler.handle(null);
 
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
+    }
+
+    @Test
+    public void testPushGatewayDelayInit() throws InterruptedException {
+        handler.setPushGateway(null);
+        handler.handle(null);
+
+        Thread.sleep(pushInterval * 1050);
+        handler.stopHandle();
+
+        // null cause IOException
+        Assert.assertNull(handler.getPushGateway());
     }
 
     @Test
@@ -60,8 +83,36 @@ public class PrometheusPushHandlerTest {
             handler.handle(statInfo);
         }, 10);
 
-        // 等待上报的内容
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
+        handler.stopHandle();
+    }
+
+    @Test
+    public void testExpiredDataClean() throws InterruptedException {
+        int count = 5;
+        StatInfo statInfo = new StatInfo();
+        ServiceCallResult callResult = mockServiceCallResult();
+        statInfo.setRouterGauge(callResult);
+        batchDone(() -> handler.handle(statInfo), count);
+
+        // mock push
+        LOG.info("first mock push finish...");
+        Thread.sleep(pushInterval * 1050);
+        Double result = getServiceCallTotalResult(callResult);
+        Assert.assertEquals(new Double(count), result);
+
+        // mock next push
+        LOG.info("second mock push finish...");
+        Thread.sleep(pushInterval * 1050);
+        result = getServiceCallTotalResult(callResult);
+        Assert.assertEquals(new Double(0), result);
+
+        LOG.info("mock sleep {} times end...", REVISION_MAX_SCOPE);
+        Thread.sleep(pushInterval * REVISION_MAX_SCOPE * 1050);
+        result = getServiceCallTotalResult(callResult);
+        Assert.assertNull(result);
+
+        // stop handle
         handler.stopHandle();
     }
 
@@ -74,7 +125,7 @@ public class PrometheusPushHandlerTest {
         batchDone(() -> handler.handle(statInfo), count);
 
         // mock pushing
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         Double result = getServiceCallTotalResult(callResult);
@@ -119,7 +170,7 @@ public class PrometheusPushHandlerTest {
         latch.await();
 
         // mock pushing
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         ServiceCallResult example = mockFixedLabelServiceCallResult(200, 1000);
@@ -142,7 +193,7 @@ public class PrometheusPushHandlerTest {
         }, count);
 
         // mock pushing
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         int maxExpected = 0;
@@ -196,7 +247,7 @@ public class PrometheusPushHandlerTest {
         }).start();
         latch.await();
 
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         DefaultRateLimitResult example = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
@@ -214,7 +265,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -228,7 +279,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -243,11 +294,41 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.CLOSE));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1500);
+        Thread.sleep(pushInterval * 1050);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
         Assert.assertEquals(new Double(0), getOpenResult(example));
+        Assert.assertEquals(new Double(0), getHalfOpenResult(example));
+    }
+
+    @Test
+    public void testCircuitBreakerRepeatOpenToHalfOpen() throws InterruptedException {
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
+
+        Thread.sleep(pushInterval * 1050);
+        handler.stopHandle();
+        DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
+        Assert.assertEquals(new Double(1), getOpenResult(example));
+        Assert.assertEquals(new Double(0), getHalfOpenResult(example));
+    }
+
+    @Test
+    public void testCircuitBreakerCloseToOpen() throws InterruptedException {
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.CLOSE));
+        changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
+
+        // mock pushing
+        Thread.sleep(pushInterval * 1050);
+        handler.stopHandle();
+        DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
+        Assert.assertEquals(new Double(1), getOpenResult(example));
         Assert.assertEquals(new Double(0), getHalfOpenResult(example));
     }
 
@@ -421,12 +502,20 @@ public class PrometheusPushHandlerTest {
             super(address);
         }
 
-        public void pushAdd(CollectorRegistry registry, String job) {
-            LOG.info("mock push-gateway sending...");
+        public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey) {
+            LOG.info("mock push-gateway push with groupKey...");
             Enumeration<Collector.MetricFamilySamples> enumeration = registry.metricFamilySamples();
-            if (null != enumeration) {
+            if (null == enumeration) {
+                return;
+            }
+
+            if (enumeration.hasMoreElements()) {
                 while (enumeration.hasMoreElements()) {
                     Collector.MetricFamilySamples samples = enumeration.nextElement();
+                    if (samples.samples.isEmpty()) {
+                        LOG.info("mock pgw-{} metric name {} no sample.", super.gatewayBaseURL, samples.name);
+                        continue;
+                    }
                     for (Collector.MetricFamilySamples.Sample sample : samples.samples) {
                         LOG.info("mock pgw-{} exposed sample: {}", super.gatewayBaseURL, sample);
                     }

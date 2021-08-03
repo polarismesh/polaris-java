@@ -25,25 +25,25 @@ import java.util.Arrays;
 import java.util.List;
 
 public class StatInfoCollectorContainer {
-    private final StatInfoCollector<InstanceGauge, StatRevisionMetric> insCollector;
-    private final StatInfoCollector<RateLimitGauge, StatRevisionMetric> rateLimitCollector;
-    private final StatInfoCollector<CircuitBreakGauge, StatMetric> circuitBreakerCollector;
+    private final StatInfoRevisionCollector<InstanceGauge> insCollector;
+    private final StatInfoRevisionCollector<RateLimitGauge> rateLimitCollector;
+    private final StatInfoStatefulCollector<CircuitBreakGauge> circuitBreakerCollector;
 
     public StatInfoCollectorContainer() {
         this.insCollector = new StatInfoRevisionCollector<InstanceGauge>();
         this.rateLimitCollector = new StatInfoRevisionCollector<RateLimitGauge>();
-        this.circuitBreakerCollector = new StatInfoGaugeCollector<CircuitBreakGauge>();
+        this.circuitBreakerCollector = new StatInfoStatefulCollector<CircuitBreakGauge>();
     }
 
-    public StatInfoCollector<InstanceGauge, StatRevisionMetric> getInsCollector() {
+    public StatInfoRevisionCollector<InstanceGauge> getInsCollector() {
         return insCollector;
     }
 
-    public StatInfoCollector<RateLimitGauge, StatRevisionMetric> getRateLimitCollector() {
+    public StatInfoRevisionCollector<RateLimitGauge> getRateLimitCollector() {
         return rateLimitCollector;
     }
 
-    public StatInfoCollector<CircuitBreakGauge, StatMetric> getCircuitBreakerCollector() {
+    public StatInfoStatefulCollector<CircuitBreakGauge> getCircuitBreakerCollector() {
         return circuitBreakerCollector;
     }
 
@@ -51,3 +51,4 @@ public class StatInfoCollectorContainer {
         return Arrays.asList(insCollector, rateLimitCollector, circuitBreakerCollector);
     }
 }
+

@@ -17,18 +17,18 @@
 
 package com.tencent.polaris.plugins.stat.common.model;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 普通的指标收集器，如果发现没有就添加，如果发现有就更新
- *
- * @param <T> 收集的指标类型
- */
-public class StatInfoGaugeCollector<T> extends AbstractSignatureStatInfoCollector<T, StatMetric> {
+public class StatInfoStatefulCollector<T> extends AbstractSignatureStatInfoCollector<T, StatStatefulMetric> {
+    private static final Logger LOG = LoggerFactory.getLogger(StatInfoStatefulCollector.class);
+
     private final Object mutex = new Object();
 
-    public StatInfoGaugeCollector() {
+    public StatInfoStatefulCollector() {
         super();
     }
 
@@ -48,8 +48,11 @@ public class StatInfoGaugeCollector<T> extends AbstractSignatureStatInfoCollecto
                     synchronized (mutex) {
                         metric = metricContainer.get(signature);
                         if (null == metric) {
-                            StatMetric statMetric = new StatMetric(metricName, labels, signature);
+                            StatStatefulMetric statMetric = new StatStatefulMetric(metricName, labels, signature);
                             statMetric.setValue(strategy.initMetricValue(info));
+                            LOG.debug("{} with signature {} init value is {}", strategy.getStrategyName(),
+                                    signature,
+                                    statMetric.getValue());
                             metricContainer.put(signature, statMetric);
                             continue;
                         }
@@ -57,6 +60,9 @@ public class StatInfoGaugeCollector<T> extends AbstractSignatureStatInfoCollecto
                 }
 
                 strategy.updateMetricValue(metric, info);
+                LOG.debug("{} with signature {} update value is {}", strategy.getStrategyName(),
+                        signature,
+                        metric.getValue());
             }
         }
     }

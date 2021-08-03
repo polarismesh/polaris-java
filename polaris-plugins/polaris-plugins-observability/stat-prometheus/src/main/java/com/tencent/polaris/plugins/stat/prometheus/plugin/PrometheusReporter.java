@@ -63,9 +63,7 @@ public class PrometheusReporter implements StatReporter {
             if (null != config) {
                 PushAddressProvider provider = new ServiceDiscoveryProvider(extensions, monitorService);
                 statInfoHandler = new PrometheusPushHandler(extensions.getValueContext().getHost(),
-                        config.getJobName(),
-                        config.getPushInterval(),
-                        provider);
+                        config, provider);
             }
         }
     }
