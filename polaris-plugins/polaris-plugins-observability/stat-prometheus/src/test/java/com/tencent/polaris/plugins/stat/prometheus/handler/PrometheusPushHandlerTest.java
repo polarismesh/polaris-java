@@ -72,6 +72,7 @@ public class PrometheusPushHandlerTest {
         handler.stopHandle();
 
         // null cause IOException
+        Thread.sleep(pushInterval * 1050);
         Assert.assertNull(handler.getPushGateway());
     }
 
