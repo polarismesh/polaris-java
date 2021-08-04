@@ -63,7 +63,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>2020.0.0-SNAPSHOT</revision>
+        <revision>1.0.0</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -205,6 +205,7 @@
         <snapshotRepository>
             <id>nexus-snapshots</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+
         </snapshotRepository>
         <repository>
             <id>nexus-releases</id>

@@ -70,18 +70,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>tencent_public_snapshots</id>
-            <name>tencent_public_snapshot</name>
-            <url>https://mirrors.tencent.com/repository/maven/tencent_public_snapshots/</url>
-        </snapshotRepository>
-        <repository>
-            <!--必须与 settings.xml 的 id 一致-->
-            <id>tencent_public</id>
-            <name>tencent_public_release</name>
-            <url>https://mirrors.tencent.com/repository/maven/tencent_public/</url>
-        </repository>
-    </distributionManagement>
 </project>
