@@ -11,12 +11,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.tencent.polaris.plugins.stat.common.TestUtil.getRandomLabels;
 
-public class StatInfoGaugeCollectorTest {
+public class StatInfoStatefulCollectorTest {
 
     @Test
     public void testCollectStatInfo() throws InterruptedException {
         Random random = new Random();
-        StatInfoGaugeCollector<AtomicDouble> collector = new StatInfoGaugeCollector<AtomicDouble>();
+        StatInfoStatefulCollector<AtomicDouble> collector = new StatInfoStatefulCollector<AtomicDouble>();
         Map<String, String> labels = getRandomLabels();
         double threshold = 0.5;
         MetricValueAggregationStrategy<AtomicDouble> maxIncStrategy = new MaxThresholdIncStrategy(threshold);
