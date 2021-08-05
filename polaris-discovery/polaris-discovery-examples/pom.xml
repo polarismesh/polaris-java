@@ -14,6 +14,10 @@
     <name>Polaris Discovery Examples</name>
     <description>Polaris Discovery Examples JAR</description>
 
+    <properties>
+        <skip.maven.deploy>true</skip.maven.deploy>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

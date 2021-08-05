@@ -13,6 +13,11 @@
     <artifactId>polaris-router-examples</artifactId>
     <name>Polaris Router Examples</name>
     <description>Polaris Router Examples JAR</description>
+
+    <properties>
+        <skip.maven.deploy>true</skip.maven.deploy>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
