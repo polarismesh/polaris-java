@@ -15,6 +15,10 @@
     <name>Polaris Circuitbreaker Examples</name>
     <description>Polaris Circuitbreaker Examples JAR</description>
 
+    <properties>
+        <skip.maven.deploy>true</skip.maven.deploy>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

@@ -17,6 +17,6 @@
     <description>Polaris Distribution POM</description>
 
     <modules>
-        <module>polaris-all-shaded</module>
+        <module>polaris-all</module>
     </modules>
 </project>
