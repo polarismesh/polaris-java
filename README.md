@@ -1,5 +1,7 @@
 polaris-java
 ========================================
+[![Maven Central](https://img.shields.io/maven-central/v/com.tencent.polaris/polaris-dependencies?label=Maven%20Central)](https://search.maven.org/search?q=g:com.tencent.polaris%20AND%20a:polaris-dependencies)
+
 Polaris is an operation centre that supports multiple programming languages, with high compatibility to different application framework. Polaris - java is Polaris's Java embedded operation SDK.
 
 ## Quick Start
