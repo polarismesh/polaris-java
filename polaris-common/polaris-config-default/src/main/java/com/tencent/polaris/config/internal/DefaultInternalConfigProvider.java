@@ -50,7 +50,7 @@ public class DefaultInternalConfigProvider implements DefaultConfigProvider {
 
     @Override
     public String getName() {
-        return Configuration.DEFAULT_CONFIG_TENCENT;
+        return Configuration.DEFAULT_CONFIG;
     }
 
     @Override

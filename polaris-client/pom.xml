@@ -34,12 +34,7 @@
         <!-- 默认配置 -->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-config-tencent</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-config-opensource</artifactId>
+            <artifactId>polaris-config-default</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--pb相关依赖-->

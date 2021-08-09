@@ -30,9 +30,7 @@ import com.tencent.polaris.api.config.verify.Verifier;
  */
 public interface Configuration extends Verifier {
 
-    String DEFAULT_CONFIG_OPENSOURCE = "opensource";
-
-    String DEFAULT_CONFIG_TENCENT = "tencent";
+    String DEFAULT_CONFIG = "default";
 
 
     /**

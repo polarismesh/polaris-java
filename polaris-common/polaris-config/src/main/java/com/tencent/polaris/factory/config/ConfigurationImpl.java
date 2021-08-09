@@ -97,7 +97,7 @@ public class ConfigurationImpl implements Configuration {
     }
 
     public ConfigurationImpl() {
-        defaultConfigName = Configuration.DEFAULT_CONFIG_OPENSOURCE;
+        defaultConfigName = Configuration.DEFAULT_CONFIG;
     }
 
     public ConfigurationImpl(String defaultConfigName) {
@@ -110,7 +110,7 @@ public class ConfigurationImpl implements Configuration {
             configuration = configProviders.get(defaultConfigName);
         }
         if (null == configuration) {
-            return configProviders.get(Configuration.DEFAULT_CONFIG_TENCENT);
+            return configProviders.get(Configuration.DEFAULT_CONFIG);
         }
         return configuration;
     }
