@@ -127,8 +127,9 @@ public class PluginConfigImpl implements PluginConfig {
                 String pluginName = entry.getKey();
                 Class<? extends Verifier> clazz = PluginConfigImpl.pluginConfigClazz.get(pluginName);
                 if (null == clazz) {
-                    throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                            String.format("unknown plugin config type for plugin %s", pluginName));
+//                    throw new PolarisException(ErrorCode.INVALID_CONFIG,
+//                            String.format("unknown plugin config type for plugin %s", pluginName));
+                    continue;
                 }
                 try {
                     Verifier result = mapper.convertValue(properties, clazz);
