@@ -30,9 +30,6 @@ import com.tencent.polaris.api.config.verify.Verifier;
  */
 public interface Configuration extends Verifier {
 
-    String DEFAULT_CONFIG = "default";
-
-
     /**
      * services.global前缀开头的所有配置项
      *

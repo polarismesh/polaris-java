@@ -20,7 +20,7 @@ package com.tencent.polaris.factory.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.config.DefaultConfigProvider;
+import com.tencent.polaris.api.config.ConfigProvider;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl;
 import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
@@ -41,8 +41,8 @@ public class ConfigurationImpl implements Configuration {
     private static final Map<String, Configuration> configProviders = new HashMap<>();
 
     static {
-        ServiceLoader<DefaultConfigProvider> providers = ServiceLoader.load(DefaultConfigProvider.class);
-        for (DefaultConfigProvider provider : providers) {
+        ServiceLoader<ConfigProvider> providers = ServiceLoader.load(ConfigProvider.class);
+        for (ConfigProvider provider : providers) {
             configProviders.put(provider.getName(), provider.getDefaultConfig());
         }
     }
@@ -97,7 +97,7 @@ public class ConfigurationImpl implements Configuration {
     }
 
     public ConfigurationImpl() {
-        defaultConfigName = Configuration.DEFAULT_CONFIG;
+        defaultConfigName = ConfigProvider.DEFAULT_CONFIG;
     }
 
     public ConfigurationImpl(String defaultConfigName) {
@@ -110,7 +110,7 @@ public class ConfigurationImpl implements Configuration {
             configuration = configProviders.get(defaultConfigName);
         }
         if (null == configuration) {
-            return configProviders.get(Configuration.DEFAULT_CONFIG);
+            return configProviders.get(ConfigProvider.DEFAULT_CONFIG);
         }
         return configuration;
     }

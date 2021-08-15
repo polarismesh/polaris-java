@@ -17,7 +17,10 @@
 
 package com.tencent.polaris.api.config;
 
-public interface DefaultConfigProvider {
+public interface ConfigProvider {
+
+
+    String DEFAULT_CONFIG = "default";
 
     /**
      * 获取默认配置名字
