@@ -144,7 +144,7 @@ consumer:
   #描述:节点熔断相关配置
   circuitBreaker:
     #描述: 是否启用本地节点熔断功能
-    enable: false
+    enable: true
     #描述: 故障检测周期，根据周期内故障进行熔断
     checkPeriod: 1m
     #描述: 首次熔断时间，后续熔断时间=重试次数*sleepWindow

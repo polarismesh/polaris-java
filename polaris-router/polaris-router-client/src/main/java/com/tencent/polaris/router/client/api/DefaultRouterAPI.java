@@ -75,27 +75,27 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
 
     @Override
     public ProcessRoutersResponse processRouters(ProcessRoutersRequest request) throws PolarisException {
-        checkAvailable("EngineAPI");
+        checkAvailable("RouterAPI");
         RouterValidator.validateProcessRouterRequest(request);
         RouterNamesGroup requestRouterGroup = request.getRouters();
         List<ServiceRouter> beforeRouters;
         if (null != requestRouterGroup && CollectionUtils.isNotEmpty(requestRouterGroup.getBeforeRouters())) {
             beforeRouters = Extensions.loadServiceRouters(
-                    requestRouterGroup.getBeforeRouters(), extensions.getPlugins());
+                    requestRouterGroup.getBeforeRouters(), extensions.getPlugins(), true);
         } else {
             beforeRouters = extensions.getConfigRouterChainGroup().getBeforeRouters();
         }
         List<ServiceRouter> afterRouters;
         if (null != requestRouterGroup && CollectionUtils.isNotEmpty(requestRouterGroup.getAfterRouters())) {
             afterRouters = Extensions.loadServiceRouters(
-                    requestRouterGroup.getAfterRouters(), extensions.getPlugins());
+                    requestRouterGroup.getAfterRouters(), extensions.getPlugins(), true);
         } else {
             afterRouters = extensions.getConfigRouterChainGroup().getAfterRouters();
         }
         List<ServiceRouter> coreRouters;
         if (null != requestRouterGroup && CollectionUtils.isNotEmpty(requestRouterGroup.getCoreRouters())) {
             coreRouters = Extensions.loadServiceRouters(
-                    requestRouterGroup.getCoreRouters(), extensions.getPlugins());
+                    requestRouterGroup.getCoreRouters(), extensions.getPlugins(), true);
         } else {
             coreRouters = extensions.getConfigRouterChainGroup().getCoreRouters();
         }
