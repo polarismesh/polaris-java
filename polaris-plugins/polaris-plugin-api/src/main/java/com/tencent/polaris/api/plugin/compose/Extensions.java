@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
@@ -35,6 +36,8 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 流程编排所需要用到的插件实例列表
@@ -42,6 +45,8 @@ import java.util.List;
  * @author andrewshan
  */
 public class Extensions {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Extensions.class);
 
     private LocalRegistry localRegistry;
 
@@ -89,19 +94,19 @@ public class Extensions {
         loadBalancer = (LoadBalancer) plugins.getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), loadBalanceType);
 
         List<ServiceRouter> beforeRouters = loadServiceRouters(config.getConsumer().getServiceRouter().getBeforeChain(),
-                plugins);
+                plugins, true);
         List<ServiceRouter> coreRouters = loadServiceRouters(config.getConsumer().getServiceRouter().getChain(),
-                plugins);
+                plugins, false);
         List<ServiceRouter> afterRouters = loadServiceRouters(config.getConsumer().getServiceRouter().getAfterChain(),
-                plugins);
+                plugins, true);
         configRouterChainGroup = new DefaultRouterChainGroup(beforeRouters, coreRouters, afterRouters);
         //加载系统路由链
         List<String> sysBefore = new ArrayList<>();
         sysBefore.add(ServiceRouterConfig.DEFAULT_ROUTER_ISOLATED);
         List<String> sysAfter = new ArrayList<>();
         sysAfter.add(ServiceRouterConfig.DEFAULT_ROUTER_RECOVER);
-        List<ServiceRouter> sysBeforeRouters = loadServiceRouters(sysBefore, plugins);
-        List<ServiceRouter> sysAfterRouters = loadServiceRouters(sysAfter, plugins);
+        List<ServiceRouter> sysBeforeRouters = loadServiceRouters(sysBefore, plugins, true);
+        List<ServiceRouter> sysAfterRouters = loadServiceRouters(sysAfter, plugins, true);
         sysRouterChainGroup = new DefaultRouterChainGroup(sysBeforeRouters, Collections.emptyList(), sysAfterRouters);
 
         //加载熔断器
@@ -109,8 +114,12 @@ public class Extensions {
         List<String> cbChain = config.getConsumer().getCircuitBreaker().getChain();
         if (enable && CollectionUtils.isNotEmpty(cbChain)) {
             for (String cbName : cbChain) {
-                circuitBreakers.add((CircuitBreaker) plugins.getPlugin(
-                        PluginTypes.CIRCUIT_BREAKER.getBaseType(), cbName));
+                Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.CIRCUIT_BREAKER.getBaseType(), cbName);
+                if (null == pluginValue) {
+                    LOG.warn("circuitBreaker plugin {} not found", cbName);
+                    continue;
+                }
+                circuitBreakers.add((CircuitBreaker) pluginValue);
             }
         }
 
@@ -126,11 +135,21 @@ public class Extensions {
         return valueContext;
     }
 
-    public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins) {
+    public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(routerChain)) {
             for (String routerName : routerChain) {
-                routers.add((ServiceRouter) plugins.getPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName));
+                Plugin routerPlugin;
+                if (force) {
+                    routerPlugin = plugins.getPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName);
+                } else {
+                    routerPlugin = plugins.getOptionalPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName);
+                }
+                if (null == routerPlugin) {
+                    LOG.warn("router {} not found", routerName);
+                    continue;
+                }
+                routers.add((ServiceRouter) routerPlugin);
             }
         }
         return Collections.unmodifiableList(routers);
@@ -141,8 +160,12 @@ public class Extensions {
         List<String> detectionChain = config.getConsumer().getOutlierDetection().getChain();
         if (enable && CollectionUtils.isNotEmpty(detectionChain)) {
             for (String detectorName : detectionChain) {
-                outlierDetectors.add((OutlierDetector) plugins.getPlugin(
-                        PluginTypes.OUTLIER_DETECTOR.getBaseType(), detectorName));
+                Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.OUTLIER_DETECTOR.getBaseType(), detectorName);
+                if (null == pluginValue) {
+                    LOG.warn("outlierDetector plugin {} not found", detectorName);
+                    continue;
+                }
+                outlierDetectors.add((OutlierDetector) pluginValue);
             }
         }
     }

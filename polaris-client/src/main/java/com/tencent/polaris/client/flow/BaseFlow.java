@@ -102,7 +102,7 @@ public class BaseFlow {
         LOG.info("[ConnectionManager]success to discover service {}", svcEventKey);
         ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(svcEventKey);
         RouterChainGroup sysRouterChainGroup = extensions.getSysRouterChainGroup();
-        List<ServiceRouter> coreRouters = Extensions.loadServiceRouters(coreRouterNames, extensions.getPlugins());
+        List<ServiceRouter> coreRouters = Extensions.loadServiceRouters(coreRouterNames, extensions.getPlugins(), false);
         RouterChainGroup routerChainGroup = new DefaultRouterChainGroup(sysRouterChainGroup.getBeforeRouters(),
                 coreRouters, sysRouterChainGroup.getAfterRouters());
         ServiceInstances instancesAfterRoute = BaseFlow

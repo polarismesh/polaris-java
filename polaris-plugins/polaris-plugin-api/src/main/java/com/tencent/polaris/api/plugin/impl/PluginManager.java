@@ -134,6 +134,18 @@ public class PluginManager implements Manager {
     }
 
     @Override
+    public Plugin getOptionalPlugin(PluginType type, String name) {
+        if (!typedPlugins.containsKey(type)) {
+            return null;
+        }
+        Map<String, Plugin> plugins = typedPlugins.get(type);
+        if (!plugins.containsKey(name)) {
+            return null;
+        }
+        return plugins.get(name);
+    }
+
+    @Override
     public Collection<Plugin> getPlugins(PluginType type) throws PolarisException {
         if (!typedPlugins.containsKey(type)) {
             throw new PolarisException(ErrorCode.PLUGIN_ERROR, String.format("plugins type(type=%s) not found", type));

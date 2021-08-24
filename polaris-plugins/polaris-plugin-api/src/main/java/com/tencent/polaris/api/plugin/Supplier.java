@@ -29,7 +29,7 @@ import java.util.Collection;
 public interface Supplier {
 
     /**
-     * 获取插件实例
+     * 获取插件实例，获取不到会报异常
      *
      * @param type 插件类型
      * @param name 插件名
@@ -37,6 +37,15 @@ public interface Supplier {
      * @throws PolarisException 获取失败抛出异常
      */
     Plugin getPlugin(PluginType type, String name) throws PolarisException;
+
+    /**
+     * 获取可选的插件，获取不到返回null
+     *
+     * @param type 插件类型
+     * @param name 插件名
+     * @return 插件实例
+     */
+    Plugin getOptionalPlugin(PluginType type, String name);
 
     /**
      * 获取某类型下的所有插件
