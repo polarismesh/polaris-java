@@ -72,4 +72,15 @@ public class QuotaRequest extends RequestBaseEntity {
     public void setMethod(String method) {
         this.method = method;
     }
+
+    @Override
+    public String toString() {
+        return "QuotaRequest{" +
+                "namespace='" + namespace + '\'' +
+                ", service='" + service + '\'' +
+                ", method='" + method + '\'' +
+                ", labels=" + labels +
+                ", count=" + count +
+                '}';
+    }
 }
