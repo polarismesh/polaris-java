@@ -1,9 +1,14 @@
 global:
+  system:
+    discoverCluster:
+      sameAsBuiltin: true
+    healthCheckCluster:
+      sameAsBuiltin: true
   # configuration for connecting the polaris server
   serverConnector:
     # target server address
     addresses:
-      - 175.27.154.41:8091
+      - 127.0.0.1:8091
 #描述:主调端配置
 consumer:
   #描述:节点熔断相关配置

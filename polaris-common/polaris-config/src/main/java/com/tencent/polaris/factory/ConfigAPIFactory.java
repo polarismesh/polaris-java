@@ -80,11 +80,13 @@ public class ConfigAPIFactory {
     public static Configuration defaultConfig(String defaultConfigName) throws PolarisException {
         InputStream inputStream = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(DEFAULT_CONFIG_PATH);
+        ConfigurationImpl configuration;
         if (null != inputStream) {
             LOG.info("[Configuration]success to load config stream from {}", DEFAULT_CONFIG_PATH);
-            return loadConfig(inputStream);
+            configuration = (ConfigurationImpl) loadConfig(inputStream);
+        } else {
+            configuration = new ConfigurationImpl(defaultConfigName);
         }
-        ConfigurationImpl configuration = new ConfigurationImpl(defaultConfigName);
         configuration.setDefault();
         return configuration;
     }
