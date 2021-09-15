@@ -46,6 +46,7 @@ public class RateLimitExample {
                     QuotaRequest quotaRequest = new QuotaRequest();
                     quotaRequest.setNamespace(namespace);
                     quotaRequest.setService(service);
+                    quotaRequest.setCount(1);
                     QuotaResponse quotaResponse = limitAPI.getQuota(quotaRequest);
                     System.out.println("quotaResponse is " + quotaResponse.getCode());
                 }
