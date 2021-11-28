@@ -47,7 +47,6 @@
     </developers>
 
     <modules>
-        <module>polaris-client</module>
         <module>polaris-factory</module>
         <module>polaris-dependencies</module>
         <module>polaris-common</module>
@@ -58,12 +57,13 @@
         <module>polaris-test</module>
         <module>polaris-router</module>
         <module>polaris-distribution</module>
+        <module>polaris-examples</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
         <!-- Project revision -->
-        <revision>1.2.0</revision>
+        <revision>1.2.1</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -83,6 +83,7 @@
         <junit.version>4.12</junit.version>
         <argLine>-Xmx2048m</argLine>
         <prometheus.version>0.11.0</prometheus.version>
+        <maven.jar.plugin.version>3.0.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>

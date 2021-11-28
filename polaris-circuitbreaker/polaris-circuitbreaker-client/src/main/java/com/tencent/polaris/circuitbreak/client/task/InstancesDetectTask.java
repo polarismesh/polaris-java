@@ -21,7 +21,7 @@ import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.detect.OutlierDetector;
+import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.registry.InstanceProperty;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.registry.ServiceUpdateRequest;
@@ -120,7 +120,7 @@ public class InstancesDetectTask implements Runnable {
     }
 
     private DetectResult detectInstance(Instance instance) throws PolarisException {
-        for (OutlierDetector detector : extensions.getOutlierDetectors()) {
+        for (HealthChecker detector : extensions.getHealthCheckers()) {
             DetectResult result = detector.detectInstance(instance);
             if (result == null) {
                 continue;

@@ -18,7 +18,6 @@
     <modules>
         <module>polaris-discovery-api</module>
         <module>polaris-discovery-client</module>
-        <module>polaris-discovery-examples</module>
         <module>polaris-discovery-factory</module>
     </modules>
 </project>

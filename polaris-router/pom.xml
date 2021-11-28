@@ -19,7 +19,6 @@
         <module>polaris-router-api</module>
         <module>polaris-router-client</module>
         <module>polaris-router-factory</module>
-        <module>polaris-router-examples</module>
     </modules>
 
 </project>

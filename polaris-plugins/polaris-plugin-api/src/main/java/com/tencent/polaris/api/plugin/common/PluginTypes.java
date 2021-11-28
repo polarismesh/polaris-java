@@ -20,7 +20,7 @@ package com.tencent.polaris.api.plugin.common;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
-import com.tencent.polaris.api.plugin.detect.OutlierDetector;
+import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
@@ -61,7 +61,7 @@ public enum PluginTypes {
     /**
      * 健康探测扩展点
      */
-    OUTLIER_DETECTOR(new PluginType(OutlierDetector.class, 2)),
+    HEALTH_CHECKER(new PluginType(HealthChecker.class, 2)),
 
     /**
      * 节点熔断扩展点

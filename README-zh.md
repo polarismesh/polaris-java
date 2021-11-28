@@ -1,60 +1,52 @@
 polaris-java
 ========================================
-北极星polaris是一个支持多种开发语言、兼容主流开发框架的服务治理中心。polaris-java是北极星的Java语言嵌入式服务治理SDK
+[![Build Status](https://github.com/polarismesh/polaris-java/actions/workflows/testing.yml/badge.svg)](https://github.com/PolarisMesh/polaris-java/actions/workflows/testing.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.tencent.polaris/polaris-dependencies?label=Maven%20Central)](https://search.maven.org/search?q=g:com.tencent.polaris%20AND%20a:polaris-dependencies)
 
-## 快速入门
+polaris-java是北极星网格的Java语言SDK，供Java语言的应用通过接口调用的方式接入北极星网格。
 
-### 包依赖
+## 如何构建
 
-#### 大前提：依赖管理
-在工程根目录的pom中的<dependencyManagement></dependencyManagement>添加如下配置，即可在项目中引用需要的polaris-java子模块依赖。
+polaris-java使用Maven进行构建，最低支持JDK 1.8。将本项目clone到本地后，执行以下命令进行构建：
+```
+mvn clean install
+```
+
+## 如何使用
+
+### 如何引入依赖
+
+在 dependencyManagement 中添加如下配置：
 ```xml
 <dependencyManagement>        
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-dependencies</artifactId>
-            <version>${version}</version>
+            <version>1.2.1</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
     </dependencies>
 </dependencyManagement>
 ```
-#### 使用全量功能
-   ```xml
-   <dependency>
-       <groupId>com.tencent.polaris</groupId>
-       <artifactId>polaris-factory</artifactId>
-   </dependency>
-   ```
-#### 仅服务注册发现
-   ```xml
-   <dependency>
-       <groupId>com.tencent.polaris</groupId>
-       <artifactId>polaris-discovery-factory</artifactId>
-   </dependency>
-   ```
-#### 仅使用熔断降级
-   ```xml
-   <dependency>
-       <groupId>com.tencent.polaris</groupId>
-       <artifactId>polaris-circuitbreaker-factory</artifactId>
-   </dependency>
-   ```
-#### 仅使用服务限流
-   ```xml
-   <dependency>
-       <groupId>com.tencent.polaris</groupId>
-       <artifactId>polaris-ratelimit-factory</artifactId>
-   </dependency>
-   ```   
+然后在 dependencies 中添加自己所需使用的依赖即可使用。
 
-### 功能使用
+## 功能样例
 
-各组件功能以及接口使用方式可参考对外开源文档：[使用polaris-java](https://github.com/PolarisMesh/website/blob/main/docs/zh/doc/%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8/%E4%BD%BF%E7%94%A8polaris-java.md)
+为了演示功能如何使用，polaris-java 项目包含了一个子模块polaris-examples。此模块中提供了演示用的 example ，您可以阅读对应的 example 工程下的 README文档，根据里面的步骤来体验。
 
-## License
+[快速开始样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/quickstart-example)
 
-The polaris-java is licensed under the BSD 3-Clause License. Copyright and license information can be found in the file [LICENSE](LICENSE)
+[注册发现样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/discovery-example)
+
+[动态路由样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/router-example)
+
+[故障熔断样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/circuitbreaker-example)
+
+[限流样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/ratelimit-example)
+
+
+
+
 

@@ -27,7 +27,7 @@ import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
-import com.tencent.polaris.api.plugin.detect.OutlierDetector;
+import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
@@ -56,7 +56,7 @@ public class Extensions {
 
     private final List<CircuitBreaker> circuitBreakers = new ArrayList<>();
 
-    private final List<OutlierDetector> outlierDetectors = new ArrayList<>();
+    private final List<HealthChecker> healthCheckers = new ArrayList<>();
 
     private Configuration configuration;
 
@@ -160,12 +160,12 @@ public class Extensions {
         List<String> detectionChain = config.getConsumer().getOutlierDetection().getChain();
         if (enable && CollectionUtils.isNotEmpty(detectionChain)) {
             for (String detectorName : detectionChain) {
-                Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.OUTLIER_DETECTOR.getBaseType(), detectorName);
+                Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.HEALTH_CHECKER.getBaseType(), detectorName);
                 if (null == pluginValue) {
                     LOG.warn("outlierDetector plugin {} not found", detectorName);
                     continue;
                 }
-                outlierDetectors.add((OutlierDetector) pluginValue);
+                healthCheckers.add((HealthChecker) pluginValue);
             }
         }
     }
@@ -186,8 +186,8 @@ public class Extensions {
         return circuitBreakers;
     }
 
-    public List<OutlierDetector> getOutlierDetectors() {
-        return outlierDetectors;
+    public List<HealthChecker> getHealthCheckers() {
+        return healthCheckers;
     }
 
     public Configuration getConfiguration() {

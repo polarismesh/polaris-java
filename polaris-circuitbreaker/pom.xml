@@ -18,7 +18,6 @@
     <modules>
         <module>polaris-circuitbreaker-api</module>
         <module>polaris-circuitbreaker-client</module>
-        <module>polaris-circuitbreaker-examples</module>
         <module>polaris-circuitbreaker-factory</module>
     </modules>
 </project>

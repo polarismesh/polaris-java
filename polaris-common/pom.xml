@@ -20,5 +20,6 @@
         <module>polaris-config-default</module>
         <module>polaris-model</module>
         <module>polaris-protobuf</module>
+        <module>polaris-client</module>
     </modules>
 </project>
