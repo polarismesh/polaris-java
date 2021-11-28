@@ -16,8 +16,9 @@
     <description>Polaris Plugins Circuitbreaker POM</description>
 
     <modules>
-        <module>circuitbreaker</module>
-        <module>outlier-detector</module>
+        <module>circuitbreaker-common</module>
+        <module>circuitbreaker-errrate</module>
+        <module>circuitbreaker-errcount</module>
     </modules>
     <dependencies>
         <dependency>

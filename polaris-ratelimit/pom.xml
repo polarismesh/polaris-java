@@ -20,6 +20,5 @@
         <module>polaris-ratelimit-api</module>
         <module>polaris-ratelimit-client</module>
         <module>polaris-ratelimit-factory</module>
-        <module>polaris-ratelimit-examples</module>
     </modules>
 </project>

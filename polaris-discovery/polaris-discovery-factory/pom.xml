@@ -29,7 +29,7 @@
         <!--依赖resCache插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>resource-cache-memory</artifactId>
+            <artifactId>registry-memory</artifactId>
             <version>${project.version}</version>
         </dependency>
         <!--依赖flowCache插件-->

@@ -184,17 +184,17 @@ public interface DefaultValues {
     /**
      * 默认健康探测手段，tcp
      */
-    String DEFAULT_TCP_OUTLIER_DETECT = "tcp";
+    String DEFAULT_HEALTH_CHECKER_TCP = "tcp";
 
     /**
      * 默认健康探测手段，udp
      */
-    String DEFAULT_UDP_OUTLIER_DETECT = "udp";
+    String DEFAULT_HEALTH_CHECKER_UDP = "udp";
 
     /**
      * 默认健康探测手段，http
      */
-    String DEFAULT_HTTP_OUTLIER_DETECT = "http";
+    String DEFAULT_HEALTH_CHECKER_HTTP = "http";
 
     /**
      * 默认权重值

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>polaris-parent</artifactId>
+        <groupId>com.tencent.polaris</groupId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>polaris-examples</artifactId>
+
+    <packaging>pom</packaging>
+    <name>Polaris Examples</name>
+    <description>Polaris Examples POM</description>
+
+    <properties>
+        <skip.maven.deploy>true</skip.maven.deploy>
+    </properties>
+
+    <modules>
+        <module>circuitbreaker-example</module>
+        <module>discovery-example</module>
+        <module>router-example</module>
+        <module>ratelimit-example</module>
+        <module>quickstart-example</module>
+    </modules>
+</project>

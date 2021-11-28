@@ -17,10 +17,14 @@
     <packaging>pom</packaging>
     <modules>
         <module>polaris-plugin-api</module>
-        <module>polaris-plugins-client</module>
-        <module>polaris-plugins-discovery</module>
+        <module>polaris-plugins-connector</module>
         <module>polaris-plugins-circuitbreaker</module>
-        <module>polaris-plugins-ratelimit</module>
+        <module>polaris-plugins-ratelimiter</module>
         <module>polaris-plugins-observability</module>
+        <module>polaris-plugins-healthchecker</module>
+        <module>polaris-plugins-loadbalancer</module>
+        <module>polaris-plugins-router</module>
+        <module>polaris-plugins-registry</module>
+        <module>polaris-plugins-cache</module>
     </modules>
 </project>
