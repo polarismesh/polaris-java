@@ -27,7 +27,9 @@ global:
 ### Start Example
 
 1. Start in IDE:
-Find main class QuickStartExample in project quickstart-example, and execute the main method with parameters '-namespace \<namespace\> -service \<service_name\>'.
+Find main class Consumer or Provider in project quickstart-example, and execute the main method with parameters '-namespace \<namespace\> -service \<service_name\>'.
 
 2. Build a jar:
-Execute command mvn clean package in project quickstart-example to build a jar，and run command 'java -jar quickstart-example.jar  -namespace \<namespace\> -service \<service_name\>' to start the application.
+Execute command mvn clean package in project quickstart-example to build a jar，and run command:
+(1) as consumer: 'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Consumer -namespace \<namespace\> -service \<service_name\>' to start the application.
+(1) as provider: 'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Provider -namespace \<namespace\> -service \<service_name\>' to start the application.

@@ -30,4 +30,6 @@ global:
 找到 quickstart-example 项目的主类 QuickStartExample，编辑启动参数为 -namespace \<namespace\> -service \<service_name\> ，执行 main 方法启动样例。
 
 2. 打包编译后启动：
-在 quickstart-example 项目中执行 mvn clean package 将工程编译打包，然后执行 java -jar quickstart-example.jar  -namespace \<namespace\> -service \<service_name\>  启动样例。
+在 quickstart-example 项目中执行 mvn clean package 将工程编译打包，然后执行 java -jar quickstart-example.jar:
+(1)作为主调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Consumer  -namespace \<namespace\> -service \<service_name\>'
+(2)作为被调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Provider  -namespace \<namespace\> -service \<service_name\>'
