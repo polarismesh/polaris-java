@@ -3,6 +3,8 @@ polaris-java
 [![Build Status](https://github.com/polarismesh/polaris-java/actions/workflows/testing.yml/badge.svg)](https://github.com/PolarisMesh/polaris-java/actions/workflows/testing.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.tencent.polaris/polaris-dependencies?label=Maven%20Central)](https://search.maven.org/search?q=g:com.tencent.polaris%20AND%20a:polaris-dependencies)
 
+See the [中文文档](https://github.com/polarismesh/polaris-java/blob/master/README-zh.md) for Chinese readme.
+
 polaris-java is the Java language SDK for polarismesh, support SDK API for application to use polaris
 
 ## How to build
