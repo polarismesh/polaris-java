@@ -31,5 +31,6 @@ global:
 
 2. 打包编译后启动：
 在 quickstart-example 项目中执行 mvn clean package 将工程编译打包，然后执行 java -jar quickstart-example.jar:
-(1)作为主调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Consumer  -namespace \<namespace\> -service \<service_name\>'
-(2)作为被调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Provider  -namespace \<namespace\> -service \<service_name\>'
+
+ - 作为主调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Consumer  -namespace \<namespace\> -service \<service_name\>'
+ - 作为被调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Provider  -namespace \<namespace\> -service \<service_name\>'
