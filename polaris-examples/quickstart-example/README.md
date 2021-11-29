@@ -27,7 +27,7 @@ global:
 ### Start Example
 
 1. Start in IDE:
-Find main class QuickStartExample in project quickstart-example, and execute the main method with parameters '-namespace <namespace> -service <service_name>'.
+Find main class QuickStartExample in project quickstart-example, and execute the main method with parameters '-namespace \<namespace\> -service \<service_name\>'.
 
 2. Build a jar:
-Execute command mvn clean package in project quickstart-example to build a jar，and run command 'java -jar quickstart-example.jar  -namespace <namespace> -service <service_name>' to start the application.
+Execute command mvn clean package in project quickstart-example to build a jar，and run command 'java -jar quickstart-example.jar  -namespace \<namespace\> -service \<service_name\>' to start the application.

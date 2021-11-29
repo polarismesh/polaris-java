@@ -34,9 +34,9 @@ mvn clean install
 
 ## 功能样例
 
-为了演示功能如何使用，polaris-java 项目包含了一个子模块polaris-examples。此模块中提供了演示用的 example ，您可以阅读对应的 example 工程下的 README文档，根据里面的步骤来体验。
+为了演示功能如何使用，polaris-java 项目包含了一个子模块polaris-examples。此模块中提供了演示用的 example ，您可以阅读对应的 example 工程下的 README-zh 文档，根据里面的步骤来体验。
 
-[快速开始样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/quickstart-example)
+[快速开始样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/quickstart-example/README-zh.md)
 
 [注册发现样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/discovery-example)
 
