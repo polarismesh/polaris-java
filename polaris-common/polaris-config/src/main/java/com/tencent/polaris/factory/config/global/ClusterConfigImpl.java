@@ -110,8 +110,6 @@ public class ClusterConfigImpl implements ClusterConfig {
     public void verify() {
         ConfigUtils.validateString(lbPolicy, "lbPolicy");
         if (!sameAsBuiltin) {
-            ConfigUtils.validateString(namespace, "namespace");
-            ConfigUtils.validateString(service, "service");
             if (CollectionUtils.isEmpty(routers)) {
                 throw new IllegalArgumentException("routers should be not empty");
             }
@@ -122,12 +120,6 @@ public class ClusterConfigImpl implements ClusterConfig {
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             ClusterConfig clusterConfig = (ClusterConfig) defaultObject;
-            if (null == namespace) {
-                setNamespace(clusterConfig.getNamespace());
-            }
-            if (null == service) {
-                setService(clusterConfig.getService());
-            }
             if (null == refreshInterval) {
                 setRefreshInterval(clusterConfig.getRefreshInterval());
             }

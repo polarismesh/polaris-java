@@ -83,25 +83,34 @@ public class SystemConfigImpl implements SystemConfig {
     @Override
     public void verify() {
         ConfigUtils.validateNull(flowCache, "system.flowCache");
+        ConfigUtils.validateNull(discoverCluster, "system.discoverCluster");
+        ConfigUtils.validateNull(healthCheckCluster, "system.healthCheckCluster");
+        ConfigUtils.validateNull(monitorCluster, "system.monitorCluster");
         flowCache.verify();
-        if (null != discoverCluster) {
-            discoverCluster.verify();
-        }
-        if (null != healthCheckCluster) {
-            healthCheckCluster.verify();
-        }
-        if (null != monitorCluster) {
-            monitorCluster.verify();
-        }
+        discoverCluster.verify();
+        healthCheckCluster.verify();
+        monitorCluster.verify();
     }
 
     @Override
     public void setDefault(Object defaultObject) {
+        if (null == discoverCluster) {
+            discoverCluster = new ClusterConfigImpl();
+        }
+        if (null == healthCheckCluster) {
+            healthCheckCluster = new ClusterConfigImpl();
+        }
+        if (null == monitorCluster) {
+            monitorCluster = new ClusterConfigImpl();
+        }
         if (null == flowCache) {
             flowCache = new FlowCacheConfigImpl();
         }
         if (null != defaultObject) {
             SystemConfig systemConfig = (SystemConfig) defaultObject;
+            discoverCluster.setDefault(systemConfig.getDiscoverCluster());
+            healthCheckCluster.setDefault(systemConfig.getHealthCheckCluster());
+            monitorCluster.setDefault(systemConfig.getMonitorCluster());
             flowCache.setDefault(systemConfig.getFlowCache());
             if (null == variables) {
                 setVariables(systemConfig.getVariables());

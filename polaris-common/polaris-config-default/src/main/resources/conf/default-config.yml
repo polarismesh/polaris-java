@@ -1,6 +1,30 @@
 global:
   #描述: 系统相关配置
   system:
+    #描述: 服务发现集群
+    discoverCluster:
+      #描述: 服务刷新间隔
+      refreshInterval: 1m
+      #描述: 系统服务使用的路由链
+      routers:
+        - metadataRouter
+        - nearbyBasedRouter
+      #描述: 系统服务使用的负载均衡方式
+      lbPolicy: weightedRandom
+    #描述: 健康检查集群
+    healthCheckCluster:
+      refreshInterval: 1m
+      routers:
+        - metadataRouter
+        - nearbyBasedRouter
+      lbPolicy: ringHash
+    #描述: 监控上报集群
+    monitorCluster:
+      refreshInterval: 1m
+      routers:
+        - metadataRouter
+        - nearbyBasedRouter
+      lbPolicy: ringHash
     #描述: SDK流程数据缓存配置
     flowCache:
       enable: true
