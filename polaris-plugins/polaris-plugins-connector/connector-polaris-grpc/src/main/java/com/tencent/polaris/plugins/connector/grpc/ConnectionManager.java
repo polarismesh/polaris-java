@@ -81,7 +81,7 @@ public class ConnectionManager extends Destroyable {
 
     private final Map<ClusterType, CompletableFuture<String>> readyNotifiers = new HashMap<>();
 
-    private String clientId;
+    private final String clientId;
 
     /**
      * 构造器
@@ -442,11 +442,16 @@ public class ConnectionManager extends Destroyable {
             return instance;
         }
 
-        private Connection connectTarget(ConnID connID) {
-            ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(connID.getHost(), connID.getPort())
-                    .usePlaintext();
-            ManagedChannel channel = builder.build();
-            return new Connection(channel, connID, ConnectionManager.this);
+        private Connection connectTarget(ConnID connID) throws PolarisException {
+            try {
+                ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(connID.getHost(), connID.getPort())
+                        .usePlaintext();
+                ManagedChannel channel = builder.build();
+                return new Connection(channel, connID, ConnectionManager.this);
+            } catch (Throwable e) {
+                throw new PolarisException(ErrorCode.NETWORK_ERROR,
+                        String.format("[ConnectionManager]fail to create connection by %s", connID.toString()), e);
+            }
         }
     }
 }

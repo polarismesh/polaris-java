@@ -163,9 +163,6 @@ public class ConsumerTest {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ConfigurationImpl configImpl = (ConfigurationImpl) configuration;
         configImpl.setDefault();
-        ClusterConfig discoverCluster = configImpl.getGlobal().getSystem()
-                .getDiscoverCluster();
-        ((ClusterConfigImpl) discoverCluster).setSameAsBuiltin(true);
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             for (int i = 0; i < ITERATE_COUNT; i++) {
                 GetOneInstanceRequest request = new GetOneInstanceRequest();

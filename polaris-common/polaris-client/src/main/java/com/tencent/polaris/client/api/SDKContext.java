@@ -106,15 +106,15 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         //加载系统服务配置
         SystemConfig system = configuration.getGlobal().getSystem();
         ClusterConfig discoverCluster = system.getDiscoverCluster();
-        if (null != discoverCluster && !discoverCluster.isSameAsBuiltin()) {
+        if (clusterAvailable(discoverCluster)) {
             services.add(new ServerServiceInfo(ClusterType.SERVICE_DISCOVER_CLUSTER, discoverCluster));
         }
         ClusterConfig healthCheckCluster = system.getHealthCheckCluster();
-        if (null != healthCheckCluster && !healthCheckCluster.isSameAsBuiltin()) {
+        if (clusterAvailable(healthCheckCluster)) {
             services.add(new ServerServiceInfo(ClusterType.HEALTH_CHECK_CLUSTER, healthCheckCluster));
         }
         ClusterConfig monitorCluster = system.getMonitorCluster();
-        if (null != monitorCluster && !monitorCluster.isSameAsBuiltin()) {
+        if (clusterAvailable(monitorCluster)) {
             services.add(new ServerServiceInfo(ClusterType.MONITOR_CLUSTER, monitorCluster));
         }
         this.serverServices = Collections.unmodifiableCollection(services);
@@ -128,6 +128,18 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         plugins.postContextInitPlugins(extensions);
     }
 
+    private boolean clusterAvailable(ClusterConfig clusterConfig) {
+        if (null == clusterConfig) {
+            return false;
+        }
+        if (StringUtils.isBlank(clusterConfig.getNamespace()) || StringUtils.isBlank(clusterConfig.getService())) {
+            return false;
+        }
+        if (!clusterConfig.isSameAsBuiltin()) {
+            return false;
+        }
+        return true;
+    }
 
     public Extensions getExtensions() {
         return extensions;

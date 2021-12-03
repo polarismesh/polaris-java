@@ -31,7 +31,7 @@ public class CommonProviderRequest {
 
     private String host;
 
-    private Integer port;
+    private int port;
 
     private String version;
 
@@ -85,11 +85,11 @@ public class CommonProviderRequest {
         this.host = host;
     }
 
-    public Integer getPort() {
+    public int getPort() {
         return port;
     }
 
-    public void setPort(Integer port) {
+    public void setPort(int port) {
         this.port = port;
     }
 

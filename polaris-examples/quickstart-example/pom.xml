@@ -11,6 +11,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>quickstart-example</artifactId>
+    <name>Polaris QuickStart Example</name>
+    <description>Polaris QuickStart Example JAR</description>
 
     <properties>
         <skip.maven.deploy>true</skip.maven.deploy>
