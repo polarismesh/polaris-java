@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.circuitbreak.client.task;
 
-import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_OUTLIER_DETECTOR_STATUS;
+import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_DETECT_RESULT;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -109,7 +109,7 @@ public class InstancesDetectTask implements Runnable {
         for (Map.Entry<Instance, DetectResult> entry : aliveResults.entrySet()) {
             Map<String, Object> properties = new HashMap<>();
 
-            properties.put(PROPERTY_OUTLIER_DETECTOR_STATUS,
+            properties.put(PROPERTY_DETECT_RESULT,
                     new OutlierDetectionStatus(entry.getValue().getDetectType(), OutlierDetectionStatus.Status.HEALTHY,
                             entry.getValue().getLastDetectTime().getTime()));
             InstanceProperty instanceProperty = new InstanceProperty(entry.getKey(), properties);

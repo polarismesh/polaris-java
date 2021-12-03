@@ -1,40 +1,6 @@
 global:
   #描述: 系统相关配置
   system:
-    #描述: 服务发现集群
-    discoverCluster:
-      namespace: Polaris
-      service: polaris.discover
-      #描述: 服务刷新间隔
-      refreshInterval: 1m
-      #描述: 是否使用埋点地址作为服务发现集群
-      sameAsBuiltin: true
-      #描述: 系统服务使用的路由链
-      routers:
-        - metadataRouter
-        - nearbyBasedRouter
-      #描述: 系统服务使用的负载均衡方式
-      lbPolicy: weightedRandom
-    #描述: 健康检查集群
-    healthCheckCluster:
-      namespace: Polaris
-      service: polaris.healthcheck
-      refreshInterval: 1m
-      sameAsBuiltin: true
-      routers:
-        - metadataRouter
-        - nearbyBasedRouter
-      lbPolicy: ringHash
-    #描述: 监控上报集群
-    monitorCluster:
-      namespace: Polaris
-      service: polaris.monitor
-      refreshInterval: 1m
-      sameAsBuiltin: false
-      routers:
-        - metadataRouter
-        - nearbyBasedRouter
-      lbPolicy: ringHash
     #描述: SDK流程数据缓存配置
     flowCache:
       enable: true

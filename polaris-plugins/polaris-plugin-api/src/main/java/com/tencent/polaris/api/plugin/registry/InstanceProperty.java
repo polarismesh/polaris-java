@@ -33,16 +33,10 @@ public class InstanceProperty {
      * 属性标签，标识熔断状态
      */
     public static final String PROPERTY_CIRCUIT_BREAKER_STATUS = "circuitBreakerStatus";
-    public static final String PROPERTY_OUTLIER_DETECTOR_STATUS = "OutlierDetectorStatus";
     /**
      * 属性标签，标识故障探测结果
      */
     public static final String PROPERTY_DETECT_RESULT = "detectResult";
-
-    /**
-     * 动态权重更新索引
-     */
-    public static final String DYNAMIC_WEIGHT_KEY = "dynamicWeight";
 
     private final Instance instance;
 

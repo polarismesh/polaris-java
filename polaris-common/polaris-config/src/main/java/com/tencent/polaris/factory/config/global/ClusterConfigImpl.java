@@ -108,7 +108,6 @@ public class ClusterConfigImpl implements ClusterConfig {
 
     @Override
     public void verify() {
-        ConfigUtils.validateNull(sameAsBuiltin, "sameAsBuiltin");
         ConfigUtils.validateString(lbPolicy, "lbPolicy");
         if (!sameAsBuiltin) {
             ConfigUtils.validateString(namespace, "namespace");
