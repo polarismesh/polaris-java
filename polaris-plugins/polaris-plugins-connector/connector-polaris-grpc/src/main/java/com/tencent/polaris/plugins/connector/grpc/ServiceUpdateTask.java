@@ -200,6 +200,7 @@ public class ServiceUpdateTask implements Runnable, Comparable<ServiceUpdateTask
         }
         long nowMs = System.currentTimeMillis();
         return nowMs - lastUpdateTime.get() >= refreshIntervalMs;
+
     }
 
     @Override

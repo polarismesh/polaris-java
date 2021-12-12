@@ -269,6 +269,13 @@
                 <artifactId>polaris-test-mock-discovery</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <!-- shade -->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-all</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
