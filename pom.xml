@@ -79,7 +79,7 @@
         <commons.io.version>2.6</commons.io.version>
         <guava.version>29.0-android</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <log4j.version>2.12.0</log4j.version>
+        <logback.version>1.2.7</logback.version>
         <junit.version>4.12</junit.version>
         <argLine>-Xmx2048m</argLine>
         <prometheus.version>0.11.0</prometheus.version>
@@ -99,21 +99,15 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <version>${log4j.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <version>${log4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <version>${log4j.version}</version>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
