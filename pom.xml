@@ -79,7 +79,7 @@
         <commons.io.version>2.6</commons.io.version>
         <guava.version>29.0-android</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <log4j.version>2.12.0</log4j.version>
+        <log4j.version>2.15.0</log4j.version>
         <junit.version>4.12</junit.version>
         <argLine>-Xmx2048m</argLine>
         <prometheus.version>0.11.0</prometheus.version>
