@@ -163,7 +163,7 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
                 LOG.info("[ServerConnector]task for service {} has been scheduled builtin", updateTask);
                 buildInExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
             } else {
-                LOG.info("[ServerConnector]task for service {} has been scheduled discover", updateTask);
+                LOG.debug("[ServerConnector]task for service {} has been scheduled discover", updateTask);
                 sendDiscoverExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
             }
         }

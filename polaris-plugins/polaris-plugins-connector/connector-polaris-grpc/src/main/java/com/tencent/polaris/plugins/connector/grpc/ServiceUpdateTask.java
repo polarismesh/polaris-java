@@ -185,6 +185,7 @@ public class ServiceUpdateTask implements Runnable, Comparable<ServiceUpdateTask
         if (taskType.compareAndSet(Type.FIRST, Type.LONG_RUNNING)) {
             targetClusterType.set(ClusterType.SERVICE_DISCOVER_CLUSTER);
             grpcConnector.addLongRunningTask(this);
+            LOG.info("[ServerConnector]task for service {} has been scheduled updated", this);
         }
     }
 
@@ -199,6 +200,7 @@ public class ServiceUpdateTask implements Runnable, Comparable<ServiceUpdateTask
         }
         long nowMs = System.currentTimeMillis();
         return nowMs - lastUpdateTime.get() >= refreshIntervalMs;
+
     }
 
     @Override
