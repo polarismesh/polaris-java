@@ -27,10 +27,11 @@ global:
 ### 执行样例
 
 1. IDE直接启动：
-找到 quickstart-example 项目的主类 QuickStartExample，编辑启动参数为 -namespace \<namespace\> -service \<service_name\> ，执行 main 方法启动样例。
+
+- 启动被调方：找到 `quickstart-example-provider` 项目的主类 `Provider`，执行 main 方法启动。
+- 启动主调方：找到 `quickstart-example-consumer` 项目的主类 `Consumer`，执行 main 方法启动。
 
 2. 打包编译后启动：
-在 quickstart-example 项目中执行 mvn clean package 将工程编译打包，然后执行 java -jar quickstart-example.jar:
 
- - 作为主调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Consumer  -namespace \<namespace\> -service \<service_name\>'
- - 作为被调方：'java -jar quickstart-example.jar com.tencent.polaris.quickstart.example.Provider  -namespace \<namespace\> -service \<service_name\>'
+- 启动被调方：找到 `quickstart-example-provider` 项目下，执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar quickstart-example-provider-${version}.jar`
+- 启动主调方：找到 `quickstart-example-consumer` 项目下，执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar quickstart-example-consumer-${version}.jar`
