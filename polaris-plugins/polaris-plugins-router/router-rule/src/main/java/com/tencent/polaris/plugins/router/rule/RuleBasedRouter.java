@@ -37,7 +37,6 @@ import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -391,7 +390,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             weightedSubset.setInstances(filteredInstances);
             weightedSubset.setWeight(weight);
 
-            prioritySubsets.setSubsets(Arrays.asList(weightedSubset));
+            prioritySubsets.setSubsets(new ArrayList<>(Collections.singletonList(weightedSubset)));
             prioritySubsets.setTotalWeight(weight);
 
             subsetsMap.put(priority, prioritySubsets);
