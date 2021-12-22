@@ -17,6 +17,7 @@
 package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
@@ -105,6 +106,18 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @throws PolarisException 错误码及错误信息
      */
     ServiceRuleResponse getServiceRule(GetServiceRuleRequest req) throws PolarisException;
+
+    /**
+     *
+     * @return
+     */
+    boolean addListener(ServiceListener listener);
+
+    /**
+     *
+     * @return
+     */
+    boolean removeListener(ServiceListener listener);
 
     /**
      * 清理并释放资源

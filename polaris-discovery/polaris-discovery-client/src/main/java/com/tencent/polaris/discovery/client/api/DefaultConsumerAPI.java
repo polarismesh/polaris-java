@@ -20,6 +20,7 @@ package com.tencent.polaris.discovery.client.api;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
@@ -144,5 +145,15 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         Validator.validateGetServiceRuleRequest(request);
         CommonRuleRequest commonRuleRequest = new CommonRuleRequest(request, config);
         return syncFlow.commonSyncGetServiceRule(commonRuleRequest);
+    }
+
+    @Override
+    public boolean addListener(ServiceListener listener) {
+        return false;
+    }
+
+    @Override
+    public boolean removeListener(ServiceListener listener) {
+        return false;
     }
 }

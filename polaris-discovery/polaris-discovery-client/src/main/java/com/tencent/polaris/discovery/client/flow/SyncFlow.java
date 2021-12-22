@@ -18,6 +18,7 @@
 package com.tencent.polaris.discovery.client.flow;
 
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;
@@ -106,6 +107,22 @@ public class SyncFlow {
     }
 
     /**
+     *
+     * @return
+     */
+    public boolean addListener(ServiceListener listener) {
+        return true;
+    }
+
+    /**
+     *
+     * @return
+     */
+    public boolean removeListener(ServiceListener listener) {
+        return true;
+    }
+
+    /**
      * 获取服务实例以及路由数据
      *
      * @param request 请求对象
@@ -121,4 +138,5 @@ public class SyncFlow {
             request.getRouteInfo().setSourceRouteRule(resourcesResponse.getServiceRule(request.getSrcRuleEventKey()));
         }
     }
+
 }
