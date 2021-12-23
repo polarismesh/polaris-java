@@ -24,6 +24,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
@@ -42,14 +43,13 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
-import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.client.pb.ClientProto;
 import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ServiceProto;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.plugins.connector.grpc.ServiceUpdateTask.Status;
 import com.tencent.polaris.plugins.connector.grpc.ServiceUpdateTask.Type;
-import com.tencent.polaris.client.util.NamedThreadFactory;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -183,8 +183,8 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
         checkDestroyed();
-        ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
         Connection connection = null;
+        ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
         try {
             waitDiscoverReady();
             connection = connectionManager
@@ -204,6 +204,9 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
         } catch (Throwable t) {
             if (t instanceof PolarisException) {
                 throw t;
+            }
+            if (null != connection) {
+                connection.reportFail();
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to register host %s:%d service %s", req.getHost(), req.getPort(), serviceKey),
@@ -322,6 +325,9 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
                 //服务端异常不进行重试
                 throw t;
             }
+            if (null != connection) {
+                connection.reportFail();
+            }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to deregister id %s, host %s:%d service %s",
                             req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), t);
@@ -351,6 +357,9 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
                 //服务端异常不进行重试
                 throw t;
             }
+            if (null != connection) {
+                connection.reportFail();
+            }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to heartbeat id %s, host %s:%d service %s",
                             req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), t);
@@ -365,12 +374,13 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
     public ReportClientResponse reportClient(ReportClientRequest req) throws PolarisException {
         checkDestroyed();
         waitDiscoverReady();
-        Connection connection = connectionManager
-                .getConnection(GrpcUtil.OP_KEY_REPORT_CLIENT, ClusterType.SERVICE_DISCOVER_CLUSTER);
-        PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
-        GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
+        Connection connection = null;
         ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
         try {
+            connection = connectionManager
+                    .getConnection(GrpcUtil.OP_KEY_REPORT_CLIENT, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
             ClientProto.Client request = buildReportRequest(req);
             ResponseProto.Response response = stub.reportClient(request);
             LOG.debug("reportClient req:{}, rsp:{}", req, TextFormat.shortDebugString(response));
@@ -390,11 +400,16 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
                 //服务端异常不进行重试
                 throw t;
             }
+            if (null != connection) {
+                connection.reportFail();
+            }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to report client host %s, version %s service %s",
                             req.getClientHost(), req.getVersion(), serviceKey), t);
         } finally {
-            connection.release(GrpcUtil.OP_KEY_REPORT_CLIENT);
+            if (null != connection) {
+                connection.release(GrpcUtil.OP_KEY_REPORT_CLIENT);
+            }
         }
     }
 

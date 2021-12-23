@@ -275,10 +275,11 @@
                             </links>
                             <doclint>none</doclint>
                             <excludePackageNames>
-                                com.tencent.polaris.*.examples,com.tencent.polaris.*.examples.*
+                                com.tencent.polaris.*.example,com.tencent.polaris.*.example.*
                             </excludePackageNames>
-                            <doctitle>Tencent Polaris ${project.version} API</doctitle>
-                            <windowtitle>Tencent Polaris ${project.version} API</windowtitle>
+                            <doctitle>Tencent Polaris Java SDK ${project.version} API</doctitle>
+                            <windowtitle>Tencent Polaris Java SDK ${project.version} API
+                            </windowtitle>
                         </configuration>
                     </plugin>
                 </plugins>
