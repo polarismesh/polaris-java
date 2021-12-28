@@ -56,10 +56,10 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
         this.initialized = false;
         this.eventType = EventType.UNKNOWN;
     }
-
+    
     @Override
     public Object getRule() {
-        return ruleValue;
+        return ruleValue == null ? "" : ruleValue.toString();
     }
 
     @Override
