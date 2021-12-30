@@ -58,13 +58,8 @@ public class ConsistentHashLoadBalance extends Destroyable implements LoadBalanc
         if (instances == null || CollectionUtils.isEmpty(instances.getInstances())) {
             return null;
         }
-        TreeMap<Integer, Instance> ring = flowCache
-                .loadPluginCacheObject(getId(), instances, new Function<Object, TreeMap<Integer, Instance>>() {
-                    @Override
-                    public TreeMap<Integer, Instance> apply(Object obj) {
-                        return buildConsistentHashRing((ServiceInstances) obj);
-                    }
-                });
+        TreeMap<Integer, Instance> ring = flowCache.loadPluginCacheObject(getId(), instances,
+                obj -> buildConsistentHashRing((ServiceInstances) obj));
         int invocationHashCode = hashStrategy.getHashCode(criteria.getHashKey());
         return lookup(ring, invocationHashCode);
     }
