@@ -45,14 +45,13 @@ public class PrometheusPushHandlerTest {
     @Before
     public void setUp() {
         String callerIp = "127.0.0.1";
-        pushInterval = 2L;
+        pushInterval = 2 * 1000;
         PrometheusPushHandlerConfig pushHandlerConfig = new PrometheusPushHandlerConfig();
-        //pushHandlerConfig.setJobName("default");
         pushHandlerConfig.setPushInterval(pushInterval);
         pushHandlerConfig.setPushgatewayAddress(PUSH_DEFAULT_ADDRESS);
         MockPushGateway pgw = new MockPushGateway(PUSH_DEFAULT_ADDRESS);
         handler = new PrometheusPushHandler(callerIp, pushHandlerConfig,
-                new ServiceDiscoveryProvider(null, pushHandlerConfig), callerIp);
+                new ServiceDiscoveryProvider(null, pushHandlerConfig), "default");
         handler.setPushGateway(pgw);
     }
 
@@ -130,7 +129,7 @@ public class PrometheusPushHandlerTest {
 
         // mock pushing
         Thread.sleep(pushInterval * 1050);
-        handler.stopHandle();
+        //handler.stopHandle();
 
         Double result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(count), result);

@@ -34,6 +34,8 @@ import com.tencent.polaris.plugins.stat.prometheus.handler.ServiceDiscoveryProvi
 
 public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
+    public static final String PUSH_DEFAULT_JOB_NAME = "polaris-client";
+
     private StatInfoHandler statInfoHandler;
 
     @Override
@@ -49,7 +51,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                     .getPluginConfig(getName(), PrometheusPushHandlerConfig.class);
             ServiceDiscoveryProvider provider = new ServiceDiscoveryProvider(extensions, config);
             statInfoHandler = new PrometheusPushHandler(extensions.getValueContext().getHost(),
-                    config, provider, extensions.getValueContext().getClientId());
+                    config, provider, PUSH_DEFAULT_JOB_NAME);
         }
     }
 

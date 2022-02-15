@@ -78,8 +78,8 @@ public class PrometheusPushHandler implements StatInfoHandler {
     private PushGateway pushGateway;
 
     public PrometheusPushHandler(String callerIp, PrometheusPushHandlerConfig config, ServiceDiscoveryProvider provider,
-            String instanceName) {
-        this(callerIp, config.getPushInterval(), provider, instanceName);
+            String jobName) {
+        this(callerIp, config.getPushInterval(), provider, jobName);
     }
 
     /**
@@ -91,13 +91,13 @@ public class PrometheusPushHandler implements StatInfoHandler {
      */
     private PrometheusPushHandler(String callerIp,
             Long pushIntervalS,
-            ServiceDiscoveryProvider provider, String instanceName) {
+            ServiceDiscoveryProvider provider, String jobName) {
         this.callerIp = callerIp;
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
         this.promRegistry = new CollectorRegistry(true);
         this.addressProvider = provider;
-        this.jobName = PUSH_DEFAULT_JOB_NAME;
+        this.jobName = jobName;
         if (null != pushIntervalS) {
             this.pushIntervalS = pushIntervalS;
         } else {
