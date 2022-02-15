@@ -61,7 +61,7 @@ public class PrometheusPushHandlerTest {
         handler.handle(statInfo);
         handler.handle(null);
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
     }
 
@@ -70,11 +70,11 @@ public class PrometheusPushHandlerTest {
         handler.setPushGateway(null);
         handler.handle(null);
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         // null cause IOException
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         Assert.assertNull(handler.getPushGateway());
     }
 
@@ -86,7 +86,7 @@ public class PrometheusPushHandlerTest {
             handler.handle(statInfo);
         }, 10);
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
     }
 
@@ -100,18 +100,18 @@ public class PrometheusPushHandlerTest {
 
         // mock push
         LOG.info("first mock push finish...");
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         Double result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(count), result);
 
         // mock next push
         LOG.info("second mock push finish...");
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(0), result);
 
         LOG.info("mock sleep {} times end...", REVISION_MAX_SCOPE);
-        Thread.sleep(pushInterval * REVISION_MAX_SCOPE * 1050);
+        Thread.sleep(pushInterval * REVISION_MAX_SCOPE + 1000);
         result = getServiceCallTotalResult(callResult);
         Assert.assertNull(result);
 
@@ -128,7 +128,7 @@ public class PrometheusPushHandlerTest {
         batchDone(() -> handler.handle(statInfo), count);
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         Double result = getServiceCallTotalResult(callResult);
@@ -173,7 +173,7 @@ public class PrometheusPushHandlerTest {
         latch.await();
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         ServiceCallResult example = mockFixedLabelServiceCallResult(200, 1000);
@@ -196,7 +196,7 @@ public class PrometheusPushHandlerTest {
         }, count);
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         int maxExpected = 0;
@@ -250,7 +250,7 @@ public class PrometheusPushHandlerTest {
         }).start();
         latch.await();
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultRateLimitResult example = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
@@ -268,7 +268,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -282,7 +282,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -297,7 +297,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.CLOSE));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -313,7 +313,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
         Assert.assertEquals(new Double(1), getOpenResult(example));
@@ -328,7 +328,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
         Assert.assertEquals(new Double(1), getOpenResult(example));

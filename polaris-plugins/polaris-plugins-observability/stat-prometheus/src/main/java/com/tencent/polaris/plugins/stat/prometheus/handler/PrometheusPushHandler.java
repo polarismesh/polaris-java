@@ -57,7 +57,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandler.class);
 
-    public static final int PUSH_DEFAULT_INTERVALS = 30;
+    public static final int PUSH_DEFAULT_INTERVAL_MILLI = 30 * 1000;
     public static final String PUSH_DEFAULT_JOB_NAME = "polaris-client";
     public static final String PUSH_GROUP_KEY = "instance";
     public static final int REVISION_MAX_SCOPE = 2;
@@ -70,7 +70,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
     // push
     private final String callerIp;
     private final String jobName;
-    private final long pushIntervalS;
+    private final long pushIntervalMilli;
     private final CollectorRegistry promRegistry;
     private final Map<String, Gauge> sampleMapping;
     private final ServiceDiscoveryProvider addressProvider;
@@ -99,9 +99,9 @@ public class PrometheusPushHandler implements StatInfoHandler {
         this.addressProvider = provider;
         this.jobName = jobName;
         if (null != pushIntervalS) {
-            this.pushIntervalS = pushIntervalS;
+            this.pushIntervalMilli = pushIntervalS;
         } else {
-            this.pushIntervalS = PUSH_DEFAULT_INTERVALS;
+            this.pushIntervalMilli = PUSH_DEFAULT_INTERVAL_MILLI;
         }
         this.scheduledPushTask = Executors.newSingleThreadScheduledExecutor();
         initSampleMapping(MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY,
@@ -186,10 +186,10 @@ public class PrometheusPushHandler implements StatInfoHandler {
     private void startSchedulePushTask() {
         if (null != container && null != scheduledPushTask && null != sampleMapping) {
             this.scheduledPushTask.scheduleWithFixedDelay(this::doPush,
-                    pushIntervalS,
-                    pushIntervalS,
+                    pushIntervalMilli,
+                    pushIntervalMilli,
                     TimeUnit.MILLISECONDS);
-            LOG.info("start schedule push task, task interval {}", pushIntervalS);
+            LOG.info("start schedule push task, task interval {}", pushIntervalMilli);
         }
     }
 
