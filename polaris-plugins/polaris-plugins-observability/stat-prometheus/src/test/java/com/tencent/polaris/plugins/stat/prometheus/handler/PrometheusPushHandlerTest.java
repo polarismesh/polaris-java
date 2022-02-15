@@ -129,7 +129,7 @@ public class PrometheusPushHandlerTest {
 
         // mock pushing
         Thread.sleep(pushInterval * 1050);
-        //handler.stopHandle();
+        handler.stopHandle();
 
         Double result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(count), result);
