@@ -37,8 +37,10 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import java.io.Closeable;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -82,7 +84,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
 
     private final Object lock = new Object();
 
-    private List<Destroyable> destroyHooks = new ArrayList<>();
+    private final List<Destroyable> destroyHooks = new ArrayList<>();
 
     private final Collection<ServerServiceInfo> serverServices;
 
@@ -221,19 +223,33 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             return hostAddress;
         }
         String nic = configuration.getGlobal().getAPI().getBindIf();
-        return resolveAddress(nic);
+        if (StringUtils.isNotBlank(nic)) {
+            return resolveAddress(nic);
+        }
+        try {
+            return getHostByDial(configuration);
+        } catch (IOException e) {
+            LOG.error("[ReportClient]get address by dial failed", e);
+        }
+        return DEFAULT_ADDRESS;
+    }
+
+    private static String getHostByDial(Configuration configuration) throws IOException {
+        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        String[] tokens = serverAddress.split(":");
+        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+            return socket.getLocalAddress().getHostAddress();
+        }
     }
 
     private static NetworkInterface resolveNetworkInterface(String nic) {
         NetworkInterface ni = null;
         try {
-            if (StringUtils.isNotBlank(nic)) {
-                ni = NetworkInterface.getByName(nic);
-            }
+            ni = NetworkInterface.getByName(nic);
         } catch (SocketException e) {
             LOG.error("[ReportClient]get nic failed, nic:{}", nic, e);
         }
-        if (null != nic) {
+        if (null != ni) {
             return ni;
         }
         //获取第一张网卡

@@ -35,6 +35,8 @@ public class ValueContext {
 
     private static final String KEY_CLIENT_ID = "key_clientId";
 
+    private static final String KEY_ENGINE = "key_engine";
+
     private final Object lock = new Object();
 
     private volatile boolean locationReady;

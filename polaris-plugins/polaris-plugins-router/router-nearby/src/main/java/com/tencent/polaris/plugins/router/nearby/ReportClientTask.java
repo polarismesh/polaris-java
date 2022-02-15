@@ -17,12 +17,16 @@
 
 package com.tencent.polaris.plugins.router.nearby;
 
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
+import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.version.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,15 +65,27 @@ public class ReportClientTask implements Runnable {
     }
 
     private ReportClientResponse doReport(String clientHost, String version) {
+        BaseEngine engine = BaseEngine.getEngine(shareContext);
         ReportClientRequest req = new ReportClientRequest();
         req.setClientHost(clientHost);
         req.setVersion(version);
         ReportClientResponse rsp = null;
+        long start = System.currentTimeMillis();
+        ServiceCallResult serviceCallResult = new ServiceCallResult();
         try {
             rsp = extensions.getServerConnector().reportClient(req);
+            serviceCallResult.setRetStatus(RetStatus.RetSuccess);
+            serviceCallResult.setRetCode(ErrorCode.Success.getCode());
         } catch (PolarisException e) {
+            serviceCallResult.setRetStatus(RetStatus.RetFail);
+            serviceCallResult.setRetCode(e.getCode().getCode());
             LOG.warn("fail to report client info(clientHost={}, version={}), cause is {}", clientHost, version,
                     e.getMessage());
+        }
+        long delay = System.currentTimeMillis() - start;
+        serviceCallResult.setDelay(delay);
+        if (null != engine) {
+            engine.reportServerCall(serviceCallResult, req.getTargetServer(), "reportClient");
         }
         return rsp;
     }

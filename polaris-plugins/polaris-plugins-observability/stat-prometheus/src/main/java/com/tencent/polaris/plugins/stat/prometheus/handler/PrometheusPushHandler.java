@@ -17,26 +17,27 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
+import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
+import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricName;
+import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricValue.NULL_VALUE;
+
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.pojo.InstanceGauge;
-import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
-import com.tencent.polaris.plugins.stat.common.model.StatInfoHandler;
-import com.tencent.polaris.plugins.stat.common.model.StatMetric;
-import com.tencent.polaris.plugins.stat.common.model.StatInfoCollector;
-import com.tencent.polaris.plugins.stat.common.model.StatInfoRevisionCollector;
-import com.tencent.polaris.plugins.stat.common.model.StatInfoCollectorContainer;
-import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
-import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import com.tencent.polaris.plugins.stat.common.model.AbstractSignatureStatInfoCollector;
+import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
+import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoCollector;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoCollectorContainer;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoHandler;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoRevisionCollector;
+import com.tencent.polaris.plugins.stat.common.model.StatMetric;
 import com.tencent.polaris.plugins.stat.common.model.StatRevisionMetric;
+import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,20 +47,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
-import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricName;
-import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricValue.NULL_VALUE;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 通过向Prometheus PushGateWay推送StatInfo消息来处理StatInfo。
  */
 public class PrometheusPushHandler implements StatInfoHandler {
+
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandler.class);
 
     public static final int PUSH_DEFAULT_INTERVALS = 30;
-    public static final String PUSH_DEFAULT_ADDRESS = "127.0.0.1:9091";
-    public static final String PUSH_DEFAULT_JOB_NAME = "defaultJobName";
+    public static final String PUSH_DEFAULT_JOB_NAME = "polaris-client";
     public static final String PUSH_GROUP_KEY = "instance";
     public static final int REVISION_MAX_SCOPE = 2;
 
@@ -74,51 +73,37 @@ public class PrometheusPushHandler implements StatInfoHandler {
     private final long pushIntervalS;
     private final CollectorRegistry promRegistry;
     private final Map<String, Gauge> sampleMapping;
-    private final PushAddressProvider addressProvider;
-    private final String instanceName;
+    private final ServiceDiscoveryProvider addressProvider;
     private String pushAddress;
     private PushGateway pushGateway;
 
-    public PrometheusPushHandler(String callerIp, PrometheusPushHandlerConfig config, PushAddressProvider provider) {
-        this(callerIp, config.getJobName(), config.getPushInterval(), config.getInstanceName(), provider);
+    public PrometheusPushHandler(String callerIp, PrometheusPushHandlerConfig config, ServiceDiscoveryProvider provider,
+            String instanceName) {
+        this(callerIp, config.getPushInterval(), provider, instanceName);
     }
 
     /**
      * 构造函数
      *
-     * @param callerIp      调用者Ip
-     * @param jobName       向PushGateWay推送使用任务名称
+     * @param callerIp 调用者Ip
      * @param pushIntervalS 向PushGateWay推送的时间间隔
-     * @param instanceName  运行实例的Id
-     * @param provider      push的地址提供者
+     * @param provider push的地址提供者
      */
-    public PrometheusPushHandler(String callerIp,
-                                 String jobName,
-                                 Long pushIntervalS,
-                                 String instanceName,
-                                 PushAddressProvider provider) {
+    private PrometheusPushHandler(String callerIp,
+            Long pushIntervalS,
+            ServiceDiscoveryProvider provider, String instanceName) {
         this.callerIp = callerIp;
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
         this.promRegistry = new CollectorRegistry(true);
         this.addressProvider = provider;
-        if (null != jobName) {
-            this.jobName = jobName;
-        } else {
-            this.jobName = PUSH_DEFAULT_JOB_NAME;
-        }
+        this.jobName = PUSH_DEFAULT_JOB_NAME;
         if (null != pushIntervalS) {
             this.pushIntervalS = pushIntervalS;
         } else {
             this.pushIntervalS = PUSH_DEFAULT_INTERVALS;
         }
-        if (null != instanceName) {
-            this.instanceName = instanceName;
-        } else {
-            this.instanceName = callerIp;
-        }
         this.scheduledPushTask = Executors.newSingleThreadScheduledExecutor();
-
         initSampleMapping(MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY,
                 SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
         initSampleMapping(MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY,
@@ -203,7 +188,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
             this.scheduledPushTask.scheduleWithFixedDelay(this::doPush,
                     pushIntervalS,
                     pushIntervalS,
-                    TimeUnit.SECONDS);
+                    TimeUnit.MILLISECONDS);
             LOG.info("start schedule push task, task interval {}", pushIntervalS);
         }
     }
@@ -226,7 +211,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
                 }
 
                 if (null == pushAddress) {
-                    setPushAddress(PUSH_DEFAULT_ADDRESS);
+                    return;
                 }
 
                 if (getPushGateway() == null) {
@@ -234,7 +219,8 @@ public class PrometheusPushHandler implements StatInfoHandler {
                     setPushGateway(new PushGateway(pushAddress));
                 }
 
-                pushGateway.pushAdd(promRegistry, jobName, Collections.singletonMap(PUSH_GROUP_KEY, instanceName));
+                //pushGateway.pushAdd(promRegistry, jobName, Collections.singletonMap(PUSH_GROUP_KEY, instanceName));
+                pushGateway.pushAdd(promRegistry, jobName, Collections.emptyMap());
                 LOG.info("push result to push-gateway {} success", pushAddress);
             } catch (IOException exception) {
                 LOG.error("push result to push-gateway {} encountered exception, exception:{}", pushAddress,
@@ -258,8 +244,8 @@ public class PrometheusPushHandler implements StatInfoHandler {
     }
 
     private void putDataFromContainerInOrder(AbstractSignatureStatInfoCollector<?, ? extends StatMetric> collector,
-                                             long currentRevision,
-                                             String[] order) {
+            long currentRevision,
+            String[] order) {
         Collection<? extends StatMetric> values = collector.getCollectedValues();
 
         for (StatMetric s : values) {
@@ -308,6 +294,9 @@ public class PrometheusPushHandler implements StatInfoHandler {
                     break;
                 case SystemMetricModel.SystemMetricName.CALLEE_SERVICE:
                     addLabel(labelName, insGauge.getService(), labels);
+                    break;
+                case SystemMetricName.CALLEE_METHOD:
+                    addLabel(labelName, insGauge.getMethod(), labels);
                     break;
                 case SystemMetricName.CALLEE_SUBSET:
                     addLabel(labelName, insGauge.getSubset(), labels);

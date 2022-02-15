@@ -45,6 +45,8 @@ public class CommonProviderRequest {
 
     private Integer ttl;
 
+    private TargetServer targetServer;
+
     public String getInstanceID() {
         return instanceID;
     }
@@ -141,8 +143,15 @@ public class CommonProviderRequest {
         this.ttl = ttl;
     }
 
+    public TargetServer getTargetServer() {
+        return targetServer;
+    }
+
+    public void setTargetServer(TargetServer targetServer) {
+        this.targetServer = targetServer;
+    }
+
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "CommonProviderRequest{" +
                 "instanceID='" + instanceID + '\'' +
@@ -157,6 +166,8 @@ public class CommonProviderRequest {
                 ", priority=" + priority +
                 ", metadata=" + metadata +
                 ", ttl=" + ttl +
+                ", targetServer=" + targetServer +
                 '}';
     }
+
 }

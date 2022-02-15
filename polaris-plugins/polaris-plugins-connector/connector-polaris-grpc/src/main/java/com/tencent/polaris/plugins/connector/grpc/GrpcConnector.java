@@ -39,6 +39,7 @@ import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
+import com.tencent.polaris.api.plugin.server.TargetServer;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -48,6 +49,7 @@ import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ServiceProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
 import com.tencent.polaris.plugins.connector.grpc.ServiceUpdateTask.Status;
 import com.tencent.polaris.plugins.connector.grpc.ServiceUpdateTask.Type;
 import java.util.HashMap;
@@ -189,6 +191,7 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
             waitDiscoverReady();
             connection = connectionManager
                     .getConnection(GrpcUtil.OP_KEY_REGISTER_INSTANCE, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             ResponseProto.Response registerInstanceResponse = stub.registerInstance(buildRegisterInstanceRequest(req));
@@ -314,6 +317,7 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
             waitDiscoverReady();
             connection = connectionManager
                     .getConnection(GrpcUtil.OP_KEY_DEREGISTER_INSTANCE, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceDeRegisterReqId());
             ResponseProto.Response deregisterInstanceResponse = stub
@@ -338,6 +342,11 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
         }
     }
 
+    private static TargetServer connectionToTargetNode(Connection connection) {
+        ConnID connID = connection.getConnID();
+        return new TargetServer(connID.getServiceKey(), connID.getHost(), connID.getPort(), connID.getProtocol());
+    }
+
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
         checkDestroyed();
@@ -347,6 +356,7 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
             waitDiscoverReady();
             connection = connectionManager
                     .getConnection(GrpcUtil.OP_KEY_INSTANCE_HEARTBEAT, ClusterType.HEALTH_CHECK_CLUSTER);
+            req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
             ResponseProto.Response heartbeatResponse = stub.heartbeat(buildHeartbeatRequest(req));
@@ -379,6 +389,7 @@ public class GrpcConnector extends Destroyable implements ServerConnector {
         try {
             connection = connectionManager
                     .getConnection(GrpcUtil.OP_KEY_REPORT_CLIENT, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
             ClientProto.Client request = buildReportRequest(req);

@@ -30,14 +30,11 @@ import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.client.api.ServiceCallResultListener;
-import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.discovery.client.flow.AsyncFlow;
 import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
 import com.tencent.polaris.discovery.client.flow.CommonRuleRequest;
 import com.tencent.polaris.discovery.client.flow.SyncFlow;
 import com.tencent.polaris.discovery.client.util.Validator;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +54,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
 
     private final AsyncFlow asyncFlow = new AsyncFlow();
 
-    private List<ServiceCallResultListener> serviceCallResultListeners;
-
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
@@ -67,18 +62,8 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     }
 
     @Override
-    protected void subInit() {
-        serviceCallResultListeners = ServiceCallResultListener.getServiceCallResultListeners(sdkContext);
-        sdkContext.registerDestroyHook(new Destroyable() {
-            @Override
-            protected void doDestroy() {
-                if (null != serviceCallResultListeners) {
-                    for (ServiceCallResultListener listener : serviceCallResultListeners) {
-                        listener.destroy();
-                    }
-                }
-            }
-        });
+    protected void subInit() throws PolarisException {
+
     }
 
     @Override
@@ -133,9 +118,7 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public void updateServiceCallResult(ServiceCallResult req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateServiceCallResult(req);
-        for (ServiceCallResultListener listener : serviceCallResultListeners) {
-            listener.onServiceCallResult(req);
-        }
+        reportInvokeStat(req);
     }
 
     @Override

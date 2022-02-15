@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.connector.grpc;
 
 import com.tencent.polaris.api.config.global.ClusterType;
+import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import io.grpc.ManagedChannel;
 import java.util.Objects;
@@ -207,12 +208,23 @@ public class Connection {
          */
         private final int port;
 
-        public ConnID(ServiceKey serviceKey, ClusterType clusterType, String host, int port) {
+        /**
+         * 协议信息
+         */
+        private final String protocol;
+
+        public ConnID(ServiceKey serviceKey, ClusterType clusterType, String host, int port, String protocol) {
             this.id = UUID.randomUUID().toString();
-            this.serviceKey = serviceKey;
+            if (null != serviceKey) {
+                this.serviceKey = serviceKey;
+            } else {
+                this.serviceKey = new ServiceKey(DefaultValues.DEFAULT_SYSTEM_NAMESPACE,
+                        DefaultValues.DEFAULT_BUILTIN_DISCOVER);
+            }
             this.clusterType = clusterType;
             this.host = host;
             this.port = port;
+            this.protocol = protocol;
         }
 
         public String getId() {
@@ -223,6 +235,10 @@ public class Connection {
             return serviceKey;
         }
 
+        public ClusterType getClusterType() {
+            return clusterType;
+        }
+
         public String getHost() {
             return host;
         }
@@ -231,20 +247,8 @@ public class Connection {
             return port;
         }
 
-        public ClusterType getClusterType() {
-            return clusterType;
-        }
-
-        @Override
-        @SuppressWarnings("checkstyle:all")
-        public String toString() {
-            return "ConnID{" +
-                    "id='" + id + '\'' +
-                    ", serviceKey=" + serviceKey +
-                    ", clusterType=" + clusterType +
-                    ", host='" + host + '\'' +
-                    ", port=" + port +
-                    '}';
+        public String getProtocol() {
+            return protocol;
         }
 
         @Override
@@ -252,17 +256,21 @@ public class Connection {
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof ConnID)) {
                 return false;
             }
             ConnID connID = (ConnID) o;
-            return port == connID.port && Objects.equals(id, connID.id) && Objects.equals(serviceKey, connID.serviceKey)
-                    && clusterType == connID.clusterType && Objects.equals(host, connID.host);
+            return port == connID.port &&
+                    Objects.equals(id, connID.id) &&
+                    Objects.equals(serviceKey, connID.serviceKey) &&
+                    clusterType == connID.clusterType &&
+                    Objects.equals(host, connID.host) &&
+                    Objects.equals(protocol, connID.protocol);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(id, serviceKey, clusterType, host, port);
+            return Objects.hash(id, serviceKey, clusterType, host, port, protocol);
         }
     }
 }

@@ -26,6 +26,8 @@ import java.util.List;
  */
 public interface StatReporterConfig extends PluginConfig, Verifier {
 
+    String DEFAULT_REPORTER_PROMETHEUS = "prometheus";
+
     /**
      * 是否启用数据上报
      *

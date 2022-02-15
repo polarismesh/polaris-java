@@ -31,7 +31,7 @@ public class QuotaRequest extends RequestBaseEntity {
 
     private Map<String, String> labels;
 
-    private int count;
+    private int count = 1;
 
     public String getNamespace() {
         return namespace;
