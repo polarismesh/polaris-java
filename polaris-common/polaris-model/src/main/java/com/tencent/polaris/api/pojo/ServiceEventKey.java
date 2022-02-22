@@ -26,6 +26,7 @@ public class ServiceEventKey implements Service {
         ROUTING,
         CIRCUIT_BREAKING,
         RATE_LIMITING,
+        SERVICE,
     }
 
     private final ServiceKey serviceKey;

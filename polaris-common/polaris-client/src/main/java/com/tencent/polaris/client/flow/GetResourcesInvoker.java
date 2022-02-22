@@ -26,11 +26,14 @@ import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -104,6 +107,15 @@ public class GetResourcesInvoker implements EventCompleteNotifier, Future<Resour
                     resourcesResponse.addServiceInstances(svcEventKey, instances);
                 } else {
                     localRegistry.loadInstances(svcEventKey, this);
+                    callbacks++;
+                }
+                break;
+            case SERVICE:
+                Services services = localRegistry.getServices(filter);
+                if (services.isInitialized()) {
+                    resourcesResponse.addServices(svcEventKey, services);
+                } else {
+                    localRegistry.loadServices(svcEventKey, this);
                     callbacks++;
                 }
                 break;

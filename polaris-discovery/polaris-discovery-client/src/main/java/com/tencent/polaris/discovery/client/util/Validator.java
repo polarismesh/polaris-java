@@ -28,6 +28,7 @@ import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetResourcesRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
@@ -108,6 +109,12 @@ public class Validator {
         checkCommon(request);
         if (request.getRuleType() == ServiceEventKey.EventType.INSTANCE) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "event type can not be instance");
+        }
+    }
+
+    public static void validateGetServicesRequest(GetServicesRequest request) throws PolarisException {
+        if (StringUtils.isBlank(request.getNamespace())) {
+            request.setNamespace("*");
         }
     }
 
