@@ -111,7 +111,7 @@ public class ResourcesResponse {
      * 获取服务列表应答对象
      *
      * @param svcEventKey 服务标识
-     * @return List<ServiceInfo>
+     * @return Services 服务列表
      */
     public Services getServices(ServiceEventKey svcEventKey) {
         return servicesMap.get(svcEventKey);
