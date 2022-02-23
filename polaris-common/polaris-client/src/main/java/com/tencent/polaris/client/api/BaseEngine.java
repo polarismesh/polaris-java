@@ -17,10 +17,14 @@
 
 package com.tencent.polaris.client.api;
 
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.common.ValueContext;
+import com.tencent.polaris.api.plugin.server.TargetServer;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
-import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import java.util.List;
 
 /**
  * 基础构建引擎，API会基于该类进行实现
@@ -30,7 +34,11 @@ import com.tencent.polaris.api.control.Destroyable;
  */
 public abstract class BaseEngine extends Destroyable {
 
+    private static final String CTX_KEY_ENGINE = "key_engine";
+
     protected final SDKContext sdkContext;
+
+    private List<ServiceCallResultListener> serviceCallResultListeners;
 
     public BaseEngine(SDKContext sdkContext) {
         this.sdkContext = sdkContext;
@@ -39,6 +47,18 @@ public abstract class BaseEngine extends Destroyable {
     public void init() throws PolarisException {
         sdkContext.init();
         subInit();
+        serviceCallResultListeners = ServiceCallResultListener.getServiceCallResultListeners(sdkContext);
+        sdkContext.registerDestroyHook(new Destroyable() {
+            @Override
+            protected void doDestroy() {
+                if (null != serviceCallResultListeners) {
+                    for (ServiceCallResultListener listener : serviceCallResultListeners) {
+                        listener.destroy();
+                    }
+                }
+            }
+        });
+        sdkContext.getValueContext().setValue(CTX_KEY_ENGINE, this);
     }
 
     public SDKContext getSDKContext() {
@@ -68,8 +88,43 @@ public abstract class BaseEngine extends Destroyable {
                 : entity.getTimeoutMs();
     }
 
+    /**
+     * 上报调用结果数据
+     *
+     * @param req 调用结果数据
+     * @throws PolarisException
+     */
+    protected void reportInvokeStat(ServiceCallResult req) throws PolarisException {
+        for (ServiceCallResultListener listener : serviceCallResultListeners) {
+            listener.onServiceCallResult(req);
+        }
+    }
+
     @Override
     protected void doDestroy() {
         sdkContext.doDestroy();
+    }
+
+    public static BaseEngine getEngine(ValueContext valueContext) {
+        return valueContext.getValue(CTX_KEY_ENGINE);
+    }
+
+    /**
+     * 上报内部服务调用结果
+     *
+     * @param serviceCallResult 服务调用结果
+     * @param targetServer 目标服务端
+     * @param method 方法
+     */
+    public void reportServerCall(ServiceCallResult serviceCallResult, TargetServer targetServer, String method) {
+        if (null != targetServer) {
+            serviceCallResult.setNamespace(targetServer.getServiceKey().getNamespace());
+            serviceCallResult.setService(targetServer.getServiceKey().getService());
+            serviceCallResult.setHost(targetServer.getHost());
+            serviceCallResult.setPort(targetServer.getPort());
+            serviceCallResult.setLabels(targetServer.getLabels());
+        }
+        serviceCallResult.setMethod(method);
+        reportInvokeStat(serviceCallResult);
     }
 }

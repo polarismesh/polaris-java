@@ -126,7 +126,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                     serviceInstances, minAvailableLevel, clientLocationInfo), RouteResult.State.Next);
         }
         CheckResult checkResult = new CheckResult();
-        for (int i = minLevel.ordinal(); i < maxLevel.ordinal(); i++) {
+        for (int i = minLevel.ordinal(); i <= maxLevel.ordinal(); i++) {
             LocationLevel curLevel = LocationLevel.values()[i];
             checkResult = hasHealthyInstances(serviceInstances, routeInfo.getStatusDimensions(), curLevel,
                     clientLocationInfo);

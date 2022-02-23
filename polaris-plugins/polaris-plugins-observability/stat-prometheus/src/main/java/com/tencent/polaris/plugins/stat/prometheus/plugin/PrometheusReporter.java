@@ -17,39 +17,29 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.plugin;
 
-import com.tencent.polaris.api.config.global.ClusterType;
+import com.tencent.polaris.api.config.global.StatReporterConfig;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
+import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
-import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandlerConfig;
-import com.tencent.polaris.plugins.stat.common.model.StatInfoHandler;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PushAddressProvider;
 import com.tencent.polaris.plugins.stat.prometheus.handler.ServiceDiscoveryProvider;
 
-import java.util.Collection;
+public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
-public class PrometheusReporter implements StatReporter {
+    public static final String PUSH_DEFAULT_JOB_NAME = "polaris-client";
+
     private StatInfoHandler statInfoHandler;
-    private ServerServiceInfo monitorService;
 
     @Override
     public void init(InitContext initContext) throws PolarisException {
-        Collection<ServerServiceInfo> serverServices = initContext.getServerServices();
-        if (CollectionUtils.isNotEmpty(serverServices)) {
-            for (ServerServiceInfo serverService : serverServices) {
-                if (serverService.getClusterType() == ClusterType.MONITOR_CLUSTER) {
-                    this.monitorService = serverService;
-                    return;
-                }
-            }
-        }
     }
 
     @Override
@@ -58,13 +48,10 @@ public class PrometheusReporter implements StatReporter {
             PrometheusPushHandlerConfig config = extensions.getConfiguration()
                     .getGlobal()
                     .getStatReporter()
-                    .getPluginConfig(PrometheusPushHandlerConfig.PROMETHEUS_PUSH_CONFIG_NAME,
-                            PrometheusPushHandlerConfig.class);
-            if (null != config) {
-                PushAddressProvider provider = new ServiceDiscoveryProvider(extensions, monitorService);
-                statInfoHandler = new PrometheusPushHandler(extensions.getValueContext().getHost(),
-                        config, provider);
-            }
+                    .getPluginConfig(getName(), PrometheusPushHandlerConfig.class);
+            ServiceDiscoveryProvider provider = new ServiceDiscoveryProvider(extensions, config);
+            statInfoHandler = new PrometheusPushHandler(extensions.getValueContext().getHost(),
+                    config, provider, PUSH_DEFAULT_JOB_NAME);
         }
     }
 
@@ -77,7 +64,12 @@ public class PrometheusReporter implements StatReporter {
 
     @Override
     public String getName() {
-        return this.getClass().getSimpleName();
+        return StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS;
+    }
+
+    @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return PrometheusPushHandlerConfig.class;
     }
 
     @Override

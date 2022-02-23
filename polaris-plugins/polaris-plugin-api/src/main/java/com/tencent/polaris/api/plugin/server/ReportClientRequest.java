@@ -16,6 +16,8 @@ public class ReportClientRequest {
 
     private String version;
 
+    private TargetServer targetServer;
+
     public String getClientHost() {
         return clientHost;
     }
@@ -48,12 +50,22 @@ public class ReportClientRequest {
         this.service = service;
     }
 
+    public TargetServer getTargetServer() {
+        return targetServer;
+    }
+
+    public void setTargetServer(TargetServer targetServer) {
+        this.targetServer = targetServer;
+    }
+
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "ReportClientRequest{" +
-                "clientHost='" + clientHost + '\'' +
+                "namespace='" + namespace + '\'' +
+                ", service='" + service + '\'' +
+                ", clientHost='" + clientHost + '\'' +
                 ", version='" + version + '\'' +
-                "}" + super.toString();
+                ", targetServer=" + targetServer +
+                '}';
     }
 }

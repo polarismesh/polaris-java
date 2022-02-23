@@ -35,11 +35,12 @@ public class CircuitBreakExample {
             //3. 针对某个服务实例上报调用结果失败，默认连续10次失败，或者1分钟错误率50%，就会对实例进行熔断
             Instance targetInstance = availableInstances[0];
             System.out.printf("target instance is %s:%d%n", targetInstance.getHost(), targetInstance.getPort());
-            for (int i = 0; i < 120; i++) {
+            for (int i = 0; i < 120000; i++) {
                 //这里要进行服务调用，用户可以写自己的服务调用代码
                 for (Instance instance : availableInstances) {
                     ServiceCallResult serviceCallResult = new ServiceCallResult();
                     serviceCallResult.setInstance(targetInstance);
+                    serviceCallResult.setMethod("echo");
                     if (instance.getHost().equals(targetInstance.getHost()) && instance.getPort() == targetInstance
                             .getPort()) {
                         serviceCallResult.setRetStatus(RetStatus.RetFail);

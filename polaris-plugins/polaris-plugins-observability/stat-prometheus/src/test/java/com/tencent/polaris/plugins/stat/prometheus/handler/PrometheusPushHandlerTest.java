@@ -1,10 +1,12 @@
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
-import com.tencent.polaris.api.plugin.stat.StatInfo;
-import com.tencent.polaris.api.plugin.stat.DefaultRateLimitResult;
-import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
-import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
+import static com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandler.REVISION_MAX_SCOPE;
+
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
+import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
+import com.tencent.polaris.api.plugin.stat.DefaultRateLimitResult;
+import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
+import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -17,24 +19,24 @@ import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMet
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.PushGateway;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Random;
-import java.util.Collections;
-import java.util.concurrent.CountDownLatch;
-
-import static com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandler.REVISION_MAX_SCOPE;
-
 public class PrometheusPushHandlerTest {
+
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandlerTest.class);
+
+    private static final String PUSH_DEFAULT_ADDRESS = "127.0.0.1:9091";
 
     private final Random random = new Random();
     private PrometheusPushHandler handler;
@@ -43,13 +45,13 @@ public class PrometheusPushHandlerTest {
     @Before
     public void setUp() {
         String callerIp = "127.0.0.1";
-        MockPushGateway pgw = new MockPushGateway(PrometheusPushHandler.PUSH_DEFAULT_ADDRESS);
-        pushInterval = 2L;
-        handler = new PrometheusPushHandler(callerIp,
-                null,
-                pushInterval,
-                "mockInstanceName",
-                new MockAddressProvider());
+        pushInterval = 2 * 1000;
+        PrometheusPushHandlerConfig pushHandlerConfig = new PrometheusPushHandlerConfig();
+        pushHandlerConfig.setPushInterval(pushInterval);
+        pushHandlerConfig.setPushgatewayAddress(PUSH_DEFAULT_ADDRESS);
+        MockPushGateway pgw = new MockPushGateway(PUSH_DEFAULT_ADDRESS);
+        handler = new PrometheusPushHandler(callerIp, pushHandlerConfig,
+                new ServiceDiscoveryProvider(null, pushHandlerConfig), "default");
         handler.setPushGateway(pgw);
     }
 
@@ -59,7 +61,7 @@ public class PrometheusPushHandlerTest {
         handler.handle(statInfo);
         handler.handle(null);
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
     }
 
@@ -68,11 +70,11 @@ public class PrometheusPushHandlerTest {
         handler.setPushGateway(null);
         handler.handle(null);
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         // null cause IOException
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         Assert.assertNull(handler.getPushGateway());
     }
 
@@ -84,7 +86,7 @@ public class PrometheusPushHandlerTest {
             handler.handle(statInfo);
         }, 10);
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
     }
 
@@ -98,18 +100,18 @@ public class PrometheusPushHandlerTest {
 
         // mock push
         LOG.info("first mock push finish...");
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         Double result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(count), result);
 
         // mock next push
         LOG.info("second mock push finish...");
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(0), result);
 
         LOG.info("mock sleep {} times end...", REVISION_MAX_SCOPE);
-        Thread.sleep(pushInterval * REVISION_MAX_SCOPE * 1050);
+        Thread.sleep(pushInterval * REVISION_MAX_SCOPE + 1000);
         result = getServiceCallTotalResult(callResult);
         Assert.assertNull(result);
 
@@ -126,7 +128,7 @@ public class PrometheusPushHandlerTest {
         batchDone(() -> handler.handle(statInfo), count);
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         Double result = getServiceCallTotalResult(callResult);
@@ -171,7 +173,7 @@ public class PrometheusPushHandlerTest {
         latch.await();
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         ServiceCallResult example = mockFixedLabelServiceCallResult(200, 1000);
@@ -194,7 +196,7 @@ public class PrometheusPushHandlerTest {
         }, count);
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         int maxExpected = 0;
@@ -248,7 +250,7 @@ public class PrometheusPushHandlerTest {
         }).start();
         latch.await();
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultRateLimitResult example = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
@@ -266,7 +268,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -280,7 +282,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -295,7 +297,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.CLOSE));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
 
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
@@ -311,7 +313,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.HALF_OPEN));
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
         Assert.assertEquals(new Double(1), getOpenResult(example));
@@ -326,7 +328,7 @@ public class PrometheusPushHandlerTest {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
         // mock pushing
-        Thread.sleep(pushInterval * 1050);
+        Thread.sleep(pushInterval + 1000);
         handler.stopHandle();
         DefaultCircuitBreakResult example = mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN);
         Assert.assertEquals(new Double(1), getOpenResult(example));
@@ -366,7 +368,7 @@ public class PrometheusPushHandlerTest {
     }
 
     private Double getServiceCallResult(ServiceCallResult example,
-                                        MetricValueAggregationStrategy<InstanceGauge> strategy) {
+            MetricValueAggregationStrategy<InstanceGauge> strategy) {
         CollectorRegistry registry = handler.getPromRegistry();
         String[] labelKeys = SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER;
         String[] labelValues = PrometheusPushHandler.getOrderedMetricLabelValues(
@@ -390,7 +392,7 @@ public class PrometheusPushHandlerTest {
     }
 
     private Double getRateLimitResult(DefaultRateLimitResult example,
-                                      MetricValueAggregationStrategy<RateLimitGauge> strategy) {
+            MetricValueAggregationStrategy<RateLimitGauge> strategy) {
         CollectorRegistry registry = handler.getPromRegistry();
         String[] labelKeys = SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER;
         String[] labelValues = PrometheusPushHandler.getOrderedMetricLabelValues(
@@ -415,7 +417,7 @@ public class PrometheusPushHandlerTest {
     }
 
     private Double getCircuitBreakerResult(DefaultCircuitBreakResult example,
-                                           MetricValueAggregationStrategy<CircuitBreakGauge> strategy) {
+            MetricValueAggregationStrategy<CircuitBreakGauge> strategy) {
         CollectorRegistry registry = handler.getPromRegistry();
         String[] labelKeys = SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER;
         String[] labelValues = PrometheusPushHandler.getOrderedMetricLabelValues(
@@ -424,24 +426,24 @@ public class PrometheusPushHandlerTest {
     }
 
     private Map<String, String> getServiceCallLabels(MetricValueAggregationStrategy<InstanceGauge> strategy,
-                                                     InstanceGauge gauge,
-                                                     PrometheusPushHandler handler) {
+            InstanceGauge gauge,
+            PrometheusPushHandler handler) {
         Map<String, String> labels = handler.convertInsGaugeToLabels(gauge);
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
     }
 
     private Map<String, String> getRateLimitLabels(MetricValueAggregationStrategy<RateLimitGauge> strategy,
-                                                   RateLimitGauge gauge,
-                                                   PrometheusPushHandler handler) {
+            RateLimitGauge gauge,
+            PrometheusPushHandler handler) {
         Map<String, String> labels = handler.convertRateLimitGaugeToLabels(gauge);
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
     }
 
     private Map<String, String> getCircuitBreakerLabels(MetricValueAggregationStrategy<CircuitBreakGauge> strategy,
-                                                        CircuitBreakGauge gauge,
-                                                        PrometheusPushHandler handler) {
+            CircuitBreakGauge gauge,
+            PrometheusPushHandler handler) {
         Map<String, String> labels = handler.convertCircuitBreakToLabels(gauge);
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
@@ -499,6 +501,7 @@ public class PrometheusPushHandlerTest {
     }
 
     private static class MockPushGateway extends PushGateway {
+
         public MockPushGateway(String address) {
             super(address);
         }
@@ -522,14 +525,6 @@ public class PrometheusPushHandlerTest {
                     }
                 }
             }
-        }
-    }
-
-    private static class MockAddressProvider implements PushAddressProvider {
-
-        @Override
-        public String getAddress() {
-            return PrometheusPushHandler.PUSH_DEFAULT_ADDRESS;
         }
     }
 }

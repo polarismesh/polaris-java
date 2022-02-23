@@ -46,6 +46,7 @@ public class RateLimitExample {
                     QuotaRequest quotaRequest = new QuotaRequest();
                     quotaRequest.setNamespace(namespace);
                     quotaRequest.setService(service);
+                    quotaRequest.setMethod("echo");
                     quotaRequest.setCount(1);
                     QuotaResponse quotaResponse = limitAPI.getQuota(quotaRequest);
                     System.out.println("quotaResponse is " + quotaResponse.getCode());
@@ -57,7 +58,7 @@ public class RateLimitExample {
                         .scheduleWithFixedDelay(runnable, 10 + i, 500, TimeUnit.MILLISECONDS);
                 futures.add(scheduledFuture);
             }
-            Thread.sleep(5000);
+            Thread.sleep(500000);
             for (ScheduledFuture<?> future : futures) {
                 future.cancel(true);
             }

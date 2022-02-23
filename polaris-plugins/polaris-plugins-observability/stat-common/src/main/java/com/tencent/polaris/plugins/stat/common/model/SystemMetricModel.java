@@ -18,10 +18,13 @@
 package com.tencent.polaris.plugins.stat.common.model;
 
 public class SystemMetricModel {
+
     public static class SystemMetricLabelOrder {
+
         public static final String[] INSTANCE_GAUGE_LABEL_ORDER = new String[]{
                 SystemMetricName.CALLEE_NAMESPACE,
                 SystemMetricName.CALLEE_SERVICE,
+                SystemMetricName.CALLEE_METHOD,
                 SystemMetricName.CALLEE_SUBSET,
                 SystemMetricName.CALLEE_INSTANCE,
                 SystemMetricName.CALLEE_RET_CODE,
@@ -52,6 +55,7 @@ public class SystemMetricModel {
     }
 
     public static class SystemMetricName {
+
         public static final String CALLEE_NAMESPACE = "callee_namespace";
         public static final String CALLEE_SERVICE = "callee_service";
         public static final String CALLEE_SUBSET = "callee_subset";
@@ -66,6 +70,7 @@ public class SystemMetricModel {
     }
 
     public static class SystemMetricValue {
+
         public static final String NULL_VALUE = "__NULL__";
     }
 }

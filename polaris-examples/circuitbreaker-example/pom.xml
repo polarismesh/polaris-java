@@ -22,17 +22,7 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-discovery-factory</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-circuitbreaker-factory</artifactId>
+            <artifactId>polaris-all</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

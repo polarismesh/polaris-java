@@ -18,19 +18,24 @@
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.factory.util.ConfigUtils;
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
 public class PrometheusPushHandlerConfig implements Verifier {
-    public static final String PROMETHEUS_PUSH_CONFIG_NAME = "pushgatewayConfig";
 
     @JsonProperty
-    private String jobName;
+    private String pushgatewayAddress;
 
     @JsonProperty
-    private String instanceName;
+    private String pushgatewayService;
 
     @JsonProperty
+    private String pushgatewayNamespace;
+
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long pushInterval;
 
     public PrometheusPushHandlerConfig() {
@@ -41,7 +46,10 @@ public class PrometheusPushHandlerConfig implements Verifier {
      */
     @Override
     public void verify() {
-        ConfigUtils.validateString(jobName, "prometheus push-gateway job name");
+        if (StringUtils.isBlank(pushgatewayAddress) && (StringUtils.isBlank(pushgatewayNamespace) || StringUtils
+                .isBlank(pushgatewayService))) {
+            throw new IllegalArgumentException("both pushgatewayAddress and pushgatewayService are empty");
+        }
     }
 
     /**
@@ -53,24 +61,13 @@ public class PrometheusPushHandlerConfig implements Verifier {
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             PrometheusPushHandlerConfig config = (PrometheusPushHandlerConfig) defaultObject;
-            if (null == jobName) {
-                setJobName(config.getJobName());
-            }
-            if (null == instanceName) {
-                setPushInterval(config.getPushInterval());
+            if (StringUtils.isBlank(pushgatewayAddress)) {
+                setPushgatewayAddress(config.getPushgatewayAddress());
             }
             if (null == pushInterval) {
                 setPushInterval(config.getPushInterval());
             }
         }
-    }
-
-    public String getJobName() {
-        return jobName;
-    }
-
-    public void setJobName(String jobName) {
-        this.jobName = jobName;
     }
 
     public Long getPushInterval() {
@@ -81,11 +78,27 @@ public class PrometheusPushHandlerConfig implements Verifier {
         this.pushInterval = pushInterval;
     }
 
-    public String getInstanceName() {
-        return instanceName;
+    public String getPushgatewayAddress() {
+        return pushgatewayAddress;
     }
 
-    public void setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
+    public void setPushgatewayAddress(String pushgatewayAddress) {
+        this.pushgatewayAddress = pushgatewayAddress;
+    }
+
+    public String getPushgatewayService() {
+        return pushgatewayService;
+    }
+
+    public void setPushgatewayService(String pushgatewayService) {
+        this.pushgatewayService = pushgatewayService;
+    }
+
+    public String getPushgatewayNamespace() {
+        return pushgatewayNamespace;
+    }
+
+    public void setPushgatewayNamespace(String pushgatewayNamespace) {
+        this.pushgatewayNamespace = pushgatewayNamespace;
     }
 }
