@@ -408,7 +408,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 String namespace = req.getService().getNamespace().getValue();
                 System.out.println("get service param : " + namespace);
                 keys.removeIf(serviceKey1 -> {
-                    if ("*".equals(namespace) || StringUtils.isBlank(namespace)) {
+                    if (StringUtils.isBlank(namespace)) {
                         return false;
                     }
                     return !Objects.equals(namespace, serviceKey1.getNamespace());

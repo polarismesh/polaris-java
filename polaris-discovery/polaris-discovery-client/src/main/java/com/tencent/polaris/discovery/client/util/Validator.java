@@ -112,12 +112,6 @@ public class Validator {
         }
     }
 
-    public static void validateGetServicesRequest(GetServicesRequest request) throws PolarisException {
-        if (StringUtils.isBlank(request.getNamespace())) {
-            request.setNamespace("*");
-        }
-    }
-
     /**
      * 校验用户上报的调用结果
      *

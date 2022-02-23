@@ -152,7 +152,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     @Override
     public ServicesResponse getServices(GetServicesRequest request) throws PolarisException {
         checkAvailable("ConsumerAPI");
-        Validator.validateGetServicesRequest(request);
         CommonServicesRequest commonServicesRequest = new CommonServicesRequest(request, config);
         return syncFlow.commonSyncGetServices(commonServicesRequest);
     }
