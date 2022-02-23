@@ -32,6 +32,7 @@ import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
 import com.tencent.polaris.client.pb.RateLimitProto;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RequestProto.DiscoverRequest;
+import com.tencent.polaris.client.pb.RequestProto.DiscoverRequest.DiscoverRequestType;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import com.tencent.polaris.client.pb.RoutingProto;
@@ -40,8 +41,11 @@ import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pojo.Node;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -366,12 +370,16 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
         ServiceKey serviceKey = new ServiceKey(service.getNamespace().getValue(), service.getName().getValue());
 
         switch (req.getType()) {
+            case UNKNOWN:
+                break;
             case INSTANCE:
                 instances = services.get(serviceKey);
                 if (CollectionUtils.isNotEmpty(instances)) {
                     builder.addAllInstances(instances);
                 }
                 builder.setType(DiscoverResponseType.INSTANCE);
+                break;
+            case CLUSTER:
                 break;
             case ROUTING:
                 routing = serviceRoutings.get(serviceKey);
@@ -394,6 +402,35 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 }
                 builder.setType(DiscoverResponseType.RATE_LIMIT);
                 break;
+            case SERVICES:
+                Set<ServiceKey> keys = services.keySet();
+                Map<String, ServiceProto.Service> tmp = new HashMap<>();
+                String namespace = req.getService().getNamespace().getValue();
+                System.out.println("get service param : " + namespace);
+                keys.removeIf(serviceKey1 -> {
+                    if (StringUtils.isBlank(namespace)) {
+                        return false;
+                    }
+                    return !Objects.equals(namespace, serviceKey1.getNamespace());
+                });
+
+                keys.forEach(key -> {
+                    tmp.put(key.getNamespace() + "##" + key.getService(), ServiceProto.Service.newBuilder()
+                            .setNamespace(StringValue.newBuilder().setValue(key.getNamespace()).build())
+                            .setName(StringValue.newBuilder().setValue(key.getService()).build())
+                            .build());
+                });
+
+                final int[] index = {0};
+                tmp.forEach((s, svc) -> {
+                    builder.addServices(index[0], svc);
+                    index[0] ++;
+                });
+
+                builder.setType(DiscoverResponseType.SERVICES);
+                break;
+            case UNRECOGNIZED:
+                break;
             default:
                 break;
         }
@@ -412,13 +449,15 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
             @Override
             public void onNext(DiscoverRequest req) {
-                ServiceProto.Service service = req.getService();
-                ServiceKey serviceKey = new ServiceKey(service.getNamespace().getValue(), service.getName().getValue());
-                if (!services.containsKey(serviceKey)) {
-                    responseObserver.onNext(
-                            buildServiceResponse(ServerCodes.NOT_FOUND_RESOURCE,
-                                    String.format("service %s not found", serviceKey), req));
-                    return;
+                if (req.getType().equals(DiscoverRequestType.INSTANCE)) {
+                    ServiceProto.Service service = req.getService();
+                    ServiceKey serviceKey = new ServiceKey(service.getNamespace().getValue(), service.getName().getValue());
+                    if (!services.containsKey(serviceKey)) {
+                        responseObserver.onNext(
+                                buildServiceResponse(ServerCodes.NOT_FOUND_RESOURCE,
+                                        String.format("service %s not found", serviceKey), req));
+                        return;
+                    }
                 }
                 responseObserver.onNext(
                         buildServiceResponse(ServerCodes.EXECUTE_SUCCESS,

@@ -50,7 +50,9 @@ import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceRule;
@@ -206,13 +208,28 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
                 filter.isInternalRequest());
         if (null == resourceCache) {
-            return CacheObject.EMPTY_SERVICES;
+            return CacheObject.EMPTY_INSTANCES;
         }
         return (ServiceInstances) resourceCache;
     }
 
     @Override
     public void loadServiceRule(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
+        loadRemoteValue(svcEventKey, notifier);
+    }
+
+    @Override
+    public Services getServices(ResourceFilter filter) {
+        RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
+                filter.isInternalRequest());
+        if (null == resourceCache) {
+            return CacheObject.EMPTY_SERVICE;
+        }
+        return (Services) resourceCache;
+    }
+
+    @Override
+    public void loadServices(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
         loadRemoteValue(svcEventKey, notifier);
     }
 

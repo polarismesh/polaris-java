@@ -153,6 +153,8 @@ public class GrpcUtil {
                 return DiscoverRequestType.RATE_LIMIT;
             case CIRCUIT_BREAKING:
                 return DiscoverRequestType.CIRCUIT_BREAKER;
+            case SERVICE:
+                return DiscoverRequestType.SERVICES;
             default:
                 return DiscoverRequestType.UNKNOWN;
         }
@@ -168,6 +170,8 @@ public class GrpcUtil {
                 return EventType.RATE_LIMITING;
             case CIRCUIT_BREAKER:
                 return EventType.CIRCUIT_BREAKING;
+            case SERVICES:
+                return EventType.SERVICE;
             default:
                 return EventType.UNKNOWN;
         }

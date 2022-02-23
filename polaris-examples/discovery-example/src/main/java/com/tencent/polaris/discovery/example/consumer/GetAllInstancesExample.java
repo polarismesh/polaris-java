@@ -26,7 +26,7 @@ import com.tencent.polaris.discovery.example.utils.ExampleUtils.InitResult;
 public class GetAllInstancesExample {
 
     public static void main(String[] args) throws Exception {
-        InitResult initResult = ExampleUtils.initConsumerConfiguration(args);
+        InitResult initResult = ExampleUtils.initConsumerConfiguration(args, false);
         String namespace = initResult.getNamespace();
         String service = initResult.getService();
         try (ConsumerAPI consumerAPI = ExampleUtils.createConsumerAPI(initResult.getConfig())) {

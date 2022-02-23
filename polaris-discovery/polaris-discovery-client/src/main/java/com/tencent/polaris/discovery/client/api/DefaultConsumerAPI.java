@@ -24,10 +24,12 @@ import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
@@ -35,6 +37,7 @@ import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.discovery.client.flow.AsyncFlow;
 import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
 import com.tencent.polaris.discovery.client.flow.CommonRuleRequest;
+import com.tencent.polaris.discovery.client.flow.CommonServicesRequest;
 import com.tencent.polaris.discovery.client.flow.SyncFlow;
 import com.tencent.polaris.discovery.client.util.Validator;
 import java.util.List;
@@ -144,5 +147,12 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         Validator.validateGetServiceRuleRequest(request);
         CommonRuleRequest commonRuleRequest = new CommonRuleRequest(request, config);
         return syncFlow.commonSyncGetServiceRule(commonRuleRequest);
+    }
+
+    @Override
+    public ServicesResponse getServices(GetServicesRequest request) throws PolarisException {
+        checkAvailable("ConsumerAPI");
+        CommonServicesRequest commonServicesRequest = new CommonServicesRequest(request, config);
+        return syncFlow.commonSyncGetServices(commonServicesRequest);
     }
 }

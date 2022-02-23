@@ -21,9 +21,12 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.Services;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -57,6 +60,23 @@ public interface LocalRegistry extends Plugin {
      * @throws PolarisException 异常信息
      */
     void loadServiceRule(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException;
+
+    /**
+     * 获取服务列表
+     *
+     * @param filter 服务获取参数
+     * @return 获取服务列表
+     */
+    Services getServices(ResourceFilter filter);
+
+    /**
+     * 加载服务列表信息
+     *
+     * @param svcEventKey 服务信息
+     * @param notifier 获取后的回调通知
+     * @throws PolarisException 异常信息
+     */
+    void loadServices(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException;
 
     /**
      * 获取实例列表
