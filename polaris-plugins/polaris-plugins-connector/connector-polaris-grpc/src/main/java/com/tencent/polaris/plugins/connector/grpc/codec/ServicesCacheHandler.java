@@ -17,19 +17,13 @@
 
 package com.tencent.polaris.plugins.connector.grpc.codec;
 
-import com.tencent.polaris.api.plugin.registry.CacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
-import com.tencent.polaris.client.pb.ServiceProto;
 import com.tencent.polaris.client.pojo.ServicesByProto;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import org.apache.commons.codec.digest.Sha2Crypt;
 
-public class ServicesCacheHandler implements CacheHandler {
+
+public class ServicesCacheHandler extends AbstractCacheHandler {
 
     @Override
     public EventType getTargetEventType() {
@@ -37,20 +31,8 @@ public class ServicesCacheHandler implements CacheHandler {
     }
 
     @Override
-    public CachedStatus compareMessage(RegistryCacheValue oldValue, Object newValue) {
-        DiscoverResponse discoverResponse = (DiscoverResponse) newValue;
-        return CommonHandler.compareMessage(getTargetEventType(), oldValue, discoverResponse,
-                discoverResponse1 -> {
-                    List<ServiceProto.Service> tmpServices = discoverResponse1.getServicesList();
-                    List<String> revisions = new ArrayList<>();
-                    if (CollectionUtils.isNotEmpty(tmpServices)) {
-                        tmpServices.forEach(service -> revisions.add(service.getRevision().getValue()));
-                    }
-                    Collections.sort(revisions);
-                    StringBuilder revisionAppender = new StringBuilder();
-                    revisions.forEach(revisionAppender::append);
-                    return Sha2Crypt.sha256Crypt(revisionAppender.toString().getBytes());
-                });
+    protected String getRevision(DiscoverResponse discoverResponse) {
+        return "";
     }
 
     @Override
