@@ -37,34 +37,6 @@
             <artifactId>polaris-config-default</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!--pb相关依赖-->
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty-shaded</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-context</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-
-        <!--        <dependency>-->
-        <!--            <groupId>com.google.guava</groupId>-->
-        <!--            <artifactId>guava</artifactId>-->
-        <!--            <version>${guava.version}</version>-->
-        <!--        </dependency>-->
-
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
