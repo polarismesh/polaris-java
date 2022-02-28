@@ -21,10 +21,12 @@ import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
 import java.io.Closeable;
 
 /**
@@ -105,6 +107,15 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @throws PolarisException 错误码及错误信息
      */
     ServiceRuleResponse getServiceRule(GetServiceRuleRequest req) throws PolarisException;
+
+    /**
+     * 获取服务列表
+     *
+     * @param req 请求参数
+     * @return 服务列表
+     * @throws PolarisException 错误码及错误信息
+     */
+    ServicesResponse getServices(GetServicesRequest req) throws  PolarisException;
 
     /**
      * 清理并释放资源

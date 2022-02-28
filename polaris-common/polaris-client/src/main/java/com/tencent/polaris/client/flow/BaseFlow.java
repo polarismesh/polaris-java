@@ -42,6 +42,7 @@ import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -263,6 +264,15 @@ public class BaseFlow {
             ServiceInstances instances = localRegistry.getInstances(filter);
             if (instances.isInitialized()) {
                 resourcesResponse.addServiceInstances(svcEventKey, instances);
+                return false;
+            } else {
+                return true;
+            }
+        }
+        if (svcEventKey.getEventType() == EventType.SERVICE) {
+            Services services = localRegistry.getServices(filter);
+            if (services.isInitialized()) {
+                resourcesResponse.addServices(svcEventKey, services);
                 return false;
             } else {
                 return true;

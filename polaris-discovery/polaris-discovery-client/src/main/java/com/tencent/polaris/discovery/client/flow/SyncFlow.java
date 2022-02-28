@@ -24,6 +24,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
@@ -120,5 +121,17 @@ public class SyncFlow {
         if (null != request.getSrcRuleEventKey()) {
             request.getRouteInfo().setSourceRouteRule(resourcesResponse.getServiceRule(request.getSrcRuleEventKey()));
         }
+    }
+
+    /**
+     * 批量获取服务信息
+     *
+     * @param request 请求对象
+     * @return 规则数据
+     * @throws PolarisException 异常
+     */
+    public ServicesResponse commonSyncGetServices(CommonServicesRequest request) throws PolarisException {
+        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, request, request);
+        return new ServicesResponse(resourcesResponse.getServices(request.getSvcEventKey()));
     }
 }

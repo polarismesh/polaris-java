@@ -93,7 +93,7 @@ public class ExampleUtils {
      * @return 配置对象
      * @throws ParseException 解析异常
      */
-    public static InitResult initConsumerConfiguration(String[] args) throws ParseException {
+    public static InitResult initConsumerConfiguration(String[] args, boolean ignoreServiceCheck) throws ParseException {
         CommandLineParser parser = new DefaultParser();
         Options options = new Options();
         options.addOption("namespace", "service_namespace", true, "namespace for service");
@@ -104,9 +104,11 @@ public class ExampleUtils {
         String namespace = commandLine.getOptionValue("namespace");
         String service = commandLine.getOptionValue("service");
         String config = commandLine.getOptionValue("config");
-        if (StringUtils.isBlank(namespace) || StringUtils.isBlank(service)) {
-            System.out.println("namespace or service is required");
-            System.exit(1);
+        if (StringUtils.isBlank(namespace)) {
+            if (!ignoreServiceCheck && StringUtils.isBlank(service)) {
+                System.out.println("namespace or service is required");
+                System.exit(1);
+            }
         }
         return new InitResult(namespace, service, config);
     }
