@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import org.apache.commons.codec.digest.Sha2Crypt;
 
 public class ServicesByProto implements Services, RegistryCacheValue {
 
@@ -43,8 +42,6 @@ public class ServicesByProto implements Services, RegistryCacheValue {
 
     private final int hashCode;
 
-    private String revision;
-
     public ServicesByProto() {
         this.services = Collections.emptyList();
         this.initialized = false;
@@ -54,7 +51,6 @@ public class ServicesByProto implements Services, RegistryCacheValue {
 
     public ServicesByProto(ResponseProto.DiscoverResponse response, boolean loadFromFile) {
         List<ServiceProto.Service> tmpServices = response.getServicesList();
-        List<String> revisions = new ArrayList<>();
 
         this.services = new ArrayList<>();
         this.svcKey = new ServiceKey("", "");
@@ -69,14 +65,8 @@ public class ServicesByProto implements Services, RegistryCacheValue {
                         .metadata(service.getMetadataMap())
                         .revision(service.getRevision().getValue())
                         .build());
-                revisions.add(service.getRevision().getValue());
             });
         }
-
-        Collections.sort(revisions);
-        StringBuilder revisionAppender = new StringBuilder();
-        revisions.forEach(revisionAppender::append);
-        this.revision = Sha2Crypt.sha256Crypt(revisionAppender.toString().getBytes());
 
         this.hashCode = Objects.hash(response.getServicesList());
         this.initialized = true;
@@ -100,7 +90,7 @@ public class ServicesByProto implements Services, RegistryCacheValue {
 
     @Override
     public String getRevision() {
-        return revision;
+        return "";
     }
 
     public ServiceKey getSvcKey() {
