@@ -457,9 +457,8 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             case destRuleSucc:
                 return new RouteResult(destFilteredInstances, RouteResult.State.Next);
             default:
-                // 如果规则匹配失败, 返回错误
-                LOG.error("route rule not match, rule status: {}", ruleStatus);
-                throw new PolarisException(ErrorCode.ROUTE_RULE_NOT_MATCH, "getFilteredInstances route rule not match");
+                // 如果规则匹配失败, 就全放通路由
+                return new RouteResult(instances.getInstances(), RouteResult.State.Next);
         }
     }
 

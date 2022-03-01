@@ -190,6 +190,7 @@ public class APIFacade {
         if (MapUtils.isNotEmpty(srcLabels)) {
             ServiceInfo serviceInfo = new ServiceInfo();
             serviceInfo.setMetadata(srcLabels);
+            getInstancesRequest.setServiceInfo(serviceInfo);
         }
         if (MapUtils.isNotEmpty(dstLabels)) {
             getInstancesRequest.setMetadata(dstLabels);
