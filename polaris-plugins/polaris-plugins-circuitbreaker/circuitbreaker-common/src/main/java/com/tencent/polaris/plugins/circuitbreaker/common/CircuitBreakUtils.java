@@ -223,7 +223,8 @@ public class CircuitBreakUtils {
         svcEventKeys.add(dstSvcEventKey);
         ServiceEventKey srcSvcEventKey = null;
         Service callerService = ruleIdentifier.getCallerService();
-        if (null != callerService) {
+        if (null != callerService && StringUtils.isNotBlank(callerService.getNamespace()) && StringUtils
+                .isNotBlank(callerService.getService())) {
             srcSvcEventKey = new ServiceEventKey(
                     new ServiceKey(callerService.getNamespace(), callerService.getService()),
                     EventType.CIRCUIT_BREAKING);

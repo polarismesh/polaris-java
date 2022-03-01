@@ -462,7 +462,6 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         }
     }
 
-
     private List<Instance> getHealthyInstances(List<Instance> instances) {
         List<Instance> healthyInstances = new ArrayList<>();
         for (Instance instance : instances) {
