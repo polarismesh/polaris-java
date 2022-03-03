@@ -431,8 +431,8 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         // 根据匹配过程修改状态, 默认无路由策略状态
         RuleStatus ruleStatus;
         // 优先匹配inbound规则, 成功则不需要继续匹配outbound规则
-        List<Instance> destFilteredInstances = new ArrayList<>();
-        List<Instance> sourceFilteredInstances = new ArrayList<>();
+        List<Instance> destFilteredInstances = null;
+        List<Instance> sourceFilteredInstances = null;
         if (routeInfo.getDestRouteRule() != null) {
             destFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
                     RuleMatchType.destRouteRuleMatch);
@@ -457,8 +457,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             case destRuleSucc:
                 return new RouteResult(destFilteredInstances, RouteResult.State.Next);
             default:
-                // 如果规则匹配失败, 就全放通路由
-                return new RouteResult(instances.getInstances(), RouteResult.State.Next);
+                LOG.error("route rule not match, rule status: {}, not matched source {}", ruleStatus,
+                        routeInfo.getSourceService());
+                return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
         }
     }
 
@@ -519,6 +520,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
+        if (routeInfo.getSourceService() == null) {
+            return false;
+        }
         List<RoutingProto.Route> dstRoutes = getRoutesFromRule(routeInfo, RuleMatchType.destRouteRuleMatch);
         List<RoutingProto.Route> srcRoutes = getRoutesFromRule(routeInfo, RuleMatchType.sourceRouteRuleMatch);
         return !(CollectionUtils.isEmpty(dstRoutes) && CollectionUtils.isEmpty(srcRoutes));
