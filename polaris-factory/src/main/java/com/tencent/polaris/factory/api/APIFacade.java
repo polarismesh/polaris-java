@@ -72,7 +72,7 @@ public class APIFacade {
             }
             ByteArrayInputStream bis = new ByteArrayInputStream(configStr.getBytes());
             Configuration configuration = ConfigAPIFactory.loadConfig(bis);
-            SDKContext sdkContext = SDKContext.initContextByConfig(configuration);
+            sdkContext = SDKContext.initContextByConfig(configuration);
             inited.set(true);
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
             providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
