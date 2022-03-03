@@ -91,7 +91,7 @@ public class APIFacade {
     }
 
     public static boolean register(String namespace, String service, String host, int port, String protocol,
-            String version, Map<String, String> metadata, int ttl, String token) {
+            String version, int weight, Map<String, String> metadata, int ttl, String token) {
         if (!inited.get()) {
             LOGGER.info("polaris not inited, register fail");
             return false;
@@ -104,6 +104,7 @@ public class APIFacade {
         instanceRegisterRequest.setProtocol(protocol);
         instanceRegisterRequest.setVersion(version);
         instanceRegisterRequest.setTtl(ttl);
+        instanceRegisterRequest.setWeight(weight);
         instanceRegisterRequest.setMetadata(metadata);
         instanceRegisterRequest.setToken(token);
         InstanceRegisterResponse instanceRegisterResponse = providerAPI.register(instanceRegisterRequest);
@@ -212,6 +213,10 @@ public class APIFacade {
 
         public static String getProtocol(Object instance) {
             return ((Instance) instance).getProtocol();
+        }
+
+        public static int getWeight(Object instance) {
+            return ((Instance) instance).getWeight();
         }
 
         public static Map<String, String> getMetadata(Object instance) {
