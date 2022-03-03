@@ -160,8 +160,8 @@ public class APIFacade {
         return quota.getCode() == QuotaResultCode.QuotaResultOk;
     }
 
-    public static boolean updateServiceCallResult(String namespace, String service, String host, int port, long delay,
-            boolean success, int code) {
+    public static boolean updateServiceCallResult(String namespace, String service, String method, String host,
+            int port, long delay, boolean success, int code) {
         if (!inited.get()) {
             LOGGER.info("polaris not inited, updateServiceCallResult fail");
             return false;
@@ -169,6 +169,7 @@ public class APIFacade {
         ServiceCallResult serviceCallResult = new ServiceCallResult();
         serviceCallResult.setNamespace(namespace);
         serviceCallResult.setService(service);
+        serviceCallResult.setMethod(method);
         serviceCallResult.setHost(host);
         serviceCallResult.setPort(port);
         serviceCallResult.setDelay(delay);
