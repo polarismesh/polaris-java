@@ -160,7 +160,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         if (MapUtils.isEmpty(ruleMeta)) {
             return true;
         }
-
+        if (ruleMeta.containsKey(RuleUtils.MATCH_ALL)) {
+            return true;
+        }
         // 如果规则metadata不为空, 待匹配规则为空, 直接返回失败
         if (MapUtils.isEmpty(destMeta)) {
             return false;
