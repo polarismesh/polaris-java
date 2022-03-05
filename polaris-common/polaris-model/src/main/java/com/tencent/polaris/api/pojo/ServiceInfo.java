@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import java.util.Comparator;
 import java.util.Map;
 
 /**
@@ -25,13 +26,15 @@ import java.util.Map;
  * @author andrewshan
  * @date 2019/9/23
  */
-public class ServiceInfo implements ServiceMetadata {
+public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
     private String namespace;
 
     private String service;
 
     private Map<String, String> metadata;
+
+    private String revision;
 
     @Override
     public String getNamespace() {
@@ -51,6 +54,14 @@ public class ServiceInfo implements ServiceMetadata {
         this.service = service;
     }
 
+    public String getRevision() {
+        return revision;
+    }
+
+    public void setRevision(String revision) {
+        this.revision = revision;
+    }
+
     @Override
     public Map<String, String> getMetadata() {
         return metadata;
@@ -68,5 +79,56 @@ public class ServiceInfo implements ServiceMetadata {
                 ", service='" + service + '\'' +
                 ", metadata=" + metadata +
                 '}';
+    }
+
+    public static ServiceInfoBuilder builder() {
+        return new ServiceInfoBuilder();
+    }
+
+    @Override
+    public int compareTo(ServiceInfo o) {
+        String key1 = namespace + "##" + service;
+        String key2 = o.namespace + "##" + o.service;
+        return key1.compareTo(key2);
+    }
+
+    public static final class ServiceInfoBuilder {
+
+        private String namespace;
+        private String service;
+        private Map<String, String> metadata;
+        private String revision;
+
+        private ServiceInfoBuilder() {
+        }
+
+        public ServiceInfoBuilder namespace(String namespace) {
+            this.namespace = namespace;
+            return this;
+        }
+
+        public ServiceInfoBuilder service(String service) {
+            this.service = service;
+            return this;
+        }
+
+        public ServiceInfoBuilder metadata(Map<String, String> metadata) {
+            this.metadata = metadata;
+            return this;
+        }
+
+        public ServiceInfoBuilder revision(String revision) {
+            this.revision = revision;
+            return this;
+        }
+
+        public ServiceInfo build() {
+            ServiceInfo serviceInfo = new ServiceInfo();
+            serviceInfo.setNamespace(namespace);
+            serviceInfo.setService(service);
+            serviceInfo.setMetadata(metadata);
+            serviceInfo.setRevision(revision);
+            return serviceInfo;
+        }
     }
 }

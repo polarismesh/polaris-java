@@ -15,29 +15,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.stat.prometheus.handler;
+package com.tencent.polaris.api.rpc;
 
-import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
-import com.tencent.polaris.api.config.verify.Verifier;
+/**
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ */
+public class WatchServiceResponse extends BaseEntity {
 
-public class PrometheusPushHandlerConfigProvider implements PluginConfigProvider {
-    /**
-     * 插件名
-     *
-     * @return name
-     */
-    @Override
-    public String getName() {
-        return PrometheusPushHandlerConfig.PROMETHEUS_PUSH_CONFIG_NAME;
+    private final InstancesResponse response;
+
+    private final boolean result;
+
+    public WatchServiceResponse(InstancesResponse response, boolean result) {
+        this.response = response;
+        this.result = result;
     }
 
-    /**
-     * 获取插件配置类型
-     *
-     * @return config clazz
-     */
-    @Override
-    public Class<? extends Verifier> getPluginConfigClazz() {
-        return PrometheusPushHandlerConfig.class;
+    public InstancesResponse getResponse() {
+        return response;
+    }
+
+    public boolean isResult() {
+        return result;
     }
 }

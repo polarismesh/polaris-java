@@ -32,6 +32,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.client.pojo.ServicesByProto;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -49,7 +50,8 @@ import org.slf4j.LoggerFactory;
  */
 public class CacheObject implements EventHandler {
 
-    public static final ServiceInstancesByProto EMPTY_SERVICES = new ServiceInstancesByProto();
+    public static final ServicesByProto EMPTY_SERVICE = new ServicesByProto();
+    public static final ServiceInstancesByProto EMPTY_INSTANCES = new ServiceInstancesByProto();
     public static final ServiceRuleByProto EMPTY_SERVICE_RULE = new ServiceRuleByProto();
 
     private static final Logger LOG = LoggerFactory.getLogger(CacheObject.class);

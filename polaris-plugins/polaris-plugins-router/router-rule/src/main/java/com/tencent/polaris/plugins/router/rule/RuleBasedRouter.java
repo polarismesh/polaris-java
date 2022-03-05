@@ -37,7 +37,6 @@ import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -161,7 +160,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         if (MapUtils.isEmpty(ruleMeta)) {
             return true;
         }
-
+        if (ruleMeta.containsKey(RuleUtils.MATCH_ALL)) {
+            return true;
+        }
         // 如果规则metadata不为空, 待匹配规则为空, 直接返回失败
         if (MapUtils.isEmpty(destMeta)) {
             return false;
@@ -391,7 +392,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             weightedSubset.setInstances(filteredInstances);
             weightedSubset.setWeight(weight);
 
-            prioritySubsets.setSubsets(Arrays.asList(weightedSubset));
+            prioritySubsets.setSubsets(new ArrayList<>(Collections.singletonList(weightedSubset)));
             prioritySubsets.setTotalWeight(weight);
 
             subsetsMap.put(priority, prioritySubsets);
@@ -432,8 +433,8 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         // 根据匹配过程修改状态, 默认无路由策略状态
         RuleStatus ruleStatus;
         // 优先匹配inbound规则, 成功则不需要继续匹配outbound规则
-        List<Instance> destFilteredInstances = new ArrayList<>();
-        List<Instance> sourceFilteredInstances = new ArrayList<>();
+        List<Instance> destFilteredInstances = null;
+        List<Instance> sourceFilteredInstances = null;
         if (routeInfo.getDestRouteRule() != null) {
             destFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
                     RuleMatchType.destRouteRuleMatch);
@@ -458,12 +459,11 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             case destRuleSucc:
                 return new RouteResult(destFilteredInstances, RouteResult.State.Next);
             default:
-                // 如果规则匹配失败, 返回错误
-                LOG.error("route rule not match, rule status: {}", ruleStatus);
-                throw new PolarisException(ErrorCode.ROUTE_RULE_NOT_MATCH, "getFilteredInstances route rule not match");
+                LOG.error("route rule not match, rule status: {}, not matched source {}", ruleStatus,
+                        routeInfo.getSourceService());
+                return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
         }
     }
-
 
     private List<Instance> getHealthyInstances(List<Instance> instances) {
         List<Instance> healthyInstances = new ArrayList<>();
@@ -522,6 +522,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
+        if (routeInfo.getSourceService() == null) {
+            return false;
+        }
         List<RoutingProto.Route> dstRoutes = getRoutesFromRule(routeInfo, RuleMatchType.destRouteRuleMatch);
         List<RoutingProto.Route> srcRoutes = getRoutesFromRule(routeInfo, RuleMatchType.sourceRouteRuleMatch);
         return !(CollectionUtils.isEmpty(dstRoutes) && CollectionUtils.isEmpty(srcRoutes));

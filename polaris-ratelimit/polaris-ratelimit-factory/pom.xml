@@ -75,6 +75,12 @@
             <artifactId>ratelimiter-reject</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--依赖监控上报插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>stat-prometheus</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--测试依赖插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

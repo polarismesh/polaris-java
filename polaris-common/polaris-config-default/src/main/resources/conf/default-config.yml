@@ -62,13 +62,11 @@ global:
     #描述: 是否启用上报
     enable: false
     plugin:
-      pushgatewayConfig:
-        #描述: 上报给prometheus pushgateway的任务名称
-        jobName: "defaultJob"
-        #描述: pushgateway的服务名称
-        serviceName: "polaris.monitor"
+      prometheus:
+        #描述: 上报给prometheus pushgateway的地址
+        pushgatewayAddress: 127.0.0.1:9090
         #描述: 上报给pushgateway的时间间隔
-        pushInterval: 10
+        pushInterval: 10s
 #描述: 主调端配置
 consumer:
   #描述: 本地服务缓存相关配置

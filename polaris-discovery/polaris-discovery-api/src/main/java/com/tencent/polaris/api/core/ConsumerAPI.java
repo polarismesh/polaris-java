@@ -18,14 +18,8 @@ package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
-import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.InstancesFuture;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
-import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.*;
+
 import java.io.Closeable;
 
 /**
@@ -108,16 +102,30 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
     ServiceRuleResponse getServiceRule(GetServiceRuleRequest req) throws PolarisException;
 
     /**
+     * 获取服务列表
      *
-     * @return
+     * @param req 请求参数
+     * @return 服务列表
+     * @throws PolarisException 错误码及错误信息
      */
-    boolean addListener(ServiceListener listener);
+    ServicesResponse getServices(GetServicesRequest req) throws  PolarisException;
 
     /**
+     * 监听服务下实例变化
      *
-     * @return
+     * @param request 监听请求
+     * @return 发起监听时查询的服务下的实例列表
+     * @throws PolarisException
      */
-    boolean removeListener(ServiceListener listener);
+    WatchServiceResponse watchService(WatchServiceRequest request) throws PolarisException;
+
+    /**
+     * 取消服务监听
+     *
+     * @param request 取消监听请求
+     * @return 取消成功标识
+     */
+    boolean unWatchService(WatchServiceRequest request);
 
     /**
      * 清理并释放资源

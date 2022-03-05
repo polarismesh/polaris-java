@@ -26,6 +26,7 @@ public class ServiceEventKey implements Service {
         ROUTING,
         CIRCUIT_BREAKING,
         RATE_LIMITING,
+        SERVICE,
     }
 
     private final ServiceKey serviceKey;
@@ -69,5 +70,31 @@ public class ServiceEventKey implements Service {
                 "serviceKey=" + serviceKey +
                 ", eventType=" + eventType +
                 '}';
+    }
+
+    public static ServiceEventKeyBuilder builder() {
+        return new ServiceEventKeyBuilder();
+    }
+
+    public static final class ServiceEventKeyBuilder {
+        private ServiceKey serviceKey;
+        private EventType eventType;
+
+        private ServiceEventKeyBuilder() {
+        }
+
+        public ServiceEventKeyBuilder serviceKey(ServiceKey serviceKey) {
+            this.serviceKey = serviceKey;
+            return this;
+        }
+
+        public ServiceEventKeyBuilder eventType(EventType eventType) {
+            this.eventType = eventType;
+            return this;
+        }
+
+        public ServiceEventKey build() {
+            return new ServiceEventKey(serviceKey, eventType);
+        }
     }
 }

@@ -17,37 +17,65 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
+import java.util.ArrayList;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ServiceDiscoveryProvider implements PushAddressProvider {
+public class ServiceDiscoveryProvider {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceDiscoveryProvider.class);
+
     private final Extensions extensions;
-    private final ServerServiceInfo serverServiceInfo;
 
-    public ServiceDiscoveryProvider(Extensions extensions, ServerServiceInfo serverServiceInfo) {
+    private final ServiceKey pushService;
+
+    private final List<String> coreRouters = new ArrayList<>();
+
+    private final String pushAddress;
+
+    public ServiceDiscoveryProvider(Extensions extensions, PrometheusPushHandlerConfig pushHandlerConfig) {
         this.extensions = extensions;
-        this.serverServiceInfo = serverServiceInfo;
+        if (!StringUtils.isBlank(pushHandlerConfig.getPushgatewayService()) && !StringUtils
+                .isBlank(pushHandlerConfig.getPushgatewayNamespace())) {
+            pushService = new ServiceKey(pushHandlerConfig.getPushgatewayNamespace(),
+                    pushHandlerConfig.getPushgatewayService());
+            pushAddress = null;
+        } else {
+            pushService = null;
+            pushAddress = pushHandlerConfig.getPushgatewayAddress();
+        }
+        coreRouters.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
     }
 
-    @Override
     public String getAddress() {
-        if (null == extensions || null == serverServiceInfo) {
+        if (null == pushService && StringUtils.isBlank(pushAddress)) {
             return null;
         }
-
-        Instance instance = BaseFlow.commonGetOneInstance(extensions,
-                serverServiceInfo.getServiceKey(),
-                serverServiceInfo.getRouters(),
-                serverServiceInfo.getLbPolicy(),
-                extensions.getConfiguration().getGlobal().getServerConnector().getProtocol(),
-                extensions.getValueContext().getClientId());
-
+        if (!StringUtils.isBlank(pushAddress)) {
+            return pushAddress;
+        }
+        Instance instance = null;
+        try {
+            instance = BaseFlow.commonGetOneInstance(extensions,
+                    pushService,
+                    coreRouters,
+                    LoadBalanceConfig.LOAD_BALANCE_WEIGHTED_RANDOM,
+                    extensions.getConfiguration().getGlobal().getServerConnector().getProtocol(),
+                    extensions.getValueContext().getClientId());
+        } catch (Exception e) {
+            LOG.error("fail to discover service " + pushService, e);
+        }
         if (null != instance) {
             return instance.getHost() + ":" + instance.getPort();
-        } else {
-            return null;
         }
+        return null;
     }
 }

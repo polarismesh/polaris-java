@@ -11,6 +11,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>router-example</artifactId>
+    <packaging>pom</packaging>
     <name>Polaris Router Example</name>
     <description>Polaris Router Example JAR</description>
 

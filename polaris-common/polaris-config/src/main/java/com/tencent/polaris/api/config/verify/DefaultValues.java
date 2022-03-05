@@ -239,9 +239,7 @@ public interface DefaultValues {
     String DEFAULT_SYSTEM_NAMESPACE = "Polaris";
     String DEFAULT_SYSTEM_REFRESH_INTERVAL = "10m";
 
-    String DEFAULT_DISCOVER_SERVICE = "polaris.discover";
-    String DEFAULT_HEALTH_CHECK_SERVICE = "polaris.healthcheck";
-    String DEFAULT_MONITOR_SERVICE = "polaris.monitor";
+    String DEFAULT_BUILTIN_DISCOVER = "polaris.builtin";
 
     /**
      * 默认连接器协议

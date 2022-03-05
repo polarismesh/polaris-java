@@ -24,11 +24,13 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.FlowControlParam;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,13 +53,20 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
     //规则中含有正则表达式扩散
     private boolean regexSpread;
 
-    private FlowControlParam flowControlParam;
+    private final FlowControlParam flowControlParam;
 
     public CommonQuotaRequest(QuotaRequest quotaRequest, Configuration configuration) {
         svcEventKey = new ServiceEventKey(new ServiceKey(quotaRequest.getNamespace(), quotaRequest.getService()),
                 EventType.RATE_LIMITING);
-        labels = quotaRequest.getLabels();
+        if (null == quotaRequest.getLabels()) {
+            labels = new HashMap<>();
+        } else {
+            labels = quotaRequest.getLabels();
+        }
         method = quotaRequest.getMethod();
+        if (StringUtils.isNotBlank(method)) {
+            labels.put("method", method);
+        }
         count = quotaRequest.getCount();
         initCriteria = new InitCriteria();
         this.flowControlParam = new DefaultFlowControlParam();
@@ -114,4 +123,5 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
     public int getCount() {
         return count;
     }
+
 }

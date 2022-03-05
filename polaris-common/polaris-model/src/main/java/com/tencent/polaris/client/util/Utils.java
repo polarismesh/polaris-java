@@ -19,12 +19,21 @@ package com.tencent.polaris.client.util;
 
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.utils.StringUtils;
-import java.util.Map;
+
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,5 +98,54 @@ public class Utils {
             }
         }
         return true;
+    }
+
+
+    public static List<Instance> checkAddInstances(ServiceInstancesByProto oldVal, ServiceInstancesByProto newVal) {
+
+        Set<Instance> oldIns = new HashSet<>(oldVal.getInstances());
+        Set<Instance> newIns = new HashSet<>(newVal.getInstances());
+        List<Instance> ret = new LinkedList<>();
+
+        for (Instance instance : newIns) {
+            if (!oldIns.contains(instance)) {
+                ret.add(instance);
+            }
+        }
+
+        return ret;
+    }
+
+    public static List<ServiceChangeEvent.OneInstanceUpdate> checkUpdateInstances(ServiceInstancesByProto oldVal,
+                                                                                  ServiceInstancesByProto newVal) {
+        Map<String, Instance> oldIns = oldVal.getInstances().stream()
+                .collect(Collectors.toMap(Instance::getId, instance -> instance));
+        Map<String, Instance> newIns = newVal.getInstances().stream()
+                .collect(Collectors.toMap(Instance::getId, instance -> instance));
+
+        List<ServiceChangeEvent.OneInstanceUpdate> ret = new LinkedList<>();
+
+        oldIns.forEach((id, instance) -> {
+            Instance ins = newIns.get(id);
+            if (!Objects.equals(ins.getRegion(), instance.getRegion())) {
+                ret.add(new ServiceChangeEvent.OneInstanceUpdate(instance, ins));
+            }
+        });
+
+        return ret;
+    }
+
+    public static List<Instance> checkDeleteInstances(ServiceInstancesByProto oldVal, ServiceInstancesByProto newVal) {
+        Set<Instance> oldIns = new HashSet<>(oldVal.getInstances());
+        Set<Instance> newIns = new HashSet<>(newVal.getInstances());
+        List<Instance> ret = new LinkedList<>();
+
+        for (Instance instance : oldIns) {
+            if (!newIns.contains(instance)) {
+                ret.add(instance);
+            }
+        }
+
+        return ret;
     }
 }

@@ -21,24 +21,11 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
-import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.InstancesFuture;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
-import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.client.api.ServiceCallResultListener;
-import com.tencent.polaris.api.control.Destroyable;
-import com.tencent.polaris.discovery.client.flow.AsyncFlow;
-import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
-import com.tencent.polaris.discovery.client.flow.CommonRuleRequest;
-import com.tencent.polaris.discovery.client.flow.SyncFlow;
+import com.tencent.polaris.discovery.client.flow.*;
 import com.tencent.polaris.discovery.client.util.Validator;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,28 +45,19 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
 
     private final AsyncFlow asyncFlow = new AsyncFlow();
 
-    private List<ServiceCallResultListener> serviceCallResultListeners;
+    private final WatchFlow watchFlow = new WatchFlow();
 
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
         syncFlow.init(context.getExtensions());
         asyncFlow.init(syncFlow);
+        watchFlow.init(context.getExtensions(), syncFlow);
     }
 
     @Override
-    protected void subInit() {
-        serviceCallResultListeners = ServiceCallResultListener.getServiceCallResultListeners(sdkContext);
-        sdkContext.registerDestroyHook(new Destroyable() {
-            @Override
-            protected void doDestroy() {
-                if (null != serviceCallResultListeners) {
-                    for (ServiceCallResultListener listener : serviceCallResultListeners) {
-                        listener.destroy();
-                    }
-                }
-            }
-        });
+    protected void subInit() throws PolarisException {
+
     }
 
     @Override
@@ -134,9 +112,7 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public void updateServiceCallResult(ServiceCallResult req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateServiceCallResult(req);
-        for (ServiceCallResultListener listener : serviceCallResultListeners) {
-            listener.onServiceCallResult(req);
-        }
+        reportInvokeStat(req);
     }
 
     @Override
@@ -148,12 +124,29 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     }
 
     @Override
-    public boolean addListener(ServiceListener listener) {
-        return false;
+    public ServicesResponse getServices(GetServicesRequest request) throws PolarisException {
+        checkAvailable("ConsumerAPI");
+        CommonServicesRequest commonServicesRequest = new CommonServicesRequest(request, config);
+        return syncFlow.commonSyncGetServices(commonServicesRequest);
     }
 
     @Override
-    public boolean removeListener(ServiceListener listener) {
-        return false;
+    public WatchServiceResponse watchService(WatchServiceRequest request) throws PolarisException {
+        checkAvailable("ConsumerAPI");
+        Validator.validateWatchServiceRequest(request);
+        CommonWatchServiceRequest watchServiceRequest = new CommonWatchServiceRequest(request,
+                new CommonInstancesRequest(GetAllInstancesRequest.builder()
+                        .service(request.getService())
+                        .namespace(request.getNamespace())
+                        .build(), config), true);
+        return watchFlow.commonWatchService(watchServiceRequest);
+    }
+
+    @Override
+    public boolean unWatchService(WatchServiceRequest request) {
+        checkAvailable("ConsumerAPI");
+        Validator.validateWatchServiceRequest(request);
+        CommonWatchServiceRequest watchServiceRequest = new CommonWatchServiceRequest(request, false);
+        return watchFlow.commonWatchService(watchServiceRequest).isResult();
     }
 }

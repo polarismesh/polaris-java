@@ -1,1 +1,1 @@
-com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandlerConfigProvider
+com.tencent.polaris.plugins.stat.prometheus.plugin.PrometheusReporter

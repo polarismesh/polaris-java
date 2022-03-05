@@ -345,7 +345,7 @@ public class ConnectionManager extends Destroyable {
                     svcKey = serverServiceInfo.getServiceKey();
                 }
                 ConnID connID = new ConnID(svcKey, clusterType, servAddress.getHost(),
-                        servAddress.getPort());
+                        servAddress.getPort(), protocol);
                 Connection connection = connectTarget(connID);
                 if (null != curConnection) {
                     curConnection.lazyClose();
@@ -397,7 +397,7 @@ public class ConnectionManager extends Destroyable {
                     curConnection.lazyClose();
                 }
                 ConnID connID = new ConnID(serverServiceInfo.getServiceKey(), clusterType, servAddress.getHost(),
-                        servAddress.getPort());
+                        servAddress.getPort(), protocol);
                 Connection connection = connectTarget(connID);
                 curConnectionValue.set(connection);
             }
@@ -424,7 +424,7 @@ public class ConnectionManager extends Destroyable {
                     return;
                 }
                 ConnID connID = new ConnID(serverServiceInfo.getServiceKey(), clusterType, servAddress.getHost(),
-                        servAddress.getPort());
+                        servAddress.getPort(), protocol);
                 Connection connection = connectTarget(connID);
                 curConnection.lazyClose();
                 curConnectionValue.set(connection);

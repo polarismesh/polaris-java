@@ -25,6 +25,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
@@ -107,22 +108,6 @@ public class SyncFlow {
     }
 
     /**
-     *
-     * @return
-     */
-    public boolean addListener(ServiceListener listener) {
-        return true;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public boolean removeListener(ServiceListener listener) {
-        return true;
-    }
-
-    /**
      * 获取服务实例以及路由数据
      *
      * @param request 请求对象
@@ -139,4 +124,15 @@ public class SyncFlow {
         }
     }
 
+    /**
+     * 批量获取服务信息
+     *
+     * @param request 请求对象
+     * @return 规则数据
+     * @throws PolarisException 异常
+     */
+    public ServicesResponse commonSyncGetServices(CommonServicesRequest request) throws PolarisException {
+        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, request, request);
+        return new ServicesResponse(resourcesResponse.getServices(request.getSvcEventKey()));
+    }
 }

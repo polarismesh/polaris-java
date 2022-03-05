@@ -63,7 +63,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>1.2.2-SNAPSHOT</revision>
+        <revision>1.2.4-SNAPSHOT</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -89,15 +89,11 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.shaded.plugin.version>3.2.4</maven.shaded.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
+        <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
     </properties>
 
     <dependencies>
         <!--日志相关依赖-->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
-        </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -172,7 +168,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.1.0</version>
+                <version>${maven.flatten.plugin.version}</version>
                 <configuration>
                     <updatePomFile>true</updatePomFile>
                     <flattenMode>resolveCiFriendliesOnly</flattenMode>
@@ -274,10 +270,11 @@
                             </links>
                             <doclint>none</doclint>
                             <excludePackageNames>
-                                com.tencent.polaris.*.examples,com.tencent.polaris.*.examples.*
+                                com.tencent.polaris.*.example,com.tencent.polaris.*.example.*
                             </excludePackageNames>
-                            <doctitle>Tencent Polaris ${project.version} API</doctitle>
-                            <windowtitle>Tencent Polaris ${project.version} API</windowtitle>
+                            <doctitle>Tencent Polaris Java SDK ${project.version} API</doctitle>
+                            <windowtitle>Tencent Polaris Java SDK ${project.version} API
+                            </windowtitle>
                         </configuration>
                     </plugin>
                 </plugins>

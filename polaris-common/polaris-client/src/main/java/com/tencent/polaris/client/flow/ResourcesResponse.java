@@ -20,6 +20,7 @@ package com.tencent.polaris.client.flow;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.Services;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ResourcesResponse {
 
-    private final Map<ServiceEventKey, ServiceInstances> services = new ConcurrentHashMap<>();
+    private final Map<ServiceEventKey, Services> servicesMap = new ConcurrentHashMap<>();
+
+    private final Map<ServiceEventKey, ServiceInstances> instancesMap = new ConcurrentHashMap<>();
 
     private final Map<ServiceEventKey, ServiceRule> rules = new ConcurrentHashMap<>();
 
@@ -43,7 +46,17 @@ public class ResourcesResponse {
      * @param instances 实例列表
      */
     public void addServiceInstances(ServiceEventKey svcEventKey, ServiceInstances instances) {
-        services.put(svcEventKey, instances);
+        instancesMap.put(svcEventKey, instances);
+    }
+
+    /**
+     * 添加服务应答
+     *
+     * @param svcEventKey 服务标识
+     * @param services 服务列表
+     */
+    public void addServices(ServiceEventKey svcEventKey, Services services) {
+        servicesMap.put(svcEventKey, services);
     }
 
     /**
@@ -53,7 +66,7 @@ public class ResourcesResponse {
      * @return ServiceRuleResponse
      */
     public ServiceInstances getServiceInstances(ServiceEventKey svcEventKey) {
-        return services.get(svcEventKey);
+        return instancesMap.get(svcEventKey);
     }
 
     /**
@@ -62,7 +75,7 @@ public class ResourcesResponse {
      * @return services
      */
     public Map<ServiceEventKey, ServiceInstances> getAllServiceInstances() {
-        return services;
+        return instancesMap;
     }
 
     /**
@@ -92,6 +105,16 @@ public class ResourcesResponse {
      */
     public ServiceRule getServiceRule(ServiceEventKey svcEventKey) {
         return rules.get(svcEventKey);
+    }
+
+    /**
+     * 获取服务列表应答对象
+     *
+     * @param svcEventKey 服务标识
+     * @return Services 服务列表
+     */
+    public Services getServices(ServiceEventKey svcEventKey) {
+        return servicesMap.get(svcEventKey);
     }
 
     /**
