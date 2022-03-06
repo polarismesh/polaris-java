@@ -82,7 +82,8 @@ public class WatchFlow {
     private void initFlow() {
         if (initialize.compareAndSet(false, true)) {
             extensions.getLocalRegistry().registerResourceListener(new InstanceChangeListener());
-            executor = new DispatchExecutor(extensions.getConfiguration().getConsumer().getSubscribe().getThreadPoolSize());
+            executor = new DispatchExecutor(extensions.getConfiguration().getConsumer().getSubscribe()
+                    .getCallbackConcurrency());
         }
     }
 

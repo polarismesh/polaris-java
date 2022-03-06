@@ -30,6 +30,6 @@ public interface SubscribeConfig  extends PluginConfig, Verifier {
      *
      * @return int
      */
-    int getThreadPoolSize();
+    int getCallbackConcurrency();
 
 }

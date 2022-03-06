@@ -28,15 +28,15 @@ import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 public class SubscribeConfigImpl  extends PluginConfigImpl implements SubscribeConfig {
 
     @JsonProperty
-    private int threadPoolSize = 1;
+    private int callbackConcurrency = 1;
 
-    public void setThreadPoolSize(int threadPoolSize) {
-        this.threadPoolSize = threadPoolSize;
+    public void setCallbackConcurrency(int callbackConcurrency) {
+        this.callbackConcurrency = callbackConcurrency;
     }
 
     @Override
     public void verify() {
-        if (threadPoolSize < 1) {
+        if (callbackConcurrency < 1) {
             throw new IllegalArgumentException("threadPoolSize cannot less then 1");
         }
     }
@@ -45,15 +45,15 @@ public class SubscribeConfigImpl  extends PluginConfigImpl implements SubscribeC
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             SubscribeConfigImpl subscribeConfig = (SubscribeConfigImpl) defaultObject;
-            if (threadPoolSize < 1) {
-                setThreadPoolSize(subscribeConfig.getThreadPoolSize());
+            if (callbackConcurrency < 1) {
+                setCallbackConcurrency(subscribeConfig.getCallbackConcurrency());
             }
             setDefaultPluginConfig(subscribeConfig);
         }
     }
 
     @Override
-    public int getThreadPoolSize() {
-        return threadPoolSize;
+    public int getCallbackConcurrency() {
+        return callbackConcurrency;
     }
 }

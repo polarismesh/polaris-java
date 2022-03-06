@@ -16,4 +16,4 @@ consumer:
     #描述:是否启用节点熔断功能
     enable: false
   subscribe:
-    threadPoolSize: 4
+    callbackConcurrency: 4
