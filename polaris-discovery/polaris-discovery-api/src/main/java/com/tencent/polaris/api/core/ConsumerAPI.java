@@ -17,8 +17,16 @@
 package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.listener.ServiceListener;
-import com.tencent.polaris.api.rpc.*;
+import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.GetInstancesRequest;
+import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.GetServicesRequest;
+import com.tencent.polaris.api.rpc.InstancesFuture;
+import com.tencent.polaris.api.rpc.InstancesResponse;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.rpc.ServiceRuleResponse;
+import com.tencent.polaris.api.rpc.ServicesResponse;
 
 import java.io.Closeable;
 
