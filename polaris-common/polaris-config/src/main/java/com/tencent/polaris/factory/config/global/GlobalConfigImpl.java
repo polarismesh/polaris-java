@@ -19,15 +19,17 @@ package com.tencent.polaris.factory.config.global;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
-import com.tencent.polaris.api.config.global.StatReporterConfig;
-import com.tencent.polaris.api.config.global.SystemConfig;
+import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 全局配置对象
  *
- * @author andrewshan
- * @date 2019/8/20
+ * @author andrewshan, Haotian Zhang
  */
 public class GlobalConfigImpl implements GlobalConfig {
 
@@ -39,6 +41,9 @@ public class GlobalConfigImpl implements GlobalConfig {
 
     @JsonProperty
     private ServerConnectorConfigImpl serverConnector;
+
+    @JsonProperty
+    private List<ServerConnectorConfigImpl> serverConnectors;
 
     @JsonProperty
     private StatReporterConfigImpl statReporter;
@@ -58,24 +63,39 @@ public class GlobalConfigImpl implements GlobalConfig {
         return serverConnector;
     }
 
+    public void setServerConnector(ServerConnectorConfigImpl serverConnector) {
+        this.serverConnector = serverConnector;
+    }
+
+    @Override
+    public List<ServerConnectorConfigImpl> getServerConnectors() {
+        return serverConnectors;
+    }
+
     @Override
     public StatReporterConfigImpl getStatReporter() {
         return statReporter;
-    }
-
-    public void setServerConnector(ServerConnectorConfigImpl serverConnector) {
-        this.serverConnector = serverConnector;
     }
 
     @Override
     public void verify() {
         ConfigUtils.validateNull(system, "system");
         ConfigUtils.validateNull(api, "api");
-        ConfigUtils.validateNull(serverConnector, "serverConnector");
+        Map<String, Object> validateMap = new HashMap<>();
+        validateMap.put("serverConnector", serverConnector);
+        validateMap.put("serverConnectors", serverConnectors);
+        ConfigUtils.validateAllNull(validateMap);
         ConfigUtils.validateNull(statReporter, "statReporter");
+
         system.verify();
         api.verify();
-        serverConnector.verify();
+        if (CollectionUtils.isNotEmpty(serverConnectors)) {
+            for (ServerConnectorConfig serverConnectorConfig : serverConnectors) {
+                serverConnectorConfig.verify();
+            }
+        } else {
+            serverConnector.verify();
+        }
         statReporter.verify();
     }
 
@@ -87,7 +107,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (null == api) {
             api = new APIConfigImpl();
         }
-        if (null == serverConnector) {
+        if (CollectionUtils.isEmpty(serverConnectors) && null == serverConnector) {
             serverConnector = new ServerConnectorConfigImpl();
         }
         if (null == statReporter) {
@@ -97,7 +117,13 @@ public class GlobalConfigImpl implements GlobalConfig {
             GlobalConfig globalConfig = (GlobalConfig) defaultObject;
             system.setDefault(globalConfig.getSystem());
             api.setDefault(globalConfig.getAPI());
-            serverConnector.setDefault(globalConfig.getServerConnector());
+            if (CollectionUtils.isNotEmpty(serverConnectors)) {
+                for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
+                    serverConnectorConfig.setDefault(globalConfig.getServerConnector());
+                }
+            } else {
+                serverConnector.setDefault(globalConfig.getServerConnector());
+            }
             statReporter.setDefault(globalConfig.getStatReporter());
         }
     }
@@ -107,8 +133,10 @@ public class GlobalConfigImpl implements GlobalConfig {
     public String toString() {
         return "GlobalConfigImpl{" +
                 "system=" + system +
-                "api=" + api +
+                ", api=" + api +
                 ", serverConnector=" + serverConnector +
+                ", serverConnectors=" + serverConnectors +
+                ", statReporter=" + statReporter +
                 '}';
     }
 }

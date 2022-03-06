@@ -18,12 +18,13 @@
 package com.tencent.polaris.api.config.global;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
+import java.util.List;
 
 /**
  * 全局配置对象
  *
- * @author andrewshan
- * @date 2019/8/20
+ * @author andrewshan, Haotian Zhang
  */
 public interface GlobalConfig extends Verifier {
 
@@ -47,6 +48,14 @@ public interface GlobalConfig extends Verifier {
      * @return ServerConnectorConfig
      */
     ServerConnectorConfig getServerConnector();
+
+    /**
+     * Configuration of prefix of "services.global.serverConnectors". This has higher priority over
+     * ${@link GlobalConfig#getServerConnector()}.
+     *
+     * @return List of ServerConnectorConfig
+     */
+    List<ServerConnectorConfigImpl> getServerConnectors();
 
     /**
      * services.global.statReporter前缀开头的所有配置项

@@ -21,6 +21,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tencent.polaris.api.utils.StringUtils;
 import java.util.Map;
 
+/**
+ * Toolkits for configuration.
+ *
+ * @author Haotian Zhang
+ */
 public class ConfigUtils {
 
     public static Map<?, ?> objectToMap(Object obj) {
@@ -59,6 +64,29 @@ public class ConfigUtils {
     public static void validateNull(Object value, String name) {
         if (null == value) {
             throw new IllegalArgumentException(name + " must not be empty");
+        }
+    }
+
+    /**
+     * Validate if all Object being null.
+     *
+     * @param valueMap
+     */
+    public static void validateAllNull(Map<String, Object> valueMap) {
+        StringBuilder nameListStr = null;
+        int count = 0;
+        for (String key : valueMap.keySet()) {
+            if (null == valueMap.get(key)) {
+                if (null == nameListStr) {
+                    nameListStr = new StringBuilder(key);
+                } else {
+                    nameListStr.append(", ").append(key);
+                }
+                count++;
+            }
+        }
+        if (count == valueMap.keySet().size()) {
+            throw new IllegalArgumentException(nameListStr + " must not be all null.");
         }
     }
 

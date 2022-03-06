@@ -24,8 +24,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 用于主流程传递kv数据的上下文对象，线程安全
  *
- * @author andrewshan
- * @date 2019/9/18
+ * @author andrewshan, Haotian Zhang
  */
 public class ValueContext {
 
@@ -37,11 +36,11 @@ public class ValueContext {
 
     private static final String KEY_ENGINE = "key_engine";
 
+    private static final String KEY_SERVER_CONNECTOR_PROTOCOL = "key_serverConnectorProtocol";
+
     private final Object lock = new Object();
-
-    private volatile boolean locationReady;
-
     private final Map<Object, Object> coreMap;
+    private volatile boolean locationReady;
 
     public ValueContext() {
         coreMap = new ConcurrentHashMap<>();
@@ -90,6 +89,14 @@ public class ValueContext {
 
     public void setClientId(String clientId) {
         setValue(KEY_CLIENT_ID, clientId);
+    }
+
+    public String getServerConnectorProtocol() {
+        return getValue(KEY_SERVER_CONNECTOR_PROTOCOL);
+    }
+
+    public void setServerConnectorProtocol(String protocol) {
+        setValue(KEY_SERVER_CONNECTOR_PROTOCOL, protocol);
     }
 
     public void notifyAllForLocationReady() {

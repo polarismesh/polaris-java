@@ -20,8 +20,7 @@ package com.tencent.polaris.api.config.plugin;
 /**
  * 默认插件名
  *
- * @author andrewshann
- * @date 2019/8/27
+ * @author andrewshann, Haotian Zhang
  */
 public interface DefaultPlugins {
 
@@ -29,6 +28,16 @@ public interface DefaultPlugins {
      * GRPC连接器插件名
      */
     String SERVER_CONNECTOR_GRPC = "grpc";
+
+    /**
+     * Name of Consul server connector.
+     */
+    String SERVER_CONNECTOR_CONSUL = "consul";
+
+    /**
+     * Name of composite server connector.
+     */
+    String SERVER_CONNECTOR_COMPOSITE = "composite";
 
     /**
      * 基于内存的本地缓存插件名

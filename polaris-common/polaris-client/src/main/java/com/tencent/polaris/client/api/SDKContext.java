@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterConfig;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.SystemConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -33,6 +34,7 @@ import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.plugin.impl.PluginManager;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
@@ -56,41 +58,29 @@ import org.slf4j.LoggerFactory;
 /**
  * SDK初始化相关的上下文信息
  *
- * @author andrewshan
- * @date 2019/8/21
+ * @author andrewshan, Haotian Zhang
  */
 public class SDKContext extends Destroyable implements InitContext, AutoCloseable, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SDKContext.class);
-
+    private static final String DEFAULT_ADDRESS = "127.0.0.1";
     /**
      * 配置对象
      */
     private final Configuration configuration;
-
     /**
      * 初始化标识
      */
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-
     /**
      * 插件管理器
      */
     private final Manager plugins;
-
     private final ValueContext valueContext;
-
     private final Extensions extensions = new Extensions();
-
     private final Object lock = new Object();
-
     private final List<Destroyable> destroyHooks = new ArrayList<>();
-
     private final Collection<ServerServiceInfo> serverServices;
-
-    public ValueContext getValueContext() {
-        return valueContext;
-    }
 
     /**
      * 构造器
@@ -120,6 +110,150 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             services.add(new ServerServiceInfo(ClusterType.MONITOR_CLUSTER, monitorCluster));
         }
         this.serverServices = Collections.unmodifiableCollection(services);
+    }
+
+    /**
+     * 通过默认配置初始化SDKContext
+     *
+     * @return SDKContext对象
+     * @throws PolarisException 初始化异常
+     */
+    public static SDKContext initContext() throws PolarisException {
+        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        return initContextByConfig(configuration);
+    }
+
+    /**
+     * 通过配置对象初始化SDK上下文
+     *
+     * @param config 配置对象
+     * @return SDK上下文
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static SDKContext initContextByConfig(Configuration config) throws PolarisException {
+        try {
+            ((ConfigurationImpl) config).setDefault();
+            config.verify();
+        } catch (IllegalArgumentException e) {
+            throw new PolarisException(ErrorCode.INVALID_CONFIG, "fail to verify configuration", e);
+        }
+        ServiceLoader<TypeProvider> providers = ServiceLoader.load(TypeProvider.class);
+        List<PluginType> types = new ArrayList<>();
+        for (TypeProvider provider : providers) {
+            types.addAll(provider.getTypes());
+        }
+        PluginManager manager = new PluginManager(types);
+        ValueContext valueContext = new ValueContext();
+        valueContext.setHost(parseHost(config));
+        valueContext.setServerConnectorProtocol(parseServerConnectorProtocol(config));
+        SDKContext initContext = new SDKContext(config, manager, valueContext);
+
+        try {
+            manager.initPlugins(initContext);
+        } catch (Throwable e) {
+            manager.destroyPlugins();
+            if (e instanceof PolarisException) {
+                throw e;
+            }
+            throw new PolarisException(ErrorCode.PLUGIN_ERROR, "plugin error", e);
+        }
+        return initContext;
+    }
+
+    public static String parseHost(Configuration configuration) {
+        String hostAddress = configuration.getGlobal().getAPI().getBindIP();
+        if (!StringUtils.isBlank(hostAddress)) {
+            return hostAddress;
+        }
+        String nic = configuration.getGlobal().getAPI().getBindIf();
+        if (StringUtils.isNotBlank(nic)) {
+            return resolveAddress(nic);
+        }
+        try {
+            return getHostByDial(configuration);
+        } catch (IOException e) {
+            LOG.error("[ReportClient]get address by dial failed", e);
+        }
+        return DEFAULT_ADDRESS;
+    }
+
+    /**
+     * Get protocol of server connector, such as:
+     * <ul>
+     * <li>{@link DefaultPlugins#SERVER_CONNECTOR_COMPOSITE}</li>
+     * <li>{@link DefaultPlugins#SERVER_CONNECTOR_GRPC}</li>
+     * <li>{@link DefaultPlugins#SERVER_CONNECTOR_CONSUL}</li>
+     * </ul>
+     *
+     * @param configuration
+     * @return
+     */
+    public static String parseServerConnectorProtocol(Configuration configuration) {
+        String protocol;
+        if (CollectionUtils.isNotEmpty(configuration.getGlobal().getServerConnectors())) {
+            // Composite server connector first
+            protocol = DefaultPlugins.SERVER_CONNECTOR_COMPOSITE;
+        } else {
+            // If composite server connector does not exist.
+            protocol = configuration.getGlobal().getServerConnector().getProtocol();
+        }
+        return protocol;
+    }
+
+    private static String getHostByDial(Configuration configuration) throws IOException {
+        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        String[] tokens = serverAddress.split(":");
+        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+            return socket.getLocalAddress().getHostAddress();
+        }
+    }
+
+    private static NetworkInterface resolveNetworkInterface(String nic) {
+        NetworkInterface ni = null;
+        try {
+            ni = NetworkInterface.getByName(nic);
+        } catch (SocketException e) {
+            LOG.error("[ReportClient]get nic failed, nic:{}", nic, e);
+        }
+        if (null != ni) {
+            return ni;
+        }
+        //获取第一张网卡
+        try {
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+                if (!networkInterface.isLoopback() && networkInterface.getInetAddresses().hasMoreElements()) {
+                    return networkInterface;
+                }
+            }
+        } catch (SocketException e) {
+            LOG.error("[ReportClient]get all network interfaces failed", e);
+        }
+        return null;
+    }
+
+    /**
+     * 解析网卡IP
+     *
+     * @param nic 网卡标识，如eth1
+     * @return 地址信息
+     */
+    private static String resolveAddress(String nic) {
+        NetworkInterface ni = resolveNetworkInterface(nic);
+        if (null == ni) {
+            return DEFAULT_ADDRESS;
+        }
+        Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
+        if (inetAddresses.hasMoreElements()) {
+            InetAddress inetAddress = inetAddresses.nextElement();
+            return inetAddress.getCanonicalHostName();
+        }
+        return DEFAULT_ADDRESS;
+    }
+
+    public ValueContext getValueContext() {
+        return valueContext;
     }
 
     public synchronized void init() throws PolarisException {
@@ -165,127 +299,9 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         plugins.destroyPlugins();
     }
 
-    /**
-     * 通过默认配置初始化SDKContext
-     *
-     * @return SDKContext对象
-     * @throws PolarisException 初始化异常
-     */
-    public static SDKContext initContext() throws PolarisException {
-        Configuration configuration = ConfigAPIFactory.defaultConfig();
-        return initContextByConfig(configuration);
-    }
-
-    /**
-     * 通过配置对象初始化SDK上下文
-     *
-     * @param config 配置对象
-     * @return SDK上下文
-     * @throws PolarisException 初始化过程的异常
-     */
-    public static SDKContext initContextByConfig(Configuration config) throws PolarisException {
-        try {
-            ((ConfigurationImpl) config).setDefault();
-            config.verify();
-        } catch (IllegalArgumentException e) {
-            throw new PolarisException(ErrorCode.INVALID_CONFIG, "fail to verify configuration", e);
-        }
-        ServiceLoader<TypeProvider> providers = ServiceLoader.load(TypeProvider.class);
-        List<PluginType> types = new ArrayList<>();
-        for (TypeProvider provider : providers) {
-            types.addAll(provider.getTypes());
-        }
-        PluginManager manager = new PluginManager(types);
-        ValueContext valueContext = new ValueContext();
-        valueContext.setHost(parseHost(config));
-        SDKContext initContext = new SDKContext(config, manager, valueContext);
-
-        try {
-            manager.initPlugins(initContext);
-        } catch (Throwable e) {
-            manager.destroyPlugins();
-            if (e instanceof PolarisException) {
-                throw e;
-            }
-            throw new PolarisException(ErrorCode.PLUGIN_ERROR, "plugin error", e);
-        }
-        return initContext;
-    }
-
     @Override
     public Collection<ServerServiceInfo> getServerServices() {
         return serverServices;
-    }
-
-    public static String parseHost(Configuration configuration) {
-        String hostAddress = configuration.getGlobal().getAPI().getBindIP();
-        if (!StringUtils.isBlank(hostAddress)) {
-            return hostAddress;
-        }
-        String nic = configuration.getGlobal().getAPI().getBindIf();
-        if (StringUtils.isNotBlank(nic)) {
-            return resolveAddress(nic);
-        }
-        try {
-            return getHostByDial(configuration);
-        } catch (IOException e) {
-            LOG.error("[ReportClient]get address by dial failed", e);
-        }
-        return DEFAULT_ADDRESS;
-    }
-
-    private static String getHostByDial(Configuration configuration) throws IOException {
-        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
-        String[] tokens = serverAddress.split(":");
-        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
-            return socket.getLocalAddress().getHostAddress();
-        }
-    }
-
-    private static NetworkInterface resolveNetworkInterface(String nic) {
-        NetworkInterface ni = null;
-        try {
-            ni = NetworkInterface.getByName(nic);
-        } catch (SocketException e) {
-            LOG.error("[ReportClient]get nic failed, nic:{}", nic, e);
-        }
-        if (null != ni) {
-            return ni;
-        }
-        //获取第一张网卡
-        try {
-            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-            while (networkInterfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = networkInterfaces.nextElement();
-                if (!networkInterface.isLoopback() && networkInterface.getInetAddresses().hasMoreElements()) {
-                    return networkInterface;
-                }
-            }
-        } catch (SocketException e) {
-            LOG.error("[ReportClient]get all network interfaces failed", e);
-        }
-        return null;
-    }
-
-    private static final String DEFAULT_ADDRESS = "127.0.0.1";
-
-    /**
-     * 解析网卡IP
-     *
-     * @param nic 网卡标识，如eth1
-     * @return 地址信息
-     */
-    private static String resolveAddress(String nic) {
-        NetworkInterface ni = resolveNetworkInterface(nic);
-        if (null == ni) {
-            return DEFAULT_ADDRESS;
-        }
-        Enumeration<InetAddress> inetAddresses = ni.getInetAddresses();
-        if (inetAddresses.hasMoreElements()) {
-            InetAddress inetAddress = inetAddresses.nextElement();
-            return inetAddress.getCanonicalHostName();
-        }
-        return DEFAULT_ADDRESS;
     }
 
     public void registerDestroyHook(Destroyable destroyable) {

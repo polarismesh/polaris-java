@@ -42,22 +42,16 @@ import org.slf4j.LoggerFactory;
 /**
  * 流程编排所需要用到的插件实例列表
  *
- * @author andrewshan
+ * @author andrewshan, Haotian Zhang
  */
 public class Extensions {
 
     private static final Logger LOG = LoggerFactory.getLogger(Extensions.class);
-
-    private LocalRegistry localRegistry;
-
-    private ServerConnector serverConnector;
-
-    private LoadBalancer loadBalancer;
-
     private final List<CircuitBreaker> circuitBreakers = new ArrayList<>();
-
     private final List<HealthChecker> healthCheckers = new ArrayList<>();
-
+    private LocalRegistry localRegistry;
+    private ServerConnector serverConnector;
+    private LoadBalancer loadBalancer;
     private Configuration configuration;
 
     private Supplier plugins;
@@ -73,6 +67,26 @@ public class Extensions {
 
     //全局变量
     private ValueContext valueContext;
+
+    public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
+        List<ServiceRouter> routers = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(routerChain)) {
+            for (String routerName : routerChain) {
+                Plugin routerPlugin;
+                if (force) {
+                    routerPlugin = plugins.getPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName);
+                } else {
+                    routerPlugin = plugins.getOptionalPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName);
+                }
+                if (null == routerPlugin) {
+                    LOG.warn("router {} not found", routerName);
+                    continue;
+                }
+                routers.add((ServiceRouter) routerPlugin);
+            }
+        }
+        return Collections.unmodifiableList(routers);
+    }
 
     /**
      * 初始化
@@ -126,33 +140,12 @@ public class Extensions {
         //加载探测器
         loadOutlierDetector(config, plugins);
 
-        String protocol = config.getGlobal().getServerConnector().getProtocol();
-        serverConnector = (ServerConnector) plugins.getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(), protocol);
-
+        serverConnector = (ServerConnector) plugins.getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
+                valueContext.getServerConnectorProtocol());
     }
 
     public ValueContext getValueContext() {
         return valueContext;
-    }
-
-    public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
-        List<ServiceRouter> routers = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(routerChain)) {
-            for (String routerName : routerChain) {
-                Plugin routerPlugin;
-                if (force) {
-                    routerPlugin = plugins.getPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName);
-                } else {
-                    routerPlugin = plugins.getOptionalPlugin(PluginTypes.SERVICE_ROUTER.getBaseType(), routerName);
-                }
-                if (null == routerPlugin) {
-                    LOG.warn("router {} not found", routerName);
-                    continue;
-                }
-                routers.add((ServiceRouter) routerPlugin);
-            }
-        }
-        return Collections.unmodifiableList(routers);
     }
 
     private void loadOutlierDetector(Configuration config, Supplier plugins) throws PolarisException {

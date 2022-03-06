@@ -32,11 +32,17 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test for {@link PrometheusPushHandler}
+ *
+ * @author Haotian Zhang
+ */
 public class PrometheusPushHandlerTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandlerTest.class);
 
-    private static final String PUSH_DEFAULT_ADDRESS = "127.0.0.1:9091";
+    // Avoid pushing to local push gateway.
+    private static final String PUSH_DEFAULT_ADDRESS = "127.0.0.1:19091";
 
     private final Random random = new Random();
     private PrometheusPushHandler handler;

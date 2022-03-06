@@ -3,9 +3,13 @@ global:
   serverConnector:
     # target server address
     addresses:
-      - 9.134.15.118:8091
+      - 127.0.0.1:8091
+  #  serverConnectors:
+  #    - protocol: grpc
+  #      addresses:
+  #        - 127.0.0.1:8091
   statReporter:
     enable: true
     plugin:
       prometheus:
-        pushgatewayAddress: 9.134.15.118:9091
+        pushgatewayAddress: 127.0.0.1:9091
