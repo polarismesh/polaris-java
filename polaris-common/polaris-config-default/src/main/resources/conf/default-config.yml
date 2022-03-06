@@ -170,7 +170,9 @@ consumer:
       - http
       - tcp
       - udp
+  #服务订阅相关配置
   subscribe:
+    #服务订阅执行回调Listener的线程数量
     threadPoolSize: 1
 # 被调方配置
 provider:

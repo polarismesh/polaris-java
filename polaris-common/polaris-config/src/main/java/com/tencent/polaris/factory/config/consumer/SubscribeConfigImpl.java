@@ -45,7 +45,9 @@ public class SubscribeConfigImpl  extends PluginConfigImpl implements SubscribeC
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             SubscribeConfigImpl subscribeConfig = (SubscribeConfigImpl) defaultObject;
-            setThreadPoolSize(subscribeConfig.getThreadPoolSize());
+            if (threadPoolSize < 1) {
+                setThreadPoolSize(subscribeConfig.getThreadPoolSize());
+            }
             setDefaultPluginConfig(subscribeConfig);
         }
     }

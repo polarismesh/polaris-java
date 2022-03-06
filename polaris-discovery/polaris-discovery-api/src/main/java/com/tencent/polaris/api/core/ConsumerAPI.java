@@ -27,6 +27,8 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceResponse;
 
 import java.io.Closeable;
 
