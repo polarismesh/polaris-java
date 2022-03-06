@@ -127,7 +127,10 @@ public class Utils {
 
         oldIns.forEach((id, instance) -> {
             Instance ins = newIns.get(id);
-            if (!Objects.equals(ins.getRegion(), instance.getRegion())) {
+            if (ins == null) {
+                return;
+            }
+            if (!Objects.equals(ins.getRevision(), instance.getRevision())) {
                 ret.add(new ServiceChangeEvent.OneInstanceUpdate(instance, ins));
             }
         });

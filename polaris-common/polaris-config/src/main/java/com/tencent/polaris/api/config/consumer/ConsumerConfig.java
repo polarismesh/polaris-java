@@ -62,4 +62,11 @@ public interface ConsumerConfig extends Verifier {
      */
     OutlierDetectionConfig getOutlierDetection();
 
+    /**
+     * services.consumer.subscribe前缀开头的所有配置
+     *
+     * @return SubscribeConfig
+     */
+    SubscribeConfig getSubscribe();
+
 }

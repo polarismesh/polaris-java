@@ -170,6 +170,8 @@ consumer:
       - http
       - tcp
       - udp
+  subscribe:
+    threadPoolSize: 1
 # 被调方配置
 provider:
   # 限流配置
