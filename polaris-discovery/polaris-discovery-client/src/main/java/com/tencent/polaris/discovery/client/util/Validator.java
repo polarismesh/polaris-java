@@ -22,17 +22,7 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.rpc.BaseEntity;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
-import com.tencent.polaris.api.rpc.GetResourcesRequest;
-import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.GetServicesRequest;
-import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.CommonValidator;
@@ -110,6 +100,16 @@ public class Validator {
         if (request.getRuleType() == ServiceEventKey.EventType.INSTANCE) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "event type can not be instance");
         }
+    }
+
+    /**
+     * 校验服务监听的请求
+     *
+     * @param request 请求对象
+     * @throws PolarisException 校验失败
+     */
+    public static void validateWatchServiceRequest(WatchServiceRequest request) throws PolarisException {
+        CommonValidator.validateNamespaceService(request.getNamespace(), request.getService());
     }
 
     /**
