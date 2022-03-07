@@ -44,4 +44,47 @@ public class GetAllInstancesRequest extends RequestBaseEntity {
                 "metadata=" + metadata +
                 '}';
     }
+
+    public static GetAllInstancesRequestBuilder builder() {
+        return new GetAllInstancesRequestBuilder();
+    }
+
+    public static final class GetAllInstancesRequestBuilder {
+        private String service;
+        private String namespace;
+        private long timeoutMs;
+        private Map<String, String> metadata;
+
+        private GetAllInstancesRequestBuilder() {
+        }
+
+        public GetAllInstancesRequestBuilder service(String service) {
+            this.service = service;
+            return this;
+        }
+
+        public GetAllInstancesRequestBuilder namespace(String namespace) {
+            this.namespace = namespace;
+            return this;
+        }
+
+        public GetAllInstancesRequestBuilder timeoutMs(long timeoutMs) {
+            this.timeoutMs = timeoutMs;
+            return this;
+        }
+
+        public GetAllInstancesRequestBuilder metadata(Map<String, String> metadata) {
+            this.metadata = metadata;
+            return this;
+        }
+
+        public GetAllInstancesRequest build() {
+            GetAllInstancesRequest getAllInstancesRequest = new GetAllInstancesRequest();
+            getAllInstancesRequest.setService(service);
+            getAllInstancesRequest.setNamespace(namespace);
+            getAllInstancesRequest.setTimeoutMs(timeoutMs);
+            getAllInstancesRequest.setMetadata(metadata);
+            return getAllInstancesRequest;
+        }
+    }
 }
