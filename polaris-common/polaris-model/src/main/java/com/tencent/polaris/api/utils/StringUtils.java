@@ -52,6 +52,16 @@ public class StringUtils {
         return str == null || str.length() == 0;
     }
 
+    public static boolean isAllEmpty(String ...str) {
+        for (String s : str) {
+            if (isNotEmpty(s)) {
+                return  false;
+            }
+        }
+
+        return true;
+    }
+
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
     }

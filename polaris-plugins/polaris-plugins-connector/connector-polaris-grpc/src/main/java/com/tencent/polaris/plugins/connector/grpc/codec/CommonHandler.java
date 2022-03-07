@@ -23,6 +23,7 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
 import java.util.function.Function;
@@ -66,8 +67,14 @@ public class CommonHandler {
         } else {
             oldLoadedFromFile = oldValue.isLoadedFromFile();
             oldRevision = oldValue.getRevision();
-            cachedStatus = oldRevision.equals(newRevision) && !oldLoadedFromFile ? CachedStatus.CacheNotChanged
-                    : CachedStatus.CacheChanged;
+
+            // 如果新老版本都是空字符串，直接认为cache变动
+            if (StringUtils.isAllEmpty(oldRevision, newRevision)) {
+                cachedStatus = CachedStatus.CacheChanged;
+            } else {
+                cachedStatus = oldRevision.equals(newRevision) && !oldLoadedFromFile ? CachedStatus.CacheNotChanged
+                        : CachedStatus.CacheChanged;
+            }
         }
         if (cachedStatus != CachedStatus.CacheNotChanged) {
             LOG.info("resource {} has updated, compare status {}, old revision is {}, old loadedFromFile is {}, "
