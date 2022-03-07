@@ -33,13 +33,12 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.factory.ConfigAPIFactory;
+import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,7 +61,7 @@ public class APIFacade {
 
     private static final AtomicBoolean inited = new AtomicBoolean(false);
 
-    public static void initByConfigText(String configStr) {
+    public static void initByConfiguration(Object configuration) {
         if (inited.get()) {
             return;
         }
@@ -70,9 +69,7 @@ public class APIFacade {
             if (inited.get()) {
                 return;
             }
-            ByteArrayInputStream bis = new ByteArrayInputStream(configStr.getBytes());
-            Configuration configuration = ConfigAPIFactory.loadConfig(bis);
-            sdkContext = SDKContext.initContextByConfig(configuration);
+            sdkContext = SDKContext.initContextByConfig((Configuration) configuration);
             inited.set(true);
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
             providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
@@ -200,6 +197,14 @@ public class APIFacade {
         InstancesResponse instancesResp = consumerAPI.getInstances(getInstancesRequest);
         ServiceInstances serviceInstances = instancesResp.toServiceInstances();
         return serviceInstances.getInstances();
+    }
+
+    public static class ConfigurationModifier {
+
+        public static void setAddresses(Object configuration, List<String> addresses) {
+            ((ConfigurationImpl) configuration).setDefault();
+            ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setAddresses(addresses);
+        }
     }
 
     public static class InstanceParser {
