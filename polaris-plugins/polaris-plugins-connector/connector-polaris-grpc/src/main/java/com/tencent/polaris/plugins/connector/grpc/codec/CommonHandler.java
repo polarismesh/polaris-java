@@ -71,6 +71,8 @@ public class CommonHandler {
             oldRevision = oldValue.getRevision();
 
             // 如果当前的请求返回是获取服务列表
+            // 因为 server 对于 sdk 获取服务列表支持根据 metadata、business、namespace 字段进行筛选操作，无法告知 SDK 一个准确的
+            // revision 值，因此对于 SERVICES 类型的请求，默认直接强制更新 cache 数据
             if (discoverResponse.getType() == DiscoverResponseType.SERVICES) {
                 cachedStatus = CachedStatus.CacheChanged;
             } else {
