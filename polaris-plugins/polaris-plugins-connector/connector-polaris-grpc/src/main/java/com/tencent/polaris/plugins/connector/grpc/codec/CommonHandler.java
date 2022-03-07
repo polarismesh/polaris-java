@@ -25,6 +25,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -51,6 +52,7 @@ public class CommonHandler {
         ServiceEventKey serviceEventKey = new ServiceEventKey(
                 new ServiceKey(service.getNamespace().getValue(), service.getName().getValue()), eventType);
         //判断server的错误码，是否未变更
+
         if (discoverResponse.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
             if (null == oldValue) {
                 return CachedStatus.CacheEmptyButNoData;
@@ -68,8 +70,8 @@ public class CommonHandler {
             oldLoadedFromFile = oldValue.isLoadedFromFile();
             oldRevision = oldValue.getRevision();
 
-            // 如果新老版本都是空字符串，直接认为cache变动
-            if (StringUtils.isAllEmpty(oldRevision, newRevision)) {
+            // 如果当前的请求返回是获取服务列表
+            if (discoverResponse.getType() == DiscoverResponseType.SERVICES) {
                 cachedStatus = CachedStatus.CacheChanged;
             } else {
                 cachedStatus = oldRevision.equals(newRevision) && !oldLoadedFromFile ? CachedStatus.CacheNotChanged
