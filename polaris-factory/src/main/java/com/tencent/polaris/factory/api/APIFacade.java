@@ -61,7 +61,7 @@ public class APIFacade {
 
     private static final AtomicBoolean inited = new AtomicBoolean(false);
 
-    public static void initByConfigText(Object configuration) {
+    public static void initByConfiguration(Object configuration) {
         if (inited.get()) {
             return;
         }
