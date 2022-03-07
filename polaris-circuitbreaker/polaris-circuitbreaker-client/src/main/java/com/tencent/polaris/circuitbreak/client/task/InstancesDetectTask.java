@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.circuitbreak.client.task;
 
+import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_CIRCUIT_BREAKER_STATUS;
 import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_DETECT_RESULT;
 
 import com.tencent.polaris.api.exception.PolarisException;
@@ -34,12 +35,15 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.MapUtils;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,19 +103,15 @@ public class InstancesDetectTask implements Runnable {
             ServiceUpdateRequest updateRequest = buildInstanceUpdateResult(serviceKey, aliveResults);
             LOG.info("update cache for outlier detect, value is {}", updateRequest);
             extensions.getLocalRegistry().updateInstances(updateRequest);
-
         }
     }
 
     private ServiceUpdateRequest buildInstanceUpdateResult(ServiceKey serviceKey,
-            Map<Instance, DetectResult> aliveResults) {
+                                                           Map<Instance, DetectResult> aliveResults) {
         List<InstanceProperty> instances = new ArrayList<>();
         for (Map.Entry<Instance, DetectResult> entry : aliveResults.entrySet()) {
             Map<String, Object> properties = new HashMap<>();
-
-            properties.put(PROPERTY_DETECT_RESULT,
-                    new OutlierDetectionStatus(entry.getValue().getDetectType(), OutlierDetectionStatus.Status.HEALTHY,
-                            entry.getValue().getLastDetectTime().getTime()));
+            properties.put(PROPERTY_DETECT_RESULT, entry.getValue());
             InstanceProperty instanceProperty = new InstanceProperty(entry.getKey(), properties);
             instances.add(instanceProperty);
         }
