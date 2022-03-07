@@ -111,12 +111,9 @@ public class InstancesDetectTask implements Runnable {
         List<InstanceProperty> instances = new ArrayList<>();
         for (Map.Entry<Instance, DetectResult> entry : aliveResults.entrySet()) {
             Map<String, Object> properties = new HashMap<>();
-            Optional.ofNullable(entry.getValue())
-                    .ifPresent(detectResult -> {
-                        properties.put(PROPERTY_DETECT_RESULT, detectResult);
-                        InstanceProperty instanceProperty = new InstanceProperty(entry.getKey(), properties);
-                        instances.add(instanceProperty);
-                    });
+            properties.put(PROPERTY_DETECT_RESULT, entry.getValue());
+            InstanceProperty instanceProperty = new InstanceProperty(entry.getKey(), properties);
+            instances.add(instanceProperty);
         }
 
         return new ServiceUpdateRequest(serviceKey, instances);
