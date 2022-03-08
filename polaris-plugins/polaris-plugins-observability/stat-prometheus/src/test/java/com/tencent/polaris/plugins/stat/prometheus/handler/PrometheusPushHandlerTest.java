@@ -51,7 +51,7 @@ public class PrometheusPushHandlerTest {
         pushHandlerConfig.setPushgatewayAddress(PUSH_DEFAULT_ADDRESS);
         MockPushGateway pgw = new MockPushGateway(PUSH_DEFAULT_ADDRESS);
         handler = new PrometheusPushHandler(callerIp, pushHandlerConfig,
-                new ServiceDiscoveryProvider(null, pushHandlerConfig), "default");
+                new ServiceDiscoveryProvider(null, pushHandlerConfig), "default", callerIp);
         handler.setPushGateway(pgw);
     }
 
