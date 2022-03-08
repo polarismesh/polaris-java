@@ -23,7 +23,9 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -50,6 +52,7 @@ public class CommonHandler {
         ServiceEventKey serviceEventKey = new ServiceEventKey(
                 new ServiceKey(service.getNamespace().getValue(), service.getName().getValue()), eventType);
         //判断server的错误码，是否未变更
+
         if (discoverResponse.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
             if (null == oldValue) {
                 return CachedStatus.CacheEmptyButNoData;
@@ -66,8 +69,16 @@ public class CommonHandler {
         } else {
             oldLoadedFromFile = oldValue.isLoadedFromFile();
             oldRevision = oldValue.getRevision();
-            cachedStatus = oldRevision.equals(newRevision) && !oldLoadedFromFile ? CachedStatus.CacheNotChanged
-                    : CachedStatus.CacheChanged;
+
+            // 如果当前的请求返回是获取服务列表
+            // 因为 server 对于 sdk 获取服务列表支持根据 metadata、business、namespace 字段进行筛选操作，无法告知 SDK 一个准确的
+            // revision 值，因此对于 SERVICES 类型的请求，默认直接强制更新 cache 数据
+            if (discoverResponse.getType() == DiscoverResponseType.SERVICES) {
+                cachedStatus = CachedStatus.CacheChanged;
+            } else {
+                cachedStatus = oldRevision.equals(newRevision) && !oldLoadedFromFile ? CachedStatus.CacheNotChanged
+                        : CachedStatus.CacheChanged;
+            }
         }
         if (cachedStatus != CachedStatus.CacheNotChanged) {
             LOG.info("resource {} has updated, compare status {}, old revision is {}, old loadedFromFile is {}, "
