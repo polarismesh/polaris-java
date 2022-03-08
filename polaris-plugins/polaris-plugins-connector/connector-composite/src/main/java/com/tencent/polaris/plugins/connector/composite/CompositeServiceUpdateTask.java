@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.composite;
 
+import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
@@ -72,45 +73,55 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
         if (null == serverEvent.getError()) {
             successUpdates.addAndGet(1);
         }
-        if (serverEvent.getValue() instanceof DiscoverResponse) {
-            DiscoverResponse discoverResponse = (DiscoverResponse) serverEvent.getValue();
-            CompositeConnector connector = (CompositeConnector) serverConnector;
-            if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
-                List<Instance> polarisInstanceList = discoverResponse.getInstancesList();
-                // Get instance information list except polaris.
-                List<DefaultInstance> extendInstanceList = new ArrayList<>();
-                for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                    if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
-                        List<DefaultInstance> instanceList = sc.syncGetServiceInstances(this);
-                        if (extendInstanceList.isEmpty()) {
-                            extendInstanceList.addAll(instanceList);
-                        } else {
-                            // TODO 多数据源合并去重
+        try {
+            if (serverEvent.getValue() instanceof DiscoverResponse) {
+                DiscoverResponse discoverResponse = (DiscoverResponse) serverEvent.getValue();
+                DiscoverResponse.Builder newDiscoverResponseBuilder = DiscoverResponse.newBuilder()
+                        .mergeFrom(discoverResponse);
+                CompositeConnector connector = (CompositeConnector) serverConnector;
+                if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
+                    List<Instance> polarisInstanceList = discoverResponse.getInstancesList();
+                    // Get instance information list except polaris.
+                    List<DefaultInstance> extendInstanceList = new ArrayList<>();
+                    for (DestroyableServerConnector sc : connector.getServerConnectors()) {
+                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                            List<DefaultInstance> instanceList = sc.syncGetServiceInstances(this);
+                            if (extendInstanceList.isEmpty()) {
+                                extendInstanceList.addAll(instanceList);
+                            } else {
+                                // TODO 多数据源合并去重
+                            }
                         }
                     }
-                }
-                // Merge instance information list
-                for (DefaultInstance i : extendInstanceList) {
-                    for (Instance j : polarisInstanceList) {
-                        if (i.getHost().equals(j.getHost().getValue()) && i.getPort() == j.getPort().getValue()) {
-                            break;
+                    // Merge instance information list
+                    for (DefaultInstance i : extendInstanceList) {
+                        for (Instance j : polarisInstanceList) {
+                            if (i.getHost().equals(j.getHost().getValue()) && i.getPort() == j.getPort().getValue()) {
+                                break;
+                            }
                         }
+                        Instance instance = Instance.newBuilder()
+                                .setService(StringValue.of(i.getService()))
+                                .setHost(StringValue.of(i.getHost()))
+                                .setPort(UInt32Value.of(i.getPort()))
+                                .setHealthy(BoolValue.of(true))
+                                .build();
+                        newDiscoverResponseBuilder.addInstances(instance);
                     }
-                    polarisInstanceList.add(Instance.newBuilder()
-                            .setService(StringValue.of(i.getService()))
-                            .setHost(StringValue.of(i.getHost()))
-                            .setPort(UInt32Value.of(i.getPort()))
-                            .build());
-                }
-            } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
-                // TODO service information update
+
+                } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
+                    // TODO service information update
 //                Services polarisServices = discoverResponse.getServicesList();
 //                for (DestroyableServerConnector sc : connector.getServerConnectors()) {
 //                    if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
 //
 //                    }
 //                }
+                }
+                serverEvent.setValue(newDiscoverResponseBuilder.build());
             }
+        } catch (Throwable throwable) {
+            LOG.error("Merge other server response failed.", throwable);
         }
         return getEventHandler().onEventUpdate(serverEvent);
     }

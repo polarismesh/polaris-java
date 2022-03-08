@@ -69,7 +69,7 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
         }
         AtomicReference<SpecStreamClient> streamClientAtomicReference = grpcConnector.getStreamClient(clusterType);
         SpecStreamClient specStreamClient = streamClientAtomicReference.get();
-        boolean available = checkStreamClientAvailable(specStreamClient);
+        boolean available = checkStreamClientAvailable(specStreamClient, serviceUpdateTask);
         if (!available) {
             LOG.debug("[ServerConnector]start to get connection for task {}", serviceUpdateTask);
             Connection connection = null;
@@ -83,7 +83,8 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
                 grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
                 return;
             }
-            specStreamClient = new SpecStreamClient(connection, grpcConnector.getConnectionIdleTimeoutMs(), this);
+            specStreamClient = new SpecStreamClient(connection, grpcConnector.getConnectionIdleTimeoutMs(),
+                    serviceUpdateTask);
             streamClientAtomicReference.set(specStreamClient);
             LOG.info("[ServerConnector]success to create stream client for task {}", serviceUpdateTask);
         }
@@ -97,11 +98,11 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
         LOG.error("Grpc service task execute error.", throwable);
     }
 
-    private boolean checkStreamClientAvailable(SpecStreamClient streamClient) {
+    private boolean checkStreamClientAvailable(SpecStreamClient streamClient, ServiceUpdateTask serviceUpdateTask) {
         if (null == streamClient) {
             return false;
         }
-        return streamClient.checkAvailable(this);
+        return streamClient.checkAvailable(serviceUpdateTask);
     }
 
     @Override

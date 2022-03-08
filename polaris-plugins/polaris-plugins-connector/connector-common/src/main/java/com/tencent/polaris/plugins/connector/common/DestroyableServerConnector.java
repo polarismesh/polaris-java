@@ -97,4 +97,20 @@ public abstract class DestroyableServerConnector extends Destroyable implements 
     public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
         return null;
     }
+
+    public class UpdateServiceTask implements Runnable {
+
+        @Override
+        public void run() {
+            for (ServiceUpdateTask serviceUpdateTask : updateTaskSet.values()) {
+                if (isDestroyed()) {
+                    break;
+                }
+                if (!serviceUpdateTask.needUpdate()) {
+                    continue;
+                }
+                submitServiceHandler(serviceUpdateTask, 0);
+            }
+        }
+    }
 }

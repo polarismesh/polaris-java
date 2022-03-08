@@ -487,22 +487,6 @@ public class GrpcConnector extends DestroyableServerConnector {
         return connectionIdleTimeoutMs;
     }
 
-    private class UpdateServiceTask implements Runnable {
-
-        @Override
-        public void run() {
-            for (ServiceUpdateTask serviceUpdateTask : updateTaskSet.values()) {
-                if (isDestroyed()) {
-                    break;
-                }
-                if (!serviceUpdateTask.needUpdate()) {
-                    continue;
-                }
-                submitServiceHandler(serviceUpdateTask, 0);
-            }
-        }
-    }
-
     /**
      * 清理过期的streamClient
      */

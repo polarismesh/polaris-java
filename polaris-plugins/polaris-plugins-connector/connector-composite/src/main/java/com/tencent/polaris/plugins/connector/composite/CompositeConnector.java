@@ -38,8 +38,6 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +59,6 @@ public class CompositeConnector extends DestroyableServerConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(CompositeConnector.class);
 
-    private final Map<ServiceEventKey, ServiceUpdateTask> updateTaskSet = new ConcurrentHashMap<>();
     /**
      * Collection of server connector.
      */
@@ -201,19 +198,5 @@ public class CompositeConnector extends DestroyableServerConnector {
         sendDiscoverExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
     }
 
-    private class UpdateServiceTask implements Runnable {
 
-        @Override
-        public void run() {
-            for (ServiceUpdateTask serviceUpdateTask : updateTaskSet.values()) {
-                if (isDestroyed()) {
-                    break;
-                }
-                if (!serviceUpdateTask.needUpdate()) {
-                    continue;
-                }
-                submitServiceHandler(serviceUpdateTask, 0);
-            }
-        }
-    }
 }

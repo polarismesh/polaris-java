@@ -46,7 +46,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
     /**
      * 在流中没有结束的任务
      */
-    private final Map<ServiceEventKey, GrpcServiceUpdateTask> pendingTask = new HashMap<>();
+    private final Map<ServiceEventKey, ServiceUpdateTask> pendingTask = new HashMap<>();
 
     /**
      * 连接是否可用
@@ -91,7 +91,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      * @param serviceUpdateTask 初始更新任务
      */
     public SpecStreamClient(Connection connection, long connectionIdleTimeoutMs,
-            GrpcServiceUpdateTask serviceUpdateTask) {
+            ServiceUpdateTask serviceUpdateTask) {
         this.connection = connection;
         this.connectionIdleTimeoutMs = connectionIdleTimeoutMs;
         createTimeMs = System.currentTimeMillis();
@@ -200,7 +200,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
                 validResult.getErrorCode(), validResult.getMessage(), validResult.getServiceEventKey());
         //report down
         connection.reportFail();
-        List<GrpcServiceUpdateTask> notifyTasks = new ArrayList<>();
+        List<ServiceUpdateTask> notifyTasks = new ArrayList<>();
         synchronized (clientLock) {
             ServiceEventKey serviceEventKey = validResult.getServiceEventKey();
             if (null == serviceEventKey) {
@@ -209,13 +209,13 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
                     pendingTask.clear();
                 }
             } else {
-                GrpcServiceUpdateTask task = pendingTask.remove(serviceEventKey);
+                ServiceUpdateTask task = pendingTask.remove(serviceEventKey);
                 if (null != task) {
                     notifyTasks.add(task);
                 }
             }
         }
-        for (GrpcServiceUpdateTask notifyTask : notifyTasks) {
+        for (ServiceUpdateTask notifyTask : notifyTasks) {
             notifyTask.retry();
         }
     }
@@ -236,7 +236,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         ServiceKey serviceKey = new ServiceKey(service.getNamespace().getValue(), service.getName().getValue());
         EventType eventType = GrpcUtil.buildEventType(response.getType());
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, eventType);
-        GrpcServiceUpdateTask updateTask;
+        ServiceUpdateTask updateTask;
         synchronized (clientLock) {
             updateTask = pendingTask.remove(serviceEventKey);
         }
@@ -312,7 +312,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      * @param serviceUpdateTask 更新任务
      * @return 是否可用
      */
-    public boolean checkAvailable(GrpcServiceUpdateTask serviceUpdateTask) {
+    public boolean checkAvailable(ServiceUpdateTask serviceUpdateTask) {
         if (isEndStream()) {
             return false;
         }
@@ -324,7 +324,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
                 return false;
             }
             ServiceEventKey serviceEventKey = serviceUpdateTask.getServiceEventKey();
-            GrpcServiceUpdateTask lastUpdateTask = pendingTask.get(serviceEventKey);
+            ServiceUpdateTask lastUpdateTask = pendingTask.get(serviceEventKey);
             if (null != lastUpdateTask) {
                 LOG.warn("[ServerConnector]pending task {} has been overwritten", lastUpdateTask);
             }
