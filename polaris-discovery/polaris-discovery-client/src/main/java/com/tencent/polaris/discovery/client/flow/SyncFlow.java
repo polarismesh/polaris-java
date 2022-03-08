@@ -18,6 +18,7 @@
 package com.tencent.polaris.discovery.client.flow;
 
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;

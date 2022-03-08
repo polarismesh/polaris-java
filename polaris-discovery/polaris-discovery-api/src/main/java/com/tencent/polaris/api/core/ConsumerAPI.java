@@ -27,6 +27,9 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceResponse;
+
 import java.io.Closeable;
 
 /**
@@ -116,6 +119,23 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @throws PolarisException 错误码及错误信息
      */
     ServicesResponse getServices(GetServicesRequest req) throws  PolarisException;
+
+    /**
+     * 监听服务下实例变化
+     *
+     * @param request 监听请求
+     * @return 发起监听时查询的服务下的实例列表
+     * @throws PolarisException
+     */
+    WatchServiceResponse watchService(WatchServiceRequest request) throws PolarisException;
+
+    /**
+     * 取消服务监听
+     *
+     * @param request 取消监听请求
+     * @return 取消成功标识
+     */
+    boolean unWatchService(WatchServiceRequest request);
 
     /**
      * 清理并释放资源

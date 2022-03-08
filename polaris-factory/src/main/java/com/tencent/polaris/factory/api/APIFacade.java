@@ -33,13 +33,12 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.factory.ConfigAPIFactory;
+import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -62,7 +61,7 @@ public class APIFacade {
 
     private static final AtomicBoolean inited = new AtomicBoolean(false);
 
-    public static void initByConfigText(String configStr) {
+    public static void initByConfiguration(Object configuration) {
         if (inited.get()) {
             return;
         }
@@ -70,9 +69,7 @@ public class APIFacade {
             if (inited.get()) {
                 return;
             }
-            ByteArrayInputStream bis = new ByteArrayInputStream(configStr.getBytes());
-            Configuration configuration = ConfigAPIFactory.loadConfig(bis);
-            SDKContext sdkContext = SDKContext.initContextByConfig(configuration);
+            sdkContext = SDKContext.initContextByConfig((Configuration) configuration);
             inited.set(true);
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
             providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
@@ -91,7 +88,7 @@ public class APIFacade {
     }
 
     public static boolean register(String namespace, String service, String host, int port, String protocol,
-            String version, Map<String, String> metadata, int ttl, String token) {
+            String version, int weight, Map<String, String> metadata, int ttl, String token) {
         if (!inited.get()) {
             LOGGER.info("polaris not inited, register fail");
             return false;
@@ -104,6 +101,7 @@ public class APIFacade {
         instanceRegisterRequest.setProtocol(protocol);
         instanceRegisterRequest.setVersion(version);
         instanceRegisterRequest.setTtl(ttl);
+        instanceRegisterRequest.setWeight(weight);
         instanceRegisterRequest.setMetadata(metadata);
         instanceRegisterRequest.setToken(token);
         InstanceRegisterResponse instanceRegisterResponse = providerAPI.register(instanceRegisterRequest);
@@ -159,8 +157,8 @@ public class APIFacade {
         return quota.getCode() == QuotaResultCode.QuotaResultOk;
     }
 
-    public static boolean updateServiceCallResult(String namespace, String service, String host, int port, long delay,
-            boolean success, int code) {
+    public static boolean updateServiceCallResult(String namespace, String service, String method, String host,
+            int port, long delay, boolean success, int code) {
         if (!inited.get()) {
             LOGGER.info("polaris not inited, updateServiceCallResult fail");
             return false;
@@ -168,6 +166,7 @@ public class APIFacade {
         ServiceCallResult serviceCallResult = new ServiceCallResult();
         serviceCallResult.setNamespace(namespace);
         serviceCallResult.setService(service);
+        serviceCallResult.setMethod(method);
         serviceCallResult.setHost(host);
         serviceCallResult.setPort(port);
         serviceCallResult.setDelay(delay);
@@ -200,6 +199,14 @@ public class APIFacade {
         return serviceInstances.getInstances();
     }
 
+    public static class ConfigurationModifier {
+
+        public static void setAddresses(Object configuration, List<String> addresses) {
+            ((ConfigurationImpl) configuration).setDefault();
+            ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setAddresses(addresses);
+        }
+    }
+
     public static class InstanceParser {
 
         public static String getHost(Object instance) {
@@ -212,6 +219,10 @@ public class APIFacade {
 
         public static String getProtocol(Object instance) {
             return ((Instance) instance).getProtocol();
+        }
+
+        public static int getWeight(Object instance) {
+            return ((Instance) instance).getWeight();
         }
 
         public static Map<String, String> getMetadata(Object instance) {

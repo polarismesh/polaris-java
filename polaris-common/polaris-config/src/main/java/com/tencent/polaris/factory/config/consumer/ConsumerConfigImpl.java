@@ -44,6 +44,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     @JsonProperty
     private OutlierDetectionConfigImpl outlierDetection;
 
+    @JsonProperty
+    private SubscribeConfigImpl subscribe;
+
     @Override
     public LocalCacheConfigImpl getLocalCache() {
         return localCache;
@@ -69,6 +72,11 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     }
 
     @Override
+    public SubscribeConfigImpl getSubscribe() {
+        return subscribe;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(localCache, "localCache");
         ConfigUtils.validateNull(serviceRouter, "serviceRouter");
@@ -80,6 +88,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         loadbalancer.verify();
         circuitBreaker.verify();
         outlierDetection.verify();
+        subscribe.verify();
     }
 
     @Override
@@ -99,6 +108,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         if (null == outlierDetection) {
             outlierDetection = new OutlierDetectionConfigImpl();
         }
+        if (null == subscribe) {
+            subscribe = new SubscribeConfigImpl();
+        }
         if (null != defaultObject) {
             ConsumerConfig consumerConfig = (ConsumerConfig) defaultObject;
             localCache.setDefault(consumerConfig.getLocalCache());
@@ -106,6 +118,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
             loadbalancer.setDefault(consumerConfig.getLoadbalancer());
             circuitBreaker.setDefault(consumerConfig.getCircuitBreaker());
             outlierDetection.setDefault(consumerConfig.getOutlierDetection());
+            subscribe.setDefault(consumerConfig.getSubscribe());
         }
     }
 
