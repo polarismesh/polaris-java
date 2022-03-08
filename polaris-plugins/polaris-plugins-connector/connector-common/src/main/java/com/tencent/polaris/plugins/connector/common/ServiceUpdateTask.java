@@ -39,6 +39,7 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceUpdateTask.class);
 
+    protected final ServiceEventHandler serviceEventHandler;
     protected final DestroyableServerConnector serverConnector;
     protected final AtomicReference<ClusterType> targetClusterType = new AtomicReference<>();
     protected final AtomicReference<Type> taskType = new AtomicReference<>();
@@ -50,6 +51,7 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
     private final EventHandler eventHandler;
 
     public ServiceUpdateTask(ServiceEventHandler handler, DestroyableServerConnector connector) {
+        this.serviceEventHandler = handler;
         this.serverConnector = connector;
         this.serviceEventKey = handler.getServiceEventKey();
         this.refreshIntervalMs = handler.getRefreshIntervalMs() + (new Random()).nextInt(1000);

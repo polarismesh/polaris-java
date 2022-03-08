@@ -37,17 +37,20 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
     private final AtomicLong msgSendTime = new AtomicLong(0);
     private final AtomicLong totalRequests = new AtomicLong(0);
 
-    public GrpcServiceUpdateTask(ServiceEventHandler handler,
-            DestroyableServerConnector connector) {
+    public GrpcServiceUpdateTask(ServiceEventHandler handler, DestroyableServerConnector connector) {
         super(handler, connector);
     }
 
     @Override
     public void execute() {
+        execute(this);
+    }
+
+    public void execute(ServiceUpdateTask serviceUpdateTask) {
         if (getTaskType() == Type.FIRST) {
-            LOG.info("[ServerConnector]start to run first task {}", this);
+            LOG.info("[ServerConnector]start to run first task {}", serviceUpdateTask);
         } else {
-            LOG.debug("[ServerConnector]start to run task {}", this);
+            LOG.debug("[ServerConnector]start to run task {}", serviceUpdateTask);
         }
         GrpcConnector grpcConnector = (GrpcConnector) serverConnector;
         ConnectionManager connectionManager = grpcConnector.getConnectionManager();
@@ -56,19 +59,19 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
         if (!clusterReady) {
             //没有ready，就重试
             LOG.info("{} service is not ready", clusterType);
-            grpcConnector.retryServiceUpdateTask(this);
+            grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
             return;
         }
         if (grpcConnector.isDestroyed()) {
             LOG.info("{} grpc connection is destroyed", clusterType);
-            grpcConnector.retryServiceUpdateTask(this);
+            grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
             return;
         }
         AtomicReference<SpecStreamClient> streamClientAtomicReference = grpcConnector.getStreamClient(clusterType);
         SpecStreamClient specStreamClient = streamClientAtomicReference.get();
         boolean available = checkStreamClientAvailable(specStreamClient);
         if (!available) {
-            LOG.debug("[ServerConnector]start to get connection for task {}", this);
+            LOG.debug("[ServerConnector]start to get connection for task {}", serviceUpdateTask);
             Connection connection = null;
             try {
                 connection = connectionManager.getConnection(GrpcUtil.OP_KEY_DISCOVER, clusterType);
@@ -76,17 +79,17 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
                 LOG.error("[ServerConnector]fail to get connection to {}", clusterType, e);
             }
             if (null == connection) {
-                LOG.error("[ServerConnector]get null connection for {}", this);
-                grpcConnector.retryServiceUpdateTask(this);
+                LOG.error("[ServerConnector]get null connection for {}", serviceUpdateTask);
+                grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
                 return;
             }
             specStreamClient = new SpecStreamClient(connection, grpcConnector.getConnectionIdleTimeoutMs(), this);
             streamClientAtomicReference.set(specStreamClient);
-            LOG.info("[ServerConnector]success to create stream client for task {}", this);
+            LOG.info("[ServerConnector]success to create stream client for task {}", serviceUpdateTask);
         }
         msgSendTime.set(System.currentTimeMillis());
         totalRequests.addAndGet(1);
-        specStreamClient.sendRequest(this);
+        specStreamClient.sendRequest(serviceUpdateTask);
     }
 
     @Override
@@ -99,17 +102,6 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
             return false;
         }
         return streamClient.checkAvailable(this);
-    }
-
-    /**
-     * 加入调度队列
-     */
-    public void addUpdateTaskSet() {
-        if (taskType.compareAndSet(Type.FIRST, Type.LONG_RUNNING)) {
-            targetClusterType.set(ClusterType.SERVICE_DISCOVER_CLUSTER);
-            serverConnector.addLongRunningTask(this);
-            LOG.info("[ServerConnector]task for service {} has been scheduled updated", this);
-        }
     }
 
     @Override

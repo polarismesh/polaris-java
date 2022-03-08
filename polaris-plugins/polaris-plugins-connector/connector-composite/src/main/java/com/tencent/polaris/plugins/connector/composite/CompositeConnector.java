@@ -31,11 +31,20 @@ import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
+import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An implement of {@link ServerConnector} to connect to Multiple Naming Server.It provides methods to manage resources
@@ -50,15 +59,25 @@ import java.util.List;
  */
 public class CompositeConnector extends DestroyableServerConnector {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CompositeConnector.class);
+
+    private final Map<ServiceEventKey, ServiceUpdateTask> updateTaskSet = new ConcurrentHashMap<>();
     /**
      * Collection of server connector.
      */
     private List<DestroyableServerConnector> serverConnectors;
-
     /**
      * If server connector initialized.
      */
     private boolean initialized = false;
+    /**
+     * Thread pool for sending request to discovery server.
+     */
+    private ScheduledThreadPoolExecutor sendDiscoverExecutor;
+    /**
+     * Thread pool for updating service information.
+     */
+    private ScheduledThreadPoolExecutor updateServiceExecutor;
 
     @Override
     public String getName() {
@@ -68,6 +87,10 @@ public class CompositeConnector extends DestroyableServerConnector {
     @Override
     public PluginType getType() {
         return PluginTypes.SERVER_CONNECTOR.getBaseType();
+    }
+
+    public List<DestroyableServerConnector> getServerConnectors() {
+        return serverConnectors;
     }
 
     @Override
@@ -80,52 +103,91 @@ public class CompositeConnector extends DestroyableServerConnector {
             for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectorConfigs) {
                 DestroyableServerConnector serverConnector = (DestroyableServerConnector) ctx.getPlugins()
                         .getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(), serverConnectorConfig.getProtocol());
-                if (serverConnector.isInitialized()) {
-                    serverConnectors.add(serverConnector);
-                }
+                serverConnector.init(ctx);
+                serverConnectors.add(serverConnector);
             }
+            sendDiscoverExecutor = new ScheduledThreadPoolExecutor(1,
+                    new NamedThreadFactory(getName() + "-send-discovery"), new CallerRunsPolicy());
+            sendDiscoverExecutor.setMaximumPoolSize(1);
+            updateServiceExecutor = new ScheduledThreadPoolExecutor(1,
+                    new NamedThreadFactory(getName() + "-update-service"));
+            updateServiceExecutor.setMaximumPoolSize(1);
             initialized = true;
         }
     }
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
-
+        if (initialized) {
+            this.updateServiceExecutor.scheduleWithFixedDelay(new UpdateServiceTask(), TASK_RETRY_INTERVAL_MS,
+                    TASK_RETRY_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
     public void registerServiceHandler(ServiceEventHandler handler) throws PolarisException {
-
+        checkDestroyed();
+        ServiceUpdateTask serviceUpdateTask = new CompositeServiceUpdateTask(handler, this);
+        submitServiceHandler(serviceUpdateTask, 0);
     }
 
     @Override
     public void deRegisterServiceHandler(ServiceEventKey eventKey) throws PolarisException {
-
+        checkDestroyed();
+        ServiceUpdateTask serviceUpdateTask = updateTaskSet.get(eventKey);
+        if (null != serviceUpdateTask) {
+            boolean result = serviceUpdateTask.setType(Type.LONG_RUNNING, Type.TERMINATED);
+            LOG.info("[ServerConnector]success to deRegister updateServiceTask {}, result is {}", eventKey, result);
+        }
     }
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
-        return null;
+        checkDestroyed();
+        CommonProviderResponse response = null;
+        for (DestroyableServerConnector sc : serverConnectors) {
+            CommonProviderResponse temp = sc.registerInstance(req);
+            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                response = temp;
+            }
+        }
+        return response;
     }
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
-
+        checkDestroyed();
+        for (DestroyableServerConnector sc : serverConnectors) {
+            sc.deregisterInstance(req);
+        }
     }
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-
+        checkDestroyed();
+        for (DestroyableServerConnector sc : serverConnectors) {
+            sc.heartbeat(req);
+        }
     }
 
     @Override
     public ReportClientResponse reportClient(ReportClientRequest req) throws PolarisException {
-        return null;
+        checkDestroyed();
+        ReportClientResponse response = null;
+        for (DestroyableServerConnector sc : serverConnectors) {
+            ReportClientResponse temp = sc.reportClient(req);
+            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                response = temp;
+            }
+        }
+        return response;
     }
 
     @Override
     public void updateServers(ServiceEventKey svcEventKey) {
-
+        for (DestroyableServerConnector sc : serverConnectors) {
+            sc.updateServers(svcEventKey);
+        }
     }
 
     @Override
@@ -134,12 +196,24 @@ public class CompositeConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public void retryServiceUpdateTask(ServiceUpdateTask updateTask) {
-
+    protected void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
+        LOG.debug("[ServerConnector]task for service {} has been scheduled discover", updateTask);
+        sendDiscoverExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
     }
 
-    @Override
-    public void addLongRunningTask(ServiceUpdateTask serviceUpdateTask) {
+    private class UpdateServiceTask implements Runnable {
 
+        @Override
+        public void run() {
+            for (ServiceUpdateTask serviceUpdateTask : updateTaskSet.values()) {
+                if (isDestroyed()) {
+                    break;
+                }
+                if (!serviceUpdateTask.needUpdate()) {
+                    continue;
+                }
+                submitServiceHandler(serviceUpdateTask, 0);
+            }
+        }
     }
 }

@@ -55,7 +55,6 @@ import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -79,8 +78,6 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrpcConnector.class);
 
-    private static final int TASK_RETRY_INTERVAL_MS = 500;
-    private final Map<ServiceEventKey, ServiceUpdateTask> updateTaskSet = new ConcurrentHashMap<>();
     private final Map<ClusterType, AtomicReference<SpecStreamClient>> streamClients = new HashMap<>();
     private long messageTimeoutMs;
     private ConnectionManager connectionManager;
@@ -112,19 +109,21 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        if (getName().equals(ctx.getValueContext().getServerConnectorProtocol())) {
-            standalone = true;
-            initActually(ctx, ctx.getConfig().getGlobal().getServerConnector());
-        } else {
-            standalone = false;
-            ServerConnectorConfig serverConnectorConfig = null;
-            for (ServerConnectorConfig c : ctx.getConfig().getGlobal().getServerConnectors()) {
-                if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(c.getProtocol())) {
-                    serverConnectorConfig = c;
+        if (!initialized) {
+            if (getName().equals(ctx.getValueContext().getServerConnectorProtocol())) {
+                standalone = true;
+                initActually(ctx, ctx.getConfig().getGlobal().getServerConnector());
+            } else {
+                standalone = false;
+                ServerConnectorConfig serverConnectorConfig = null;
+                for (ServerConnectorConfig c : ctx.getConfig().getGlobal().getServerConnectors()) {
+                    if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(c.getProtocol())) {
+                        serverConnectorConfig = c;
+                    }
                 }
-            }
-            if (serverConnectorConfig != null) {
-                initActually(ctx, serverConnectorConfig);
+                if (serverConnectorConfig != null) {
+                    initActually(ctx, serverConnectorConfig);
+                }
             }
         }
     }
@@ -133,7 +132,7 @@ public class GrpcConnector extends DestroyableServerConnector {
         readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_DISCOVER_CLUSTER, readyFuture);
-        connectionManager = new ConnectionManager(ctx, futures);
+        connectionManager = new ConnectionManager(ctx, connectorConfig, futures);
         connectionIdleTimeoutMs = connectorConfig.getConnectionIdleTimeout();
         messageTimeoutMs = connectorConfig.getMessageTimeout();
         sendDiscoverExecutor = new ScheduledThreadPoolExecutor(1,
@@ -168,16 +167,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public void retryServiceUpdateTask(ServiceUpdateTask updateTask) {
-        LOG.info("[ServerConnector]retry schedule task for {}, retry delay {}", updateTask, TASK_RETRY_INTERVAL_MS);
-        updateTask.setStatus(Status.RUNNING, Status.READY);
-        if (isDestroyed()) {
-            return;
-        }
-        submitServiceHandler(updateTask, TASK_RETRY_INTERVAL_MS);
-    }
-
-    private void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
+    protected void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
         ClusterType targetCluster = updateTask.getTargetClusterType();
         if (updateTask.setStatus(Status.READY, Status.RUNNING)) {
             if (targetCluster == ClusterType.BUILTIN_CLUSTER) {
@@ -461,19 +451,20 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-        if (standalone) {
+        if (initialized) {
             connectionManager.setExtensions(extensions);
-            this.updateServiceExecutor
-                    .scheduleWithFixedDelay(new UpdateServiceTask(), TASK_RETRY_INTERVAL_MS, TASK_RETRY_INTERVAL_MS,
-                            TimeUnit.MILLISECONDS);
             this.updateServiceExecutor.scheduleWithFixedDelay(new ClearIdleStreamClientTask(),
                     this.connectionIdleTimeoutMs, this.connectionIdleTimeoutMs, TimeUnit.MILLISECONDS);
+            if (standalone) {
+                this.updateServiceExecutor.scheduleWithFixedDelay(new UpdateServiceTask(), TASK_RETRY_INTERVAL_MS,
+                        TASK_RETRY_INTERVAL_MS, TimeUnit.MILLISECONDS);
+            }
         }
     }
 
     @Override
     public void doDestroy() {
-        if (standalone) {
+        if (initialized) {
             LOG.info("start to destroy connector {}", getName());
             ThreadPoolUtils.waitAndStopThreadPools(
                     new ExecutorService[]{sendDiscoverExecutor, buildInExecutor, updateServiceExecutor});
@@ -487,10 +478,6 @@ public class GrpcConnector extends DestroyableServerConnector {
         return connectionManager;
     }
 
-    @Override
-    public void addLongRunningTask(ServiceUpdateTask serviceUpdateTask) {
-        updateTaskSet.put(serviceUpdateTask.getServiceEventKey(), serviceUpdateTask);
-    }
 
     public AtomicReference<SpecStreamClient> getStreamClient(ClusterType clusterType) {
         return streamClients.get(clusterType);

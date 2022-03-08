@@ -16,6 +16,7 @@ import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
 import com.tencent.polaris.client.pb.RequestProto;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ServiceProto;
+import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
@@ -132,7 +133,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      *
      * @param serviceUpdateTask 服务更新任务
      */
-    public void sendRequest(GrpcServiceUpdateTask serviceUpdateTask) {
+    public void sendRequest(ServiceUpdateTask serviceUpdateTask) {
         ServiceEventKey serviceEventKey = serviceUpdateTask.getServiceEventKey();
         ServiceProto.Service.Builder builder = ServiceProto.Service.newBuilder();
         builder.setName(StringValue.newBuilder().setValue(serviceEventKey.getServiceKey().getService()).build());

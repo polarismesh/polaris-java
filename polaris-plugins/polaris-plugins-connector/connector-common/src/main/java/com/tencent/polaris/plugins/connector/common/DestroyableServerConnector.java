@@ -19,6 +19,15 @@ package com.tencent.polaris.plugins.connector.common;
 
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.pojo.DefaultInstance;
+import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.Services;
+import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Destroyable server connector.
@@ -26,6 +35,10 @@ import com.tencent.polaris.api.plugin.server.ServerConnector;
  * @author Haotian Zhang
  */
 public abstract class DestroyableServerConnector extends Destroyable implements ServerConnector {
+
+    protected static final int TASK_RETRY_INTERVAL_MS = 500;
+    private static final Logger LOG = LoggerFactory.getLogger(DestroyableServerConnector.class);
+    protected final Map<ServiceEventKey, ServiceUpdateTask> updateTaskSet = new ConcurrentHashMap<>();
 
     /**
      * Check if initialized.
@@ -39,12 +52,49 @@ public abstract class DestroyableServerConnector extends Destroyable implements 
      *
      * @param updateTask
      */
-    public abstract void retryServiceUpdateTask(ServiceUpdateTask updateTask);
+    public void retryServiceUpdateTask(ServiceUpdateTask updateTask) {
+        LOG.info("[ServerConnector]retry schedule task for {}, retry delay {}", updateTask, TASK_RETRY_INTERVAL_MS);
+        updateTask.setStatus(Status.RUNNING, Status.READY);
+        if (isDestroyed()) {
+            return;
+        }
+        submitServiceHandler(updateTask, TASK_RETRY_INTERVAL_MS);
+    }
 
     /**
-     * Add long-running task to destroyable server connector.
+     * Submit service update task.
+     *
+     * @param updateTask
+     * @param delayMs
+     */
+    protected abstract void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs);
+
+    /**
+     * Add long-running task.
      *
      * @param serviceUpdateTask
      */
-    public abstract void addLongRunningTask(ServiceUpdateTask serviceUpdateTask);
+    public void addLongRunningTask(ServiceUpdateTask serviceUpdateTask) {
+        updateTaskSet.put(serviceUpdateTask.getServiceEventKey(), serviceUpdateTask);
+    }
+
+    /**
+     * Get service instance information synchronously.
+     *
+     * @param serviceUpdateTask
+     * @return instance
+     */
+    public List<DefaultInstance> syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
+        return null;
+    }
+
+    /**
+     * Get service list information synchronously.
+     *
+     * @param serviceUpdateTask
+     * @return services
+     */
+    public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
+        return null;
+    }
 }

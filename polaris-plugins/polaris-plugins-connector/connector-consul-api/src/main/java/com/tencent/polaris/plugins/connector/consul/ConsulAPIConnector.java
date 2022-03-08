@@ -117,6 +117,11 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     }
 
     @Override
+    protected void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
+
+    }
+
+    @Override
     public void addLongRunningTask(ServiceUpdateTask serviceUpdateTask) {
 
     }

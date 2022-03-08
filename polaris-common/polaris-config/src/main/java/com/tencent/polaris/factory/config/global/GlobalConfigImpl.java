@@ -20,6 +20,7 @@ package com.tencent.polaris.factory.config.global;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import java.util.HashMap;
@@ -120,6 +121,9 @@ public class GlobalConfigImpl implements GlobalConfig {
             if (CollectionUtils.isNotEmpty(serverConnectors)) {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                     serverConnectorConfig.setDefault(globalConfig.getServerConnector());
+                    if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
+                        serverConnector = serverConnectorConfig;
+                    }
                 }
             } else {
                 serverConnector.setDefault(globalConfig.getServerConnector());
