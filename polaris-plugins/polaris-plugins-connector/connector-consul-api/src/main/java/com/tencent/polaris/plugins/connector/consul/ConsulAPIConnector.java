@@ -21,6 +21,7 @@ import com.ecwid.consul.v1.ConsistencyMode;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import com.ecwid.consul.v1.health.HealthServicesRequest;
 import com.ecwid.consul.v1.health.model.HealthService;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
@@ -38,8 +39,10 @@ import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
@@ -153,7 +156,17 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
-        return super.syncGetServices(serviceUpdateTask);
+        CatalogServicesRequest request = CatalogServicesRequest.newBuilder()
+                .setQueryParams(QueryParams.DEFAULT).build();
+        ArrayList<String> serviceList = new ArrayList<>(
+                this.consulClient.getCatalogServices(request).getValue().keySet());
+        Services services = new ServicesByProto();
+        for (String s : serviceList) {
+            ServiceInfo serviceInfo = new ServiceInfo();
+            serviceInfo.setService(s);
+            services.getServices().add(serviceInfo);
+        }
+        return services;
     }
 
     @Override

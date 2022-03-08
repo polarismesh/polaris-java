@@ -25,8 +25,11 @@ import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ServiceProto.Instance;
+import com.tencent.polaris.client.pb.ServiceProto.Service;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
@@ -80,7 +83,6 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                         .mergeFrom(discoverResponse);
                 CompositeConnector connector = (CompositeConnector) serverConnector;
                 if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
-                    List<Instance> polarisInstanceList = discoverResponse.getInstancesList();
                     // Get instance information list except polaris.
                     List<DefaultInstance> extendInstanceList = new ArrayList<>();
                     for (DestroyableServerConnector sc : connector.getServerConnectors()) {
@@ -94,6 +96,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                         }
                     }
                     // Merge instance information list
+                    List<Instance> polarisInstanceList = discoverResponse.getInstancesList();
                     for (DefaultInstance i : extendInstanceList) {
                         for (Instance j : polarisInstanceList) {
                             if (i.getHost().equals(j.getHost().getValue()) && i.getPort() == j.getPort().getValue()) {
@@ -101,6 +104,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             }
                         }
                         Instance instance = Instance.newBuilder()
+                                .setNamespace(StringValue.of("default"))
                                 .setService(StringValue.of(i.getService()))
                                 .setHost(StringValue.of(i.getHost()))
                                 .setPort(UInt32Value.of(i.getPort()))
@@ -108,15 +112,33 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                                 .build();
                         newDiscoverResponseBuilder.addInstances(instance);
                     }
-
                 } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
-                    // TODO service information update
-//                Services polarisServices = discoverResponse.getServicesList();
-//                for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-//                    if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
-//
-//                    }
-//                }
+                    // Get instance information list except polaris.
+                    List<ServiceInfo> extendServiceList = new ArrayList<>();
+                    for (DestroyableServerConnector sc : connector.getServerConnectors()) {
+                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                            Services services = sc.syncGetServices(this);
+                            if (extendServiceList.isEmpty()) {
+                                extendServiceList.addAll(services.getServices());
+                            } else {
+                                // TODO 多数据源合并去重
+                            }
+                        }
+                    }
+                    // Merge service information list
+                    List<Service> polarisServiceList = discoverResponse.getServicesList();
+                    for (ServiceInfo i : extendServiceList) {
+                        for (Service j : polarisServiceList) {
+                            if (i.getService().equals(j.getName().getValue())) {
+                                break;
+                            }
+                        }
+                        Service service = Service.newBuilder()
+                                .setNamespace(StringValue.of("default"))
+                                .setName(StringValue.of(i.getService()))
+                                .build();
+                        newDiscoverResponseBuilder.addServices(service);
+                    }
                 }
                 serverEvent.setValue(newDiscoverResponseBuilder.build());
             }
