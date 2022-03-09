@@ -17,10 +17,13 @@
 
 package com.tencent.polaris.plugins.connector.consul;
 
+import com.ecwid.consul.ConsulException;
 import com.ecwid.consul.v1.ConsistencyMode;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.agent.model.NewService;
+import com.ecwid.consul.v1.agent.model.NewService.Check;
 import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import com.ecwid.consul.v1.health.HealthServicesRequest;
 import com.ecwid.consul.v1.health.model.HealthService;
@@ -42,6 +45,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
@@ -49,6 +53,8 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * An implement of {@link ServerConnector} to connect to Consul Server.It provides methods to manage resources
@@ -63,12 +69,16 @@ import java.util.List;
  */
 public class ConsulAPIConnector extends DestroyableServerConnector {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ConsulAPIConnector.class);
+
     /**
      * If server connector initialized.
      */
     private boolean initialized = false;
 
     private ConsulClient consulClient;
+
+    private String id;
 
     @Override
     public String getName() {
@@ -120,17 +130,56 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
+        LOG.info("Registering service to Consul");
+        NewService service = null;
+        try {
+            service = buildRegisterInstanceRequest(req);
+            this.consulClient.agentServiceRegister(service);
+            CommonProviderResponse resp = new CommonProviderResponse();
+            id = service.getId();
+            resp.setInstanceID(service.getId());
+            resp.setExists(true);
+            LOG.info("Registered service to Consul: " + service);
+            return resp;
+        } catch (ConsulException e) {
+            LOG.warn("Register instance to Consul failed of service: " + service, e);
+        }
         return null;
+    }
+
+    private NewService buildRegisterInstanceRequest(CommonProviderRequest req) {
+        NewService service = new NewService();
+        String appName = req.getService();
+        if (StringUtils.isBlank(req.getInstanceID())) {
+            service.setId(appName + "-" + req.getPort());
+        } else {
+            service.setId(req.getInstanceID());
+        }
+        service.setAddress(req.getHost());
+        service.setPort(req.getPort());
+        service.setName(appName);
+        service.setMeta(req.getMetadata());
+        if (null != req.getTtl()) {
+            Check check = new Check();
+            check.setTtl(req.getTtl() * 1.5 + "s");
+            service.setCheck(check);
+        }
+        return service;
     }
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
-
+        LOG.info("Unregistering service to Consul: " + id);
+        this.consulClient.agentServiceDeregister(id);
+        LOG.info("Unregistered service to Consul: " + id);
     }
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-
+        this.consulClient.agentCheckPass("service:" + id);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Heartbeat service to Consul: " + id);
+        }
     }
 
     @Override

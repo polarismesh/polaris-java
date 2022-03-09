@@ -8,6 +8,9 @@ global:
     - protocol: grpc
       addresses:
         - 127.0.0.1:8091
+  #    - protocol: consul
+  #      addresses:
+  #        - 127.0.0.1:8500
   statReporter:
     enable: true
     plugin:

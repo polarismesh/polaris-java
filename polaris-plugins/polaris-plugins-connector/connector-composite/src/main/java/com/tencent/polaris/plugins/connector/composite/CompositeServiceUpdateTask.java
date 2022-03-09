@@ -98,19 +98,23 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     // Merge instance information list
                     List<Instance> polarisInstanceList = discoverResponse.getInstancesList();
                     for (DefaultInstance i : extendInstanceList) {
+                        boolean needAdd = true;
                         for (Instance j : polarisInstanceList) {
                             if (i.getHost().equals(j.getHost().getValue()) && i.getPort() == j.getPort().getValue()) {
+                                needAdd = false;
                                 break;
                             }
                         }
-                        Instance instance = Instance.newBuilder()
-                                .setNamespace(StringValue.of("default"))
-                                .setService(StringValue.of(i.getService()))
-                                .setHost(StringValue.of(i.getHost()))
-                                .setPort(UInt32Value.of(i.getPort()))
-                                .setHealthy(BoolValue.of(true))
-                                .build();
-                        newDiscoverResponseBuilder.addInstances(instance);
+                        if (needAdd) {
+                            Instance instance = Instance.newBuilder()
+                                    .setNamespace(StringValue.of("default"))
+                                    .setService(StringValue.of(i.getService()))
+                                    .setHost(StringValue.of(i.getHost()))
+                                    .setPort(UInt32Value.of(i.getPort()))
+                                    .setHealthy(BoolValue.of(true))
+                                    .build();
+                            newDiscoverResponseBuilder.addInstances(instance);
+                        }
                     }
                 } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
                     // Get instance information list except polaris.
@@ -128,16 +132,20 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     // Merge service information list
                     List<Service> polarisServiceList = discoverResponse.getServicesList();
                     for (ServiceInfo i : extendServiceList) {
+                        boolean needAdd = true;
                         for (Service j : polarisServiceList) {
                             if (i.getService().equals(j.getName().getValue())) {
+                                needAdd = false;
                                 break;
                             }
                         }
-                        Service service = Service.newBuilder()
-                                .setNamespace(StringValue.of("default"))
-                                .setName(StringValue.of(i.getService()))
-                                .build();
-                        newDiscoverResponseBuilder.addServices(service);
+                        if (needAdd) {
+                            Service service = Service.newBuilder()
+                                    .setNamespace(StringValue.of("default"))
+                                    .setName(StringValue.of(i.getService()))
+                                    .build();
+                            newDiscoverResponseBuilder.addServices(service);
+                        }
                     }
                 }
                 serverEvent.setValue(newDiscoverResponseBuilder.build());
