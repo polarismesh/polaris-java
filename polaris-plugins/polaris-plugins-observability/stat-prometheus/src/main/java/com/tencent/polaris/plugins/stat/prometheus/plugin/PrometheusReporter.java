@@ -50,8 +50,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                     .getStatReporter()
                     .getPluginConfig(getName(), PrometheusPushHandlerConfig.class);
             ServiceDiscoveryProvider provider = new ServiceDiscoveryProvider(extensions, config);
-            statInfoHandler = new PrometheusPushHandler(extensions.getValueContext().getHost(),
-                    config, provider, PUSH_DEFAULT_JOB_NAME);
+            String instanceId = extensions.getValueContext().getClientId();
+            String host = extensions.getValueContext().getHost();
+            statInfoHandler = new PrometheusPushHandler(host, config, provider, PUSH_DEFAULT_JOB_NAME, instanceId);
         }
     }
 
@@ -84,4 +85,5 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             statInfoHandler = null;
         }
     }
+
 }

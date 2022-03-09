@@ -40,6 +40,7 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
@@ -50,7 +51,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +93,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         this.configuration = configuration;
         this.plugins = plugins;
         this.valueContext = valueContext;
-        this.valueContext.setClientId(UUID.randomUUID().toString());
+        this.valueContext.setClientId(generateClientId(this.valueContext.getHost()));
         List<ServerServiceInfo> services = new ArrayList<>();
         //加载系统服务配置
         SystemConfig system = configuration.getGlobal().getSystem();
@@ -110,6 +110,74 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             services.add(new ServerServiceInfo(ClusterType.MONITOR_CLUSTER, monitorCluster));
         }
         this.serverServices = Collections.unmodifiableCollection(services);
+    }
+
+    private static String generateClientId(String host) {
+        return host + "-" + getProcessId("0");
+    }
+
+    private static String getProcessId(String fallback) {
+        // Note: may fail in some JVM implementations
+        // therefore fallback has to be provided
+
+        // something like '<pid>@<hostname>', at least in SUN / Oracle JVMs
+        final String jvmName = ManagementFactory.getRuntimeMXBean().getName();
+        final int index = jvmName.indexOf('@');
+
+        if (index < 1) {
+            // part before '@' empty (index = 0) / '@' not found (index = -1)
+            return fallback;
+        }
+
+        try {
+            return Long.toString(Long.parseLong(jvmName.substring(0, index)));
+        } catch (NumberFormatException e) {
+            // ignore
+        }
+        return fallback;
+    }
+
+    public synchronized void init() throws PolarisException {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+        extensions.init(configuration, plugins, valueContext);
+        plugins.postContextInitPlugins(extensions);
+    }
+
+    private boolean clusterAvailable(ClusterConfig clusterConfig) {
+        if (null == clusterConfig) {
+            return false;
+        }
+        if (StringUtils.isBlank(clusterConfig.getNamespace()) || StringUtils.isBlank(clusterConfig.getService())) {
+            return false;
+        }
+        if (!clusterConfig.isSameAsBuiltin()) {
+            return false;
+        }
+        return true;
+    }
+
+    public Extensions getExtensions() {
+        return extensions;
+    }
+
+    public Configuration getConfig() {
+        return configuration;
+    }
+
+    public Supplier getPlugins() {
+        return plugins;
+    }
+
+    @Override
+    protected void doDestroy() {
+        synchronized (lock) {
+            for (Destroyable destroyable : destroyHooks) {
+                destroyable.destroy();
+            }
+        }
+        plugins.destroyPlugins();
     }
 
     /**
@@ -254,49 +322,6 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
 
     public ValueContext getValueContext() {
         return valueContext;
-    }
-
-    public synchronized void init() throws PolarisException {
-        if (!initialized.compareAndSet(false, true)) {
-            return;
-        }
-        extensions.init(configuration, plugins, valueContext);
-        plugins.postContextInitPlugins(extensions);
-    }
-
-    private boolean clusterAvailable(ClusterConfig clusterConfig) {
-        if (null == clusterConfig) {
-            return false;
-        }
-        if (StringUtils.isBlank(clusterConfig.getNamespace()) || StringUtils.isBlank(clusterConfig.getService())) {
-            return false;
-        }
-        if (!clusterConfig.isSameAsBuiltin()) {
-            return false;
-        }
-        return true;
-    }
-
-    public Extensions getExtensions() {
-        return extensions;
-    }
-
-    public Configuration getConfig() {
-        return configuration;
-    }
-
-    public Supplier getPlugins() {
-        return plugins;
-    }
-
-    @Override
-    protected void doDestroy() {
-        synchronized (lock) {
-            for (Destroyable destroyable : destroyHooks) {
-                destroyable.destroy();
-            }
-        }
-        plugins.destroyPlugins();
     }
 
     @Override

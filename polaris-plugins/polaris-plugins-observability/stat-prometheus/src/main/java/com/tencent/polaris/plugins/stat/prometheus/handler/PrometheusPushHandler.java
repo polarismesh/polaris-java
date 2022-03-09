@@ -70,6 +70,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
     // push
     private final String callerIp;
     private final String jobName;
+    private final String instanceName;
     private final long pushIntervalMilli;
     private final CollectorRegistry promRegistry;
     private final Map<String, Gauge> sampleMapping;
@@ -78,8 +79,8 @@ public class PrometheusPushHandler implements StatInfoHandler {
     private PushGateway pushGateway;
 
     public PrometheusPushHandler(String callerIp, PrometheusPushHandlerConfig config, ServiceDiscoveryProvider provider,
-            String jobName) {
-        this(callerIp, config.getPushInterval(), provider, jobName);
+            String jobName, String instanceName) {
+        this(callerIp, config.getPushInterval(), provider, jobName, instanceName);
     }
 
     /**
@@ -89,15 +90,15 @@ public class PrometheusPushHandler implements StatInfoHandler {
      * @param pushIntervalS 向PushGateWay推送的时间间隔
      * @param provider push的地址提供者
      */
-    private PrometheusPushHandler(String callerIp,
-            Long pushIntervalS,
-            ServiceDiscoveryProvider provider, String jobName) {
+    private PrometheusPushHandler(String callerIp, Long pushIntervalS, ServiceDiscoveryProvider provider,
+            String jobName, String instanceName) {
         this.callerIp = callerIp;
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
         this.promRegistry = new CollectorRegistry(true);
         this.addressProvider = provider;
         this.jobName = jobName;
+        this.instanceName = instanceName;
         if (null != pushIntervalS) {
             this.pushIntervalMilli = pushIntervalS;
         } else {
@@ -219,8 +220,8 @@ public class PrometheusPushHandler implements StatInfoHandler {
                     setPushGateway(new PushGateway(pushAddress));
                 }
 
-                //pushGateway.pushAdd(promRegistry, jobName, Collections.singletonMap(PUSH_GROUP_KEY, instanceName));
-                pushGateway.pushAdd(promRegistry, jobName, Collections.emptyMap());
+                pushGateway.pushAdd(promRegistry, jobName, Collections.singletonMap(PUSH_GROUP_KEY, instanceName));
+                //pushGateway.pushAdd(promRegistry, jobName, Collections.emptyMap());
                 LOG.info("push result to push-gateway {} success", pushAddress);
             } catch (IOException exception) {
                 LOG.error("push result to push-gateway {} encountered exception, exception:{}", pushAddress,
