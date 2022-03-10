@@ -17,6 +17,11 @@
 
 package com.tencent.polaris.plugins.connector.consul;
 
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.INSTANCE_ID_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.IP_ADDRESS_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.PREFER_IP_ADDRESS_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.SERVICE_NAME_KEY;
+
 import com.ecwid.consul.ConsulException;
 import com.ecwid.consul.v1.ConsistencyMode;
 import com.ecwid.consul.v1.ConsulClient;
@@ -53,6 +58,7 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,9 +82,14 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
      */
     private boolean initialized = false;
 
+    /**
+     *
+     */
+    private boolean ieRegistered = false;
+
     private ConsulClient consulClient;
 
-    private String id;
+    private ConsulContext consulContext;
 
     @Override
     public String getName() {
@@ -110,6 +121,23 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         String agentHost = addressSplit[0];
         int agentPort = Integer.parseInt(addressSplit[1]);
         consulClient = new ConsulClient(agentHost, agentPort);
+
+        // Init context.
+        consulContext = new ConsulContext();
+        Map<String, String> metadata = connectorConfig.getMetadata();
+        if (metadata.containsKey(SERVICE_NAME_KEY) && StringUtils.isNotBlank(metadata.get(SERVICE_NAME_KEY))) {
+            consulContext.setServiceName(metadata.get(SERVICE_NAME_KEY));
+        }
+        if (metadata.containsKey(INSTANCE_ID_KEY) && StringUtils.isNotBlank(metadata.get(INSTANCE_ID_KEY))) {
+            consulContext.setInstanceId(metadata.get(INSTANCE_ID_KEY));
+        }
+        if (metadata.containsKey(IP_ADDRESS_KEY) && StringUtils.isNotBlank(metadata.get(IP_ADDRESS_KEY))) {
+            consulContext.setIpAddress(metadata.get(IP_ADDRESS_KEY));
+        }
+        if (metadata.containsKey(PREFER_IP_ADDRESS_KEY) && StringUtils.isNotBlank(
+                metadata.get(PREFER_IP_ADDRESS_KEY))) {
+            consulContext.setPreferIpAddress(Boolean.parseBoolean(metadata.get(PREFER_IP_ADDRESS_KEY)));
+        }
         initialized = true;
     }
 
@@ -136,7 +164,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             service = buildRegisterInstanceRequest(req);
             this.consulClient.agentServiceRegister(service);
             CommonProviderResponse resp = new CommonProviderResponse();
-            id = service.getId();
+            consulContext.setInstanceId(service.getId());
             resp.setInstanceID(service.getId());
             resp.setExists(true);
             LOG.info("Registered service to Consul: " + service);
@@ -151,13 +179,23 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         NewService service = new NewService();
         String appName = req.getService();
         if (StringUtils.isBlank(req.getInstanceID())) {
-            service.setId(appName + "-" + req.getPort());
+            if (StringUtils.isBlank(consulContext.getInstanceId())) {
+                consulContext.setInstanceId(appName + "-" + req.getPort());
+            }
+            service.setId(consulContext.getInstanceId());
         } else {
             service.setId(req.getInstanceID());
         }
-        service.setAddress(req.getHost());
+        if (consulContext.isPreferIpAddress()) {
+            service.setAddress(consulContext.getIpAddress());
+        } else {
+            service.setAddress(req.getHost());
+        }
         service.setPort(req.getPort());
-        service.setName(appName);
+        if (StringUtils.isBlank(consulContext.getServiceName())) {
+            consulContext.setServiceName(appName);
+        }
+        service.setName(consulContext.getServiceName());
         service.setMeta(req.getMetadata());
         if (null != req.getTtl()) {
             Check check = new Check();
@@ -169,16 +207,16 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
-        LOG.info("Unregistering service to Consul: " + id);
-        this.consulClient.agentServiceDeregister(id);
-        LOG.info("Unregistered service to Consul: " + id);
+        LOG.info("Unregistering service to Consul: " + consulContext.getInstanceId());
+        this.consulClient.agentServiceDeregister(consulContext.getInstanceId());
+        LOG.info("Unregistered service to Consul: " + consulContext.getInstanceId());
     }
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-        this.consulClient.agentCheckPass("service:" + id);
+        this.consulClient.agentCheckPass("service:" + consulContext.getInstanceId());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Heartbeat service to Consul: " + id);
+            LOG.debug("Heartbeat service to Consul: " + consulContext.getInstanceId());
         }
     }
 

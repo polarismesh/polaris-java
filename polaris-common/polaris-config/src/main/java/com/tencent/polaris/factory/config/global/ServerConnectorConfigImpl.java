@@ -25,46 +25,40 @@ import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
  * 与名字服务服务端的连接配置
  *
- * @author andrewshan
- * @date 2019/8/20
+ * @author andrewshan, Haotian Zhang
  */
 public class ServerConnectorConfigImpl extends PluginConfigImpl implements ServerConnectorConfig {
 
     private static final Pattern addressPattern = Pattern.compile("(.*)((?::))((?:[0-9]+))$");
-
+    private final Map<String, String> metadata = new ConcurrentHashMap<>();
     @JsonProperty
     private List<String> addresses;
-
     @JsonProperty
     private String protocol;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long connectTimeout;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long messageTimeout;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long serverSwitchInterval;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long connectionIdleTimeout;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reconnectInterval;
 
     @Override
-
     public List<String> getAddresses() {
         return addresses;
     }
@@ -140,6 +134,11 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
 
     public void setReconnectInterval(Long reconnectInterval) {
         this.reconnectInterval = reconnectInterval;
+    }
+
+    @Override
+    public Map<String, String> getMetadata() {
+        return metadata;
     }
 
     @Override
