@@ -20,6 +20,7 @@ package com.tencent.polaris.factory.config.global;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
@@ -144,20 +145,22 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     @Override
     public void verify() {
         if (CollectionUtils.isEmpty(addresses)) {
-            throw new IllegalArgumentException("addresses must not be empty");
+            throw new IllegalArgumentException(String.format("addresses of [%s] must not be empty", protocol));
         }
         for (String address : addresses) {
             boolean matched = addressPattern.matcher(address).find();
             if (!matched) {
-                throw new IllegalArgumentException(String.format("address %s is invalid", address));
+                throw new IllegalArgumentException(String.format("address [%s] of [%s] is invalid", address, protocol));
             }
         }
-        ConfigUtils.validateString(protocol, "serverConnector.protocol");
-        ConfigUtils.validateInterval(connectTimeout, "serverConnector.connectTimeout");
-        ConfigUtils.validateInterval(messageTimeout, "serverConnector.messageTimeout");
-        ConfigUtils.validateInterval(serverSwitchInterval, "serverConnector.serverSwitchInterval");
-        ConfigUtils.validateInterval(connectionIdleTimeout, "serverConnector.connectionIdleTimeout");
-        ConfigUtils.validateInterval(reconnectInterval, "serverConnector.reconnectInterval");
+        if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(protocol)) {
+            ConfigUtils.validateString(protocol, "serverConnector.protocol");
+            ConfigUtils.validateInterval(connectTimeout, "serverConnector.connectTimeout");
+            ConfigUtils.validateInterval(messageTimeout, "serverConnector.messageTimeout");
+            ConfigUtils.validateInterval(serverSwitchInterval, "serverConnector.serverSwitchInterval");
+            ConfigUtils.validateInterval(connectionIdleTimeout, "serverConnector.connectionIdleTimeout");
+            ConfigUtils.validateInterval(reconnectInterval, "serverConnector.reconnectInterval");
+        }
         verifyPluginConfig();
     }
 

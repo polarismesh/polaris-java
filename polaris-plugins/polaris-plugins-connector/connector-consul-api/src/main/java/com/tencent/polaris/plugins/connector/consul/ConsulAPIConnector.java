@@ -178,19 +178,23 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     private NewService buildRegisterInstanceRequest(CommonProviderRequest req) {
         NewService service = new NewService();
         String appName = req.getService();
-        if (StringUtils.isBlank(req.getInstanceID())) {
-            if (StringUtils.isBlank(consulContext.getInstanceId())) {
-                consulContext.setInstanceId(appName + "-" + req.getPort());
-            }
-            service.setId(consulContext.getInstanceId());
-        } else {
-            service.setId(req.getInstanceID());
-        }
+        // Generate ip address
         if (consulContext.isPreferIpAddress()) {
             service.setAddress(consulContext.getIpAddress());
         } else {
             service.setAddress(req.getHost());
         }
+        // Generate instance id
+        if (StringUtils.isBlank(req.getInstanceID())) {
+            if (StringUtils.isBlank(consulContext.getInstanceId())) {
+                consulContext.setInstanceId(
+                        appName + "-" + req.getHost().replace(":", "-") + "-" + req.getPort());
+            }
+            service.setId(consulContext.getInstanceId());
+        } else {
+            service.setId(req.getInstanceID());
+        }
+
         service.setPort(req.getPort());
         if (StringUtils.isBlank(consulContext.getServiceName())) {
             consulContext.setServiceName(appName);
@@ -233,6 +237,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         List<DefaultInstance> instanceList = new ArrayList<>();
         for (HealthService service : response.getValue()) {
             DefaultInstance instance = new DefaultInstance();
+            instance.setId(service.getService().getId());
             instance.setService(service.getService().getService());
             instance.setHost(service.getService().getAddress());
             instance.setPort(service.getService().getPort());

@@ -27,6 +27,7 @@ import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.Services;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
@@ -106,14 +107,16 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             }
                         }
                         if (needAdd) {
-                            Instance instance = Instance.newBuilder()
+                            Instance.Builder instanceBuilder = Instance.newBuilder()
                                     .setNamespace(StringValue.of("default"))
                                     .setService(StringValue.of(i.getService()))
                                     .setHost(StringValue.of(i.getHost()))
                                     .setPort(UInt32Value.of(i.getPort()))
-                                    .setHealthy(BoolValue.of(true))
-                                    .build();
-                            newDiscoverResponseBuilder.addInstances(instance);
+                                    .setHealthy(BoolValue.of(true));
+                            if (StringUtils.isNotBlank(i.getId())) {
+                                instanceBuilder.setId(StringValue.of(i.getId()));
+                            }
+                            newDiscoverResponseBuilder.addInstances(instanceBuilder.build());
                         }
                     }
                 } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {

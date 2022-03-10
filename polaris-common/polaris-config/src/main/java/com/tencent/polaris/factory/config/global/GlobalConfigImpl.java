@@ -90,13 +90,20 @@ public class GlobalConfigImpl implements GlobalConfig {
 
         system.verify();
         api.verify();
+
+        boolean hasGrpc = false;
         if (CollectionUtils.isNotEmpty(serverConnectors)) {
             for (ServerConnectorConfig serverConnectorConfig : serverConnectors) {
                 serverConnectorConfig.verify();
+                if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
+                    hasGrpc = true;
+                }
             }
         } else {
             serverConnector.verify();
+            hasGrpc = DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol());
         }
+        ConfigUtils.validateTrue(hasGrpc, "HasGRPC");
         statReporter.verify();
     }
 
@@ -118,10 +125,11 @@ public class GlobalConfigImpl implements GlobalConfig {
             GlobalConfig globalConfig = (GlobalConfig) defaultObject;
             system.setDefault(globalConfig.getSystem());
             api.setDefault(globalConfig.getAPI());
+            // Only grpc server connector should be set default.
             if (CollectionUtils.isNotEmpty(serverConnectors)) {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
-                    serverConnectorConfig.setDefault(globalConfig.getServerConnector());
                     if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
+                        serverConnectorConfig.setDefault(globalConfig.getServerConnector());
                         serverConnector = serverConnectorConfig;
                     }
                 }

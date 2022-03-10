@@ -96,4 +96,15 @@ public class ConfigUtils {
         }
     }
 
+    /**
+     * Validate if value is true
+     *
+     * @param value
+     * @param name
+     */
+    public static void validateTrue(Boolean value, String name) {
+        if (null == value || !value) {
+            throw new IllegalArgumentException(name + " must not be false");
+        }
+    }
 }
