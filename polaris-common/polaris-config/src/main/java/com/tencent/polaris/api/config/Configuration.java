@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.config;
 
+import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
 import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.provider.ProviderConfig;
@@ -50,4 +51,10 @@ public interface Configuration extends Verifier {
      * @return ProviderConfig
      */
     ProviderConfig getProvider();
+
+    /**
+     * configFile 前缀开头的所有配置项
+     * @return ConfigFileConfig
+     */
+    ConfigFileConfig getConfigFile();
 }

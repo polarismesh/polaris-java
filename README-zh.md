@@ -46,6 +46,8 @@ mvn clean install
 
 [限流样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/ratelimit-example)
 
+[配置中心样例](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/configuration-example)
+
 
 
 

@@ -49,3 +49,4 @@ You should be able to get off the ground quite quickly by cloning the project yo
  
  [RateLimit Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/ratelimit-example)
  
+[Configuration Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/configuration-example)

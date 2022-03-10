@@ -58,12 +58,13 @@
         <module>polaris-router</module>
         <module>polaris-distribution</module>
         <module>polaris-examples</module>
+        <module>polaris-configuration</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 
     <properties>
         <!-- Project revision -->
-        <revision>1.2.4-SNAPSHOT</revision>
+        <revision>1.3.0-SNAPSHOT</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.ConfigProvider;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl;
 import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
 import com.tencent.polaris.factory.config.provider.ProviderConfigImpl;
@@ -59,6 +60,9 @@ public class ConfigurationImpl implements Configuration {
     @JsonProperty
     private ProviderConfigImpl provider;
 
+    @JsonProperty
+    private ConfigFileConfigImpl configFile;
+
     @Override
     public GlobalConfigImpl getGlobal() {
         return global;
@@ -84,6 +88,15 @@ public class ConfigurationImpl implements Configuration {
 
     public void setProvider(ProviderConfigImpl provider) {
         this.provider = provider;
+    }
+
+    @Override
+    public ConfigFileConfigImpl getConfigFile() {
+        return configFile;
+    }
+
+    public void setConfigFile(ConfigFileConfigImpl configFile) {
+        this.configFile = configFile;
     }
 
     @Override
@@ -130,11 +143,15 @@ public class ConfigurationImpl implements Configuration {
         if (null == provider) {
             provider = new ProviderConfigImpl();
         }
+        if (null == configFile) {
+            configFile = new ConfigFileConfigImpl();
+        }
         if (null != defaultObject) {
             Configuration configuration = (Configuration) defaultObject;
             global.setDefault(configuration.getGlobal());
             consumer.setDefault(configuration.getConsumer());
             provider.setDefault(configuration.getProvider());
+            configFile.setDefault(configuration.getConfigFile());
         }
     }
 
