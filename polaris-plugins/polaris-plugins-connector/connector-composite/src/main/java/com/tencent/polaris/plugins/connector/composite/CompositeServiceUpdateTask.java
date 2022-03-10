@@ -21,6 +21,8 @@ import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
@@ -74,9 +76,6 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     public boolean notifyServerEvent(ServerEvent serverEvent) {
         taskStatus.compareAndSet(Status.RUNNING, Status.READY);
         lastUpdateTime.set(System.currentTimeMillis());
-        if (null == serverEvent.getError()) {
-            successUpdates.addAndGet(1);
-        }
         try {
             if (serverEvent.getValue() instanceof DiscoverResponse) {
                 DiscoverResponse discoverResponse = (DiscoverResponse) serverEvent.getValue();
@@ -101,14 +100,15 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     for (DefaultInstance i : extendInstanceList) {
                         boolean needAdd = true;
                         for (Instance j : polarisInstanceList) {
-                            if (i.getHost().equals(j.getHost().getValue()) && i.getPort() == j.getPort().getValue()) {
+                            if (i.getHost().equals(j.getHost().getValue()) && i.getPort() == j.getPort()
+                                    .getValue()) {
                                 needAdd = false;
                                 break;
                             }
                         }
                         if (needAdd) {
                             Instance.Builder instanceBuilder = Instance.newBuilder()
-                                    .setNamespace(StringValue.of("default"))
+                                    .setNamespace(StringValue.of(serviceEventKey.getNamespace()))
                                     .setService(StringValue.of(i.getService()))
                                     .setHost(StringValue.of(i.getHost()))
                                     .setPort(UInt32Value.of(i.getPort()))
@@ -118,6 +118,9 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             }
                             newDiscoverResponseBuilder.addInstances(instanceBuilder.build());
                         }
+                    }
+                    if (!newDiscoverResponseBuilder.getInstancesList().isEmpty()) {
+                        serverEvent.setError(null);
                     }
                 } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
                     // Get instance information list except polaris.
@@ -144,17 +147,27 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                         }
                         if (needAdd) {
                             Service service = Service.newBuilder()
-                                    .setNamespace(StringValue.of("default"))
+                                    .setNamespace(StringValue.of(serviceEventKey.getNamespace()))
                                     .setName(StringValue.of(i.getService()))
                                     .build();
                             newDiscoverResponseBuilder.addServices(service);
                         }
                     }
+                    if (!newDiscoverResponseBuilder.getServicesList().isEmpty()) {
+                        serverEvent.setError(null);
+                    }
                 }
                 serverEvent.setValue(newDiscoverResponseBuilder.build());
             }
+        } catch (PolarisException e) {
+            LOG.error("Merge other server response failed.", e);
+            serverEvent.setError(e);
         } catch (Throwable throwable) {
             LOG.error("Merge other server response failed.", throwable);
+            serverEvent.setError(new PolarisException(ErrorCode.INTERNAL_ERROR));
+        }
+        if (null == serverEvent.getError()) {
+            successUpdates.addAndGet(1);
         }
         return getEventHandler().onEventUpdate(serverEvent);
     }

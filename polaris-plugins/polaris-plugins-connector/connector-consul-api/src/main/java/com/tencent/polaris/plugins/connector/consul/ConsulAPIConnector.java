@@ -34,7 +34,10 @@ import com.ecwid.consul.v1.health.HealthServicesRequest;
 import com.ecwid.consul.v1.health.model.HealthService;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.RetriableException;
+import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -48,6 +51,7 @@ import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -158,19 +162,24 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
-        LOG.info("Registering service to Consul");
-        NewService service = null;
-        try {
-            service = buildRegisterInstanceRequest(req);
-            this.consulClient.agentServiceRegister(service);
-            CommonProviderResponse resp = new CommonProviderResponse();
-            consulContext.setInstanceId(service.getId());
-            resp.setInstanceID(service.getId());
-            resp.setExists(true);
-            LOG.info("Registered service to Consul: " + service);
-            return resp;
-        } catch (ConsulException e) {
-            LOG.warn("Register instance to Consul failed of service: " + service, e);
+        if (!ieRegistered) {
+            ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
+            try {
+                LOG.info("Registering service to Consul");
+                NewService service = buildRegisterInstanceRequest(req);
+                this.consulClient.agentServiceRegister(service);
+                CommonProviderResponse resp = new CommonProviderResponse();
+                consulContext.setInstanceId(service.getId());
+                resp.setInstanceID(service.getId());
+                resp.setExists(true);
+                LOG.info("Registered service to Consul: " + service);
+                ieRegistered = true;
+                return resp;
+            } catch (ConsulException e) {
+                throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                        String.format("fail to register host %s:%d service %s", req.getHost(), req.getPort(),
+                                serviceKey), e);
+            }
         }
         return null;
     }
@@ -211,52 +220,83 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
-        LOG.info("Unregistering service to Consul: " + consulContext.getInstanceId());
-        this.consulClient.agentServiceDeregister(consulContext.getInstanceId());
-        LOG.info("Unregistered service to Consul: " + consulContext.getInstanceId());
+        if (ieRegistered) {
+            ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
+            try {
+                LOG.info("Unregistering service to Consul: " + consulContext.getInstanceId());
+                this.consulClient.agentServiceDeregister(consulContext.getInstanceId());
+                LOG.info("Unregistered service to Consul: " + consulContext.getInstanceId());
+                ieRegistered = false;
+            } catch (ConsulException e) {
+                throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                        String.format("fail to deregister host %s:%d service %s", req.getHost(), req.getPort(),
+                                serviceKey), e);
+            }
+        }
     }
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-        this.consulClient.agentCheckPass("service:" + consulContext.getInstanceId());
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Heartbeat service to Consul: " + consulContext.getInstanceId());
+        if (ieRegistered) {
+            ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
+            try {
+                this.consulClient.agentCheckPass("service:" + consulContext.getInstanceId());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Heartbeat service to Consul: " + consulContext.getInstanceId());
+                }
+            } catch (ConsulException e) {
+                throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                        String.format("fail to heartbeat id %s, host %s:%d service %s",
+                                req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), e);
+            }
         }
     }
 
     @Override
     public List<DefaultInstance> syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
-        HealthServicesRequest request = HealthServicesRequest.newBuilder()
-                .setQueryParams(new QueryParams(ConsistencyMode.DEFAULT))
-                .build();
-        Response<List<HealthService>> response = this.consulClient
-                .getHealthServices(serviceUpdateTask.getServiceEventKey().getService(), request);
-        if (response.getValue() == null || response.getValue().isEmpty()) {
-            return Collections.emptyList();
-        }
         List<DefaultInstance> instanceList = new ArrayList<>();
-        for (HealthService service : response.getValue()) {
-            DefaultInstance instance = new DefaultInstance();
-            instance.setId(service.getService().getId());
-            instance.setService(service.getService().getService());
-            instance.setHost(service.getService().getAddress());
-            instance.setPort(service.getService().getPort());
-            instanceList.add(instance);
+        try {
+            HealthServicesRequest request = HealthServicesRequest.newBuilder()
+                    .setQueryParams(new QueryParams(ConsistencyMode.DEFAULT))
+                    .build();
+            Response<List<HealthService>> response = this.consulClient
+                    .getHealthServices(serviceUpdateTask.getServiceEventKey().getService(), request);
+            if (response.getValue() == null || response.getValue().isEmpty()) {
+                return Collections.emptyList();
+            }
+            for (HealthService service : response.getValue()) {
+                DefaultInstance instance = new DefaultInstance();
+                instance.setId(service.getService().getId());
+                instance.setService(service.getService().getService());
+                instance.setHost(service.getService().getAddress());
+                instance.setPort(service.getService().getPort());
+                instanceList.add(instance);
+            }
+        } catch (ConsulException e) {
+            throw ServerErrorResponseException.build(ErrorCode.SERVER_USER_ERROR.ordinal(),
+                    String.format("Get service instances of %s sync failed.",
+                            serviceUpdateTask.getServiceEventKey().getServiceKey()));
         }
         return instanceList;
     }
 
     @Override
     public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
-        CatalogServicesRequest request = CatalogServicesRequest.newBuilder()
-                .setQueryParams(QueryParams.DEFAULT).build();
-        ArrayList<String> serviceList = new ArrayList<>(
-                this.consulClient.getCatalogServices(request).getValue().keySet());
         Services services = new ServicesByProto();
-        for (String s : serviceList) {
-            ServiceInfo serviceInfo = new ServiceInfo();
-            serviceInfo.setService(s);
-            services.getServices().add(serviceInfo);
+        try {
+            CatalogServicesRequest request = CatalogServicesRequest.newBuilder()
+                    .setQueryParams(QueryParams.DEFAULT).build();
+            ArrayList<String> serviceList = new ArrayList<>(
+                    this.consulClient.getCatalogServices(request).getValue().keySet());
+            for (String s : serviceList) {
+                ServiceInfo serviceInfo = new ServiceInfo();
+                serviceInfo.setService(s);
+                services.getServices().add(serviceInfo);
+            }
+        } catch (ConsulException e) {
+            throw ServerErrorResponseException.build(ErrorCode.SERVER_USER_ERROR.ordinal(),
+                    String.format("Get services of %s instances sync failed.",
+                            serviceUpdateTask.getServiceEventKey().getServiceKey()));
         }
         return services;
     }

@@ -35,7 +35,7 @@ public class ServerEvent {
     /**
      * 获取错误信息，只有当出错的时候才返回
      */
-    private final PolarisException error;
+    private PolarisException error;
     /**
      * 获取泛型的值
      */
@@ -61,5 +61,9 @@ public class ServerEvent {
 
     public PolarisException getError() {
         return error;
+    }
+
+    public void setError(PolarisException error) {
+        this.error = error;
     }
 }
