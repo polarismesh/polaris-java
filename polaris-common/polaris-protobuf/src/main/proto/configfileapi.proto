@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package v1;
+
+import "configfile.proto";
+
+option java_package = "com.tencent.polaris.client.pb";
+option java_outer_classname = "PolarisConfigGRPCService";
+
+service PolarisConfigGRPC {
+
+  // 拉取配置
+  rpc GetConfigFile(ConfigFileDTO) returns (ConfigFileResponse) {}
+
+  // 订阅配置变更
+  rpc WatchConfigFiles(WatchConfigFileRequest) returns (ConfigFileResponse) {}
+}

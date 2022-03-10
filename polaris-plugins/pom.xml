@@ -26,5 +26,6 @@
         <module>polaris-plugins-router</module>
         <module>polaris-plugins-registry</module>
         <module>polaris-plugins-cache</module>
+        <module>polaris-plugins-configuration-connector</module>
     </modules>
 </project>
