@@ -125,8 +125,8 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
             synchronized (this) {
                 if (objectCache == null) {
                     objectCache = CacheBuilder.newBuilder()
-                        .maximumSize(configFileConfig.propertiesValueCacheSize())
-                        .expireAfterAccess(configFileConfig.propertiesValueExpireTime(), TimeUnit.MINUTES)
+                        .maximumSize(configFileConfig.getPropertiesValueCacheSize())
+                        .expireAfterAccess(configFileConfig.getPropertiesValueExpireTime(), TimeUnit.MINUTES)
                         .build();
                 }
             }

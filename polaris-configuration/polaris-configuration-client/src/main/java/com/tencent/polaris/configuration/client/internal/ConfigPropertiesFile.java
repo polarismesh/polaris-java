@@ -307,11 +307,6 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
     }
 
     @Override
-    public Properties asProperties() {
-        return new Properties(properties.get());
-    }
-
-    @Override
     public void addChangeListener(ConfigKVFileChangeListener listener) {
         if (!listeners.contains(listener)) {
             listeners.add(listener);
@@ -441,8 +436,8 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
     private <T> Cache<String, T> newCache() {
         Cache<String, T> cache = CacheBuilder.newBuilder()
-            .maximumSize(configFileConfig.propertiesValueCacheSize())
-            .expireAfterAccess(configFileConfig.propertiesValueExpireTime(), TimeUnit.MINUTES)
+            .maximumSize(configFileConfig.getPropertiesValueCacheSize())
+            .expireAfterAccess(configFileConfig.getPropertiesValueExpireTime(), TimeUnit.MINUTES)
             .build();
         allCaches.add(cache);
         return cache;

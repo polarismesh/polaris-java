@@ -10,24 +10,24 @@ import com.tencent.polaris.api.config.verify.Verifier;
 public interface ConfigFileConfig extends Verifier {
 
     /**
-     * 配置文件连接器类型
+     * 配置文件连接器
      *
-     * @return 连接器类型，默认为北极星后端
+     * @return 连接器配置对象
      */
-    String connectorType();
+    ConnectorConfig getServerConnector();
 
     /**
      * 值缓存的最大数量
      *
      * @return 最大数量
      */
-    int propertiesValueCacheSize();
+    int getPropertiesValueCacheSize();
 
     /**
      * 缓存的过期时间，默认为 60s
      *
      * @return 值缓存过期时间
      */
-    long propertiesValueExpireTime();
+    long getPropertiesValueExpireTime();
 
 }

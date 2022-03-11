@@ -3,6 +3,7 @@ package com.tencent.polaris.plugins.configuration.connector.polaris;
 import com.google.common.collect.Lists;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt64Value;
+
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -21,6 +22,7 @@ import com.tencent.polaris.client.pb.PolarisConfigGRPCGrpc;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +41,8 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
     public void init(InitContext ctx) throws PolarisException {
         CompletableFuture<String> readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
-        futures.put(ClusterType.SERVICE_DISCOVER_CLUSTER, readyFuture);
-        connectionManager = new ConnectionManager(ctx, null, futures);
+        futures.put(ClusterType.SERVICE_CONFIG_CLUSTER, readyFuture);
+        connectionManager = new ConnectionManager(ctx, ctx.getConfig().getConfigFile().getServerConnector(), futures);
     }
 
     @Override
@@ -48,7 +50,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         Connection connection = null;
 
         try {
-            connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_FILE, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
@@ -81,7 +83,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         Connection connection = null;
 
         try {
-            connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_FILE, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =

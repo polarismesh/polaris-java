@@ -11,6 +11,15 @@ global:
         - nearbyBasedRouter
       #描述: 系统服务使用的负载均衡方式
       lbPolicy: weightedRandom
+    configCluster:
+      #描述: 服务刷新间隔
+      refreshInterval: 1m
+      #描述: 系统服务使用的路由链
+      routers:
+        - metadataRouter
+        - nearbyBasedRouter
+      #描述: 系统服务使用的负载均衡方式
+      lbPolicy: weightedRandom
     #描述: 健康检查集群
     healthCheckCluster:
       refreshInterval: 1m
@@ -186,9 +195,25 @@ provider:
     fallbackOnExceedWindowCount: pass
 # 配置中心默认配置
 configFile:
-  # 连接器类型，默认为北极星服务端
-  connectorType: polaris
   # 类型转化缓存的key数量
   propertiesValueCacheSize: 100
   # 类型转化缓存的过期时间，默认为1分钟
   propertiesValueExpireTime: 60000
+  # 连接器配置，默认为北极星服务端
+  serverConnector:
+    connectorType: polaris
+    #描述：默认服务端埋点接入地址
+    addresses:
+      - 127.0.0.1:8093
+    #描述: 访问server的连接协议，SDK会根据协议名称会加载对应的插件
+    protocol: grpc
+    #描述: 发起连接后的连接超时时间
+    connectTimeout: 500ms
+    #描述: 与服务端发起远程请求超时时间
+    messageTimeout: 5s
+    #描述: 连接空闲时间（以最后一次消息交互时间来算），长连接模式下，当连接空闲超过一定时间后，SDK会主动释放连接
+    connectionIdleTimeout: 60s
+    #描述: server节点的切换周期，为了使得server的压力能够均衡，SDK会定期切换目标服务端节点
+    serverSwitchInterval: 10m
+    #描述：重连间隔时间
+    reconnectInterval: 500ms
