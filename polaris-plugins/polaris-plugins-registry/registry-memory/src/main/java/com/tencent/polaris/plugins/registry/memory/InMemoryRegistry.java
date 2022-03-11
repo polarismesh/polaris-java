@@ -46,17 +46,16 @@ import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.DetectResult;
+import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.pojo.StatusDimension;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -68,7 +67,6 @@ import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,15 +83,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * 本地缓存,保存服务端返回的实例信息.
  *
- * @author andrewshan
- * @date 2019/8/22
+ * @author andrewshan, Haotian Zhang
  */
 public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
@@ -103,54 +99,43 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 默认首次发现discovery服务重试间隔
      */
     private static final long defaultDiscoverServiceRetryIntervalMs = 5000;
-
-    private ServerConnector connector;
-
     /**
      * 存储同步下来的服务规则信息
      */
     private final Map<ServiceEventKey, CacheObject> resourceMap = new ConcurrentHashMap<>();
-
     /**
      * 资源变更时间监听器
      */
     private final List<ResourceEventListener> resourceEventListeners = new CopyOnWriteArrayList<>();
-
     /**
      * 存储使用到的服务列表数据
      */
     private final Map<ServiceKey, Boolean> services = new ConcurrentHashMap<>();
-
-    /**
-     * 服务数据持久化处理器
-     */
-    private MessagePersistHandler messagePersistHandler;
-
-    /**
-     * 持久化线程
-     */
-    private ExecutorService persistExecutor;
-
-    /**
-     * 超时淘汰线程
-     */
-    private ScheduledExecutorService expireExecutor;
-
-    /**
-     * 拉取系统服务的线程
-     */
-    private ExecutorService serverServicesDiscoverExecutor;
-
     /**
      * 缓存处理器，通过SPI加载
      */
     private final Map<EventType, CacheHandler> cacheHandlers = new HashMap<>();
-
     /**
      * 系统服务信息
      */
     private final Map<ServiceKey, ServerServiceInfo> serverServiceMap = new HashMap<>();
-
+    private ServerConnector connector;
+    /**
+     * 服务数据持久化处理器
+     */
+    private MessagePersistHandler messagePersistHandler;
+    /**
+     * 持久化线程
+     */
+    private ExecutorService persistExecutor;
+    /**
+     * 超时淘汰线程
+     */
+    private ScheduledExecutorService expireExecutor;
+    /**
+     * 拉取系统服务的线程
+     */
+    private ExecutorService serverServicesDiscoverExecutor;
     /**
      * 服务刷新时延
      */
@@ -418,9 +403,10 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         for (CacheHandler handler : handlers) {
             cacheHandlers.put(handler.getTargetEventType(), handler);
         }
-        //构建协议connector
-        String protocol = ctx.getConfig().getGlobal().getServerConnector().getProtocol();
-        connector = (ServerConnector) ctx.getPlugins().getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(), protocol);
+        // Load server connector.
+        connector = (ServerConnector) ctx.getPlugins().getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
+                ctx.getValueContext().getServerConnectorProtocol());
+
         //构建基础属性
         String persistDir = ctx.getConfig().getConsumer().getLocalCache().getPersistDir();
         int maxReadRetry = ctx.getConfig().getConsumer().getLocalCache().getPersistMaxReadRetry();
@@ -536,6 +522,18 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     protected void doDestroy() {
         ThreadPoolUtils.waitAndStopThreadPools(
                 new ExecutorService[]{serverServicesDiscoverExecutor, persistExecutor, expireExecutor,});
+    }
+
+    /**
+     * 设置系统服务就绪状态
+     *
+     * @param serviceEventKey 资源标识
+     */
+    public void setServerServiceReady(ServiceEventKey serviceEventKey) {
+        if (!serverServiceMap.containsKey(serviceEventKey.getServiceKey())) {
+            return;
+        }
+        connector.updateServers(serviceEventKey);
     }
 
     /**
@@ -661,18 +659,6 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
                 retryTask();
             }
         }
-    }
-
-    /**
-     * 设置系统服务就绪状态
-     *
-     * @param serviceEventKey 资源标识
-     */
-    public void setServerServiceReady(ServiceEventKey serviceEventKey) {
-        if (!serverServiceMap.containsKey(serviceEventKey.getServiceKey())) {
-            return;
-        }
-        connector.updateServers(serviceEventKey);
     }
 
 }

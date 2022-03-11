@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.router.common;
 
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.IdAwarePlugin;
@@ -29,7 +30,6 @@ import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.control.Destroyable;
 
 public abstract class AbstractServiceRouter extends Destroyable implements ServiceRouter, IdAwarePlugin {
 
@@ -55,20 +55,6 @@ public abstract class AbstractServiceRouter extends Destroyable implements Servi
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
                     "GetFilteredInstances param invalid, destService must exist");
         }
-
-        // 被调规则如果存在, 主流程必须保证已初始化
-        if (routeInfo.getDestRouteRule() != null && !routeInfo.getDestRouteRule().isInitialized()) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                    "GetFilteredInstances param invalid, dest routes exist but not initialized");
-        }
-
-        // 主调规则如果存在, 主流程必须保证已初始化
-        if (routeInfo.getSourceRouteRule() != null && !routeInfo.getSourceRouteRule()
-                .isInitialized()) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                    "GetFilteredInstances param invalid, source routes exist but not initialized");
-        }
-
     }
 
     @Override

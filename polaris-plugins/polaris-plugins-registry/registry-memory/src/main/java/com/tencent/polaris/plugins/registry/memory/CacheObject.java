@@ -231,6 +231,9 @@ public class CacheObject implements EventHandler {
             }
         }
         synchronized (lock) {
+            if (error != null && ErrorCode.SERVICE_NOT_FOUND.equals(error.getCode())) {
+                notifyEvent(null);
+            }
             notifyEvent(error);
         }
         return svcDeleted;

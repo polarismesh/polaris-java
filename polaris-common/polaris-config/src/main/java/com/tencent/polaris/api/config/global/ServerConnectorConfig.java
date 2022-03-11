@@ -20,6 +20,7 @@ package com.tencent.polaris.api.config.global;
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 与名字服务服务端的连接配置
@@ -76,4 +77,11 @@ public interface ServerConnectorConfig extends PluginConfig, Verifier {
      * @return long, 毫秒
      */
     long getReconnectInterval();
+
+    /**
+     * Get metadata map.
+     *
+     * @return metadata
+     */
+    Map<String, String> getMetadata();
 }

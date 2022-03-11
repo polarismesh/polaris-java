@@ -16,7 +16,8 @@ import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
 import com.tencent.polaris.client.pb.RequestProto;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ServiceProto;
-import com.tencent.polaris.plugins.connector.grpc.ServiceUpdateTask.Type;
+import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ import org.slf4j.LoggerFactory;
 /**
  * 用于cluster/healthcheck/heartbeat的服务发现
  *
- * @date 2021/1/30
+ * @author Haotian Zhang
  */
 public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverResponse> {
 
@@ -89,7 +90,8 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      * @param connectionIdleTimeoutMs 连接超时
      * @param serviceUpdateTask 初始更新任务
      */
-    public SpecStreamClient(Connection connection, long connectionIdleTimeoutMs, ServiceUpdateTask serviceUpdateTask) {
+    public SpecStreamClient(Connection connection, long connectionIdleTimeoutMs,
+            ServiceUpdateTask serviceUpdateTask) {
         this.connection = connection;
         this.connectionIdleTimeoutMs = connectionIdleTimeoutMs;
         createTimeMs = System.currentTimeMillis();
@@ -150,31 +152,6 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         discoverClient.onNext(req.build());
     }
 
-    private static class ValidResult {
-
-        final ServiceEventKey serviceEventKey;
-        final ErrorCode errorCode;
-        final String message;
-
-        public ValidResult(ServiceEventKey serviceEventKey, ErrorCode errorCode, String message) {
-            this.serviceEventKey = serviceEventKey;
-            this.errorCode = errorCode;
-            this.message = message;
-        }
-
-        public ServiceEventKey getServiceEventKey() {
-            return serviceEventKey;
-        }
-
-        public ErrorCode getErrorCode() {
-            return errorCode;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
-
     /**
      * 检查该应答是否合法，不合法则走异常流程
      *
@@ -211,7 +188,6 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
 
         return new ValidResult(serviceEventKey, ErrorCode.Success, "");
     }
-
 
     /**
      * 异常回调
@@ -311,7 +287,6 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         }
     }
 
-
     private boolean closeExpireStream() {
         //检查是否过期
         long lastRecvMs = lastRecvTimeMs.get();
@@ -356,5 +331,30 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             pendingTask.put(serviceEventKey, serviceUpdateTask);
         }
         return true;
+    }
+
+    private static class ValidResult {
+
+        final ServiceEventKey serviceEventKey;
+        final ErrorCode errorCode;
+        final String message;
+
+        public ValidResult(ServiceEventKey serviceEventKey, ErrorCode errorCode, String message) {
+            this.serviceEventKey = serviceEventKey;
+            this.errorCode = errorCode;
+            this.message = message;
+        }
+
+        public ServiceEventKey getServiceEventKey() {
+            return serviceEventKey;
+        }
+
+        public ErrorCode getErrorCode() {
+            return errorCode;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }

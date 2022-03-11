@@ -65,6 +65,16 @@ public class Provider {
         String localHost = getLocalHost(configuration);
         int localPort = server.getAddress().getPort();
 
+//        List<ServerConnectorConfigImpl> connectorConfigList = configuration.getGlobal().getServerConnectors();
+//        for (ServerConnectorConfigImpl serverConnectorConfig : connectorConfigList) {
+//            if (DefaultPlugins.SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
+//                Map<String, String> metadata = serverConnectorConfig.getMetadata();
+//                metadata.put(MetadataMapKey.INSTANCE_ID_KEY, "EJ-111");
+//                metadata.put(MetadataMapKey.IP_ADDRESS_KEY, "localhost");
+//                metadata.put(MetadataMapKey.PREFER_IP_ADDRESS_KEY, "true");
+//            }
+//        }
+
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
         HEARTBEAT_EXECUTOR
                 .schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
@@ -116,6 +126,26 @@ public class Provider {
         deregisterRequest.setPort(port);
         providerAPI.deRegister(deregisterRequest);
         System.out.printf("deregister instance, address is %s:%d%n", host, port);
+    }
+
+    private static Map<String, String> splitQuery(URI uri) throws UnsupportedEncodingException {
+        Map<String, String> query_pairs = new LinkedHashMap<>();
+        String query = uri.getQuery();
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            int idx = pair.indexOf("=");
+            query_pairs.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
+                    URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
+        }
+        return query_pairs;
+    }
+
+    private static String getLocalHost(Configuration configuration) throws Exception {
+        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        String[] tokens = serverAddress.split(":");
+        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+            return socket.getLocalAddress().getHostAddress();
+        }
     }
 
     private static class RegisterTask implements Runnable {
@@ -176,19 +206,6 @@ public class Provider {
         }
     }
 
-    private static Map<String, String> splitQuery(URI uri) throws UnsupportedEncodingException {
-        Map<String, String> query_pairs = new LinkedHashMap<>();
-        String query = uri.getQuery();
-        String[] pairs = query.split("&");
-        for (String pair : pairs) {
-            int idx = pair.indexOf("=");
-            query_pairs.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
-                    URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
-        }
-        return query_pairs;
-    }
-
-
     private static class EchoServerHandler implements HttpHandler {
 
         @Override
@@ -200,14 +217,6 @@ public class Provider {
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.close();
-        }
-    }
-
-    private static String getLocalHost(Configuration configuration) throws Exception {
-        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
-        String[] tokens = serverAddress.split(":");
-        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
-            return socket.getLocalAddress().getHostAddress();
         }
     }
 

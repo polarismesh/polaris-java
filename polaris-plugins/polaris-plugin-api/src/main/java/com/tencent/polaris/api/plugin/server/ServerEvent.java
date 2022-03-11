@@ -24,8 +24,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 /**
  * 服务变更事件
  *
- * @author andrewshan
- * @date 2019/8/21
+ * @author andrewshan, Haotian Zhang
  */
 public class ServerEvent {
 
@@ -33,16 +32,14 @@ public class ServerEvent {
      * 获取服务标识
      */
     private final ServiceEventKey serviceEventKey;
-
-    /**
-     * 获取泛型的值
-     */
-    private final Object value;
-
     /**
      * 获取错误信息，只有当出错的时候才返回
      */
-    private final PolarisException error;
+    private PolarisException error;
+    /**
+     * 获取泛型的值
+     */
+    private Object value;
 
     public ServerEvent(ServiceEventKey serviceEventKey, Object value, PolarisException error) {
         this.serviceEventKey = serviceEventKey;
@@ -58,7 +55,15 @@ public class ServerEvent {
         return value;
     }
 
+    public void setValue(Object value) {
+        this.value = value;
+    }
+
     public PolarisException getError() {
         return error;
+    }
+
+    public void setError(PolarisException error) {
+        this.error = error;
     }
 }

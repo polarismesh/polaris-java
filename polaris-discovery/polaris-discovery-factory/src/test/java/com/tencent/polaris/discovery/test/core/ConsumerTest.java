@@ -21,10 +21,7 @@ import static com.tencent.polaris.test.common.Consts.ITERATE_COUNT;
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
 
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.config.global.ClusterConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
-import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
@@ -34,7 +31,6 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.ClusterConfigImpl;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
@@ -54,19 +50,9 @@ import org.slf4j.LoggerFactory;
 public class ConsumerTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsumerTest.class);
-
-    private NamingServer namingServer;
-
-    private enum Operation {
-        ALL_HEALTHY, HAS_UNHEALTHY
-    }
-
     private static final Map<Operation, ValidParam> validParams = new HashMap<>();
-
     private static final String SERVICE_TEST_NORMAL = "java_test_normal";
-
     private static final String SERVICE_TEST_ABNORMAL = "java_test_abnormal";
-
     private static final String NOT_EXISTS_SERVICE = "java_test_not_exists";
 
     static {
@@ -75,6 +61,8 @@ public class ConsumerTest {
         validParams.put(Operation.HAS_UNHEALTHY,
                 new ValidParam(SERVICE_TEST_ABNORMAL, 10, 4, 8));
     }
+
+    private NamingServer namingServer;
 
     @Before
     public void before() {
@@ -141,7 +129,6 @@ public class ConsumerTest {
         concurrentTestSyncGetOneInstance(Operation.ALL_HEALTHY);
     }
 
-
     @Test
     public void testSyncGetAllInstancesAbnormal() {
         commonTestSyncGetAllInstances(Operation.HAS_UNHEALTHY);
@@ -188,16 +175,8 @@ public class ConsumerTest {
                 GetOneInstanceRequest request = new GetOneInstanceRequest();
                 request.setNamespace(NAMESPACE_TEST);
                 request.setService(NOT_EXISTS_SERVICE);
-                try {
-                    consumerAPI.getOneInstance(request);
-                    Assert.fail("not exists service should throw exception");
-                } catch (PolarisException e) {
-                    ErrorCode code = e.getCode();
-                    if (code != ErrorCode.SERVER_USER_ERROR) {
-                        Assert.fail(e.getMessage());
-                    }
-                    LOG.info("not exist service message is {}", e.getMessage());
-                }
+                InstancesResponse oneInstance = consumerAPI.getOneInstance(request);
+                Assert.assertFalse(oneInstance.isServiceExist());
             }
             //把实例加上去，可以重新获取
             InstanceParameter parameter = new InstanceParameter();
@@ -296,6 +275,10 @@ public class ConsumerTest {
                 Assert.assertEquals(100, instance.getWeight());
             }
         }
+    }
+
+    private enum Operation {
+        ALL_HEALTHY, HAS_UNHEALTHY
     }
 
     private static class ValidParam {

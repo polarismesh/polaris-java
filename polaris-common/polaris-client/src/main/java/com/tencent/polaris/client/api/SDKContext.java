@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterConfig;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.SystemConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -33,6 +34,7 @@ import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.plugin.impl.PluginManager;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
@@ -56,41 +58,29 @@ import org.slf4j.LoggerFactory;
 /**
  * SDK初始化相关的上下文信息
  *
- * @author andrewshan
- * @date 2019/8/21
+ * @author andrewshan, Haotian Zhang
  */
 public class SDKContext extends Destroyable implements InitContext, AutoCloseable, Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(SDKContext.class);
-
+    private static final String DEFAULT_ADDRESS = "127.0.0.1";
     /**
      * 配置对象
      */
     private final Configuration configuration;
-
     /**
      * 初始化标识
      */
     private final AtomicBoolean initialized = new AtomicBoolean(false);
-
     /**
      * 插件管理器
      */
     private final Manager plugins;
-
     private final ValueContext valueContext;
-
     private final Extensions extensions = new Extensions();
-
     private final Object lock = new Object();
-
     private final List<Destroyable> destroyHooks = new ArrayList<>();
-
     private final Collection<ServerServiceInfo> serverServices;
-
-    public ValueContext getValueContext() {
-        return valueContext;
-    }
 
     /**
      * 构造器
@@ -223,6 +213,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         PluginManager manager = new PluginManager(types);
         ValueContext valueContext = new ValueContext();
         valueContext.setHost(parseHost(config));
+        valueContext.setServerConnectorProtocol(parseServerConnectorProtocol(config));
         SDKContext initContext = new SDKContext(config, manager, valueContext);
 
         try {
@@ -235,11 +226,6 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             throw new PolarisException(ErrorCode.PLUGIN_ERROR, "plugin error", e);
         }
         return initContext;
-    }
-
-    @Override
-    public Collection<ServerServiceInfo> getServerServices() {
-        return serverServices;
     }
 
     public static String parseHost(Configuration configuration) {
@@ -257,6 +243,29 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             LOG.error("[ReportClient]get address by dial failed", e);
         }
         return DEFAULT_ADDRESS;
+    }
+
+    /**
+     * Get protocol of server connector, such as:
+     * <ul>
+     * <li>{@link DefaultPlugins#SERVER_CONNECTOR_COMPOSITE}</li>
+     * <li>{@link DefaultPlugins#SERVER_CONNECTOR_GRPC}</li>
+     * <li>{@link DefaultPlugins#SERVER_CONNECTOR_CONSUL}</li>
+     * </ul>
+     *
+     * @param configuration
+     * @return
+     */
+    public static String parseServerConnectorProtocol(Configuration configuration) {
+        String protocol;
+        if (CollectionUtils.isNotEmpty(configuration.getGlobal().getServerConnectors())) {
+            // Composite server connector first
+            protocol = DefaultPlugins.SERVER_CONNECTOR_COMPOSITE;
+        } else {
+            // If composite server connector does not exist.
+            protocol = configuration.getGlobal().getServerConnector().getProtocol();
+        }
+        return protocol;
     }
 
     private static String getHostByDial(Configuration configuration) throws IOException {
@@ -292,8 +301,6 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         return null;
     }
 
-    private static final String DEFAULT_ADDRESS = "127.0.0.1";
-
     /**
      * 解析网卡IP
      *
@@ -311,6 +318,15 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             return inetAddress.getCanonicalHostName();
         }
         return DEFAULT_ADDRESS;
+    }
+
+    public ValueContext getValueContext() {
+        return valueContext;
+    }
+
+    @Override
+    public Collection<ServerServiceInfo> getServerServices() {
+        return serverServices;
     }
 
     public void registerDestroyHook(Destroyable destroyable) {

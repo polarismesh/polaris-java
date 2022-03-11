@@ -3,11 +3,7 @@ package com.tencent.polaris.plugins.configuration.connector.polaris;
 import com.google.common.collect.Lists;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt64Value;
-
-import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.api.config.global.ClusterType;
-import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
@@ -25,8 +21,6 @@ import com.tencent.polaris.client.pb.PolarisConfigGRPCGrpc;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
-import com.tencent.polaris.plugins.connector.grpc.SpecStreamClient;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +40,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         CompletableFuture<String> readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_DISCOVER_CLUSTER, readyFuture);
-        connectionManager = new ConnectionManager(ctx, futures);
+        connectionManager = new ConnectionManager(ctx, null, futures);
     }
 
     @Override

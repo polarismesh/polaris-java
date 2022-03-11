@@ -20,51 +20,46 @@ package com.tencent.polaris.factory.config.global;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 /**
  * 与名字服务服务端的连接配置
  *
- * @author andrewshan
- * @date 2019/8/20
+ * @author andrewshan, Haotian Zhang
  */
 public class ServerConnectorConfigImpl extends PluginConfigImpl implements ServerConnectorConfig {
 
     private static final Pattern addressPattern = Pattern.compile("(.*)((?::))((?:[0-9]+))$");
-
+    private final Map<String, String> metadata = new ConcurrentHashMap<>();
     @JsonProperty
     private List<String> addresses;
-
     @JsonProperty
     private String protocol;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long connectTimeout;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long messageTimeout;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long serverSwitchInterval;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long connectionIdleTimeout;
-
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reconnectInterval;
 
     @Override
-
     public List<String> getAddresses() {
         return addresses;
     }
@@ -143,22 +138,29 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     }
 
     @Override
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    @Override
     public void verify() {
         if (CollectionUtils.isEmpty(addresses)) {
-            throw new IllegalArgumentException("addresses must not be empty");
+            throw new IllegalArgumentException(String.format("addresses of [%s] must not be empty", protocol));
         }
         for (String address : addresses) {
             boolean matched = addressPattern.matcher(address).find();
             if (!matched) {
-                throw new IllegalArgumentException(String.format("address %s is invalid", address));
+                throw new IllegalArgumentException(String.format("address [%s] of [%s] is invalid", address, protocol));
             }
         }
-        ConfigUtils.validateString(protocol, "serverConnector.protocol");
-        ConfigUtils.validateInterval(connectTimeout, "serverConnector.connectTimeout");
-        ConfigUtils.validateInterval(messageTimeout, "serverConnector.messageTimeout");
-        ConfigUtils.validateInterval(serverSwitchInterval, "serverConnector.serverSwitchInterval");
-        ConfigUtils.validateInterval(connectionIdleTimeout, "serverConnector.connectionIdleTimeout");
-        ConfigUtils.validateInterval(reconnectInterval, "serverConnector.reconnectInterval");
+        if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(protocol)) {
+            ConfigUtils.validateString(protocol, "serverConnector.protocol");
+            ConfigUtils.validateInterval(connectTimeout, "serverConnector.connectTimeout");
+            ConfigUtils.validateInterval(messageTimeout, "serverConnector.messageTimeout");
+            ConfigUtils.validateInterval(serverSwitchInterval, "serverConnector.serverSwitchInterval");
+            ConfigUtils.validateInterval(connectionIdleTimeout, "serverConnector.connectionIdleTimeout");
+            ConfigUtils.validateInterval(reconnectInterval, "serverConnector.reconnectInterval");
+        }
         verifyPluginConfig();
     }
 
