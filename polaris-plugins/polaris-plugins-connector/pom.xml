@@ -17,7 +17,7 @@
 
     <modules>
         <module>connector-polaris-grpc</module>
-        <module>connector-consul-api</module>
+        <module>connector-consul</module>
         <module>connector-composite</module>
         <module>connector-common</module>
     </modules>

@@ -180,24 +180,24 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- composite-connector-->
+            <!-- composite-connector -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>connector-composite</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- polaris-grpc-connector-->
+            <!-- polaris-grpc-connector -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>connector-polaris-grpc</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- consul-api-connector-->
+            <!-- consul-connector -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
-                <artifactId>connector-consul-api</artifactId>
+                <artifactId>connector-consul</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
