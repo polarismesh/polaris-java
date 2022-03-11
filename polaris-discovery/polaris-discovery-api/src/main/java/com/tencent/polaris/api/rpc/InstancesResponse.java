@@ -75,6 +75,10 @@ public class InstancesResponse extends BaseEntity {
         return new ServiceInstancesWrap(serviceInstances, Arrays.asList(getInstances()), totalWeight);
     }
 
+    public boolean isServiceExist() {
+        return this.serviceInstances.isInitialized();
+    }
+
     @Override
     @SuppressWarnings("checkstyle:all")
     public String toString() {
