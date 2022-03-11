@@ -73,6 +73,10 @@ public class GlobalConfigImpl implements GlobalConfig {
         return serverConnectors;
     }
 
+    public void setServerConnectors(List<ServerConnectorConfigImpl> serverConnectors) {
+        this.serverConnectors = serverConnectors;
+    }
+
     @Override
     public StatReporterConfigImpl getStatReporter() {
         return statReporter;
