@@ -26,5 +26,6 @@
         <module>router-example</module>
         <module>ratelimit-example</module>
         <module>quickstart-example</module>
+        <module>configuration-example</module>
     </modules>
 </project>

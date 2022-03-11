@@ -58,6 +58,7 @@
         <module>polaris-router</module>
         <module>polaris-distribution</module>
         <module>polaris-examples</module>
+        <module>polaris-configuration</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 

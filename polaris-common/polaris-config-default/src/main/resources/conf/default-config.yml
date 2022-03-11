@@ -184,3 +184,11 @@ provider:
     maxWindowCount: 10000000
     # 超过最大窗口限制时的策略。pass（放通）, reject（限流）
     fallbackOnExceedWindowCount: pass
+# 配置中心默认配置
+configFile:
+  # 连接器类型，默认为北极星服务端
+  connectorType: polaris
+  # 类型转化缓存的key数量
+  propertiesValueCacheSize: 100
+  # 类型转化缓存的过期时间，默认为1分钟
+  propertiesValueExpireTime: 60000

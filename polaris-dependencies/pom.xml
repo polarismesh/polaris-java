@@ -67,6 +67,23 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- polaris-configuration-->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-configuration-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-configuration-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-configuration-factory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-router-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
@@ -146,6 +163,13 @@
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>circuitbreaker-errrate</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- polaris-plugins-configuration-->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-configuration-connector</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

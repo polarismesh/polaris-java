@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package v1;
+
+import "google/protobuf/wrappers.proto";
+
+option java_package = "com.tencent.polaris.client.pb";
+option java_outer_classname = "ConfigFileProto";
+
+message ConfigFileDTO {
+  google.protobuf.StringValue namespace = 1;
+  google.protobuf.StringValue group = 2;
+  google.protobuf.StringValue file_name = 3;
+  google.protobuf.StringValue content = 4;
+  google.protobuf.UInt64Value version = 5;
+  google.protobuf.StringValue md5 = 6;
+}
+
+message WatchConfigFileRequest {
+  google.protobuf.StringValue client_ip = 1;
+  google.protobuf.StringValue service_name = 2;
+  repeated ConfigFileDTO watch_files = 3;
+}
+
+message ConfigFileResponse {
+  google.protobuf.UInt32Value code = 1;
+  google.protobuf.StringValue info = 2;
+
+  ConfigFileDTO configFile = 3;
+}
