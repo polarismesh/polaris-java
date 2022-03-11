@@ -24,11 +24,6 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>connector-consul-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
             <artifactId>connector-common</artifactId>
             <version>${project.version}</version>
         </dependency>
