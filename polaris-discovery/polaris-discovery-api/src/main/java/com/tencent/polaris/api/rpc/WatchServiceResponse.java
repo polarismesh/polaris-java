@@ -24,18 +24,18 @@ public class WatchServiceResponse extends BaseEntity {
 
     private final InstancesResponse response;
 
-    private final boolean result;
+    private final boolean success;
 
     public WatchServiceResponse(InstancesResponse response, boolean result) {
         this.response = response;
-        this.result = result;
+        this.success = result;
     }
 
     public InstancesResponse getResponse() {
         return response;
     }
 
-    public boolean isResult() {
-        return result;
+    public boolean isSuccess() {
+        return success;
     }
 }

@@ -163,6 +163,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         checkAvailable("ConsumerAPI");
         Validator.validateWatchServiceRequest(request);
         CommonWatchServiceRequest watchServiceRequest = new CommonWatchServiceRequest(request, false);
-        return watchFlow.commonWatchService(watchServiceRequest).isResult();
+        return watchFlow.commonWatchService(watchServiceRequest).isSuccess();
     }
 }

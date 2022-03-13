@@ -130,11 +130,12 @@ public class WatchFlow {
                 LOG.debug("receive service={} change event", svcEventKey);
                 ServiceInstancesByProto oldIns = (ServiceInstancesByProto) oldValue;
                 ServiceInstancesByProto newIns = (ServiceInstancesByProto) newValue;
-                ServiceChangeEvent event = ServiceChangeEvent.Builder()
+                ServiceChangeEvent event = ServiceChangeEvent.builder()
                         .serviceKey(svcEventKey.getServiceKey())
                         .addInstances(Utils.checkAddInstances(oldIns, newIns))
                         .updateInstances(Utils.checkUpdateInstances(oldIns, newIns))
                         .deleteInstances(Utils.checkDeleteInstances(oldIns, newIns))
+                        .finalInstances(newIns.getInstances())
                         .build();
 
                 Set<ServiceListener> listeners = watchers.getOrDefault(svcEventKey.getServiceKey(), Collections.emptySet());
