@@ -282,7 +282,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
-        Services services = new ServicesByProto();
+        Services services = new ServicesByProto(new ArrayList<>());
         try {
             CatalogServicesRequest request = CatalogServicesRequest.newBuilder()
                     .setQueryParams(QueryParams.DEFAULT).build();

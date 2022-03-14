@@ -10,11 +10,11 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>connector-consul-api</artifactId>
+    <artifactId>connector-consul</artifactId>
     <packaging>jar</packaging>
 
-    <name>Polaris Plugins Client Connector ConsulAPI</name>
-    <description>Polaris Plugins Client Connector ConsulAPI POM</description>
+    <name>Polaris Plugins Client Connector</name>
+    <description>Polaris Plugins Client Connector Consul POM</description>
 
     <dependencies>
         <dependency>
