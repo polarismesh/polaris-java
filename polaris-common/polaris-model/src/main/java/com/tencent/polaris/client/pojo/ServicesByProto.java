@@ -33,9 +33,13 @@ import java.util.Objects;
 public class ServicesByProto implements Services, RegistryCacheValue {
 
     private final List<ServiceInfo> services;
+
     private final boolean initialized;
+
     private final boolean loadedFromFile;
+
     private final int hashCode;
+
     private ServiceKey svcKey;
 
     public ServicesByProto() {
