@@ -20,17 +20,9 @@ package com.tencent.polaris.factory.api;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.pojo.*;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
@@ -39,11 +31,15 @@ import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class APIFacade {
 
@@ -60,6 +56,8 @@ public class APIFacade {
     private static final Object lock = new Object();
 
     private static final AtomicBoolean inited = new AtomicBoolean(false);
+
+    private static final Map<String, ServiceListener> linstenerMap = new ConcurrentHashMap<>();
 
     public static void initByConfiguration(Object configuration) {
         if (inited.get()) {
@@ -197,6 +195,64 @@ public class APIFacade {
         InstancesResponse instancesResp = consumerAPI.getInstances(getInstancesRequest);
         ServiceInstances serviceInstances = instancesResp.toServiceInstances();
         return serviceInstances.getInstances();
+    }
+
+    public static List<?> getAllInstances(String namespace, String service) {
+        if (!inited.get()) {
+            LOGGER.info("polaris not inited, getAllInstances fail");
+            return null;
+        }
+        GetAllInstancesRequest getAllInstancesRequest = new GetAllInstancesRequest();
+        getAllInstancesRequest.setNamespace(namespace);
+        getAllInstancesRequest.setService(service);
+        InstancesResponse instancesResp = consumerAPI.getAllInstance(getAllInstancesRequest);
+        ServiceInstances serviceInstances = instancesResp.toServiceInstances();
+        return serviceInstances.getInstances();
+    }
+
+    public static List<?> watchService(String namespace, String service, Object listener, Method method) {
+        ServiceListener serviceListener = new APIFacade.ServiceWatcher(listener, method);
+        WatchServiceRequest request = WatchServiceRequest.builder().
+                namespace(namespace).
+                service(service).
+                listeners(Collections.singletonList(serviceListener))
+                .build();
+        WatchServiceResponse response = consumerAPI.watchService(request);
+        String serviceKeyStr = namespace + ":" + service;
+        linstenerMap.put(serviceKeyStr, serviceListener);
+        return response.getResponse().toServiceInstances().getInstances();
+    }
+
+    public static boolean unWatchService(String namespace, String service) {
+        String serviceKeyStr = namespace + ":" + service;
+        ServiceListener listener = linstenerMap.get(serviceKeyStr);
+        if (null == listener) {
+            return true;
+        }
+        WatchServiceRequest request = WatchServiceRequest.builder().
+                namespace(namespace).
+                service(service).
+                listeners(Collections.singletonList(listener))
+                .build();
+        return consumerAPI.unWatchService(request);
+    }
+
+    private static class ServiceWatcher implements ServiceListener {
+        private Object listener;
+        private Method method;
+
+        ServiceWatcher(Object listener, Method method) {
+            this.listener = listener;
+            this.method = method;
+        }
+
+        public void onEvent(ServiceChangeEvent event) {
+            try {
+                this.method.invoke(this.listener, event);
+            } catch (Exception var3) {
+                APIFacade.LOGGER.error("fail to invoke method {}, exception is: {}", this.method.getName(), var3.getMessage());
+            }
+        }
     }
 
     public static class ConfigurationModifier {
