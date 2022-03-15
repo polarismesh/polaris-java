@@ -18,8 +18,10 @@
 package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.StringUtils;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class DefaultInstance implements Instance {
 
@@ -234,6 +236,11 @@ public class DefaultInstance implements Instance {
     }
 
     @Override
+    public Collection<StatusDimension> getStatusDimensions() {
+        return circuitBreakerStatuses.keySet();
+    }
+
+    @Override
     public CircuitBreakerStatus getCircuitBreakerStatus(StatusDimension statusDimension) {
         return circuitBreakerStatuses.get(statusDimension);
     }
@@ -247,5 +254,47 @@ public class DefaultInstance implements Instance {
             return result;
         }
         return this.getPort() - instance.getPort();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DefaultInstance)) {
+            return false;
+        }
+        DefaultInstance that = (DefaultInstance) o;
+        return id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
+
+    @Override
+    public String toString() {
+        return "DefaultInstance{" +
+                "namespace='" + namespace + '\'' +
+                ", service='" + service + '\'' +
+                ", revision='" + revision + '\'' +
+                ", circuitBreakerStatuses=" + circuitBreakerStatuses +
+                ", healthy=" + healthy +
+                ", isolated=" + isolated +
+                ", protocol='" + protocol + '\'' +
+                ", id='" + id + '\'' +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", version='" + version + '\'' +
+                ", metadata=" + metadata +
+                ", enableHealthCheck=" + enableHealthCheck +
+                ", region='" + region + '\'' +
+                ", zone='" + zone + '\'' +
+                ", campus='" + campus + '\'' +
+                ", priority=" + priority +
+                ", weight=" + weight +
+                ", logicSet='" + logicSet + '\'' +
+                '}';
     }
 }

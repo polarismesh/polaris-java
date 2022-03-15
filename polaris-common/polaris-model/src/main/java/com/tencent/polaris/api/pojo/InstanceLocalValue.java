@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import java.util.Collection;
 import java.util.function.Function;
 
 /**
@@ -26,6 +27,13 @@ import java.util.function.Function;
  * @date 2019/9/2
  */
 public interface InstanceLocalValue {
+
+    /**
+     * 获取被熔断的接口列表
+     *
+     * @return 接口列表
+     */
+    Collection<StatusDimension> getStatusDimensions();
 
     /**
      * 获取熔断状态

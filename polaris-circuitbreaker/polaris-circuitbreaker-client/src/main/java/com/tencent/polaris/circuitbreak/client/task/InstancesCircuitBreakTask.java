@@ -167,7 +167,7 @@ public class InstancesCircuitBreakTask implements Runnable, Comparable<Instances
             Map<StatusDimension, CircuitBreakerStatus> statusMap = (Map<StatusDimension, CircuitBreakerStatus>)
                     instanceProperty.getProperties().get(PROPERTY_CIRCUIT_BREAKER_STATUS);
             statusMap.put(resultKey.getStatusDimension(),
-                    new CircuitBreakerStatus(cbName, status, now, maxRequestAfterHalfOpen));
+                    new CircuitBreakerStatus(cbName, status, now));
         }
     }
 

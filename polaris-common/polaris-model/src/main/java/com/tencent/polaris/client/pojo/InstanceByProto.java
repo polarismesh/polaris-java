@@ -25,6 +25,8 @@ import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.client.pb.ServiceProto;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 
@@ -91,6 +93,14 @@ public class InstanceByProto implements Instance {
             return null;
         }
         return instanceLocalValue.getCircuitBreakerStatus(StatusDimension.EMPTY_DIMENSION);
+    }
+
+    @Override
+    public Collection<StatusDimension> getStatusDimensions() {
+        if (null == instanceLocalValue) {
+            return Collections.emptySet();
+        }
+        return instanceLocalValue.getStatusDimensions();
     }
 
     @Override

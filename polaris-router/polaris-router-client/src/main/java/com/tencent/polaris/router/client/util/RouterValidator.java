@@ -19,7 +19,6 @@ package com.tencent.polaris.router.client.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 
@@ -44,9 +43,6 @@ public class RouterValidator {
      * @throws PolarisException 参数校验异常
      */
     public static void validateProcessLoadBalanceRequest(ProcessLoadBalanceRequest request) throws PolarisException {
-        if (StringUtils.isBlank(request.getLbPolicy())) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "lbPolicy is null");
-        }
         if (null == request.getDstInstances()) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "dstInstances is null");
         }
