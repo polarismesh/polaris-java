@@ -40,7 +40,7 @@ public class CircuitBreakerStatus {
      */
     private final long startTimeMs;
 
-    public CircuitBreakerStatus(String circuitBreaker, Status status, long startTimeMs, int maxRequestCount) {
+    public CircuitBreakerStatus(String circuitBreaker, Status status, long startTimeMs) {
         this.circuitBreaker = circuitBreaker;
         this.status = status;
         this.startTimeMs = startTimeMs;

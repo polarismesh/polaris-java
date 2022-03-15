@@ -460,7 +460,7 @@ public class PrometheusPushHandlerTest {
         circuitBreakResult.setInstanceId("callInstanceId");
         circuitBreakResult.setCallerService(mockCallerService());
         CircuitBreakerStatus circuitBreakerStatus = new CircuitBreakerStatus(
-                "mockCB", status, System.currentTimeMillis(), 0);
+                "mockCB", status, System.currentTimeMillis());
         circuitBreakResult.setCircuitBreakStatus(circuitBreakerStatus);
         return circuitBreakResult;
     }

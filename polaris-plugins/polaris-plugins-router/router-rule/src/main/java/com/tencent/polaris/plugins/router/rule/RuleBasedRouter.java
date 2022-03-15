@@ -208,6 +208,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
     private boolean isAllMetaMatched(boolean isMatchSource, boolean allMetaMatched, String ruleMetaKey,
             MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
+        if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
+            return true;
+        }
         if (ruleMetaValue.getType() == MatchString.MatchStringType.REGEX) {
             // 正则匹配
             allMetaMatched = matchValueByValueType(isMatchSource, true, ruleMetaKey, ruleMetaValue, destMetaValue,

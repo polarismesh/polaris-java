@@ -137,8 +137,12 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
     public ProcessLoadBalanceResponse processLoadBalance(ProcessLoadBalanceRequest request) throws PolarisException {
         checkAvailable("EngineAPI");
         RouterValidator.validateProcessLoadBalanceRequest(request);
+        String lbPolicy = request.getLbPolicy();
+        if (StringUtils.isBlank(lbPolicy)) {
+            lbPolicy = extensions.getConfiguration().getConsumer().getLoadbalancer().getType();
+        }
         LoadBalancer loadBalancer = (LoadBalancer) extensions.getPlugins()
-                .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), request.getLbPolicy());
+                .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), lbPolicy);
         Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), request.getDstInstances());
         return new ProcessLoadBalanceResponse(instance);
     }

@@ -21,6 +21,7 @@ import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.StatusDimension;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -40,6 +41,11 @@ public class DefaultInstanceLocalValue implements InstanceLocalValue {
     private final AtomicReference<DetectResult> detectResult = new AtomicReference<>();
 
     private final Map<Integer, Object> pluginValues = new ConcurrentHashMap<>();
+
+    @Override
+    public Collection<StatusDimension> getStatusDimensions() {
+        return circuitBreakerStatus.keySet();
+    }
 
     @Override
     public CircuitBreakerStatus getCircuitBreakerStatus(StatusDimension statusDimension) {

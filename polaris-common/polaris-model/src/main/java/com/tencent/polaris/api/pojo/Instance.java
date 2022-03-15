@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -40,12 +41,21 @@ public interface Instance extends Comparable<Instance> {
 
     /**
      * 获取整体熔断状态
+     *
      * @return 熔断状态
      */
     CircuitBreakerStatus getCircuitBreakerStatus();
 
     /**
+     * 获取熔断的接口列表
+     *
+     * @return 接口列表
+     */
+    Collection<StatusDimension> getStatusDimensions();
+
+    /**
      * 支持按接口等维度获取熔断状态
+     *
      * @param statusDimension 维度
      * @return 熔断状态
      */
