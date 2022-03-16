@@ -65,7 +65,7 @@ public class ServiceChangeEvent implements Serializable {
     /**
      * 当前服务下的最新实例列表
      */
-    private List<Instance> finalInstances = Collections.emptyList();
+    private List<Instance> allInstances = Collections.emptyList();
 
     /**
      * 本次服务实例变化中新增的实例
@@ -98,8 +98,8 @@ public class ServiceChangeEvent implements Serializable {
         return deleteInstances;
     }
 
-    public List<Instance> getFinalInstances() {
-        return finalInstances;
+    public List<Instance> getAllInstances() {
+        return allInstances;
     }
 
     public static ServiceEventBuilder builder() {
@@ -110,6 +110,7 @@ public class ServiceChangeEvent implements Serializable {
     public String toString() {
         return "ServiceChangeEvent{" +
                 "serviceKey=" + serviceKey +
+                ", allInstances=" + allInstances +
                 ", addInstances=" + addInstances +
                 ", updateInstances=" + updateInstances +
                 ", deleteInstances=" + deleteInstances +
@@ -118,7 +119,7 @@ public class ServiceChangeEvent implements Serializable {
 
     public static final class ServiceEventBuilder {
         private ServiceKey serviceKey;
-        private List<Instance> finalInstances = Collections.emptyList();
+        private List<Instance> allInstances = Collections.emptyList();
         private List<Instance> addInstances = Collections.emptyList();
         private List<OneInstanceUpdate> updateInstances = Collections.emptyList();
         private List<Instance> deleteInstances = Collections.emptyList();
@@ -131,8 +132,8 @@ public class ServiceChangeEvent implements Serializable {
             return this;
         }
 
-        public ServiceEventBuilder finalInstances(List<Instance> finalInstances) {
-            this.finalInstances = finalInstances;
+        public ServiceEventBuilder allInstances(List<Instance> allInstances) {
+            this.allInstances = allInstances;
             return this;
         }
 
@@ -157,7 +158,7 @@ public class ServiceChangeEvent implements Serializable {
             serviceChangeEvent.deleteInstances = this.deleteInstances;
             serviceChangeEvent.serviceKey = this.serviceKey;
             serviceChangeEvent.updateInstances = this.updateInstances;
-            serviceChangeEvent.finalInstances = this.finalInstances;
+            serviceChangeEvent.allInstances = this.allInstances;
             return serviceChangeEvent;
         }
     }

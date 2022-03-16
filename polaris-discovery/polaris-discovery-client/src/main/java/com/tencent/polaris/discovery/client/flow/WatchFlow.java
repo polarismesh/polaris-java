@@ -141,7 +141,7 @@ public class WatchFlow {
                         .addInstances(Utils.checkAddInstances(oldIns, newIns))
                         .updateInstances(Utils.checkUpdateInstances(oldIns, newIns))
                         .deleteInstances(Utils.checkDeleteInstances(oldIns, newIns))
-                        .finalInstances(newIns.getInstances())
+                        .allInstances(newIns.getInstances())
                         .build();
 
                 Set<ServiceListener> listeners = watchers.getOrDefault(svcEventKey.getServiceKey(), Collections.emptySet());
