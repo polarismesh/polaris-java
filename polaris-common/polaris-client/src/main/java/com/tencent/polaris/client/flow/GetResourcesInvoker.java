@@ -31,7 +31,7 @@ import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -41,9 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 获取资源的回调
@@ -69,7 +67,7 @@ public class GetResourcesInvoker implements EventCompleteNotifier, Future<Resour
     private final boolean useCache;
 
     public GetResourcesInvoker(ServiceEventKeysProvider paramProvider,
-                               Extensions extensions, boolean internalRequest, boolean useCache) throws PolarisException {
+            Extensions extensions, boolean internalRequest, boolean useCache) throws PolarisException {
         this.extensions = extensions;
         this.internalRequest = internalRequest;
         this.totalCallback = init(paramProvider);

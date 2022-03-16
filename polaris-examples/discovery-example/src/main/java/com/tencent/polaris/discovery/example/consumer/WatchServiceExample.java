@@ -24,7 +24,6 @@ import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;

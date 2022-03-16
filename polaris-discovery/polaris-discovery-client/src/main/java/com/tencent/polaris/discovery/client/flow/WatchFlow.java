@@ -32,7 +32,7 @@ import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;

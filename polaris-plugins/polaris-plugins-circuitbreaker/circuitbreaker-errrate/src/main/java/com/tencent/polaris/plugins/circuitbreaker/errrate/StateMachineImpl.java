@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.circuitbreaker.errrate;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.AbstractStateMachine;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigGroup;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSet;
@@ -27,7 +28,6 @@ import com.tencent.polaris.plugins.circuitbreaker.common.HalfOpenCounter;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.SliceWindow;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.TimeRange;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 基于错误率的状态机转换实现

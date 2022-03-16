@@ -17,13 +17,13 @@
 
 package com.tencent.polaris.test.mock.discovery;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import io.grpc.ForwardingServerCall;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HeaderInterceptor implements ServerInterceptor {
 
@@ -33,6 +33,7 @@ public class HeaderInterceptor implements ServerInterceptor {
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(
             ServerCall<ReqT, RespT> call, Metadata headers, ServerCallHandler<ReqT, RespT> next) {
         LOG.debug("header received from client:" + headers);
-        return next.startCall(new ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT>(call) {}, headers);
+        return next.startCall(new ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT>(call) {
+        }, headers);
     }
 }

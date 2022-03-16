@@ -16,10 +16,10 @@
 
 package com.tencent.polaris.api.plugin.common;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 用于主流程传递kv数据的上下文对象，线程安全

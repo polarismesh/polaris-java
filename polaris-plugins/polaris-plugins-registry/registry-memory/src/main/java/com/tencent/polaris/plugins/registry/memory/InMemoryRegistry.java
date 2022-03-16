@@ -46,17 +46,16 @@ import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.DetectResult;
+import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.pojo.StatusDimension;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -68,7 +67,7 @@ import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,9 +84,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 本地缓存,保存服务端返回的实例信息.
@@ -246,7 +243,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 加载资源
      *
      * @param svcEventKey 服务资源名
-     * @param notifier    通知器
+     * @param notifier 通知器
      * @throws PolarisException 异常
      */
     private void loadRemoteValue(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
@@ -321,7 +318,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private void reportCircuitStat(Entry<StatusDimension, CircuitBreakerStatus> dimensionEntry,
-                                   Instance instance) {
+            Instance instance) {
         if (null != statPlugins) {
             try {
                 for (Plugin statPlugin : statPlugins) {
@@ -338,7 +335,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private CircuitBreakGauge convertToCircuitBreakGauge(Entry<StatusDimension, CircuitBreakerStatus> dimensionEntry,
-                                                         Instance instance) {
+            Instance instance) {
         DefaultCircuitBreakResult result = new DefaultCircuitBreakResult();
         result.setMethod(dimensionEntry.getKey().getMethod());
         result.setCallerService(dimensionEntry.getKey().getCallerService());
@@ -465,7 +462,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 持久化消息
      *
      * @param svcEventKey 资源KEY
-     * @param message     原始消息
+     * @param message 原始消息
      */
     public void saveMessageToFile(ServiceEventKey svcEventKey, Message message) {
         if (!persistEnable) {

@@ -17,13 +17,13 @@
 
 package com.tencent.polaris.plugins.stat.common.model;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
 
 public class StatInfoStatefulCollector<T> extends AbstractSignatureStatInfoCollector<T, StatStatefulMetric> {
+
     private static final Logger LOG = LoggerFactory.getLogger(StatInfoStatefulCollector.class);
 
     private final Object mutex = new Object();
@@ -34,8 +34,8 @@ public class StatInfoStatefulCollector<T> extends AbstractSignatureStatInfoColle
 
     @Override
     public void collectStatInfo(T info,
-                                Map<String, String> metricLabels,
-                                MetricValueAggregationStrategy<T>[] strategies) {
+            Map<String, String> metricLabels,
+            MetricValueAggregationStrategy<T>[] strategies) {
         if (null != strategies) {
             String metricName;
             for (MetricValueAggregationStrategy<T> strategy : strategies) {

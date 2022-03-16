@@ -35,6 +35,7 @@ import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 基于规则的服务路由能力

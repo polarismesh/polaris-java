@@ -12,6 +12,7 @@ import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
@@ -30,7 +31,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PrometheusPushHandlerTest {
 

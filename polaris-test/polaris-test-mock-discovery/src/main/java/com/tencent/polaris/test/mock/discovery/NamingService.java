@@ -39,6 +39,7 @@ import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.pb.ServiceProto;
 import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.logging.LoggerFactory;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,7 +50,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
@@ -424,7 +424,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 final int[] index = {0};
                 tmp.forEach((s, svc) -> {
                     builder.addServices(index[0], svc);
-                    index[0] ++;
+                    index[0]++;
                 });
 
                 builder.setType(DiscoverResponseType.SERVICES);
@@ -451,7 +451,8 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
             public void onNext(DiscoverRequest req) {
                 if (req.getType().equals(DiscoverRequestType.INSTANCE)) {
                     ServiceProto.Service service = req.getService();
-                    ServiceKey serviceKey = new ServiceKey(service.getNamespace().getValue(), service.getName().getValue());
+                    ServiceKey serviceKey = new ServiceKey(service.getNamespace().getValue(),
+                            service.getName().getValue());
                     if (!services.containsKey(serviceKey)) {
                         responseObserver.onNext(
                                 buildServiceResponse(ServerCodes.NOT_FOUND_RESOURCE,
