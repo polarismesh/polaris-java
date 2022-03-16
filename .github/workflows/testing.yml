@@ -4,9 +4,9 @@
 name: Testing
 on:
   push:
-    branches: [ release-1.2 ]
+    branches: [ main,release-1.2 ]
   pull_request:
-    branches: [ release-1.2 ]
+    branches: [ main,release-1.2 ]
 
 jobs:
   build:
