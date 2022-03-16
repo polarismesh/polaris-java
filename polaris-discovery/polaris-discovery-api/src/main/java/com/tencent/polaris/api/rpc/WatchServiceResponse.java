@@ -18,24 +18,32 @@
 package com.tencent.polaris.api.rpc;
 
 /**
+ * 服务事件变更请求响应
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class WatchServiceResponse extends BaseEntity {
 
+    /**
+     * 发起 watch 请求时，会查询一下当前服务下的实例列表信息
+     */
     private final InstancesResponse response;
 
-    private final boolean result;
+    /**
+     * 添加 List<ServiceListener> 是否成功
+     */
+    private final boolean success;
 
     public WatchServiceResponse(InstancesResponse response, boolean result) {
         this.response = response;
-        this.result = result;
+        this.success = result;
     }
 
     public InstancesResponse getResponse() {
         return response;
     }
 
-    public boolean isResult() {
-        return result;
+    public boolean isSuccess() {
+        return success;
     }
 }

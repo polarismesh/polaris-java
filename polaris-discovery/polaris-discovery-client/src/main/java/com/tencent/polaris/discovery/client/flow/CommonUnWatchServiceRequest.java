@@ -20,6 +20,7 @@ package com.tencent.polaris.discovery.client.flow;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 
 import java.util.Collections;
@@ -28,26 +29,19 @@ import java.util.Set;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class CommonWatchServiceRequest  implements ServiceEventKeysProvider {
+public class CommonUnWatchServiceRequest implements ServiceEventKeysProvider {
 
-    private final WatchServiceRequest watchServiceRequest;
+    private final UnWatchServiceRequest request;
 
     private final ServiceEventKey eventKey;
 
-    private CommonInstancesRequest allRequest;
-
-    public CommonWatchServiceRequest(WatchServiceRequest watchServiceRequest) {
-        this.watchServiceRequest = watchServiceRequest;
+    public CommonUnWatchServiceRequest(UnWatchServiceRequest request) {
+        this.request = request;
         this.eventKey = ServiceEventKey
                 .builder()
-                .serviceKey(new ServiceKey(watchServiceRequest.getNamespace(), watchServiceRequest.getService()))
+                .serviceKey(new ServiceKey(request.getNamespace(), request.getService()))
                 .eventType(ServiceEventKey.EventType.INSTANCE).
                 build();
-    }
-
-    public CommonWatchServiceRequest(WatchServiceRequest watchServiceRequest, CommonInstancesRequest allRequest) {
-        this(watchServiceRequest);
-        this.allRequest = allRequest;
     }
 
     @Override
@@ -65,11 +59,7 @@ public class CommonWatchServiceRequest  implements ServiceEventKeysProvider {
         return eventKey;
     }
 
-    public WatchServiceRequest getWatchServiceRequest() {
-        return watchServiceRequest;
-    }
-
-    public CommonInstancesRequest getAllRequest() {
-        return allRequest;
+    public UnWatchServiceRequest getRequest() {
+        return request;
     }
 }

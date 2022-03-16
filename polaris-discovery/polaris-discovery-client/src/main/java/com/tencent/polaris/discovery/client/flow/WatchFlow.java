@@ -72,22 +72,6 @@ public class WatchFlow {
      * @return WatchServiceResponse
      */
     public WatchServiceResponse commonWatchService(CommonWatchServiceRequest request) throws PolarisException {
-        if (request.isWatch()) {
-            return watchService(request);
-        } else {
-            return unWatchService(request);
-        }
-    }
-
-    private void initFlow() {
-        if (initialize.compareAndSet(false, true)) {
-            extensions.getLocalRegistry().registerResourceListener(new InstanceChangeListener());
-            executor = new DispatchExecutor(extensions.getConfiguration().getConsumer().getSubscribe()
-                    .getCallbackConcurrency());
-        }
-    }
-
-    private WatchServiceResponse watchService(CommonWatchServiceRequest request) throws PolarisException {
         initFlow();
         ServiceKey serviceKey = request.getSvcEventKey().getServiceKey();
         InstancesResponse response = syncFlow.commonSyncGetAllInstances(request.getAllRequest());
@@ -97,16 +81,38 @@ public class WatchFlow {
         return new WatchServiceResponse(response, result);
     }
 
-    private WatchServiceResponse unWatchService(CommonWatchServiceRequest request) {
+    /**
+     * 取消服务监听
+     * case 1. 移除对 service 的所有 Listener
+     * case 2. 只移除部分对 service 的 Listener
+     *
+     * @param request CommonUnWatchServiceRequest
+     * @return WatchServiceResponse
+     * @throws PolarisException
+     */
+    public WatchServiceResponse commonUnWatchService(CommonUnWatchServiceRequest request) throws PolarisException {
+        initFlow();
         boolean result = true;
 
         Set<ServiceListener> listeners = watchers.get(request.getSvcEventKey().getServiceKey());
 
-        if (CollectionUtils.isNotEmpty(listeners)) {
-            result = listeners.removeAll(request.getWatchServiceRequest().getListeners());
+        if (request.getRequest().isRemoveAll()) {
+            watchers.remove(request.getSvcEventKey().getServiceKey());
+        } else {
+            if (CollectionUtils.isNotEmpty(listeners)) {
+                result = listeners.removeAll(request.getRequest().getListeners());
+            }
         }
 
         return new WatchServiceResponse(null, result);
+    }
+
+    private void initFlow() {
+        if (initialize.compareAndSet(false, true)) {
+            extensions.getLocalRegistry().registerResourceListener(new InstanceChangeListener());
+            executor = new DispatchExecutor(extensions.getConfiguration().getConsumer().getSubscribe()
+                    .getCallbackConcurrency());
+        }
     }
 
     /**
@@ -130,11 +136,12 @@ public class WatchFlow {
                 LOG.debug("receive service={} change event", svcEventKey);
                 ServiceInstancesByProto oldIns = (ServiceInstancesByProto) oldValue;
                 ServiceInstancesByProto newIns = (ServiceInstancesByProto) newValue;
-                ServiceChangeEvent event = ServiceChangeEvent.Builder()
+                ServiceChangeEvent event = ServiceChangeEvent.builder()
                         .serviceKey(svcEventKey.getServiceKey())
                         .addInstances(Utils.checkAddInstances(oldIns, newIns))
                         .updateInstances(Utils.checkUpdateInstances(oldIns, newIns))
                         .deleteInstances(Utils.checkDeleteInstances(oldIns, newIns))
+                        .allInstances(newIns.getInstances())
                         .build();
 
                 Set<ServiceListener> listeners = watchers.getOrDefault(svcEventKey.getServiceKey(), Collections.emptySet());
