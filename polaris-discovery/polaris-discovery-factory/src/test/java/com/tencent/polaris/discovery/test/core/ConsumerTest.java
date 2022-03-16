@@ -21,7 +21,6 @@ import static com.tencent.polaris.test.common.Consts.ITERATE_COUNT;
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
 
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.config.global.ClusterConfig;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -34,7 +33,7 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.ClusterConfigImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
@@ -49,7 +48,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ConsumerTest {
 

@@ -17,10 +17,10 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.common.stat;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 时间滑窗的具体实现

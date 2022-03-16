@@ -23,7 +23,7 @@ import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.utils.StringUtils;
-
+import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,10 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Common util class.
  *
@@ -46,8 +42,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Utils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
-
     public static long sleepUninterrupted(long millis) {
         long currentTime = System.currentTimeMillis();
         long deadline = currentTime + millis;
@@ -55,7 +49,7 @@ public class Utils {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
-                LOG.debug(String.format("interrupted while sleeping %d", millis), e);
+                //ignore
             }
             currentTime = System.currentTimeMillis();
         }
@@ -118,7 +112,7 @@ public class Utils {
     }
 
     public static List<ServiceChangeEvent.OneInstanceUpdate> checkUpdateInstances(ServiceInstancesByProto oldVal,
-                                                                                  ServiceInstancesByProto newVal) {
+            ServiceInstancesByProto newVal) {
         Map<String, Instance> oldIns = oldVal.getInstances().stream()
                 .collect(Collectors.toMap(Instance::getId, instance -> instance));
         Map<String, Instance> newIns = newVal.getInstances().stream()

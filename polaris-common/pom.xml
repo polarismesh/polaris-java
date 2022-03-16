@@ -21,5 +21,6 @@
         <module>polaris-model</module>
         <module>polaris-protobuf</module>
         <module>polaris-client</module>
+        <module>polaris-logging</module>
     </modules>
 </project>

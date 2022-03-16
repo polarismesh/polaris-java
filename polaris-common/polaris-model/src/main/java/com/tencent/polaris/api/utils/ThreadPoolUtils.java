@@ -19,12 +19,8 @@ package com.tencent.polaris.api.utils;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ThreadPoolUtils {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ThreadPoolUtils.class);
 
     /**
      * 等待所有线程池结束
@@ -45,7 +41,7 @@ public class ThreadPoolUtils {
             try {
                 service.awaitTermination(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                LOG.warn("interrupted while waiting thread pool terminated", e);
+                // ignore
             }
         }
     }

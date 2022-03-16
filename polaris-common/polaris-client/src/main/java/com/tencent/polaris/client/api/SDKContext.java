@@ -36,6 +36,7 @@ import com.tencent.polaris.api.plugin.impl.PluginManager;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -51,7 +52,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * SDK初始化相关的上下文信息

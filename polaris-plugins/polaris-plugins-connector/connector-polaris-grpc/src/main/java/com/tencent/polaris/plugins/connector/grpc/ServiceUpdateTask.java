@@ -23,11 +23,11 @@ import com.tencent.polaris.api.plugin.server.EventHandler;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ServiceUpdateTask implements Runnable, Comparable<ServiceUpdateTask> {
 

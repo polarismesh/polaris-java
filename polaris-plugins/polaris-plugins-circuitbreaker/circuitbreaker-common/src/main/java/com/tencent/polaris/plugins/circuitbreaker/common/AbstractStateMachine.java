@@ -26,10 +26,10 @@ import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.client.pojo.InstanceByProto;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Collections;
 import java.util.Set;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 默认状态机实现，包括熔断后到半开到打开的逻辑，子类需要去实现具体到达熔断状态的逻辑
@@ -72,7 +72,7 @@ public abstract class AbstractStateMachine<T extends Verifier> implements StateM
         }
         boolean detectSuccess = false;
         if (instance instanceof InstanceByProto) {
-            DetectResult detectResult = ((InstanceByProto)instance).getDetectResult();
+            DetectResult detectResult = ((InstanceByProto) instance).getDetectResult();
             detectSuccess = null != detectResult && detectResult.getRetStatus() == RetStatus.RetSuccess;
         }
         //清空halfOpen的计数器

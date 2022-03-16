@@ -17,8 +17,8 @@ import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.discovery.client.util.Validator;
+import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ProviderAPI的标准实现
