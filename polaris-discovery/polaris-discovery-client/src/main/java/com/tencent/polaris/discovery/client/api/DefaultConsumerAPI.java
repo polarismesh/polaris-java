@@ -30,6 +30,7 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.client.api.BaseEngine;
@@ -38,6 +39,7 @@ import com.tencent.polaris.discovery.client.flow.AsyncFlow;
 import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
 import com.tencent.polaris.discovery.client.flow.CommonRuleRequest;
 import com.tencent.polaris.discovery.client.flow.CommonServicesRequest;
+import com.tencent.polaris.discovery.client.flow.CommonUnWatchServiceRequest;
 import com.tencent.polaris.discovery.client.flow.CommonWatchServiceRequest;
 import com.tencent.polaris.discovery.client.flow.SyncFlow;
 import com.tencent.polaris.discovery.client.flow.WatchFlow;
@@ -154,15 +156,15 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
                 new CommonInstancesRequest(GetAllInstancesRequest.builder()
                         .service(request.getService())
                         .namespace(request.getNamespace())
-                        .build(), config), true);
+                        .build(), config));
         return watchFlow.commonWatchService(watchServiceRequest);
     }
 
     @Override
-    public boolean unWatchService(WatchServiceRequest request) {
+    public boolean unWatchService(UnWatchServiceRequest request) {
         checkAvailable("ConsumerAPI");
-        Validator.validateWatchServiceRequest(request);
-        CommonWatchServiceRequest watchServiceRequest = new CommonWatchServiceRequest(request, false);
-        return watchFlow.commonWatchService(watchServiceRequest).isSuccess();
+        Validator.validateUnWatchServiceRequest(request);
+        CommonUnWatchServiceRequest unWatchServiceRequest = new CommonUnWatchServiceRequest(request);
+        return watchFlow.commonUnWatchService(unWatchServiceRequest).isSuccess();
     }
 }

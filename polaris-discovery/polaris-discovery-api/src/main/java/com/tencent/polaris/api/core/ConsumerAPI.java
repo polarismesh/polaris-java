@@ -27,6 +27,7 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
 
@@ -130,12 +131,16 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
     WatchServiceResponse watchService(WatchServiceRequest request) throws PolarisException;
 
     /**
-     * 取消服务监听
+     * 取消服务的监听
+     * case 1. 移除对 service 的所有 Listener
+     * case 2. 只移除部分对 service 的 Listener
+     *
+     * 移除部分Listener与移除全部Listener是互斥的，每次 unWatch 只能执行其中的一种 case
      *
      * @param request 取消监听请求
      * @return 取消成功标识
      */
-    boolean unWatchService(WatchServiceRequest request);
+    boolean unWatchService(UnWatchServiceRequest request);
 
     /**
      * 清理并释放资源

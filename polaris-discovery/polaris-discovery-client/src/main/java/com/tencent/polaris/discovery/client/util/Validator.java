@@ -113,6 +113,16 @@ public class Validator {
     }
 
     /**
+     * 校验服务监听取消的请求
+     *
+     * @param request 请求对象
+     * @throws PolarisException 校验失败
+     */
+    public static void validateUnWatchServiceRequest(UnWatchServiceRequest request) throws PolarisException {
+        CommonValidator.validateNamespaceService(request.getNamespace(), request.getService());
+    }
+
+    /**
      * 校验用户上报的调用结果
      *
      * @param serviceCallResult 调用结果
