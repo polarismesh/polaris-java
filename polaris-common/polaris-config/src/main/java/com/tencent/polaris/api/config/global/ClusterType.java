@@ -25,6 +25,8 @@ public enum ClusterType {
     BUILTIN_CLUSTER,
     //服务注册中心
     SERVICE_DISCOVER_CLUSTER,
+    //配置中心集群
+    SERVICE_CONFIG_CLUSTER,
     //健康检查集群
     HEALTH_CHECK_CLUSTER,
     //监控集群

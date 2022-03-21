@@ -50,7 +50,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         if (configFileConnector != null) {
             this.configFileConnector = configFileConnector;
         } else {
-            String configFileConnectorType = sdkContext.getConfig().getConfigFile().connectorType();
+            String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector().getConnectorType();
             this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         }

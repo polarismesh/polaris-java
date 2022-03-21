@@ -70,14 +70,6 @@ public class ConfigYamlFileTest {
                                                                                       ConfigFileTestUtils.MyType.class,
                                                                                       ConfigFileTestUtils.MyType.T2));
 
-        Properties properties = configFile.asProperties();
-        Assert.assertEquals(7, properties.stringPropertyNames().size());
-        Assert.assertEquals("10", properties.getProperty("root.k1"));
-        Assert.assertEquals("false", properties.getProperty("root.k2"));
-        Assert.assertEquals("5.6", properties.getProperty("root.k3"));
-        Assert.assertEquals("1,2,3,4,5", properties.getProperty("root.k4"));
-        Assert.assertEquals("T1", properties.getProperty("root.k5"));
-
         ConfigFileTestUtils.User user = configFile.getJsonProperty("root.k6", ConfigFileTestUtils.User.class, null);
         Assert.assertNotNull(user);
         Assert.assertEquals("zhangsan", user.getName());

@@ -18,8 +18,6 @@
 package com.tencent.polaris.factory.config.global;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.tencent.polaris.api.config.global.ClusterConfig;
-import com.tencent.polaris.api.config.global.FlowCacheConfig;
 import com.tencent.polaris.api.config.global.SystemConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import java.util.Collections;
@@ -40,6 +38,9 @@ public class SystemConfigImpl implements SystemConfig {
     private ClusterConfigImpl discoverCluster;
 
     @JsonProperty
+    private ClusterConfigImpl configCluster;
+
+    @JsonProperty
     private ClusterConfigImpl healthCheckCluster;
 
     @JsonProperty
@@ -51,6 +52,11 @@ public class SystemConfigImpl implements SystemConfig {
     @Override
     public ClusterConfigImpl getDiscoverCluster() {
         return discoverCluster;
+    }
+
+    @Override
+    public ClusterConfigImpl getConfigCluster() {
+        return configCluster;
     }
 
     @Override
@@ -84,10 +90,12 @@ public class SystemConfigImpl implements SystemConfig {
     public void verify() {
         ConfigUtils.validateNull(flowCache, "system.flowCache");
         ConfigUtils.validateNull(discoverCluster, "system.discoverCluster");
+        ConfigUtils.validateNull(discoverCluster, "system.configCluster");
         ConfigUtils.validateNull(healthCheckCluster, "system.healthCheckCluster");
         ConfigUtils.validateNull(monitorCluster, "system.monitorCluster");
         flowCache.verify();
         discoverCluster.verify();
+        configCluster.verify();
         healthCheckCluster.verify();
         monitorCluster.verify();
     }
@@ -96,6 +104,9 @@ public class SystemConfigImpl implements SystemConfig {
     public void setDefault(Object defaultObject) {
         if (null == discoverCluster) {
             discoverCluster = new ClusterConfigImpl();
+        }
+        if (null == configCluster) {
+            configCluster = new ClusterConfigImpl();
         }
         if (null == healthCheckCluster) {
             healthCheckCluster = new ClusterConfigImpl();
@@ -109,6 +120,7 @@ public class SystemConfigImpl implements SystemConfig {
         if (null != defaultObject) {
             SystemConfig systemConfig = (SystemConfig) defaultObject;
             discoverCluster.setDefault(systemConfig.getDiscoverCluster());
+            configCluster.setDefault(systemConfig.getConfigCluster());
             healthCheckCluster.setDefault(systemConfig.getHealthCheckCluster());
             monitorCluster.setDefault(systemConfig.getMonitorCluster());
             flowCache.setDefault(systemConfig.getFlowCache());
@@ -123,6 +135,7 @@ public class SystemConfigImpl implements SystemConfig {
     public String toString() {
         return "SystemConfigImpl{" +
                 ", discoverCluster=" + discoverCluster +
+                ", configCluster=" + configCluster +
                 ", healthCheckCluster=" + healthCheckCluster +
                 ", monitorCluster=" + monitorCluster +
                 ", variables=" + variables +
