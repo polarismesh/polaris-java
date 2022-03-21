@@ -319,7 +319,9 @@ public class RuleBasedRouter extends AbstractServiceRouter {
                 if (dest == null) {
                     continue;
                 }
-
+                if (dest.hasIsolate()) {
+                    continue;
+                }
                 // 对于outbound规则, 需要匹配DestService服务
                 if (ruleMatchType == RuleMatchType.sourceRouteRuleMatch) {
                     if (!RuleUtils.MATCH_ALL.equals(dest.getNamespace().getValue()) && !dest.getNamespace().getValue()
