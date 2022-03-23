@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 public class PolarisLogging {
 
     private static final Logger LOGGER = org.slf4j.LoggerFactory.getLogger(PolarisLogging.class);
+    
     public static final String LOGBACK_CLASSIC_LOGGER = "ch.qos.logback.classic.Logger";
 
     public static final String LOG4J2_CLASSIC_LOGGER = "org.apache.logging.log4j.LogManager";
