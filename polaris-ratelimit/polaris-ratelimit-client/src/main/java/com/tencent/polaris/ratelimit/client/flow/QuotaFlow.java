@@ -41,18 +41,16 @@ import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
-
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -249,11 +247,12 @@ public class QuotaFlow extends Destroyable {
 
         @Override
         public void onResourceUpdated(ServiceEventKey svcEventKey, RegistryCacheValue oldValue,
-                                      RegistryCacheValue newValue) {
+                RegistryCacheValue newValue) {
             EventType eventType = svcEventKey.getEventType();
             if (eventType != EventType.RATE_LIMITING) {
                 return;
             }
+            LOG.info("[RateLimit]onResourceUpdated: serviceEvent {}", svcEventKey);
             Map<String, Rule> oldRules = parseRules(oldValue);
             Map<String, Rule> newRules = parseRules(newValue);
             if (MapUtils.isEmpty(oldRules)) {
@@ -276,6 +275,7 @@ public class QuotaFlow extends Destroyable {
             if (eventType != EventType.RATE_LIMITING) {
                 return;
             }
+            LOG.info("[RateLimit]onResourceDeleted: serviceEvent {}", svcEventKey);
             Map<String, Rule> oldRules = parseRules(oldValue);
             if (MapUtils.isEmpty(oldRules)) {
                 return;
