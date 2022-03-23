@@ -45,6 +45,10 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     private Long serviceRefreshInterval;
 
     @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long serviceListRefreshInterval;
+
+    @JsonProperty
     private Boolean persistEnable;
 
     @JsonProperty
@@ -154,6 +158,15 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     }
 
     @Override
+    public long getServiceListRefreshInterval() {
+        return this.serviceListRefreshInterval;
+    }
+
+    public void setServiceListRefreshInterval(Long serviceListRefreshInterval) {
+        this.serviceListRefreshInterval = serviceListRefreshInterval;
+    }
+
+    @Override
     public long getPersistRetryInterval() {
         if (null == persistRetryInterval) {
             return 0;
@@ -196,6 +209,9 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
             }
             if (null == serviceRefreshInterval) {
                 setServiceRefreshInterval(localCacheConfig.getServiceRefreshInterval());
+            }
+            if (null == serviceListRefreshInterval) {
+                setServiceListRefreshInterval(localCacheConfig.getServiceListRefreshInterval());
             }
             if (null == persistEnable) {
                 setPersistEnable(localCacheConfig.isPersistEnable());

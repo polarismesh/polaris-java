@@ -142,6 +142,11 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     private long serviceRefreshIntervalMs;
 
     /**
+     * 拉取服务列表刷新间隔
+     */
+    private long serviceListRefreshIntervalMs;
+
+    /**
      * 启用本地文件缓存
      */
     private boolean persistEnable;
@@ -283,7 +288,12 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
                 eventHandler.setTargetCluster(ClusterType.BUILTIN_CLUSTER);
             }
         } else {
-            eventHandler.setRefreshInterval(serviceRefreshIntervalMs);
+            // 拉取服务列表的间隔时间参数跟其它资源独立
+            if (eventHandler.getServiceEventKey().getEventType() == EventType.SERVICE) {
+                eventHandler.setRefreshInterval(serviceListRefreshIntervalMs);
+            } else {
+                eventHandler.setRefreshInterval(serviceRefreshIntervalMs);
+            }
             eventHandler.setTargetCluster(ClusterType.SERVICE_DISCOVER_CLUSTER);
         }
         return eventHandler;
@@ -413,6 +423,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         int maxWriteRetry = ctx.getConfig().getConsumer().getLocalCache().getPersistMaxWriteRetry();
         long retryIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getPersistRetryInterval();
         this.serviceRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceRefreshInterval();
+        this.serviceListRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceListRefreshInterval();
         boolean configPersistEnable = ctx.getConfig().getConsumer().getLocalCache().isPersistEnable();
         persistEnable = configPersistEnable && StringUtils.isNotBlank(persistDir);
         //启动本地缓存

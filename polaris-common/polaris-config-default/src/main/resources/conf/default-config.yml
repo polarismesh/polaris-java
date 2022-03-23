@@ -88,6 +88,8 @@ consumer:
     serviceExpireTime: 24h
     #描述: 服务定期同步刷新周期
     serviceRefreshInterval: 2s
+    #描述: 拉取服务元信息列表定期同步刷新周期
+    serviceListRefreshInterval: 60s
     #描述: 是否启用服务数据文件缓存
     persistEnable: true
     #描述: 服务缓存持久化目录，SDK在实例数据更新后，按照服务维度将数据持久化到磁盘
