@@ -1,0 +1,35 @@
+{
+  "service": "RuleTestService",
+  "namespace": "Test",
+  "inbounds": [
+    {
+      "sources": [
+        {
+          "service": "*",
+          "namespace": "*",
+          "metadata": {
+            "req": {
+              "type": "EXACT",
+              "value": "v1"
+            }
+          }
+        }
+      ],
+      "destinations": [
+        {
+          "service": "RuleTestService",
+          "namespace": "Test",
+          "metadata": {
+            "version": {
+              "type": "EXACT",
+              "value": "2.0.0"
+            }
+          },
+          "priority": 0,
+          "weight": 100,
+          "isolate": false
+        }
+      ]
+    }
+  ]
+}

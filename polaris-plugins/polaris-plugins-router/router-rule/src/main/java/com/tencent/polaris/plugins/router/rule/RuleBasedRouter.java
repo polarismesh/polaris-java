@@ -319,7 +319,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
                 if (dest == null) {
                     continue;
                 }
-                if (dest.hasIsolate()) {
+                if (dest.getIsolate().getValue()) {
                     continue;
                 }
                 // 对于outbound规则, 需要匹配DestService服务
