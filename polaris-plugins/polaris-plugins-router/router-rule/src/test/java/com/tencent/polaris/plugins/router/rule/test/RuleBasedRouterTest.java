@@ -92,6 +92,49 @@ public class RuleBasedRouterTest {
     private static final String ROUTE_TEST_NAMESPACE = "Test";
 
     @Test
+    public void testMultipleLabels() {
+        Routing routeRule = loadRouting("multi-labels-rule.json");
+        Assert.assertNotNull(routeRule);
+        ServiceRule rule = new ServiceRuleByProto(routeRule, "1234", false, EventType.ROUTING);
+        List<Instance> instances = new ArrayList<>();
+        DefaultInstance v1Instance = new DefaultInstance();
+        v1Instance.setNamespace(ROUTE_TEST_NAMESPACE);
+        v1Instance.setService(ROUTE_TEST_SVC_NAME);
+        v1Instance.setHost("127.0.0.1");
+        v1Instance.setPort(20881);
+        Map<String, String> v1Meta = new HashMap<>();
+        v1Meta.put("version", "2.0.0");
+        v1Meta.put("dubbo", "2.0.0");
+        v1Meta.put("interface", "com.alibaba.dubbo.demo.bid.BidService");
+        v1Meta.put("methods", "throwNPE,bid");
+        v1Instance.setMetadata(v1Meta);
+        instances.add(v1Instance);
+
+        DefaultServiceInstances defaultServiceInstances = new DefaultServiceInstances(
+                new ServiceKey(ROUTE_TEST_NAMESPACE, ROUTE_TEST_SVC_NAME), instances);
+        RuleBasedRouter ruleBasedRouter = new RuleBasedRouter();
+        // first check req:v1, expect all to version:v2
+        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        Map<String, String> v1ReqMeta = new HashMap<>();
+        v1ReqMeta.put("owner", "programmer");
+        v1ReqMeta.put("side", "consumer");
+        v1ReqMeta.put("methods", "throwNPE,bid");
+        v1ReqMeta.put("dubbo", "2.0.0");
+        v1ReqMeta.put("pid", "51356");
+        v1ReqMeta.put("interface", "com.alibaba.dubbo.demo.bid.BidService");
+        v1ReqMeta.put("version", "*");
+        v1ReqMeta.put("application", "demo-consumer");
+        v1ReqMeta.put("req", "v1");
+        v1ServiceInfo.setMetadata(v1ReqMeta);
+        RouteInfo v1RouteInfo = new RouteInfo(
+                v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+        boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
+        Assert.assertTrue(enableV1);
+        RouteResult result = ruleBasedRouter.router(v1RouteInfo, defaultServiceInstances);
+        Assert.assertEquals(1, result.getInstances().size());
+    }
+
+    @Test
     public void testRouteByIsolatedDestination() {
         Routing routeRule = loadRouting("isolated-rule.json");
         Assert.assertNotNull(routeRule);
