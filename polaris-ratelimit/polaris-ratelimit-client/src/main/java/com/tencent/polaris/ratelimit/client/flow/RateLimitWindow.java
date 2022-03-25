@@ -28,13 +28,13 @@ import com.tencent.polaris.client.pb.RateLimitProto.Amount;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimitCluster;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 限流窗口

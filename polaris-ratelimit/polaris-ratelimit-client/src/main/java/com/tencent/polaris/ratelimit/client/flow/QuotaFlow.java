@@ -38,23 +38,21 @@ import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
-
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class QuotaFlow extends Destroyable {
 
@@ -249,7 +247,7 @@ public class QuotaFlow extends Destroyable {
 
         @Override
         public void onResourceUpdated(ServiceEventKey svcEventKey, RegistryCacheValue oldValue,
-                                      RegistryCacheValue newValue) {
+                RegistryCacheValue newValue) {
             EventType eventType = svcEventKey.getEventType();
             if (eventType != EventType.RATE_LIMITING) {
                 return;

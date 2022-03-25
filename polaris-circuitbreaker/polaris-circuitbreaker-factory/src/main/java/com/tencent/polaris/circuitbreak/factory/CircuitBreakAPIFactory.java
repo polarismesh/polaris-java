@@ -22,7 +22,7 @@ import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.client.api.SDKContext;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 
 public class CircuitBreakAPIFactory {
 

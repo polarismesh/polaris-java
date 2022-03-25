@@ -17,13 +17,13 @@
 
 package com.tencent.polaris.test.mock.discovery;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import io.grpc.ForwardingServerCall;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HeaderInterceptor implements ServerInterceptor {
 

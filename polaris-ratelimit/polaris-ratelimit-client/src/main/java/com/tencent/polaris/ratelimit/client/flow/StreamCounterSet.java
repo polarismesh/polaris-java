@@ -3,6 +3,7 @@ package com.tencent.polaris.ratelimit.client.flow;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow.WindowStatus;
 import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc;
 import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc.RateLimitGRPCV2BlockingStub;
@@ -27,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 计数器对象

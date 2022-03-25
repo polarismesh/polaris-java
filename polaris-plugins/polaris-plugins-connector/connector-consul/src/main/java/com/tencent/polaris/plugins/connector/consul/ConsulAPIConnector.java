@@ -57,6 +57,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import java.util.ArrayList;
@@ -64,7 +65,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An implement of {@link ServerConnector} to connect to Consul Server.It provides methods to manage resources

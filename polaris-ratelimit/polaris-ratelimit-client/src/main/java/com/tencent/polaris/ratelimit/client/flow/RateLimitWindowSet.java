@@ -19,13 +19,13 @@ package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RateLimitWindowSet {
 

@@ -5,7 +5,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.configuration.api.core.ChangeType;
@@ -15,10 +14,7 @@ import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeEvent;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeListener;
 import com.tencent.polaris.configuration.api.core.ConfigPropertyChangeInfo;
 import com.tencent.polaris.configuration.client.util.ConvertFunctions;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -30,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
 
 /**
  * The properties file.
@@ -41,21 +38,21 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigPropertiesFile.class);
 
     private final List<ConfigKVFileChangeListener> listeners = Lists.newCopyOnWriteArrayList();
-    private       AtomicReference<Properties>      properties;
+    private AtomicReference<Properties> properties;
 
-    private volatile Cache<String, Integer>               integerCache;
-    private volatile Cache<String, Long>                  longCache;
-    private volatile Cache<String, Short>                 shortCache;
-    private volatile Cache<String, Float>                 floatCache;
-    private volatile Cache<String, Double>                doubleCache;
-    private volatile Cache<String, Byte>                  byteCache;
-    private volatile Cache<String, Boolean>               booleanCache;
-    private final    Map<String, Cache<String, String[]>> arrayCache;
-    private final    List<Cache>                          allCaches;
-    private final    AtomicLong                           cacheVersion;
+    private volatile Cache<String, Integer> integerCache;
+    private volatile Cache<String, Long> longCache;
+    private volatile Cache<String, Short> shortCache;
+    private volatile Cache<String, Float> floatCache;
+    private volatile Cache<String, Double> doubleCache;
+    private volatile Cache<String, Byte> byteCache;
+    private volatile Cache<String, Boolean> booleanCache;
+    private final Map<String, Cache<String, String[]>> arrayCache;
+    private final List<Cache> allCaches;
+    private final AtomicLong cacheVersion;
 
     public ConfigPropertiesFile(String namespace, String fileGroup, String fileName,
-                                ConfigFileRepo configFileRepo, ConfigFileConfig configFileConfig) {
+            ConfigFileRepo configFileRepo, ConfigFileConfig configFileConfig) {
         super(namespace, fileGroup, fileName, configFileRepo, configFileConfig);
 
         arrayCache = Maps.newConcurrentMap();
@@ -270,7 +267,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
             }
         } catch (Throwable t) {
             LOGGER.error("[Config] convert to json object error. return default value. clazz = {}", clazz.getTypeName(),
-                         t);
+                    t);
         }
 
         return defaultValue;
@@ -285,7 +282,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
             }
         } catch (Throwable t) {
             LOGGER.error("[Config] convert to json object error. return default value. clazz = {}", typeOfT,
-                         t);
+                    t);
         }
 
         return defaultValue;
@@ -378,8 +375,8 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
             properties.load(new ByteArrayInputStream(content.getBytes()));
         } catch (IOException e) {
             String msg = String.format("[Config] failed to convert content to properties. namespace = %s, "
-                                       + "file group = %s, file name = %s",
-                                       getNamespace(), getFileGroup(), getFileName());
+                            + "file group = %s, file name = %s",
+                    getNamespace(), getFileGroup(), getFileName());
             LOGGER.error(msg, e);
             throw new IllegalStateException(msg);
         }
@@ -394,10 +391,10 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
                     listener.onChange(event);
 
                     LOGGER.info("[Config] invoke config file change listener success. listener = {}, duration = {} ms",
-                                listener.getClass().getName(), System.currentTimeMillis() - startTime);
+                            listener.getClass().getName(), System.currentTimeMillis() - startTime);
                 } catch (Throwable t) {
                     LOGGER.error("[Config] ailed to invoke config file change listener. listener = {}, event = {}",
-                                 listener.getClass().getName(), event, t);
+                            listener.getClass().getName(), event, t);
                 }
             });
         }
@@ -414,7 +411,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
     }
 
     private <T> T getValueAndStoreToCache(String key, Function<String, T> parser, Cache<String, T> cache,
-                                          T defaultValue) {
+            T defaultValue) {
         long currentCacheVersion = cacheVersion.get();
         String value = getProperty(key, null);
 
@@ -436,9 +433,9 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
     private <T> Cache<String, T> newCache() {
         Cache<String, T> cache = CacheBuilder.newBuilder()
-            .maximumSize(configFileConfig.getPropertiesValueCacheSize())
-            .expireAfterAccess(configFileConfig.getPropertiesValueExpireTime(), TimeUnit.MINUTES)
-            .build();
+                .maximumSize(configFileConfig.getPropertiesValueCacheSize())
+                .expireAfterAccess(configFileConfig.getPropertiesValueExpireTime(), TimeUnit.MINUTES)
+                .build();
         allCaches.add(cache);
         return cache;
     }

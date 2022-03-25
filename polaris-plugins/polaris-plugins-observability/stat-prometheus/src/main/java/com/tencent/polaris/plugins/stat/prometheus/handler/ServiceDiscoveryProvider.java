@@ -24,10 +24,10 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ServiceDiscoveryProvider {
 

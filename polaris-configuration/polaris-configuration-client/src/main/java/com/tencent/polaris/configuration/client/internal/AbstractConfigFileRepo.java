@@ -1,14 +1,11 @@
 package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Lists;
-
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.List;
+import org.slf4j.Logger;
 
 /**
  * @author lepdou 2022-03-01
@@ -17,7 +14,7 @@ public abstract class AbstractConfigFileRepo implements ConfigFileRepo {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigFileRepo.class);
 
-    protected     ConfigFileMetadata                 configFileMetadata;
+    protected ConfigFileMetadata configFileMetadata;
     private final List<ConfigFileRepoChangeListener> listeners = Lists.newCopyOnWriteArrayList();
 
     protected SDKContext sdkContext;
@@ -57,7 +54,7 @@ public abstract class AbstractConfigFileRepo implements ConfigFileRepo {
                 listener.onChange(configFileMetadata, newContent);
             } catch (Throwable t) {
                 LOGGER.error("[Config] invoke config file repo change listener failed. config file = {}, listener = {}",
-                             configFileMetadata, listener.getClass(), t);
+                        configFileMetadata, listener.getClass(), t);
             }
         }
     }

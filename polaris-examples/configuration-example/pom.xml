@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-examples</artifactId>
         <groupId>com.tencent.polaris</groupId>
@@ -17,7 +17,7 @@
     <properties>
         <log4j.version>2.17.2</log4j.version>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.12</version>
+            <version>${slf4j.version}</version>
         </dependency>
         <!-- 桥接：告诉Slf4j使用Log4j2 -->
         <dependency>

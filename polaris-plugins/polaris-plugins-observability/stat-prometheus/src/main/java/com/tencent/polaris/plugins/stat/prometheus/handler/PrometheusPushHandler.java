@@ -25,6 +25,7 @@ import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.pojo.InstanceGauge;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.AbstractSignatureStatInfoCollector;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
@@ -48,7 +49,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 通过向Prometheus PushGateWay推送StatInfo消息来处理StatInfo。

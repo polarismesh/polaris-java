@@ -27,8 +27,8 @@ import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**

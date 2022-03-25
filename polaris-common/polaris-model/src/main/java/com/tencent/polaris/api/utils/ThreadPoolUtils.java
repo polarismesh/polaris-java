@@ -17,10 +17,10 @@
 
 package com.tencent.polaris.api.utils;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ThreadPoolUtils {
 

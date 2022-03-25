@@ -33,6 +33,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
@@ -42,7 +43,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An implement of {@link ServerConnector} to connect to Multiple Naming Server.It provides methods to manage resources

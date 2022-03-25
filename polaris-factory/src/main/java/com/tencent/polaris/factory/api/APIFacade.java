@@ -34,6 +34,7 @@ import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
@@ -43,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class APIFacade {
 

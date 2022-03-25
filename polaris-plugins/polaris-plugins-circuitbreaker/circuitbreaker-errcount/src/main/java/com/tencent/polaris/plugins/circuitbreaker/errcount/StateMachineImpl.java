@@ -19,13 +19,13 @@ package com.tencent.polaris.plugins.circuitbreaker.errcount;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.AbstractStateMachine;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigGroup;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSet;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSetLocator;
 import com.tencent.polaris.plugins.circuitbreaker.common.HalfOpenCounter;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 基于连续错误熔断的状态机切换逻辑

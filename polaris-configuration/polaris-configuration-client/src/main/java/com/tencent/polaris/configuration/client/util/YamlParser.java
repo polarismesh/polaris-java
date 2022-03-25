@@ -1,20 +1,18 @@
 package com.tencent.polaris.configuration.client.util;
 
 import com.tencent.polaris.api.utils.StringUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-import org.yaml.snakeyaml.representer.Representer;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.representer.Representer;
 
 /**
  * @author lepdou 2022-03-02
@@ -53,7 +51,8 @@ public class YamlParser {
             }
         }
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[Config] Loaded " + count + " document" + (count > 1 ? "s" : "") + " from YAML resource: " + content);
+            LOGGER.debug("[Config] Loaded " + count + " document" + (count > 1 ? "s" : "") + " from YAML resource: "
+                    + content);
         }
         return (count > 0);
     }

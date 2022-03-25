@@ -7,13 +7,13 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 连接器，单线程调用，不考虑并发

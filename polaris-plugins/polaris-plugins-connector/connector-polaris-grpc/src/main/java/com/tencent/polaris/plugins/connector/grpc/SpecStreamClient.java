@@ -16,6 +16,7 @@ import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
 import com.tencent.polaris.client.pb.RequestProto;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ServiceProto;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import io.grpc.stub.StreamObserver;
@@ -26,7 +27,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 用于cluster/healthcheck/heartbeat的服务发现
