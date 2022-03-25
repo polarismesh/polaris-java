@@ -92,7 +92,7 @@ public class ConfigUtils {
 
     public static void validatePositive(Integer value, String name) {
         if (null == value || value <= 0) {
-            throw new IllegalArgumentException(name + " must not be positive");
+            throw new IllegalArgumentException(name + " must not be negative");
         }
     }
 
