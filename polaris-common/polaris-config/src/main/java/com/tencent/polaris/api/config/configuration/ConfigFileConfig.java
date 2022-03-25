@@ -1,6 +1,7 @@
 package com.tencent.polaris.api.config.configuration;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
 
 /**
  * 配置中心相关的配置项
@@ -14,7 +15,7 @@ public interface ConfigFileConfig extends Verifier {
      *
      * @return 连接器配置对象
      */
-    ConnectorConfig getServerConnector();
+    ConnectorConfigImpl getServerConnector();
 
     /**
      * 值缓存的最大数量
