@@ -23,7 +23,8 @@ import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.utils.StringUtils;
-
+import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,10 +34,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Common util class.
@@ -118,7 +116,7 @@ public class Utils {
     }
 
     public static List<ServiceChangeEvent.OneInstanceUpdate> checkUpdateInstances(ServiceInstancesByProto oldVal,
-                                                                                  ServiceInstancesByProto newVal) {
+            ServiceInstancesByProto newVal) {
         Map<String, Instance> oldIns = oldVal.getInstances().stream()
                 .collect(Collectors.toMap(Instance::getId, instance -> instance));
         Map<String, Instance> newIns = newVal.getInstances().stream()

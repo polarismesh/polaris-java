@@ -47,6 +47,7 @@ import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 同步调用流程
@@ -103,7 +103,8 @@ public class BaseFlow {
         LOG.info("[ConnectionManager]success to discover service {}", svcEventKey);
         ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(svcEventKey);
         RouterChainGroup sysRouterChainGroup = extensions.getSysRouterChainGroup();
-        List<ServiceRouter> coreRouters = Extensions.loadServiceRouters(coreRouterNames, extensions.getPlugins(), false);
+        List<ServiceRouter> coreRouters = Extensions
+                .loadServiceRouters(coreRouterNames, extensions.getPlugins(), false);
         RouterChainGroup routerChainGroup = new DefaultRouterChainGroup(sysRouterChainGroup.getBeforeRouters(),
                 coreRouters, sysRouterChainGroup.getAfterRouters());
         ServiceInstances instancesAfterRoute = BaseFlow

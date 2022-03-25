@@ -23,11 +23,11 @@ import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.ConfigAPIFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
 import java.io.InputStream;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class APIFactory {
 

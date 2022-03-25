@@ -2,7 +2,6 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
@@ -11,16 +10,14 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
 
 /**
  * @author lepdou 2022-03-02
@@ -37,9 +34,9 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
 
     private final Map<ConfigFileMetadata, RemoteConfigFileRepo> configFilePool;
     //此处只缓存所有配置文件对应通知的版本号，跟远端拉取的配置文件返回的版本号没有关系
-    private final Map<ConfigFileMetadata, Long>                 notifiedVersion;
-    private final AtomicReference<Boolean>                      started;
-    private final RetryPolicy                                   retryPolicy;
+    private final Map<ConfigFileMetadata, Long> notifiedVersion;
+    private final AtomicReference<Boolean> started;
+    private final RetryPolicy retryPolicy;
 
     DefaultConfigFileLongPollingService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
 
@@ -52,9 +49,10 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
             this.configFileConnector = configFileConnector;
         } else {
             //获取远程调用插件实现类
-            String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector().getConnectorType();
+            String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
+                    .getConnectorType();
             this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
-                .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
+                    .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         }
 
         //初始化 long polling 线程池
@@ -117,7 +115,7 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
                 List<ConfigFile> watchConfigFiles = assembleWatchConfigFiles();
 
                 LOGGER.info("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
-                            retryPolicy.getCurrentDelayTime());
+                        retryPolicy.getCurrentDelayTime());
 
                 ConfigFileResponse response = configFileConnector.watchConfigFiles(watchConfigFiles);
 
@@ -128,8 +126,8 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
                 if (responseCode == ServerCodes.EXECUTE_SUCCESS && response.getConfigFile() != null) {
                     ConfigFile changedConfigFile = response.getConfigFile();
                     ConfigFileMetadata metadata = new DefaultConfigFileMetadata(changedConfigFile.getNamespace(),
-                                                                                changedConfigFile.getFileGroup(),
-                                                                                changedConfigFile.getFileName());
+                            changedConfigFile.getFileGroup(),
+                            changedConfigFile.getFileName());
                     long newNotifiedVersion = changedConfigFile.getVersion();
                     long oldNotifiedVersion = notifiedVersion.get(metadata);
 
@@ -139,8 +137,8 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
                     notifiedVersion.put(metadata, maxVersion);
 
                     LOGGER.info(
-                        "[Config] received change event by long polling. file = {}, new version = {}, old version = {}",
-                        metadata, newNotifiedVersion, oldNotifiedVersion);
+                            "[Config] received change event by long polling. file = {}, new version = {}, old version = {}",
+                            metadata, newNotifiedVersion, oldNotifiedVersion);
 
                     //通知 RemoteConfigFileRepo 拉取最新的配置文件
                     RemoteConfigFileRepo remoteConfigFileRepo = configFilePool.get(metadata);
@@ -174,7 +172,7 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
             ConfigFileMetadata metadata = remoteConfigFileRepo.getConfigFileMetadata();
 
             ConfigFile configFile = new ConfigFile(metadata.getNamespace(), metadata.getFileGroup(),
-                                                   metadata.getFileName());
+                    metadata.getFileName());
 
             configFile.setVersion(notifiedVersion.get(metadata));
 

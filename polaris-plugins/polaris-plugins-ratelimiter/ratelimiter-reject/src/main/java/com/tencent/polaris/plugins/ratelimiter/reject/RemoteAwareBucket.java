@@ -30,6 +30,7 @@ import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.AmountMode;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.FailoverType;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.BucketShareInfo;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.UpdateIdentifier;
 import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
@@ -42,7 +43,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class RemoteAwareBucket implements QuotaBucket {
 

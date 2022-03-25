@@ -28,6 +28,7 @@ import com.google.protobuf.util.JsonFormat;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -52,7 +53,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 /**

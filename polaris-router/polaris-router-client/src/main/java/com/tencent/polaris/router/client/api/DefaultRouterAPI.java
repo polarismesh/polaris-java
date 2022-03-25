@@ -38,6 +38,7 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.ResourcesResponse;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.router.api.core.RouterAPI;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
@@ -49,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 默认引擎API

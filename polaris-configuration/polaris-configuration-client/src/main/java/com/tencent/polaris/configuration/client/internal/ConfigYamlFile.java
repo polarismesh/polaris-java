@@ -2,11 +2,9 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.configuration.client.util.YamlParser;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Properties;
+import org.slf4j.Logger;
 
 /**
  * The yaml/yml file.
@@ -21,8 +19,8 @@ public class ConfigYamlFile extends ConfigPropertiesFile {
 
 
     public ConfigYamlFile(String namespace, String fileGroup, String fileName,
-                          ConfigFileRepo configFileRepo,
-                          ConfigFileConfig configFileConfig) {
+            ConfigFileRepo configFileRepo,
+            ConfigFileConfig configFileConfig) {
         super(namespace, fileGroup, fileName, configFileRepo, configFileConfig);
     }
 
@@ -37,8 +35,8 @@ public class ConfigYamlFile extends ConfigPropertiesFile {
             properties = YAML_PARSER.yamlToProperties(content);
         } catch (Throwable t) {
             String msg = String.format("[Config] failed to convert content to properties. namespace = %s, "
-                                       + "file group = %s, file name = %s",
-                                       getNamespace(), getFileGroup(), getFileName());
+                            + "file group = %s, file name = %s",
+                    getNamespace(), getFileGroup(), getFileName());
             LOGGER.error(msg, t);
             throw new IllegalStateException(msg);
         }

@@ -34,10 +34,10 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Collection;
 import java.util.Set;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 状态转换相关逻辑

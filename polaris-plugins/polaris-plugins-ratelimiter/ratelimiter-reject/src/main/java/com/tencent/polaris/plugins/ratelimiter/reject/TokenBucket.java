@@ -20,13 +20,13 @@ package com.tencent.polaris.plugins.ratelimiter.reject;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
 import com.tencent.polaris.api.utils.ClosableReadWriteLock;
 import com.tencent.polaris.api.utils.ClosableReadWriteLock.LockWrapper;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.BucketShareInfo;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.UpdateIdentifier;
 import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TokenBucket implements Comparable<TokenBucket> {
 

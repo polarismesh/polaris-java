@@ -27,9 +27,9 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.function.Function;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CommonHandler {
 

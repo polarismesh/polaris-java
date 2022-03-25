@@ -30,7 +30,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 
 public class SyncFlow {
 

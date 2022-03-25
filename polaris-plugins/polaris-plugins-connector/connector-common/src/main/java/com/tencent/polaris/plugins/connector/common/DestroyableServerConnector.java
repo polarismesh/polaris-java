@@ -22,12 +22,12 @@ import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.Services;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Destroyable server connector.

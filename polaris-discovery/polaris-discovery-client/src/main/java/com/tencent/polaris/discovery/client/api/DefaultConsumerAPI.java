@@ -44,8 +44,8 @@ import com.tencent.polaris.discovery.client.flow.CommonWatchServiceRequest;
 import com.tencent.polaris.discovery.client.flow.SyncFlow;
 import com.tencent.polaris.discovery.client.flow.WatchFlow;
 import com.tencent.polaris.discovery.client.util.Validator;
+import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ConsumerAPI的标准实现

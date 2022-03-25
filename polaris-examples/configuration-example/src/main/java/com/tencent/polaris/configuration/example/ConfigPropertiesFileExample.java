@@ -1,20 +1,17 @@
 package com.tencent.polaris.configuration.example;
 
 import com.google.common.base.Charsets;
-
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeEvent;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeListener;
 import com.tencent.polaris.configuration.api.core.ConfigPropertyChangeInfo;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.slf4j.Logger;
 
 /**
  * properties, yaml 格式的配置文件，可以通过 ConfigKVFile 对象提供更高级能力的支持，提高业务开发使用效率。
@@ -58,8 +55,8 @@ public class ConfigPropertiesFileExample {
                 for (String key : event.changedKeys()) {
                     ConfigPropertyChangeInfo changeInfo = event.getChangeInfo(key);
                     System.out.printf("\nChange info ：key = %s, old value = %s, new value = %s, change type = %s\n%n",
-                                      changeInfo.getPropertyName(), changeInfo.getOldValue(),
-                                      changeInfo.getNewValue(), changeInfo.getChangeType());
+                            changeInfo.getPropertyName(), changeInfo.getOldValue(),
+                            changeInfo.getNewValue(), changeInfo.getChangeType());
                 }
             }
         });

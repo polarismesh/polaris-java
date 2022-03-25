@@ -27,6 +27,7 @@ import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.logging.LoggingConsts;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

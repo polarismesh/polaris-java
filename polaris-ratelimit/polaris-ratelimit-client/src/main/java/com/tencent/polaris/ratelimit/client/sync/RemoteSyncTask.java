@@ -21,6 +21,7 @@ import com.tencent.polaris.api.plugin.ratelimiter.AmountInfo;
 import com.tencent.polaris.api.plugin.ratelimiter.LocalQuotaInfo;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.flow.AsyncRateLimitConnector;
 import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow;
 import com.tencent.polaris.ratelimit.client.flow.ServiceIdentifier;
@@ -41,7 +42,6 @@ import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import io.grpc.stub.StreamObserver;
 import java.util.Map;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 1、首次调用需要上报

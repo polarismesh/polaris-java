@@ -27,9 +27,9 @@ import com.tencent.polaris.api.plugin.server.ReportClientResponse;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.client.api.BaseEngine;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.version.Version;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ReportClientTask implements Runnable {
 

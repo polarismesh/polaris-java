@@ -27,9 +27,9 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.InputStream;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ConfigAPIFactory {
 

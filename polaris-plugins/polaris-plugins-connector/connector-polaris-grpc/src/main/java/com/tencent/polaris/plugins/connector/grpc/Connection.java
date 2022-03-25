@@ -20,6 +20,7 @@ package com.tencent.polaris.plugins.connector.grpc;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.logging.LoggerFactory;
 import io.grpc.ManagedChannel;
 import java.util.Objects;
 import java.util.UUID;
@@ -27,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 封装的连接对象

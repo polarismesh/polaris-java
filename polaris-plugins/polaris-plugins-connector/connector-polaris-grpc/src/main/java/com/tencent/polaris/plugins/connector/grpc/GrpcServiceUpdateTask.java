@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
@@ -28,7 +29,6 @@ import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskCo
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GrpcServiceUpdateTask extends ServiceUpdateTask {
 

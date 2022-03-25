@@ -41,6 +41,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,7 +53,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 就近接入路由

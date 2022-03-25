@@ -67,6 +67,7 @@ import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.logging.LoggerFactory;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -84,7 +85,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 本地缓存,保存服务端返回的实例信息.

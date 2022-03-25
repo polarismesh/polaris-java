@@ -25,7 +25,7 @@ import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;

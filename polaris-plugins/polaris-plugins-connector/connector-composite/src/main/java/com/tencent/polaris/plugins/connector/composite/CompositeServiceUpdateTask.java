@@ -33,6 +33,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
@@ -40,7 +41,6 @@ import com.tencent.polaris.plugins.connector.grpc.GrpcServiceUpdateTask;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scheduled task for updating service information.

@@ -34,6 +34,7 @@ import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -50,7 +51,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 用于管理与后端服务器的GRPC连接.

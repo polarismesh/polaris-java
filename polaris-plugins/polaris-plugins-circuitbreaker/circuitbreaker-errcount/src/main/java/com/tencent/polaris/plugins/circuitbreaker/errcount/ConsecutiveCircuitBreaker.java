@@ -38,6 +38,7 @@ import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.Subset;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.ChangeStateUtils;
 import com.tencent.polaris.plugins.circuitbreaker.common.CircuitBreakUtils;
 import com.tencent.polaris.plugins.circuitbreaker.common.CircuitBreakUtils.RuleDestinationResult;
@@ -59,7 +60,6 @@ import com.tencent.polaris.client.pojo.InstanceByProto;
 import java.util.Collection;
 import java.util.function.Function;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * 基于错误统计次数的熔断器

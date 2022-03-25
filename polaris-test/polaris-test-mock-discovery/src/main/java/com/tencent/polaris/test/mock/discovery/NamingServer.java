@@ -19,13 +19,13 @@ package com.tencent.polaris.test.mock.discovery;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
 import java.io.IOException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NamingServer {
 
