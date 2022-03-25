@@ -43,6 +43,12 @@ public interface SystemConfig extends Verifier {
     ClusterConfig getDiscoverCluster();
 
     /**
+     * 获取配置中心集群信息
+     *
+     */
+    ClusterConfig getConfigCluster();
+
+    /**
      * 获取心跳集群地址
      *
      * @return healthCheck

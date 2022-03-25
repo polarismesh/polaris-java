@@ -101,6 +101,10 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         if (clusterAvailable(discoverCluster)) {
             services.add(new ServerServiceInfo(ClusterType.SERVICE_DISCOVER_CLUSTER, discoverCluster));
         }
+        ClusterConfig configCluster = system.getConfigCluster();
+        if (clusterAvailable(configCluster)) {
+            services.add(new ServerServiceInfo(ClusterType.SERVICE_CONFIG_CLUSTER, configCluster));
+        }
         ClusterConfig healthCheckCluster = system.getHealthCheckCluster();
         if (clusterAvailable(healthCheckCluster)) {
             services.add(new ServerServiceInfo(ClusterType.HEALTH_CHECK_CLUSTER, healthCheckCluster));

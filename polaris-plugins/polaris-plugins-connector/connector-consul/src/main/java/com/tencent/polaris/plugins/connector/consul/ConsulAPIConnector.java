@@ -197,7 +197,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         if (StringUtils.isBlank(req.getInstanceID())) {
             if (StringUtils.isBlank(consulContext.getInstanceId())) {
                 consulContext.setInstanceId(
-                        appName + "-" + req.getHost().replace(":", "-") + "-" + req.getPort());
+                        appName + "-" + service.getAddress().replace(".", "-") + "-" + req.getPort());
             }
             service.setId(consulContext.getInstanceId());
         } else {

@@ -107,6 +107,7 @@ public class ConfigurationImpl implements Configuration {
         global.verify();
         consumer.verify();
         provider.verify();
+        configFile.verify();
     }
 
     public ConfigurationImpl() {

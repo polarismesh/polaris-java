@@ -45,6 +45,14 @@ public interface LocalCacheConfig extends PluginConfig, Verifier {
     long getServiceRefreshInterval();
 
     /**
+     * services.consumer.localCache.serviceList.refreshInterval
+     * 拉取服务元信息列表的定期刷新时间
+     *
+     * @return long, 毫秒
+     */
+    long getServiceListRefreshInterval();
+
+    /**
      * services.consumer.localCache.type
      * 本地缓存类型，可修改成具体的缓存插件名
      *

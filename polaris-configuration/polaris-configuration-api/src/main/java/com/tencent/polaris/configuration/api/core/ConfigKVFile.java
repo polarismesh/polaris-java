@@ -12,13 +12,6 @@ import java.util.Set;
 public interface ConfigKVFile extends ConfigFile {
 
     /**
-     * Get the properties object after automatic parsing
-     *
-     * @return properties object
-     */
-    Properties asProperties();
-
-    /**
      * Get the value of given key in the configuration file, or {@code defaultValue} if the key doesn't exist
      *
      * @param key          the properties key

@@ -52,7 +52,7 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
             this.configFileConnector = configFileConnector;
         } else {
             //获取远程调用插件实现类
-            String configFileConnectorType = sdkContext.getConfig().getConfigFile().connectorType();
+            String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector().getConnectorType();
             this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         }

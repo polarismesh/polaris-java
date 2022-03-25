@@ -22,13 +22,25 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * 服务实例变更事件
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ServiceChangeEvent implements Serializable {
 
+    /**
+     * 针对单个实例变化的变化记录数据
+     */
     public static class OneInstanceUpdate {
 
+        /**
+         * 更新前的实例
+         */
         private Instance before;
+
+        /**
+         * 更新后的实例
+         */
         private Instance after;
 
         public OneInstanceUpdate(Instance before, Instance after) {
@@ -50,10 +62,24 @@ public class ServiceChangeEvent implements Serializable {
      */
     private ServiceKey serviceKey;
 
+    /**
+     * 当前服务下的最新实例列表
+     */
+    private List<Instance> allInstances = Collections.emptyList();
+
+    /**
+     * 本次服务实例变化中新增的实例
+     */
     private List<Instance> addInstances = Collections.emptyList();
 
+    /**
+     * 本次服务实例变化中更新的实例
+     */
     private List<OneInstanceUpdate> updateInstances = Collections.emptyList();
 
+    /**
+     * 本次服务实例变化中被删除的实例
+     */
     private List<Instance> deleteInstances = Collections.emptyList();
 
     public ServiceKey getServiceKey() {
@@ -72,13 +98,28 @@ public class ServiceChangeEvent implements Serializable {
         return deleteInstances;
     }
 
-    public static ServiceEventBuilder Builder() {
+    public List<Instance> getAllInstances() {
+        return allInstances;
+    }
+
+    public static ServiceEventBuilder builder() {
         return new ServiceEventBuilder();
     }
 
-    public static final class ServiceEventBuilder {
+    @Override
+    public String toString() {
+        return "ServiceChangeEvent{" +
+                "serviceKey=" + serviceKey +
+                ", allInstances=" + allInstances +
+                ", addInstances=" + addInstances +
+                ", updateInstances=" + updateInstances +
+                ", deleteInstances=" + deleteInstances +
+                '}';
+    }
 
+    public static final class ServiceEventBuilder {
         private ServiceKey serviceKey;
+        private List<Instance> allInstances = Collections.emptyList();
         private List<Instance> addInstances = Collections.emptyList();
         private List<OneInstanceUpdate> updateInstances = Collections.emptyList();
         private List<Instance> deleteInstances = Collections.emptyList();
@@ -88,6 +129,11 @@ public class ServiceChangeEvent implements Serializable {
 
         public ServiceEventBuilder serviceKey(ServiceKey serviceKey) {
             this.serviceKey = serviceKey;
+            return this;
+        }
+
+        public ServiceEventBuilder allInstances(List<Instance> allInstances) {
+            this.allInstances = allInstances;
             return this;
         }
 
@@ -107,22 +153,13 @@ public class ServiceChangeEvent implements Serializable {
         }
 
         public ServiceChangeEvent build() {
-            ServiceChangeEvent serviceEvent = new ServiceChangeEvent();
-            serviceEvent.addInstances = this.addInstances;
-            serviceEvent.serviceKey = this.serviceKey;
-            serviceEvent.deleteInstances = this.deleteInstances;
-            serviceEvent.updateInstances = this.updateInstances;
-            return serviceEvent;
+            ServiceChangeEvent serviceChangeEvent = new ServiceChangeEvent();
+            serviceChangeEvent.addInstances = this.addInstances;
+            serviceChangeEvent.deleteInstances = this.deleteInstances;
+            serviceChangeEvent.serviceKey = this.serviceKey;
+            serviceChangeEvent.updateInstances = this.updateInstances;
+            serviceChangeEvent.allInstances = this.allInstances;
+            return serviceChangeEvent;
         }
-    }
-
-    @Override
-    public String toString() {
-        return "ServiceChangeEvent{" +
-                "serviceKey=" + serviceKey +
-                ", addInstances=" + addInstances +
-                ", updateInstances=" + updateInstances +
-                ", deleteInstances=" + deleteInstances +
-                '}';
     }
 }

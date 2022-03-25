@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.grpc;
 
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.control.Destroyable;
@@ -83,6 +84,12 @@ public class ConnectionManager extends Destroyable {
             Map<ClusterType, CompletableFuture<String>> notifiers) {
         this.clientId = initContext.getValueContext().getClientId();
         this.readyNotifiers.putAll(notifiers);
+
+        if (serverConnectorConfig == null) {
+            Configuration config = initContext.getConfig();
+            serverConnectorConfig = config.getGlobal().getServerConnector();
+        }
+
         this.connectTimeoutMs = serverConnectorConfig.getConnectTimeout();
         this.protocol = serverConnectorConfig.getProtocol();
         List<String> addresses = serverConnectorConfig.getAddresses();
@@ -90,6 +97,7 @@ public class ConnectionManager extends Destroyable {
         Collection<ServerServiceInfo> serverServices = initContext.getServerServices();
         ServerServiceInfo discoverService = null;
         ServerServiceInfo healthCheckService = null;
+        ServerServiceInfo configService = null;
         if (CollectionUtils.isNotEmpty(serverServices)) {
             for (ServerServiceInfo serverService : serverServices) {
                 if (serverService.getClusterType() == ClusterType.SERVICE_DISCOVER_CLUSTER) {
@@ -98,6 +106,9 @@ public class ConnectionManager extends Destroyable {
                 }
                 if (serverService.getClusterType() == ClusterType.HEALTH_CHECK_CLUSTER) {
                     healthCheckService = serverService;
+                }
+                if (serverService.getClusterType() == ClusterType.SERVICE_CONFIG_CLUSTER) {
+                    configService = serverService;
                 }
             }
         }
@@ -108,6 +119,14 @@ public class ConnectionManager extends Destroyable {
             serverAddresses
                     .put(ClusterType.SERVICE_DISCOVER_CLUSTER,
                             new ServerAddressList(discoverService, ClusterType.SERVICE_DISCOVER_CLUSTER));
+        }
+        if (null == configService) {
+            serverAddresses.put(ClusterType.SERVICE_CONFIG_CLUSTER,
+                                new ServerAddressList(addresses, ClusterType.SERVICE_CONFIG_CLUSTER));
+        } else {
+            serverAddresses
+                .put(ClusterType.SERVICE_CONFIG_CLUSTER,
+                     new ServerAddressList(configService, ClusterType.SERVICE_CONFIG_CLUSTER));
         }
         if (null == healthCheckService) {
             serverAddresses.put(ClusterType.HEALTH_CHECK_CLUSTER,

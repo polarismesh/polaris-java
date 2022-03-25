@@ -72,14 +72,6 @@ public class ConfigPropertiesFileTest {
         Assert.assertEquals(ConfigFileTestUtils.MyType.T1, configFile
             .getEnumProperty("k5", ConfigFileTestUtils.MyType.class, ConfigFileTestUtils.MyType.T2));
 
-        Properties properties = configFile.asProperties();
-        Assert.assertEquals(7, properties.stringPropertyNames().size());
-        Assert.assertEquals("10", properties.getProperty("k1"));
-        Assert.assertEquals("false", properties.getProperty("k2"));
-        Assert.assertEquals("5.6", properties.getProperty("k3"));
-        Assert.assertEquals("1,2,3,4,5", properties.getProperty("k4"));
-        Assert.assertEquals("T1", properties.getProperty("k5"));
-
         ConfigFileTestUtils.User user = configFile.getJsonProperty("k6", ConfigFileTestUtils.User.class, null);
         Assert.assertNotNull(user);
         Assert.assertEquals("zhangsan", user.getName());
@@ -190,15 +182,6 @@ public class ConfigPropertiesFileTest {
 
         Assert.assertEquals(ConfigFileTestUtils.MyType.T1, configFile
             .getEnumProperty("k5", ConfigFileTestUtils.MyType.class, ConfigFileTestUtils.MyType.T2));
-
-        Properties properties = configFile.asProperties();
-        Assert.assertEquals(7, properties.stringPropertyNames().size());
-        Assert.assertEquals("1", properties.getProperty("k1"));
-        Assert.assertNull(properties.getProperty("k2"));
-        Assert.assertEquals("5.6", properties.getProperty("k3"));
-        Assert.assertEquals("1,2,3,4,5", properties.getProperty("k4"));
-        Assert.assertEquals("T1", properties.getProperty("k5"));
-        Assert.assertEquals("xx", properties.getProperty("k8"));
 
         ConfigFileTestUtils.User user = configFile.getJsonProperty("k6", ConfigFileTestUtils.User.class, null);
         Assert.assertNotNull(user);

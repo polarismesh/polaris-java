@@ -1,5 +1,9 @@
 global:
   system:
+    configCluster:
+      namespace: Polaris
+      service: polaris.config
+      sameAsBuiltin: true
     discoverCluster:
       sameAsBuiltin: true
     healthCheckCluster:
@@ -16,4 +20,7 @@ consumer:
     #描述:是否启用节点熔断功能
     enable: false
 configFile:
-  connectorType: polaris
+  serverConnector:
+    connectorType: polaris
+    addresses:
+      - 127.0.0.1:8093
