@@ -137,49 +137,6 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         return fallback;
     }
 
-    public synchronized void init() throws PolarisException {
-        if (!initialized.compareAndSet(false, true)) {
-            return;
-        }
-        extensions.init(configuration, plugins, valueContext);
-        plugins.postContextInitPlugins(extensions);
-    }
-
-    private boolean clusterAvailable(ClusterConfig clusterConfig) {
-        if (null == clusterConfig) {
-            return false;
-        }
-        if (StringUtils.isBlank(clusterConfig.getNamespace()) || StringUtils.isBlank(clusterConfig.getService())) {
-            return false;
-        }
-        if (!clusterConfig.isSameAsBuiltin()) {
-            return false;
-        }
-        return true;
-    }
-
-    public Extensions getExtensions() {
-        return extensions;
-    }
-
-    public Configuration getConfig() {
-        return configuration;
-    }
-
-    public Supplier getPlugins() {
-        return plugins;
-    }
-
-    @Override
-    protected void doDestroy() {
-        synchronized (lock) {
-            for (Destroyable destroyable : destroyHooks) {
-                destroyable.destroy();
-            }
-        }
-        plugins.destroyPlugins();
-    }
-
     /**
      * 通过默认配置初始化SDKContext
      *
@@ -318,6 +275,49 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             return inetAddress.getCanonicalHostName();
         }
         return DEFAULT_ADDRESS;
+    }
+
+    public synchronized void init() throws PolarisException {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+        extensions.init(configuration, plugins, valueContext);
+        plugins.postContextInitPlugins(extensions);
+    }
+
+    private boolean clusterAvailable(ClusterConfig clusterConfig) {
+        if (null == clusterConfig) {
+            return false;
+        }
+        if (StringUtils.isBlank(clusterConfig.getNamespace()) || StringUtils.isBlank(clusterConfig.getService())) {
+            return false;
+        }
+        if (clusterConfig.isSameAsBuiltin()) {
+            return false;
+        }
+        return true;
+    }
+
+    public Extensions getExtensions() {
+        return extensions;
+    }
+
+    public Configuration getConfig() {
+        return configuration;
+    }
+
+    public Supplier getPlugins() {
+        return plugins;
+    }
+
+    @Override
+    protected void doDestroy() {
+        synchronized (lock) {
+            for (Destroyable destroyable : destroyHooks) {
+                destroyable.destroy();
+            }
+        }
+        plugins.destroyPlugins();
     }
 
     public ValueContext getValueContext() {
