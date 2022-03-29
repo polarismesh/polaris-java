@@ -17,6 +17,7 @@ import com.tencent.polaris.configuration.client.util.ConvertFunctions;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
@@ -372,7 +373,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
     protected void convertToProperties(Properties properties, String content) {
         try {
-            properties.load(new ByteArrayInputStream(content.getBytes()));
+            properties.load(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
         } catch (IOException e) {
             String msg = String.format("[Config] failed to convert content to properties. namespace = %s, "
                             + "file group = %s, file name = %s",
