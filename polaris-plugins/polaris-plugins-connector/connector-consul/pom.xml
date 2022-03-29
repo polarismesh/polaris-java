@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Polaris Plugins Client Connector Consul</name>
-    <description>Polaris Plugins Client Connector Consul POM</description>
+    <description>Polaris Plugins Client Connector Consul JAR</description>
 
     <dependencies>
         <dependency>
