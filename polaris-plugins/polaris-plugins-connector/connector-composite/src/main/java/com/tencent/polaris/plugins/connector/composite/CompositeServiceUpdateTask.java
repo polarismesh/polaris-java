@@ -63,6 +63,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
             if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
                 GrpcServiceUpdateTask grpcServiceUpdateTask = new GrpcServiceUpdateTask(serviceEventHandler, sc);
                 grpcServiceUpdateTask.execute(this);
+                return;
             }
         }
     }

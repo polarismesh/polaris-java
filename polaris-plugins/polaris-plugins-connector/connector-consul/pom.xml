@@ -13,7 +13,7 @@
     <artifactId>connector-consul</artifactId>
     <packaging>jar</packaging>
 
-    <name>Polaris Plugins Client Connector</name>
+    <name>Polaris Plugins Client Connector Consul</name>
     <description>Polaris Plugins Client Connector Consul POM</description>
 
     <dependencies>
