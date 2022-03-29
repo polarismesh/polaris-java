@@ -36,7 +36,7 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     }
 
     @Override
-    public ConnectorConfig getServerConnector() {
+    public ConnectorConfigImpl getServerConnector() {
         return serverConnector;
     }
 
