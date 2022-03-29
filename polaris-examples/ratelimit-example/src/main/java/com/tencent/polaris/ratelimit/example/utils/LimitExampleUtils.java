@@ -18,11 +18,18 @@
 package com.tencent.polaris.ratelimit.example.utils;
 
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.ConfigAPIFactory;
+import com.tencent.polaris.ratelimit.api.core.LimitAPI;
+import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class LimitExampleUtils {
 
@@ -31,11 +38,13 @@ public class LimitExampleUtils {
         private final String namespace;
         private final String service;
         private final int concurrency;
+        private final String config;
 
-        public InitResult(String namespace, String service, int concurrency) {
+        public InitResult(String namespace, String service, int concurrency, String config) {
             this.namespace = namespace;
             this.service = service;
             this.concurrency = concurrency;
+            this.config = config;
         }
 
         public String getNamespace() {
@@ -48,6 +57,10 @@ public class LimitExampleUtils {
 
         public int getConcurrency() {
             return concurrency;
+        }
+
+        public String getConfig() {
+            return config;
         }
     }
 
@@ -64,11 +77,13 @@ public class LimitExampleUtils {
         options.addOption("namespace", "service namespace", true, "namespace for service");
         options.addOption("service", "service name", true, "service name");
         options.addOption("concurrency", "concurrency", true, "concurrency");
+        options.addOption("config", "config_path", true, "config file path");
 
         CommandLine commandLine = parser.parse(options, args);
         String namespace = commandLine.getOptionValue("namespace");
         String service = commandLine.getOptionValue("service");
         String concurrencyStr = commandLine.getOptionValue("concurrency");
+        String config = commandLine.getOptionValue("config");
         int concurrency;
         if (StringUtils.isNotBlank(concurrencyStr)) {
             try {
@@ -84,6 +99,21 @@ public class LimitExampleUtils {
             System.out.println("namespace or service is required");
             System.exit(1);
         }
-        return new InitResult(namespace, service, concurrency);
+        return new InitResult(namespace, service, concurrency, config);
+    }
+
+    /**
+     * 创建 LimitAPI
+     * @param config 配置文件路径
+     * @return api object
+     * @throws IOException
+     */
+    public static LimitAPI createLimitAPI(String config) throws IOException {
+        if (StringUtils.isNotBlank(config)) {
+            try (InputStream inputStream = new FileInputStream(config)) {
+                return LimitAPIFactory.createLimitAPIByConfig(ConfigAPIFactory.loadConfig(inputStream));
+            }
+        }
+        return LimitAPIFactory.createLimitAPI();
     }
 }

@@ -1,7 +1,14 @@
 package com.tencent.polaris.circuitbreak.example;
 
 import com.tencent.polaris.api.utils.StringUtils;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
+
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.ConfigAPIFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -21,12 +28,14 @@ public class CircuitBreakExampleUtils {
         private final String service;
         private final int instanceCount;
         private final String token;
+        private final String config;
 
-        public InitResult(String namespace, String service, int instanceCount, String token) {
+        public InitResult(String namespace, String service, int instanceCount, String token, String config) {
             this.namespace = namespace;
             this.service = service;
             this.instanceCount = instanceCount;
             this.token = token;
+            this.config =config;
         }
 
         public String getNamespace() {
@@ -43,6 +52,10 @@ public class CircuitBreakExampleUtils {
 
         public String getToken() {
             return token;
+        }
+
+        public String getConfig() {
+            return config;
         }
     }
 
@@ -68,12 +81,14 @@ public class CircuitBreakExampleUtils {
         options.addOption("service", "service name", true, "service name");
         options.addOption("instCount", "instance count", true, "instance count");
         options.addOption("token", "token", true, "token");
+        options.addOption("config", "config_path", true, "config file path");
 
         CommandLine commandLine = parser.parse(options, args);
         String namespace = commandLine.getOptionValue("namespace");
         String service = commandLine.getOptionValue("service");
         String token = commandLine.getOptionValue("token");
         String instCountStr = commandLine.getOptionValue("instCount");
+        String config = commandLine.getOptionValue("config");
         int instCount;
         if (StringUtils.isNotBlank(instCountStr)) {
             try {
@@ -89,6 +104,21 @@ public class CircuitBreakExampleUtils {
             System.out.println("namespace or service is required");
             System.exit(1);
         }
-        return new InitResult(namespace, service, instCount, token);
+        return new InitResult(namespace, service, instCount, token, config);
+    }
+
+    /**
+     * 初始化 SDKContext
+     * @param config 配置文件路径
+     * @return sdk context
+     * @throws IOException
+     */
+    public static SDKContext initContext(String config) throws IOException {
+        if (StringUtils.isNotBlank(config)) {
+            try (InputStream inputStream = new FileInputStream(config)) {
+                return SDKContext.initContextByConfig(ConfigAPIFactory.loadConfig(inputStream));
+            }
+        }
+        return SDKContext.initContext();
     }
 }

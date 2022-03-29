@@ -39,7 +39,7 @@ public class RateLimitExample {
         int concurrency = initResult.getConcurrency();
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(concurrency);
         //注意：使用本地限流时，限流阈值计数器会存放在LimitAPI实例内部，无法跨实例共享，因此LimitAPI建议通过进程单例模式使用
-        try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPI()) {
+        try (LimitAPI limitAPI = LimitExampleUtils.createLimitAPI(initResult.getConfig())) {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {

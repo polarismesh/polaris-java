@@ -48,7 +48,7 @@ public class RouterExample {
         InitResult initResult = ExampleUtils.initConsumerConfiguration(args);
         String namespace = initResult.getNamespace();
         String service = initResult.getService();
-        try (SDKContext sdkContext = SDKContext.initContext()) {
+        try (SDKContext sdkContext = ExampleUtils.initContext(initResult.getConfig())) {
             ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
             RouterAPI routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
             //1. 拉取全量服务实例

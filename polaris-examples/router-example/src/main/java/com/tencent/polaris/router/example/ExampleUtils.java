@@ -18,11 +18,17 @@
 package com.tencent.polaris.router.example;
 
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.ConfigAPIFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class ExampleUtils {
 
@@ -30,10 +36,12 @@ public class ExampleUtils {
 
         private final String namespace;
         private final String service;
+        private final String config;
 
-        public InitResult(String namespace, String service) {
+        public InitResult(String namespace, String service, String config) {
             this.namespace = namespace;
             this.service = service;
+            this.config = config;
         }
 
         public String getNamespace() {
@@ -42,6 +50,10 @@ public class ExampleUtils {
 
         public String getService() {
             return service;
+        }
+
+        public String getConfig() {
+            return config;
         }
     }
 
@@ -57,15 +69,32 @@ public class ExampleUtils {
         Options options = new Options();
         options.addOption("namespace", "service namespace", true, "namespace for service");
         options.addOption("service", "service name", true, "service name");
+        options.addOption("config", "config_path", true, "config file path");
 
         CommandLine commandLine = parser.parse(options, args);
         String namespace = commandLine.getOptionValue("namespace");
         String service = commandLine.getOptionValue("service");
+        String config = commandLine.getOptionValue("config");
         if (StringUtils.isBlank(namespace) || StringUtils.isBlank(service)) {
             System.out.println("namespace or service is required");
             System.exit(1);
         }
-        return new InitResult(namespace, service);
+        return new InitResult(namespace, service, config);
+    }
+
+    /**
+     * 初始化 SDKContext
+     * @param config 配置文件路径
+     * @return sdk context
+     * @throws IOException
+     */
+    public static SDKContext initContext(String config) throws IOException {
+        if (StringUtils.isNotBlank(config)) {
+            try (InputStream inputStream = new FileInputStream(config)) {
+                return SDKContext.initContextByConfig(ConfigAPIFactory.loadConfig(inputStream));
+            }
+        }
+        return SDKContext.initContext();
     }
 
 }

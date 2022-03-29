@@ -24,7 +24,7 @@ public class CircuitBreakExample {
     public static void main(String[] args) throws Throwable {
         InitResult initResult = CircuitBreakExampleUtils.initConfiguration(args);
         //由于需要用到多个API对象，因此可以使用SDKContext使得多个API对象的资源都可以共享
-        try (SDKContext sdkContext = SDKContext.initContext()) {
+        try (SDKContext sdkContext = CircuitBreakExampleUtils.initContext(initResult.getConfig())) {
             ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
             //1. 先注册服务实例
             registerInstances(providerAPI, initResult);

@@ -28,6 +28,8 @@ import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -54,6 +56,7 @@ public class Provider {
     private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
 
     public static void main(String[] args) throws Exception {
+        ProviderExampleUtils.InitResult initResult = ProviderExampleUtils.initProviderConfiguration(args);
 
         String namespace = NAMESPACE_DEFAULT;
         String service = ECHO_SERVICE_NAME;
@@ -61,7 +64,7 @@ public class Provider {
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
         server.createContext("/echo", new EchoServerHandler());
 
-        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        Configuration configuration = ProviderExampleUtils.createConfiguration(initResult.getConfig());
         String localHost = getLocalHost(configuration);
         int localPort = server.getAddress().getPort();
 
