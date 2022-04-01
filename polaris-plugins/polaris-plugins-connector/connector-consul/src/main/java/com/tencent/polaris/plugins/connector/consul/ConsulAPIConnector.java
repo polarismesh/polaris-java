@@ -121,9 +121,9 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     private void initActually(InitContext ctx, ServerConnectorConfig connectorConfig) {
         String address = connectorConfig.getAddresses().get(0);
-        String[] addressSplit = address.split(":");
-        String agentHost = addressSplit[0];
-        int agentPort = Integer.parseInt(addressSplit[1]);
+        int lastIndex = address.lastIndexOf(":");
+        String agentHost = address.substring(0, lastIndex);
+        int agentPort = Integer.parseInt(address.substring(lastIndex + 1));
         consulClient = new ConsulClient(agentHost, agentPort);
 
         // Init context.
