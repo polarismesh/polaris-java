@@ -14,7 +14,7 @@
     <packaging>jar</packaging>
 
     <name>Polaris Plugins Client Connector Composite</name>
-    <description>Polaris Plugins Client Connector Composite POM</description>
+    <description>Polaris Plugins Client Connector Composite JAR</description>
 
     <dependencies>
         <dependency>
