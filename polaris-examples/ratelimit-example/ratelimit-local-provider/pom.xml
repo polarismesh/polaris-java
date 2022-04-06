@@ -5,11 +5,12 @@
     <parent>
         <artifactId>ratelimit-example</artifactId>
         <groupId>com.tencent.polaris</groupId>
-        <version>1.3.1</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ratelimit-local-provider</artifactId>
-
+    <name>Polaris RateLimit Local Provider Example</name>
 
 </project>
