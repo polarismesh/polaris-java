@@ -141,7 +141,12 @@ public class Provider {
     }
 
     private static String getLocalHost(Configuration configuration) throws Exception {
-        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        String serverAddress;
+        if (configuration.getGlobal().getServerConnector() == null) {
+            serverAddress = configuration.getGlobal().getServerConnectors().get(0).getAddresses().get(0);
+        } else {
+            serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        }
         String[] tokens = serverAddress.split(":");
         try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
             return socket.getLocalAddress().getHostAddress();
