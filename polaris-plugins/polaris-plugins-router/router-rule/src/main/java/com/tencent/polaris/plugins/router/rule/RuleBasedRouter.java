@@ -288,7 +288,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
 
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
-            RuleMatchType ruleMatchType) throws PolarisException {
+            RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
         // 获取路由规则
         List<RoutingProto.Route> routes = getRoutesFromRule(routeInfo, ruleMatchType);
         if (CollectionUtils.isEmpty(routes)) {
@@ -310,7 +310,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             if (!sourceMatched) {
                 continue;
             }
-
+            matchStatus.matched = true;
             // 如果source匹配成功, 继续匹配destination规则
             // 然后将结果写进map(key: 权重, value: 带权重的实例分组)
             Map<Integer, PrioritySubsets> subsetsMap = new HashMap<>();
@@ -433,25 +433,29 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         return Collections.emptyList();
     }
 
+
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) {
         // 根据匹配过程修改状态, 默认无路由策略状态
-        RuleStatus ruleStatus;
+        RuleStatus ruleStatus = RuleStatus.noRule;
         // 优先匹配inbound规则, 成功则不需要继续匹配outbound规则
         List<Instance> destFilteredInstances = null;
         List<Instance> sourceFilteredInstances = null;
+        MatchStatus matchStatus = new MatchStatus();
         if (routeInfo.getDestRouteRule() != null) {
             destFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
-                    RuleMatchType.destRouteRuleMatch);
-            if (destFilteredInstances.isEmpty()) {
-                ruleStatus = RuleStatus.destRuleFail;
-            } else {
+                    RuleMatchType.destRouteRuleMatch, matchStatus);
+            if (!destFilteredInstances.isEmpty()) {
                 ruleStatus = RuleStatus.destRuleSucc;
             }
-        } else {
+            if (destFilteredInstances.isEmpty() && matchStatus.matched) {
+                ruleStatus = RuleStatus.destRuleFail;
+            }
+        }
+        if (ruleStatus == RuleStatus.noRule && routeInfo.getSourceRouteRule() != null) {
             // 然后匹配outbound规则
             sourceFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
-                    RuleMatchType.sourceRouteRuleMatch);
+                    RuleMatchType.sourceRouteRuleMatch, matchStatus);
             if (sourceFilteredInstances.isEmpty()) {
                 ruleStatus = RuleStatus.sourceRuleFail;
             } else {
@@ -468,6 +472,11 @@ public class RuleBasedRouter extends AbstractServiceRouter {
                         routeInfo.getSourceService());
                 return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
         }
+    }
+
+    private static class MatchStatus {
+
+        boolean matched;
     }
 
     private List<Instance> getHealthyInstances(List<Instance> instances) {

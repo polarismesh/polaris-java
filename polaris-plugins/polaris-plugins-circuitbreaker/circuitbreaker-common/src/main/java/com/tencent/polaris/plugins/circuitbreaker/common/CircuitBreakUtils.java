@@ -143,13 +143,15 @@ public class CircuitBreakUtils {
             return new MatchDestResult(null, false);
         }
         for (DestinationSet destinationSet : rule.getDestinationsList()) {
-            boolean namespaceMatch = destinationSet.getNamespace().getValue().equals(matchAll);
-            boolean serviceMatch = destinationSet.getService().getValue().equals(matchAll);
+            String namespaceValue = destinationSet.getNamespace().getValue();
+            String serviceValue = destinationSet.getService().getValue();
+            boolean namespaceMatch = StringUtils.isBlank(namespaceValue) || namespaceValue.equals(matchAll);
+            boolean serviceMatch = StringUtils.isBlank(serviceValue) || serviceValue.equals(matchAll);
             if (!namespaceMatch) {
-                namespaceMatch = destinationSet.getNamespace().getValue().equals(ruleIdentifier.getNamespace());
+                namespaceMatch = namespaceValue.equals(ruleIdentifier.getNamespace());
             }
             if (!serviceMatch) {
-                serviceMatch = destinationSet.getService().getValue().equals(ruleIdentifier.getService());
+                serviceMatch = serviceValue.equals(ruleIdentifier.getService());
             }
             if (!namespaceMatch || !serviceMatch) {
                 continue;
@@ -158,16 +160,17 @@ public class CircuitBreakUtils {
             if (null == methodMatcher) {
                 return new MatchDestResult(destinationSet, true);
             }
-            if (RuleUtils.isMatchAllValue(methodMatcher)) {
+            String methodMatcherValue = methodMatcher.getValue().getValue();
+            if (StringUtils.isBlank(methodMatcherValue) || RuleUtils.isMatchAllValue(methodMatcher)) {
                 return new MatchDestResult(destinationSet, true);
             }
             String method = ruleIdentifier.getMethod();
             if (methodMatcher.getType() == MatchStringType.EXACT) {
-                if (StringUtils.equals(methodMatcher.getValue().getValue(), method)) {
+                if (StringUtils.equals(methodMatcherValue, method)) {
                     return new MatchDestResult(destinationSet, false);
                 }
             }
-            Pattern pattern = flowCache.loadOrStoreCompiledRegex(methodMatcher.getValue().getValue());
+            Pattern pattern = flowCache.loadOrStoreCompiledRegex(methodMatcherValue);
             if (pattern.matcher(method).find()) {
                 return new MatchDestResult(destinationSet, false);
             }

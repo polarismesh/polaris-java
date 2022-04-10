@@ -22,10 +22,13 @@ import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 
 public class RuleUtils {
 
-    public static final String MATCH_ALL = "*";
+    public static final String
+
+            MATCH_ALL = "*";
 
     /**
      * 是否全匹配的规则
+     *
      * @param ruleMetaValue 规则匹配条件
      * @return 是否全匹配，全匹配则忽略该规则
      */

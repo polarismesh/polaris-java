@@ -15,9 +15,15 @@
     <name>Polaris Circuitbreaker Example</name>
     <description>Polaris Circuitbreaker Example JAR</description>
 
+    <packaging>pom</packaging>
+
     <properties>
         <skip.maven.deploy>true</skip.maven.deploy>
     </properties>
+
+    <modules>
+        <module>circuitbreaker-instance-example</module>
+    </modules>
 
     <dependencies>
         <dependency>
