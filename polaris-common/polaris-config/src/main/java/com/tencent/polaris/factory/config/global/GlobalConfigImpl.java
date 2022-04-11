@@ -19,13 +19,13 @@ package com.tencent.polaris.factory.config.global;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
-import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 全局配置对象
@@ -45,6 +45,8 @@ public class GlobalConfigImpl implements GlobalConfig {
 
     @JsonProperty
     private List<ServerConnectorConfigImpl> serverConnectors;
+
+    private Map<String, ServerConnectorConfigImpl> serverConnectorConfigMap = new ConcurrentHashMap<>();
 
     @JsonProperty
     private StatReporterConfigImpl statReporter;
@@ -77,6 +79,10 @@ public class GlobalConfigImpl implements GlobalConfig {
         this.serverConnectors = serverConnectors;
     }
 
+    public Map<String, ServerConnectorConfigImpl> getServerConnectorConfigMap() {
+        return serverConnectorConfigMap;
+    }
+
     @Override
     public StatReporterConfigImpl getStatReporter() {
         return statReporter;
@@ -97,14 +103,22 @@ public class GlobalConfigImpl implements GlobalConfig {
 
         boolean hasGrpc = false;
         if (CollectionUtils.isNotEmpty(serverConnectors)) {
-            for (ServerConnectorConfig serverConnectorConfig : serverConnectors) {
+            for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                 serverConnectorConfig.verify();
                 if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
                     hasGrpc = true;
                 }
+                if (serverConnectorConfigMap.containsKey(serverConnectorConfig.getName())) {
+                    throw new IllegalArgumentException(
+                            String.format("Server connector config of [%s] is already exist.",
+                                    serverConnectorConfig.getName()));
+                } else {
+                    serverConnectorConfigMap.put(serverConnectorConfig.getName(), serverConnectorConfig);
+                }
             }
         } else {
             serverConnector.verify();
+            serverConnectorConfigMap.put(serverConnector.getName(), serverConnector);
             hasGrpc = DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol());
         }
         ConfigUtils.validateTrue(hasGrpc, "HasGRPC");
@@ -136,6 +150,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                         serverConnectorConfig.setDefault(globalConfig.getServerConnector());
                         serverConnector = serverConnectorConfig;
                     }
+                    ServerConnectorConfigImpl.increaseIndex();
                 }
             } else {
                 serverConnector.setDefault(globalConfig.getServerConnector());

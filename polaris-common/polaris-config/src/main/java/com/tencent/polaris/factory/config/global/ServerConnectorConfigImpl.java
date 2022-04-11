@@ -28,6 +28,7 @@ import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 /**
@@ -38,6 +39,7 @@ import java.util.regex.Pattern;
 public class ServerConnectorConfigImpl extends PluginConfigImpl implements ServerConnectorConfig {
 
     private static final Pattern addressPattern = Pattern.compile("(.*)((?::))((?:[0-9]+))$");
+    private static final AtomicLong INDEX = new AtomicLong(0);
     private final Map<String, String> metadata = new ConcurrentHashMap<>();
     @JsonProperty
     private List<String> addresses;
@@ -58,6 +60,12 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reconnectInterval;
+    @JsonProperty
+    private String name;
+
+    public static void increaseIndex() {
+        INDEX.incrementAndGet();
+    }
 
     @Override
     public List<String> getAddresses() {
@@ -143,6 +151,15 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     }
 
     @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
     public void verify() {
         if (CollectionUtils.isEmpty(addresses)) {
             throw new IllegalArgumentException(String.format("addresses of [%s] must not be empty", protocol));
@@ -153,6 +170,7 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
                 throw new IllegalArgumentException(String.format("address [%s] of [%s] is invalid", address, protocol));
             }
         }
+        ConfigUtils.validateString(name, "serverConnector.name");
         if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(protocol)) {
             ConfigUtils.validateString(protocol, "serverConnector.protocol");
             ConfigUtils.validateInterval(connectTimeout, "serverConnector.connectTimeout");
@@ -188,6 +206,14 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
             }
             if (null == reconnectInterval) {
                 setReconnectInterval(serverConnectorConfig.getReconnectInterval());
+            }
+            if (null == name) {
+                long index = INDEX.get();
+                if (index == 0L) {
+                    setName(serverConnectorConfig.getName());
+                } else {
+                    setName(serverConnectorConfig.getName() + index);
+                }
             }
             setDefaultPluginConfig(serverConnectorConfig);
         }

@@ -17,13 +17,35 @@
 
 package com.tencent.polaris.factory.config.provider;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RegisterConfig;
+import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Implementation of {@link RegisterConfig}.
+ *
+ * @author Haotian Zhang
+ */
 public class RegisterConfigImpl implements RegisterConfig {
 
+    private static final AtomicLong INDEX = new AtomicLong(0);
+
+    @JsonProperty
     private String namespace;
 
+    @JsonProperty
     private String service;
+
+    @JsonProperty
+    private String serverConnectorName;
+
+    @JsonProperty
+    private Boolean enable;
+
+    public static void increaseIndex() {
+        INDEX.incrementAndGet();
+    }
 
     @Override
     public String getNamespace() {
@@ -44,15 +66,51 @@ public class RegisterConfigImpl implements RegisterConfig {
     }
 
     @Override
+    public String getServerConnectorName() {
+        return serverConnectorName;
+    }
+
+    public void setServerConnectorName(String serverConnectorName) {
+        this.serverConnectorName = serverConnectorName;
+    }
+
+    @Override
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
+    @Override
     public void verify() {
+        ConfigUtils.validateString(serverConnectorName,
+                "register.serverConnectorName or registers[?].serverConnectorName");
+        ConfigUtils.validateNull(enable, "register.enable or registers[?].enable");
     }
 
     @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             RegisterConfig registerConfig = (RegisterConfig) defaultObject;
-            setNamespace(registerConfig.getNamespace());
-            setService(registerConfig.getService());
+            if (null == namespace) {
+                setNamespace(registerConfig.getNamespace());
+            }
+            if (null == service) {
+                setService(registerConfig.getService());
+            }
+            if (null == serverConnectorName) {
+                long index = INDEX.get();
+                if (index == 0L) {
+                    setServerConnectorName(registerConfig.getServerConnectorName());
+                } else {
+                    setServerConnectorName(registerConfig.getServerConnectorName() + index);
+                }
+            }
+            if (null == enable) {
+                setEnable(registerConfig.isEnable());
+            }
         }
     }
 }

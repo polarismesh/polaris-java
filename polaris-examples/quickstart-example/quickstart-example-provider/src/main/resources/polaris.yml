@@ -5,7 +5,8 @@ global:
   #    addresses:
   #      - 127.0.0.1:8091
   serverConnectors:
-    - protocol: grpc
+    - name: polaris
+      protocol: grpc
       addresses:
         - 127.0.0.1:8091
   #    - protocol: consul
@@ -16,3 +17,7 @@ global:
     plugin:
       prometheus:
         pushgatewayAddress: 127.0.0.1:9091
+provider:
+  registers:
+    - serverConnectorName: polaris
+      enable: true

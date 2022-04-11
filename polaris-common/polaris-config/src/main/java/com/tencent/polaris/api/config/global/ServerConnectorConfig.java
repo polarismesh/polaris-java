@@ -84,4 +84,11 @@ public interface ServerConnectorConfig extends PluginConfig, Verifier {
      * @return metadata
      */
     Map<String, String> getMetadata();
+
+    /**
+     * Get name of server connector.
+     *
+     * @return name
+     */
+    String getName();
 }

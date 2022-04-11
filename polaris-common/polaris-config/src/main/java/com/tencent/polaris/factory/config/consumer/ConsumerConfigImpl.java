@@ -19,7 +19,12 @@ package com.tencent.polaris.factory.config.consumer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 调用者配置对象
@@ -46,6 +51,10 @@ public class ConsumerConfigImpl implements ConsumerConfig {
 
     @JsonProperty
     private SubscribeConfigImpl subscribe;
+
+    @JsonProperty
+    private List<DiscoveryConfigImpl> discoveries;
+    private Map<String, DiscoveryConfigImpl> discoveryConfigMap = new ConcurrentHashMap<>();
 
     @Override
     public LocalCacheConfigImpl getLocalCache() {
@@ -77,18 +86,38 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     }
 
     @Override
+    public List<DiscoveryConfigImpl> getDiscoveries() {
+        return discoveries;
+    }
+
+    public Map<String, DiscoveryConfigImpl> getDiscoveryConfigMap() {
+        return discoveryConfigMap;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(localCache, "localCache");
         ConfigUtils.validateNull(serviceRouter, "serviceRouter");
         ConfigUtils.validateNull(loadbalancer, "loadbalancer");
         ConfigUtils.validateNull(circuitBreaker, "circuitBreaker");
         ConfigUtils.validateNull(outlierDetection, "outlierDetection");
+        ConfigUtils.validateNull(discoveries, "discoveries");
+
         localCache.verify();
         serviceRouter.verify();
         loadbalancer.verify();
         circuitBreaker.verify();
         outlierDetection.verify();
         subscribe.verify();
+        for (DiscoveryConfigImpl discoveryConfig : discoveries) {
+            discoveryConfig.verify();
+            if (discoveryConfigMap.containsKey(discoveryConfig.getServerConnectorName())) {
+                throw new IllegalArgumentException(String.format("Discovery config of [%s] is already exist.",
+                        discoveryConfig.getServerConnectorName()));
+            } else {
+                discoveryConfigMap.put(discoveryConfig.getServerConnectorName(), discoveryConfig);
+            }
+        }
     }
 
     @Override
@@ -111,6 +140,10 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         if (null == subscribe) {
             subscribe = new SubscribeConfigImpl();
         }
+        if (CollectionUtils.isEmpty(discoveries)) {
+            discoveries = new ArrayList<>();
+            discoveries.add(new DiscoveryConfigImpl());
+        }
         if (null != defaultObject) {
             ConsumerConfig consumerConfig = (ConsumerConfig) defaultObject;
             localCache.setDefault(consumerConfig.getLocalCache());
@@ -119,6 +152,10 @@ public class ConsumerConfigImpl implements ConsumerConfig {
             circuitBreaker.setDefault(consumerConfig.getCircuitBreaker());
             outlierDetection.setDefault(consumerConfig.getOutlierDetection());
             subscribe.setDefault(consumerConfig.getSubscribe());
+            for (DiscoveryConfigImpl discoveryConfig : discoveries) {
+                discoveryConfig.setDefault(consumerConfig.getDiscoveries().get(0));
+                DiscoveryConfigImpl.increaseIndex();
+            }
         }
     }
 
