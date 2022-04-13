@@ -60,12 +60,13 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     protected void execute() {
         CompositeConnector connector = (CompositeConnector) serverConnector;
         for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                 GrpcServiceUpdateTask grpcServiceUpdateTask = new GrpcServiceUpdateTask(serviceEventHandler, sc);
                 grpcServiceUpdateTask.execute(this);
                 return;
             }
         }
+        this.notifyServerEvent(new ServerEvent(serviceEventKey, DiscoverResponse.newBuilder().build(), null));
     }
 
     @Override
@@ -87,7 +88,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     // Get instance information list except polaris.
                     List<DefaultInstance> extendInstanceList = new ArrayList<>();
                     for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                             List<DefaultInstance> instanceList = sc.syncGetServiceInstances(this);
                             if (extendInstanceList.isEmpty()) {
                                 extendInstanceList.addAll(instanceList);
@@ -127,7 +128,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     // Get instance information list except polaris.
                     List<ServiceInfo> extendServiceList = new ArrayList<>();
                     for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                             Services services = sc.syncGetServices(this);
                             if (extendServiceList.isEmpty()) {
                                 extendServiceList.addAll(services.getServices());

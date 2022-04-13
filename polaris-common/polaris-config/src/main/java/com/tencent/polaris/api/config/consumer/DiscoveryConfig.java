@@ -27,11 +27,11 @@ import com.tencent.polaris.api.config.verify.Verifier;
 public interface DiscoveryConfig extends Verifier {
 
     /**
-     * Get name of discovery server connector.
+     * Get id of discovery server connector.
      *
-     * @return name
+     * @return id
      */
-    String getServerConnectorName();
+    String getServerConnectorId();
 
     /**
      * If discovery is enabled.

@@ -32,7 +32,7 @@ public class DiscoveryConfigImpl implements DiscoveryConfig {
     private static final AtomicLong INDEX = new AtomicLong(0);
 
     @JsonProperty
-    private String serverConnectorName;
+    private String serverConnectorId;
 
     @JsonProperty
     private Boolean enable;
@@ -42,12 +42,12 @@ public class DiscoveryConfigImpl implements DiscoveryConfig {
     }
 
     @Override
-    public String getServerConnectorName() {
-        return serverConnectorName;
+    public String getServerConnectorId() {
+        return serverConnectorId;
     }
 
-    public void setServerConnectorName(String serverConnectorName) {
-        this.serverConnectorName = serverConnectorName;
+    public void setServerConnectorId(String serverConnectorId) {
+        this.serverConnectorId = serverConnectorId;
     }
 
     @Override
@@ -61,8 +61,8 @@ public class DiscoveryConfigImpl implements DiscoveryConfig {
 
     @Override
     public void verify() {
-        ConfigUtils.validateString(serverConnectorName,
-                "discovery.serverConnectorName or discoveries[?].serverConnectorName");
+        ConfigUtils.validateString(serverConnectorId,
+                "discovery.serverConnectorId or discoveries[?].serverConnectorId");
         ConfigUtils.validateNull(enable, "discovery.enable or discoveries[?].enable");
     }
 
@@ -70,12 +70,12 @@ public class DiscoveryConfigImpl implements DiscoveryConfig {
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             DiscoveryConfig discoveryConfig = (DiscoveryConfig) defaultObject;
-            if (null == serverConnectorName) {
+            if (null == serverConnectorId) {
                 long index = INDEX.get();
                 if (index == 0L) {
-                    setServerConnectorName(discoveryConfig.getServerConnectorName());
+                    setServerConnectorId(discoveryConfig.getServerConnectorId());
                 } else {
-                    setServerConnectorName(discoveryConfig.getServerConnectorName() + index);
+                    setServerConnectorId(discoveryConfig.getServerConnectorId() + index);
                 }
             }
             if (null == enable) {

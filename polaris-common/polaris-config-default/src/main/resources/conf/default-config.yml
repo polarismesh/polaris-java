@@ -51,8 +51,8 @@ global:
     retryInterval: 500ms
   #描述: 对接北极星服务端的相关配置
   serverConnector:
-    #Descirption: name of server connector.
-    name: polaris
+    #Descirption: id of server connector.
+    id: polaris
     #描述：默认服务端埋点接入地址
     addresses:
       - 127.0.0.1:8091
@@ -82,7 +82,7 @@ global:
 consumer:
   # Switch of discovery.
   discoveries:
-    - serverConnectorName: polaris # Name of server connector.
+    - serverConnectorId: polaris # Name of server connector.
       enable: true # If discovery is enabled.
   #描述: 本地服务缓存相关配置
   localCache:
@@ -195,7 +195,7 @@ consumer:
 provider:
   # Switch of registration
   registers:
-    - serverConnectorName: polaris # Name of server connector.
+    - serverConnectorId: polaris # Name of server connector.
       enable: true # If registration is enabled.
   # 限流配置
   rateLimit:
@@ -213,6 +213,7 @@ configFile:
   propertiesValueExpireTime: 60000
   # 连接器配置，默认为北极星服务端
   serverConnector:
+    name: polaris-config
     connectorType: polaris
     #描述：默认服务端埋点接入地址
     addresses:

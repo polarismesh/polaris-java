@@ -86,4 +86,26 @@ public interface ServerConnector extends Plugin {
      * @throws PolarisException 异常场景：当地址列表为空，或者地址全部连接失败，则返回error，调用者需进行重试
      */
     void updateServers(ServiceEventKey svcEventKey);
+
+    /**
+     * Get id of server connector.
+     *
+     * @return id
+     */
+    String getId();
+
+
+    /**
+     * Get id of server connector.
+     *
+     * @return id
+     */
+    boolean isRegisterEnable();
+
+    /**
+     * Get id of server connector.
+     *
+     * @return id
+     */
+    boolean isDiscoveryEnable();
 }

@@ -90,6 +90,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         return discoveries;
     }
 
+    @Override
     public Map<String, DiscoveryConfigImpl> getDiscoveryConfigMap() {
         return discoveryConfigMap;
     }
@@ -111,11 +112,11 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         subscribe.verify();
         for (DiscoveryConfigImpl discoveryConfig : discoveries) {
             discoveryConfig.verify();
-            if (discoveryConfigMap.containsKey(discoveryConfig.getServerConnectorName())) {
+            if (discoveryConfigMap.containsKey(discoveryConfig.getServerConnectorId())) {
                 throw new IllegalArgumentException(String.format("Discovery config of [%s] is already exist.",
-                        discoveryConfig.getServerConnectorName()));
+                        discoveryConfig.getServerConnectorId()));
             } else {
-                discoveryConfigMap.put(discoveryConfig.getServerConnectorName(), discoveryConfig);
+                discoveryConfigMap.put(discoveryConfig.getServerConnectorId(), discoveryConfig);
             }
         }
     }

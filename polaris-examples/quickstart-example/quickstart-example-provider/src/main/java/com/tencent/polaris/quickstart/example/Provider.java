@@ -26,6 +26,7 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import java.io.IOException;
@@ -142,7 +143,7 @@ public class Provider {
 
     private static String getLocalHost(Configuration configuration) throws Exception {
         String serverAddress;
-        if (configuration.getGlobal().getServerConnector() == null) {
+        if (CollectionUtils.isNotEmpty(configuration.getGlobal().getServerConnectors())) {
             serverAddress = configuration.getGlobal().getServerConnectors().get(0).getAddresses().get(0);
         } else {
             serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
@@ -176,11 +177,17 @@ public class Provider {
 
         @Override
         public void run() {
-            Provider.register(namespace, service, host, port, providerAPI);
-            // register successfully, then start to do heartbeat
-            Provider.HEARTBEAT_EXECUTOR
-                    .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL, TTL,
-                            TimeUnit.SECONDS);
+            try {
+                Provider.register(namespace, service, host, port, providerAPI);
+                // register successfully, then start to do heartbeat
+                Provider.HEARTBEAT_EXECUTOR
+                        .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL,
+                                TTL,
+                                TimeUnit.SECONDS);
+            } catch (Throwable throwable) {
+                System.out.printf(throwable.getMessage());
+            }
+
         }
     }
 

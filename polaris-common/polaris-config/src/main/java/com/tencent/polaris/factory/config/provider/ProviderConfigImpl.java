@@ -57,6 +57,7 @@ public class ProviderConfigImpl implements ProviderConfig {
         this.registers = registers;
     }
 
+    @Override
     public Map<String, RegisterConfigImpl> getRegisterConfigMap() {
         return registerConfigMap;
     }
@@ -69,11 +70,11 @@ public class ProviderConfigImpl implements ProviderConfig {
         rateLimit.verify();
         for (RegisterConfigImpl registerConfig : registers) {
             registerConfig.verify();
-            if (registerConfigMap.containsKey(registerConfig.getServerConnectorName())) {
+            if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
                 throw new IllegalArgumentException(String.format("Register config of [%s] is already exist.",
-                        registerConfig.getServerConnectorName()));
+                        registerConfig.getServerConnectorId()));
             } else {
-                registerConfigMap.put(registerConfig.getServerConnectorName(), registerConfig);
+                registerConfigMap.put(registerConfig.getServerConnectorId(), registerConfig);
             }
         }
     }

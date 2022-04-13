@@ -41,11 +41,11 @@ public interface RegisterConfig extends Verifier {
     String getService();
 
     /**
-     * Get name of discovery server connector.
+     * Get id of discovery server connector.
      *
-     * @return name
+     * @return id
      */
-    String getServerConnectorName();
+    String getServerConnectorId();
 
     /**
      * If registration is enabled.

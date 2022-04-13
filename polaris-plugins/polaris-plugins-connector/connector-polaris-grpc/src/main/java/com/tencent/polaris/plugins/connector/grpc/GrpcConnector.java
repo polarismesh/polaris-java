@@ -84,6 +84,9 @@ public class GrpcConnector extends DestroyableServerConnector {
     private long connectionIdleTimeoutMs;
     private boolean initialized = false;
     private boolean standalone = true;
+    private String id;
+    private boolean isRegisterEnable = true;
+    private boolean isDiscoveryEnable = true;
 
     /**
      * 发送消息的线程池
@@ -132,6 +135,13 @@ public class GrpcConnector extends DestroyableServerConnector {
         readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_DISCOVER_CLUSTER, readyFuture);
+        id = connectorConfig.getId();
+        if (ctx.getConfig().getProvider().getRegisterConfigMap().containsKey(id)) {
+            isRegisterEnable = ctx.getConfig().getProvider().getRegisterConfigMap().get(id).isEnable();
+        }
+        if (ctx.getConfig().getConsumer().getDiscoveryConfigMap().containsKey(id)) {
+            isDiscoveryEnable = ctx.getConfig().getConsumer().getDiscoveryConfigMap().get(id).isEnable();
+        }
         connectionManager = new ConnectionManager(ctx, connectorConfig, futures);
         connectionIdleTimeoutMs = connectorConfig.getConnectionIdleTimeout();
         messageTimeoutMs = connectorConfig.getMessageTimeout();
@@ -437,10 +447,24 @@ public class GrpcConnector extends DestroyableServerConnector {
         return initialized;
     }
 
-
     @Override
     public String getName() {
         return DefaultPlugins.SERVER_CONNECTOR_GRPC;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public boolean isRegisterEnable() {
+        return isRegisterEnable;
+    }
+
+    @Override
+    public boolean isDiscoveryEnable() {
+        return isDiscoveryEnable;
     }
 
     @Override

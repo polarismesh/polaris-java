@@ -101,27 +101,23 @@ public class GlobalConfigImpl implements GlobalConfig {
         system.verify();
         api.verify();
 
-        boolean hasGrpc = false;
         if (CollectionUtils.isNotEmpty(serverConnectors)) {
             for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                 serverConnectorConfig.verify();
-                if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
-                    hasGrpc = true;
-                }
-                if (serverConnectorConfigMap.containsKey(serverConnectorConfig.getName())) {
+                if (serverConnectorConfigMap.containsKey(serverConnectorConfig.getId())) {
                     throw new IllegalArgumentException(
                             String.format("Server connector config of [%s] is already exist.",
-                                    serverConnectorConfig.getName()));
+                                    serverConnectorConfig.getId()));
                 } else {
-                    serverConnectorConfigMap.put(serverConnectorConfig.getName(), serverConnectorConfig);
+                    serverConnectorConfigMap.put(serverConnectorConfig.getId(), serverConnectorConfig);
                 }
             }
         } else {
+            ConfigUtils.validateTrue(DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol()),
+                    "The protocol of server connector(not server connectors) is polaris");
             serverConnector.verify();
-            serverConnectorConfigMap.put(serverConnector.getName(), serverConnector);
-            hasGrpc = DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol());
+            serverConnectorConfigMap.put(serverConnector.getId(), serverConnector);
         }
-        ConfigUtils.validateTrue(hasGrpc, "HasGRPC");
         statReporter.verify();
     }
 
@@ -133,7 +129,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (null == api) {
             api = new APIConfigImpl();
         }
-        if (CollectionUtils.isEmpty(serverConnectors) && null == serverConnector) {
+        if (null == serverConnector) {
             serverConnector = new ServerConnectorConfigImpl();
         }
         if (null == statReporter) {
@@ -144,15 +140,17 @@ public class GlobalConfigImpl implements GlobalConfig {
             system.setDefault(globalConfig.getSystem());
             api.setDefault(globalConfig.getAPI());
             // Only grpc server connector should be set default.
+            boolean ifInit = false;
             if (CollectionUtils.isNotEmpty(serverConnectors)) {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                     if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
                         serverConnectorConfig.setDefault(globalConfig.getServerConnector());
                         serverConnector = serverConnectorConfig;
+                        ifInit = true;
                     }
-                    ServerConnectorConfigImpl.increaseIndex();
                 }
-            } else {
+            }
+            if (!ifInit) {
                 serverConnector.setDefault(globalConfig.getServerConnector());
             }
             statReporter.setDefault(globalConfig.getStatReporter());

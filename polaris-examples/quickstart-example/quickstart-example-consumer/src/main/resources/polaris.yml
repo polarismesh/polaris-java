@@ -1,26 +1,26 @@
 global:
   # configuration for connecting the polaris server
-  #  serverConnector:
-  #    # target server address
-  #    addresses:
-  #      - 127.0.0.1:8091
-  serverConnectors:
-    - name: polaris
-      protocol: grpc
-      addresses:
-        - 127.0.0.1:8091
-#    - name: consul
-#      protocol: consul
-#      addresses:
-#        - 127.0.0.1:8500
+  serverConnector:
+    # target server address
+    addresses:
+      - 127.0.0.1:8091
+  #  serverConnectors:
+  #    - id: polaris
+  #      protocol: grpc
+  #      addresses:
+  #        - 127.0.0.1:8091
+  #    - id: consul
+  #      protocol: consul
+  #      addresses:
+  #        - 127.0.0.1:8500
   statReporter:
     enable: true
     plugin:
       prometheus:
         pushgatewayAddress: 127.0.0.1:9091
-consumer:
-  discoveries:
-    - serverConnectorName: polaris
-      enable: true
-    - serverConnectorName: consul
-      enable: false
+#consumer:
+#  discoveries:
+#    - serverConnectorId: polaris
+#      enable: true
+#    - serverConnectorId: consul
+#      enable: false

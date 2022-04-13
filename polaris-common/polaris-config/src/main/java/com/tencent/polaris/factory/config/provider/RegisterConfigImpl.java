@@ -38,7 +38,7 @@ public class RegisterConfigImpl implements RegisterConfig {
     private String service;
 
     @JsonProperty
-    private String serverConnectorName;
+    private String serverConnectorId;
 
     @JsonProperty
     private Boolean enable;
@@ -66,12 +66,12 @@ public class RegisterConfigImpl implements RegisterConfig {
     }
 
     @Override
-    public String getServerConnectorName() {
-        return serverConnectorName;
+    public String getServerConnectorId() {
+        return serverConnectorId;
     }
 
-    public void setServerConnectorName(String serverConnectorName) {
-        this.serverConnectorName = serverConnectorName;
+    public void setServerConnectorId(String serverConnectorId) {
+        this.serverConnectorId = serverConnectorId;
     }
 
     @Override
@@ -85,8 +85,8 @@ public class RegisterConfigImpl implements RegisterConfig {
 
     @Override
     public void verify() {
-        ConfigUtils.validateString(serverConnectorName,
-                "register.serverConnectorName or registers[?].serverConnectorName");
+        ConfigUtils.validateString(serverConnectorId,
+                "register.serverConnectorId or registers[?].serverConnectorId");
         ConfigUtils.validateNull(enable, "register.enable or registers[?].enable");
     }
 
@@ -100,12 +100,12 @@ public class RegisterConfigImpl implements RegisterConfig {
             if (null == service) {
                 setService(registerConfig.getService());
             }
-            if (null == serverConnectorName) {
+            if (null == serverConnectorId) {
                 long index = INDEX.get();
                 if (index == 0L) {
-                    setServerConnectorName(registerConfig.getServerConnectorName());
+                    setServerConnectorId(registerConfig.getServerConnectorId());
                 } else {
-                    setServerConnectorName(registerConfig.getServerConnectorName() + index);
+                    setServerConnectorId(registerConfig.getServerConnectorId() + index);
                 }
             }
             if (null == enable) {

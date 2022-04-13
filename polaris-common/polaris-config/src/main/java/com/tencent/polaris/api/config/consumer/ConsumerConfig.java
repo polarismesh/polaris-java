@@ -19,6 +19,7 @@ package com.tencent.polaris.api.config.consumer;
 
 import com.tencent.polaris.api.config.verify.Verifier;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 调用者配置对象
@@ -75,4 +76,11 @@ public interface ConsumerConfig extends Verifier {
      * @return List of {@link DiscoveryConfig}
      */
     List<? extends DiscoveryConfig> getDiscoveries();
+
+    /**
+     * Configuration of prefix of "consumer.discoveries".
+     *
+     * @return Map of {@link DiscoveryConfig}
+     */
+    Map<String, ? extends DiscoveryConfig> getDiscoveryConfigMap();
 }
