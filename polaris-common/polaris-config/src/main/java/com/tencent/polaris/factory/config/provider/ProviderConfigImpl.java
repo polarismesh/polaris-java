@@ -22,7 +22,6 @@ import com.tencent.polaris.api.config.provider.ProviderConfig;
 import com.tencent.polaris.api.config.provider.RegisterConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,16 +64,17 @@ public class ProviderConfigImpl implements ProviderConfig {
     @Override
     public void verify() {
         ConfigUtils.validateNull(rateLimit, "rateLimitConfig");
-        ConfigUtils.validateNull(registers, "registers");
 
         rateLimit.verify();
-        for (RegisterConfigImpl registerConfig : registers) {
-            registerConfig.verify();
-            if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
-                throw new IllegalArgumentException(String.format("Register config of [%s] is already exist.",
-                        registerConfig.getServerConnectorId()));
-            } else {
-                registerConfigMap.put(registerConfig.getServerConnectorId(), registerConfig);
+        if (CollectionUtils.isNotEmpty(registers)) {
+            for (RegisterConfigImpl registerConfig : registers) {
+                registerConfig.verify();
+                if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
+                    throw new IllegalArgumentException(String.format("Register config of [%s] is already exist.",
+                            registerConfig.getServerConnectorId()));
+                } else {
+                    registerConfigMap.put(registerConfig.getServerConnectorId(), registerConfig);
+                }
             }
         }
     }
@@ -84,16 +84,13 @@ public class ProviderConfigImpl implements ProviderConfig {
         if (null == rateLimit) {
             rateLimit = new RateLimitConfigImpl();
         }
-        if (CollectionUtils.isEmpty(registers)) {
-            registers = new ArrayList<>();
-            registers.add(new RegisterConfigImpl());
-        }
         if (null != defaultObject) {
             ProviderConfig providerConfig = (ProviderConfig) defaultObject;
             rateLimit.setDefault(providerConfig.getRateLimit());
-            for (RegisterConfigImpl registerConfig : registers) {
-                registerConfig.setDefault(providerConfig.getRegisters().get(0));
-                RegisterConfigImpl.increaseIndex();
+            if (CollectionUtils.isNotEmpty(registers)) {
+                for (RegisterConfigImpl registerConfig : registers) {
+                    registerConfig.setDefault(providerConfig.getRegisters().get(0));
+                }
             }
         }
 

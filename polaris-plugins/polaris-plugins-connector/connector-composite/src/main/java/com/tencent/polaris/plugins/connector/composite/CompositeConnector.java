@@ -18,7 +18,6 @@
 package com.tencent.polaris.plugins.connector.composite;
 
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
-import com.tencent.polaris.api.config.provider.RegisterConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -41,7 +40,6 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
@@ -78,11 +76,6 @@ public class CompositeConnector extends DestroyableServerConnector {
      * Thread pool for updating service information.
      */
     private ScheduledThreadPoolExecutor updateServiceExecutor;
-
-    /**
-     * Map of config of server connector registration.
-     */
-    private Map<String, ? extends RegisterConfig> registerConfigMap;
 
     @Override
     public String getName() {
@@ -132,7 +125,6 @@ public class CompositeConnector extends DestroyableServerConnector {
             updateServiceExecutor = new ScheduledThreadPoolExecutor(1,
                     new NamedThreadFactory(getName() + "-update-service"));
             updateServiceExecutor.setMaximumPoolSize(1);
-            registerConfigMap = ctx.getConfig().getProvider().getRegisterConfigMap();
             initialized = true;
         }
     }
@@ -168,15 +160,12 @@ public class CompositeConnector extends DestroyableServerConnector {
         CommonProviderResponse response = null;
         CommonProviderResponse extendResponse = null;
         for (DestroyableServerConnector sc : serverConnectors) {
-            // Register when no config or enable is true.
-            if (!registerConfigMap.containsKey(sc.getId()) || registerConfigMap.get(sc.getId()).isEnable()) {
-                CommonProviderResponse temp = sc.registerInstance(req);
-                if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
-                    response = temp;
-                } else {
-                    if (null == extendResponse) {
-                        extendResponse = temp;
-                    }
+            CommonProviderResponse temp = sc.registerInstance(req);
+            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                response = temp;
+            } else {
+                if (null == extendResponse) {
+                    extendResponse = temp;
                 }
             }
         }
@@ -193,10 +182,7 @@ public class CompositeConnector extends DestroyableServerConnector {
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
         checkDestroyed();
         for (DestroyableServerConnector sc : serverConnectors) {
-            // Register when no config or enable is true.
-            if (!registerConfigMap.containsKey(sc.getId()) || registerConfigMap.get(sc.getId()).isEnable()) {
-                sc.deregisterInstance(req);
-            }
+            sc.deregisterInstance(req);
         }
     }
 
@@ -204,10 +190,7 @@ public class CompositeConnector extends DestroyableServerConnector {
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
         checkDestroyed();
         for (DestroyableServerConnector sc : serverConnectors) {
-            // Register when no config or enable is true.
-            if (!registerConfigMap.containsKey(sc.getId()) || registerConfigMap.get(sc.getId()).isEnable()) {
-                sc.heartbeat(req);
-            }
+            sc.heartbeat(req);
         }
     }
 

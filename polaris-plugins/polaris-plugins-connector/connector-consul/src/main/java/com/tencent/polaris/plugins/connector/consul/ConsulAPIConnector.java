@@ -189,7 +189,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
-        if (!ieRegistered) {
+        if (isRegisterEnable() && !ieRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 LOG.info("Registering service to Consul");

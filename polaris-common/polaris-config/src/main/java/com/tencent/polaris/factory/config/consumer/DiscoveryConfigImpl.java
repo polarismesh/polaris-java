@@ -20,7 +20,6 @@ package com.tencent.polaris.factory.config.consumer;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.DiscoveryConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implementation of {@link DiscoveryConfig}.
@@ -29,17 +28,11 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DiscoveryConfigImpl implements DiscoveryConfig {
 
-    private static final AtomicLong INDEX = new AtomicLong(0);
-
     @JsonProperty
     private String serverConnectorId;
 
     @JsonProperty
     private Boolean enable;
-
-    public static void increaseIndex() {
-        INDEX.incrementAndGet();
-    }
 
     @Override
     public String getServerConnectorId() {
@@ -70,14 +63,6 @@ public class DiscoveryConfigImpl implements DiscoveryConfig {
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             DiscoveryConfig discoveryConfig = (DiscoveryConfig) defaultObject;
-            if (null == serverConnectorId) {
-                long index = INDEX.get();
-                if (index == 0L) {
-                    setServerConnectorId(discoveryConfig.getServerConnectorId());
-                } else {
-                    setServerConnectorId(discoveryConfig.getServerConnectorId() + index);
-                }
-            }
             if (null == enable) {
                 setEnable(discoveryConfig.isEnable());
             }

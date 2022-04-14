@@ -20,7 +20,6 @@ package com.tencent.polaris.factory.config.provider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RegisterConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implementation of {@link RegisterConfig}.
@@ -28,8 +27,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Haotian Zhang
  */
 public class RegisterConfigImpl implements RegisterConfig {
-
-    private static final AtomicLong INDEX = new AtomicLong(0);
 
     @JsonProperty
     private String namespace;
@@ -42,10 +39,6 @@ public class RegisterConfigImpl implements RegisterConfig {
 
     @JsonProperty
     private Boolean enable;
-
-    public static void increaseIndex() {
-        INDEX.incrementAndGet();
-    }
 
     @Override
     public String getNamespace() {
@@ -99,14 +92,6 @@ public class RegisterConfigImpl implements RegisterConfig {
             }
             if (null == service) {
                 setService(registerConfig.getService());
-            }
-            if (null == serverConnectorId) {
-                long index = INDEX.get();
-                if (index == 0L) {
-                    setServerConnectorId(registerConfig.getServerConnectorId());
-                } else {
-                    setServerConnectorId(registerConfig.getServerConnectorId() + index);
-                }
             }
             if (null == enable) {
                 setEnable(registerConfig.isEnable());

@@ -202,6 +202,9 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
+        if (!isRegisterEnable()) {
+            return null;
+        }
         checkDestroyed();
         Connection connection = null;
         ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
@@ -328,6 +331,9 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
+        if (!isRegisterEnable()) {
+            return;
+        }
         checkDestroyed();
         Connection connection = null;
         ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
@@ -362,6 +368,9 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
+        if (!isRegisterEnable()) {
+            return;
+        }
         checkDestroyed();
         Connection connection = null;
         ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
