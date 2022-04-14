@@ -19,9 +19,9 @@ package com.tencent.polaris.factory.config.provider;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.ProviderConfig;
-import com.tencent.polaris.api.config.provider.RegisterConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +48,7 @@ public class ProviderConfigImpl implements ProviderConfig {
     }
 
     @Override
-    public List<? extends RegisterConfig> getRegisters() {
+    public List<RegisterConfigImpl> getRegisters() {
         return registers;
     }
 
@@ -91,6 +91,8 @@ public class ProviderConfigImpl implements ProviderConfig {
                 for (RegisterConfigImpl registerConfig : registers) {
                     registerConfig.setDefault(providerConfig.getRegisters().get(0));
                 }
+            } else {
+                registers = new ArrayList<>();
             }
         }
 
