@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -118,6 +119,8 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                     discoveryConfigMap.put(discoveryConfig.getServerConnectorId(), discoveryConfig);
                 }
             }
+        } else {
+            discoveries = new ArrayList<>();
         }
     }
 
