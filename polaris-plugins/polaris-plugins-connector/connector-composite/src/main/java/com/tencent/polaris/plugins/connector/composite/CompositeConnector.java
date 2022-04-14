@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.connector.composite;
 
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -82,6 +83,21 @@ public class CompositeConnector extends DestroyableServerConnector {
     }
 
     @Override
+    public String getId() {
+        return DefaultPlugins.SERVER_CONNECTOR_COMPOSITE;
+    }
+
+    @Override
+    public boolean isRegisterEnable() {
+        return true;
+    }
+
+    @Override
+    public boolean isDiscoveryEnable() {
+        return true;
+    }
+
+    @Override
     public PluginType getType() {
         return PluginTypes.SERVER_CONNECTOR.getBaseType();
     }
@@ -142,11 +158,22 @@ public class CompositeConnector extends DestroyableServerConnector {
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
         checkDestroyed();
         CommonProviderResponse response = null;
+        CommonProviderResponse extendResponse = null;
         for (DestroyableServerConnector sc : serverConnectors) {
             CommonProviderResponse temp = sc.registerInstance(req);
             if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
                 response = temp;
+            } else {
+                if (null == extendResponse) {
+                    extendResponse = temp;
+                }
             }
+        }
+        if (null == response) {
+            response = extendResponse;
+        }
+        if (null == response) {
+            throw new PolarisException(ErrorCode.INTERNAL_ERROR, "No one server can be registered.");
         }
         return response;
     }

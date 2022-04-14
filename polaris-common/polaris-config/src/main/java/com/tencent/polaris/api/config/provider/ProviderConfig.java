@@ -18,22 +18,29 @@
 package com.tencent.polaris.api.config.provider;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 被调端配置对象
  *
- * @author andrewshan
- * @date 2019/8/20
+ * @author andrewshan, Haotian Zhang
  */
 public interface ProviderConfig extends Verifier {
 
+    /**
+     * Configuration of prefix of "provider.registers".
+     *
+     * @return List of {@link RegisterConfig}
+     */
+    List<? extends RegisterConfig> getRegisters();
 
     /**
-     * 服务注册相关配置
+     * Configuration of prefix of "provider.registers".
      *
-     * @return registerConfig
+     * @return Map of {@link RegisterConfig}
      */
-    RegisterConfig getRegister();
+    Map<String, ? extends RegisterConfig> getRegisterConfigMap();
 
     /**
      * 获取限流配置

@@ -19,13 +19,13 @@ package com.tencent.polaris.factory.config.global;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
-import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 全局配置对象
@@ -45,6 +45,8 @@ public class GlobalConfigImpl implements GlobalConfig {
 
     @JsonProperty
     private List<ServerConnectorConfigImpl> serverConnectors;
+
+    private Map<String, ServerConnectorConfigImpl> serverConnectorConfigMap = new ConcurrentHashMap<>();
 
     @JsonProperty
     private StatReporterConfigImpl statReporter;
@@ -77,6 +79,10 @@ public class GlobalConfigImpl implements GlobalConfig {
         this.serverConnectors = serverConnectors;
     }
 
+    public Map<String, ServerConnectorConfigImpl> getServerConnectorConfigMap() {
+        return serverConnectorConfigMap;
+    }
+
     @Override
     public StatReporterConfigImpl getStatReporter() {
         return statReporter;
@@ -95,19 +101,23 @@ public class GlobalConfigImpl implements GlobalConfig {
         system.verify();
         api.verify();
 
-        boolean hasGrpc = false;
         if (CollectionUtils.isNotEmpty(serverConnectors)) {
-            for (ServerConnectorConfig serverConnectorConfig : serverConnectors) {
+            for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                 serverConnectorConfig.verify();
-                if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
-                    hasGrpc = true;
+                if (serverConnectorConfigMap.containsKey(serverConnectorConfig.getId())) {
+                    throw new IllegalArgumentException(
+                            String.format("Server connector config of [%s] is already exist.",
+                                    serverConnectorConfig.getId()));
+                } else {
+                    serverConnectorConfigMap.put(serverConnectorConfig.getId(), serverConnectorConfig);
                 }
             }
         } else {
+            ConfigUtils.validateTrue(DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol()),
+                    "The protocol of server connector(not server connectors) is polaris");
             serverConnector.verify();
-            hasGrpc = DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol());
+            serverConnectorConfigMap.put(serverConnector.getId(), serverConnector);
         }
-        ConfigUtils.validateTrue(hasGrpc, "HasGRPC");
         statReporter.verify();
     }
 
@@ -119,7 +129,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (null == api) {
             api = new APIConfigImpl();
         }
-        if (CollectionUtils.isEmpty(serverConnectors) && null == serverConnector) {
+        if (null == serverConnector) {
             serverConnector = new ServerConnectorConfigImpl();
         }
         if (null == statReporter) {
@@ -130,14 +140,17 @@ public class GlobalConfigImpl implements GlobalConfig {
             system.setDefault(globalConfig.getSystem());
             api.setDefault(globalConfig.getAPI());
             // Only grpc server connector should be set default.
+            boolean ifInit = false;
             if (CollectionUtils.isNotEmpty(serverConnectors)) {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                     if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnectorConfig.getProtocol())) {
                         serverConnectorConfig.setDefault(globalConfig.getServerConnector());
                         serverConnector = serverConnectorConfig;
+                        ifInit = true;
                     }
                 }
-            } else {
+            }
+            if (!ifInit) {
                 serverConnector.setDefault(globalConfig.getServerConnector());
             }
             statReporter.setDefault(globalConfig.getStatReporter());

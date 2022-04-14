@@ -20,7 +20,11 @@ package com.tencent.polaris.factory.config.provider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.ProviderConfig;
 import com.tencent.polaris.api.config.provider.RegisterConfig;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 被调端配置对象
@@ -34,7 +38,9 @@ public class ProviderConfigImpl implements ProviderConfig {
     private RateLimitConfigImpl rateLimit;
 
     @JsonProperty
-    private RegisterConfig register;
+    private List<RegisterConfigImpl> registers;
+
+    private Map<String, RegisterConfigImpl> registerConfigMap = new ConcurrentHashMap<>();
 
     @Override
     public RateLimitConfigImpl getRateLimit() {
@@ -42,15 +48,35 @@ public class ProviderConfigImpl implements ProviderConfig {
     }
 
     @Override
-    public RegisterConfig getRegister() {
-        return register;
+    public List<? extends RegisterConfig> getRegisters() {
+        return registers;
+    }
+
+    public void setRegisters(List<RegisterConfigImpl> registers) {
+        this.registers = registers;
+    }
+
+    @Override
+    public Map<String, RegisterConfigImpl> getRegisterConfigMap() {
+        return registerConfigMap;
     }
 
     @Override
     public void verify() {
         ConfigUtils.validateNull(rateLimit, "rateLimitConfig");
+
         rateLimit.verify();
-        register.verify();
+        if (CollectionUtils.isNotEmpty(registers)) {
+            for (RegisterConfigImpl registerConfig : registers) {
+                registerConfig.verify();
+                if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
+                    throw new IllegalArgumentException(String.format("Register config of [%s] is already exist.",
+                            registerConfig.getServerConnectorId()));
+                } else {
+                    registerConfigMap.put(registerConfig.getServerConnectorId(), registerConfig);
+                }
+            }
+        }
     }
 
     @Override
@@ -58,13 +84,14 @@ public class ProviderConfigImpl implements ProviderConfig {
         if (null == rateLimit) {
             rateLimit = new RateLimitConfigImpl();
         }
-        if (null == register) {
-            register = new RegisterConfigImpl();
-        }
         if (null != defaultObject) {
             ProviderConfig providerConfig = (ProviderConfig) defaultObject;
             rateLimit.setDefault(providerConfig.getRateLimit());
-            register.setDefault(providerConfig.getRegister());
+            if (CollectionUtils.isNotEmpty(registers)) {
+                for (RegisterConfigImpl registerConfig : registers) {
+                    registerConfig.setDefault(providerConfig.getRegisters().get(0));
+                }
+            }
         }
 
     }

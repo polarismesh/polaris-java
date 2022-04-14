@@ -91,6 +91,10 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
      */
     private boolean ieRegistered = false;
 
+    private String id;
+    private boolean isRegisterEnable = true;
+    private boolean isDiscoveryEnable = true;
+
     private ConsulClient consulClient;
 
     private ConsulContext consulContext;
@@ -98,6 +102,21 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     @Override
     public String getName() {
         return DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public boolean isRegisterEnable() {
+        return isRegisterEnable;
+    }
+
+    @Override
+    public boolean isDiscoveryEnable() {
+        return isDiscoveryEnable;
     }
 
     @Override
@@ -120,6 +139,14 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     }
 
     private void initActually(InitContext ctx, ServerConnectorConfig connectorConfig) {
+        id = connectorConfig.getId();
+        if (ctx.getConfig().getProvider().getRegisterConfigMap().containsKey(id)) {
+            isRegisterEnable = ctx.getConfig().getProvider().getRegisterConfigMap().get(id).isEnable();
+        }
+        if (ctx.getConfig().getConsumer().getDiscoveryConfigMap().containsKey(id)) {
+            isDiscoveryEnable = ctx.getConfig().getConsumer().getDiscoveryConfigMap().get(id).isEnable();
+        }
+
         String address = connectorConfig.getAddresses().get(0);
         int lastIndex = address.lastIndexOf(":");
         String agentHost = address.substring(0, lastIndex);
@@ -162,7 +189,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
-        if (!ieRegistered) {
+        if (isRegisterEnable() && !ieRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 LOG.info("Registering service to Consul");
@@ -171,7 +198,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 CommonProviderResponse resp = new CommonProviderResponse();
                 consulContext.setInstanceId(service.getId());
                 resp.setInstanceID(service.getId());
-                resp.setExists(true);
+                resp.setExists(false);
                 LOG.info("Registered service to Consul: " + service);
                 ieRegistered = true;
                 return resp;
