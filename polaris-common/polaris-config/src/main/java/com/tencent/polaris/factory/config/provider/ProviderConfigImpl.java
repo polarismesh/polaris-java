@@ -94,6 +94,8 @@ public class ProviderConfigImpl implements ProviderConfig {
                 for (RegisterConfigImpl registerConfig : registers) {
                     registerConfig.setDefault(providerConfig.getRegisters().get(0));
                 }
+            } else {
+                registers = new ArrayList<>();
             }
         }
 

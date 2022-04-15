@@ -157,6 +157,8 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                 for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                     discoveryConfig.setDefault(consumerConfig.getDiscoveries().get(0));
                 }
+            } else {
+                discoveries = new ArrayList<>();
             }
         }
     }
