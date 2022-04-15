@@ -49,6 +49,9 @@ public class ProviderConfigImpl implements ProviderConfig {
 
     @Override
     public List<RegisterConfigImpl> getRegisters() {
+        if (CollectionUtils.isEmpty(registers)) {
+            registers = new ArrayList<>();
+        }
         return registers;
     }
 

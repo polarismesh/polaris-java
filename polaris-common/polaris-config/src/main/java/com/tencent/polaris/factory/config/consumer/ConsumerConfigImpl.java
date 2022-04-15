@@ -87,6 +87,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
 
     @Override
     public List<DiscoveryConfigImpl> getDiscoveries() {
+        if (CollectionUtils.isEmpty(discoveries)) {
+            discoveries = new ArrayList<>();
+        }
         return discoveries;
     }
 
@@ -119,8 +122,6 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                     discoveryConfigMap.put(discoveryConfig.getServerConnectorId(), discoveryConfig);
                 }
             }
-        } else {
-            discoveries = new ArrayList<>();
         }
     }
 
@@ -156,6 +157,8 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                 for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                     discoveryConfig.setDefault(consumerConfig.getDiscoveries().get(0));
                 }
+            } else {
+                discoveries = new ArrayList<>();
             }
         }
     }
