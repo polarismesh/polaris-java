@@ -58,6 +58,8 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reconnectInterval;
+    @JsonProperty
+    private String id = "polaris";
 
     @Override
     public List<String> getAddresses() {
@@ -143,6 +145,15 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     }
 
     @Override
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
     public void verify() {
         if (CollectionUtils.isEmpty(addresses)) {
             throw new IllegalArgumentException(String.format("addresses of [%s] must not be empty", protocol));
@@ -153,6 +164,7 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
                 throw new IllegalArgumentException(String.format("address [%s] of [%s] is invalid", address, protocol));
             }
         }
+        ConfigUtils.validateString(id, "serverConnector.id");
         if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(protocol)) {
             ConfigUtils.validateString(protocol, "serverConnector.protocol");
             ConfigUtils.validateInterval(connectTimeout, "serverConnector.connectTimeout");

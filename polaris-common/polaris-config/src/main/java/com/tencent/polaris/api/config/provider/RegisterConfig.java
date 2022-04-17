@@ -19,6 +19,11 @@ package com.tencent.polaris.api.config.provider;
 
 import com.tencent.polaris.api.config.verify.Verifier;
 
+/**
+ * Configuration of register.
+ *
+ * @author Haotian Zhang
+ */
 public interface RegisterConfig extends Verifier {
 
     /**
@@ -35,5 +40,17 @@ public interface RegisterConfig extends Verifier {
      */
     String getService();
 
+    /**
+     * Get id of discovery server connector.
+     *
+     * @return id
+     */
+    String getServerConnectorId();
 
+    /**
+     * If registration is enabled.
+     *
+     * @return boolean
+     */
+    boolean isEnable();
 }
