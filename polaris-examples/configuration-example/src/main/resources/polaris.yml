@@ -19,7 +19,7 @@ consumer:
   circuitBreaker:
     #描述:是否启用节点熔断功能
     enable: false
-configFile:
+config:
   serverConnector:
     connectorType: polaris
     addresses:
