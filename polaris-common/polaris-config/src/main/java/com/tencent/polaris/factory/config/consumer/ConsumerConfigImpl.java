@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.factory.config.consumer;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -54,6 +55,8 @@ public class ConsumerConfigImpl implements ConsumerConfig {
 
     @JsonProperty
     private List<DiscoveryConfigImpl> discoveries;
+
+    @JsonIgnore
     private Map<String, DiscoveryConfigImpl> discoveryConfigMap = new ConcurrentHashMap<>();
 
     @Override
@@ -93,6 +96,20 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         return discoveries;
     }
 
+    public void setDiscoveries(List<DiscoveryConfigImpl> discoveries) {
+        if (CollectionUtils.isNotEmpty(discoveries)) {
+            for (DiscoveryConfigImpl discoveryConfig : discoveries) {
+                if (discoveryConfigMap.containsKey(discoveryConfig.getServerConnectorId())) {
+                    throw new IllegalArgumentException(String.format("Discovery config of [%s] is already exist.",
+                            discoveryConfig.getServerConnectorId()));
+                } else {
+                    discoveryConfigMap.put(discoveryConfig.getServerConnectorId(), discoveryConfig);
+                }
+            }
+        }
+        this.discoveries = discoveries;
+    }
+
     @Override
     public Map<String, DiscoveryConfigImpl> getDiscoveryConfigMap() {
         return discoveryConfigMap;
@@ -115,12 +132,6 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         if (CollectionUtils.isNotEmpty(discoveries)) {
             for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                 discoveryConfig.verify();
-                if (discoveryConfigMap.containsKey(discoveryConfig.getServerConnectorId())) {
-                    throw new IllegalArgumentException(String.format("Discovery config of [%s] is already exist.",
-                            discoveryConfig.getServerConnectorId()));
-                } else {
-                    discoveryConfigMap.put(discoveryConfig.getServerConnectorId(), discoveryConfig);
-                }
             }
         }
     }
