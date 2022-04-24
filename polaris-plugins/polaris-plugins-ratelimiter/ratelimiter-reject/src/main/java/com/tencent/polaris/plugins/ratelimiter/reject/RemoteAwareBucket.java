@@ -169,6 +169,7 @@ public class RemoteAwareBucket implements QuotaBucket {
                                 + "remoteTimeMilli {}(startMilli {}), duration {}, remoteLeft is {}", localCurTimeMs,
                         localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
                         remoteQuotaLeft);
+                return;
             }
         }
         tokenBucket.syncUpdateRemoteToken(remoteQuotaInfo);
