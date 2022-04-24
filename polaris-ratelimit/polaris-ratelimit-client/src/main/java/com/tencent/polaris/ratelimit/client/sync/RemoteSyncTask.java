@@ -26,7 +26,7 @@ import com.tencent.polaris.ratelimit.client.flow.AsyncRateLimitConnector;
 import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow;
 import com.tencent.polaris.ratelimit.client.flow.ServiceIdentifier;
 import com.tencent.polaris.ratelimit.client.flow.StreamCounterSet;
-import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc.RateLimitGRPCV2BlockingStub;
+import com.tencent.polaris.ratelimit.client.flow.StreamResource;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.LimitTarget;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaMode;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaSum;
@@ -36,10 +36,6 @@ import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitRequest;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitRequest.Builder;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitReportRequest;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitRequest;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.TimeAdjustRequest;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.TimeAdjustResponse;
-import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
-import io.grpc.stub.StreamObserver;
 import java.util.Map;
 import org.slf4j.Logger;
 
@@ -85,7 +81,7 @@ public class RemoteSyncTask implements Runnable {
     public void run() {
         switch (window.getStatus()) {
             case CREATED:
-            case DELETED://todo 已经是删除态了，还有必要在轮询吗？
+            case DELETED:
                 break;
             case INITIALIZING:
                 doRemoteInit();
@@ -102,26 +98,18 @@ public class RemoteSyncTask implements Runnable {
     private void doRemoteInit() {
         StreamCounterSet streamCounterSet = asyncRateLimitConnector
                 .getStreamCounterSet(window.getWindowSet().getRateLimitExtension().getExtensions(),
-                        window.getRemoteCluster(), window.getUniqueKey(), serviceIdentifier);
+                        window.getRemoteCluster(), window.getRemoteAddresses(), window.getUniqueKey(),
+                        serviceIdentifier);
         //拿不到限流集群的实例的时候
         if (streamCounterSet == null) {
-            LOG.error("[doRemoteInit] failed, stream counter is null. remote cluster:{},",
-                    window.getRemoteCluster());
+            LOG.error("[doRemoteInit] failed, stream counter is null. remote cluster:{}, remote addresses: {}",
+                    window.getRemoteCluster(), window.getRemoteAddresses());
             return;
         }
+        StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
         //调整时间
-        if (!adjustTime(streamCounterSet)) {
-            LOG.error("[doRemoteInit] adjustTime failed.remote cluster:{},svcKey:{}",
-                    window.getRemoteCluster(), window.getSvcKey());
-            return;
-        }
-        StreamObserver<RateLimitRequest> streamClient = streamCounterSet.preCheckAsync(serviceIdentifier, window);
-        if (streamClient == null) {
-            LOG.error("[doRemoteInit] failed, stream client is null. remote cluster:{},svcKey:{}",
-                    window.getRemoteCluster(), window.getSvcKey());
-            return;
-        }
-        //clientId
+        adjustTime(streamResource);
+        //执行同步操作
         Builder initRequest = RateLimitInitRequest.newBuilder();
         initRequest.setClientId(window.getWindowSet().getClientId());
 
@@ -147,8 +135,9 @@ public class RemoteSyncTask implements Runnable {
         }
         RateLimitRequest rateLimitInitRequest = RateLimitRequest.newBuilder().setCmd(RateLimitCmd.INIT)
                 .setRateLimitInitRequest(initRequest).build();
-
-        streamClient.onNext(rateLimitInitRequest);
+        if (!streamResource.sendRateLimitRequest(rateLimitInitRequest)) {
+            LOG.warn("fail to init token request by {}", window.getUniqueKey());
+        }
     }
 
 
@@ -158,89 +147,61 @@ public class RemoteSyncTask implements Runnable {
     private void doRemoteAcquire() {
         StreamCounterSet streamCounterSet = asyncRateLimitConnector
                 .getStreamCounterSet(window.getWindowSet().getRateLimitExtension().getExtensions(),
-                        window.getRemoteCluster(), window.getUniqueKey(), serviceIdentifier);
+                        window.getRemoteCluster(), window.getRemoteAddresses(), window.getUniqueKey(),
+                        serviceIdentifier);
         if (streamCounterSet == null) {
             LOG.error("[doRemoteAcquire] failed, stream counter is null. remote cluster:{},",
                     window.getRemoteCluster());
             return;
         }
-        if (!streamCounterSet.hasInit(serviceIdentifier)) {
+        StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
+
+        if (!streamResource.hasInit(serviceIdentifier)) {
             LOG.warn("[doRemoteAcquire] has not inited. serviceKey:{}", window.getSvcKey());
             doRemoteInit();
             return;
         }
         //调整时间
-        if (!adjustTime(streamCounterSet)) {
-            LOG.error("[doRemoteAcquire] adjustTime failed.remote cluster:{},svcKey:{}",
-                    window.getRemoteCluster(), window.getSvcKey());
-            return;
-        }
-        StreamObserver<RateLimitRequest> streamClient = streamCounterSet.preCheckAsync(serviceIdentifier, window);
-        if (streamClient == null) {
-            LOG.error("[doRemoteAcquire] failed, stream client is null. remote cluster:{}", window.getRemoteCluster());
-            return;
-        }
+        streamResource.adjustTime();
         RateLimitReportRequest.Builder rateLimitReportRequest = RateLimitReportRequest.newBuilder();
         //clientKey
-        rateLimitReportRequest.setClientKey(streamCounterSet.getClientKey());
+        rateLimitReportRequest.setClientKey(streamResource.getClientKey());
         //timestamp
         long curTimeMilli = System.currentTimeMillis();
-        long serverTimeMilli = curTimeMilli + asyncRateLimitConnector.getTimeDiff().get();
+        long serverTimeMilli = streamResource.getRemoteTimeMilli(curTimeMilli);
         rateLimitReportRequest.setTimestamp(serverTimeMilli);
 
         //quotaUses
-        Map<Integer, LocalQuotaInfo> localQuotaInfos = window.getAllocatingBucket().fetchLocalUsage(serverTimeMilli);
+        Map<Integer, LocalQuotaInfo> localQuotaInfos = window.getAllocatingBucket().fetchLocalUsage(curTimeMilli);
 
         for (Map.Entry<Integer, LocalQuotaInfo> entry : localQuotaInfos.entrySet()) {
             QuotaSum.Builder quotaSum = QuotaSum.newBuilder();
             quotaSum.setUsed((int) entry.getValue().getQuotaUsed());
             quotaSum.setLimited((int) entry.getValue().getQuotaLimited());
-            quotaSum.setCounterKey(streamCounterSet.getInitRecord().get(serviceIdentifier).getDurationRecord()
-                    .get(entry.getKey()));
+            Integer counterKey = streamResource.getCounterKey(serviceIdentifier, entry.getKey());
+            if (null == counterKey) {
+                LOG.warn("[doRemoteAcquire] counterKey for {}, duration {} not found", window.getUniqueKey(),
+                        entry.getKey());
+                doRemoteInit();
+                return;
+            }
+            quotaSum.setCounterKey(counterKey);
             rateLimitReportRequest.addQuotaUses(quotaSum.build());
         }
 
         RateLimitRequest rateLimitRequest = RateLimitRequest.newBuilder().setCmd(RateLimitCmd.ACQUIRE)
                 .setRateLimitReportRequest(rateLimitReportRequest).build();
-        streamClient.onNext(rateLimitRequest);
+        if (!streamResource.sendRateLimitRequest(rateLimitRequest)) {
+            LOG.warn("fail to acquire token request by {}", window.getUniqueKey());
+        }
     }
 
     /**
      * 调整时间
      *
-     * @param streamCounterSet streamCounterSet
+     * @param streamResource streamCounterSet
      */
-    private boolean adjustTime(StreamCounterSet streamCounterSet) {
-
-        long lastSyncTimeMilli = asyncRateLimitConnector.getLastSyncTimeMilli().get();
-        long sendTimeMilli = System.currentTimeMillis();
-
-        //超过间隔时间才需要调整
-        if (lastSyncTimeMilli > 0 && sendTimeMilli - lastSyncTimeMilli < RateLimitConstants.STARTUP_DELAY_MS) {
-            LOG.info("adjustTime need wait.lastSyncTimeMilli:{},sendTimeMilli:{}", lastSyncTimeMilli, sendTimeMilli);
-            return true;
-        }
-
-        RateLimitGRPCV2BlockingStub client = streamCounterSet.preCheckSync(serviceIdentifier, window);
-        if (client == null) {
-            LOG.error("[adjustTime] can not get connection {}", window.getRemoteCluster());
-            return false;
-        }
-
-        TimeAdjustRequest timeAdjustRequest = TimeAdjustRequest.newBuilder().build();
-        TimeAdjustResponse timeAdjustResponse = client.timeAdjust(timeAdjustRequest);
-
-        long receiveClientTimeMilli = System.currentTimeMillis();
-        asyncRateLimitConnector.getLastSyncTimeMilli().set(receiveClientTimeMilli);
-        //服务端时间
-        long serverTimestamp = timeAdjustResponse.getServerTimestamp();
-
-        long latency = receiveClientTimeMilli - sendTimeMilli;
-
-        long timeDiff = serverTimestamp + latency / 2 - receiveClientTimeMilli;
-        asyncRateLimitConnector.getTimeDiff().set(timeDiff);
-        LOG.info("[RateLimit]adjust time to server time is {}, latency is {},diff is {}", serverTimestamp, latency,
-                timeDiff);
-        return true;
+    private void adjustTime(StreamResource streamResource) {
+        streamResource.adjustTime();
     }
 }

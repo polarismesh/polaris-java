@@ -60,21 +60,11 @@ public class Provider {
         String service = ECHO_SERVICE_NAME;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
-        server.createContext("/echo", new EchoServerHandler());
+        int localPort = server.getAddress().getPort();
+        server.createContext("/echo", new EchoServerHandler(localPort));
 
         Configuration configuration = ConfigAPIFactory.defaultConfig();
         String localHost = getLocalHost(configuration);
-        int localPort = server.getAddress().getPort();
-
-//        List<ServerConnectorConfigImpl> connectorConfigList = configuration.getGlobal().getServerConnectors();
-//        for (ServerConnectorConfigImpl serverConnectorConfig : connectorConfigList) {
-//            if (DefaultPlugins.SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
-//                Map<String, String> metadata = serverConnectorConfig.getMetadata();
-//                metadata.put(MetadataMapKey.INSTANCE_ID_KEY, "EJ-111");
-//                metadata.put(MetadataMapKey.IP_ADDRESS_KEY, "localhost");
-//                metadata.put(MetadataMapKey.PREFER_IP_ADDRESS_KEY, "true");
-//            }
-//        }
 
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
         HEARTBEAT_EXECUTOR
@@ -220,11 +210,17 @@ public class Provider {
 
     private static class EchoServerHandler implements HttpHandler {
 
+        private final int localPort;
+
+        public EchoServerHandler(int localPort) {
+            this.localPort = localPort;
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             Map<String, String> parameters = splitQuery(exchange.getRequestURI());
             String echoValue = parameters.get("value");
-            String response = "echo: " + echoValue;
+            String response = "echo: " + echoValue + ", from: " + localPort;
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

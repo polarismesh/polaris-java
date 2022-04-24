@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
@@ -59,6 +60,9 @@ public class QuotaFlow extends Destroyable {
     private static final Logger LOG = LoggerFactory.getLogger(QuotaFlow.class);
 
     private RateLimitExtension rateLimitExtension;
+
+    private RateLimitConfig rateLimitConfig;
+
     /**
      * 客户端的唯一标识
      */
@@ -69,15 +73,17 @@ public class QuotaFlow extends Destroyable {
     public void init(Extensions extensions) throws PolarisException {
         clientId = extensions.getValueContext().getClientId();
         rateLimitExtension = new RateLimitExtension(extensions);
+        rateLimitConfig = rateLimitExtension.getExtensions().getConfiguration().getProvider().getRateLimit();
         extensions.getLocalRegistry().registerResourceListener(new RateLimitRuleListener());
-        rateLimitExtension.submitExpireJob(new Runnable() {
-            @Override
-            public void run() {
-                for (Map.Entry<ServiceKey, RateLimitWindowSet> entry : svcToWindowSet.entrySet()) {
-                    entry.getValue().cleanupContainers();
-                }
-            }
-        });
+        //TODO: 淘汰后无法重新进行限流，先对淘汰功能进行屏蔽
+//        rateLimitExtension.submitExpireJob(new Runnable() {
+//            @Override
+//            public void run() {
+//                for (Map.Entry<ServiceKey, RateLimitWindowSet> entry : svcToWindowSet.entrySet()) {
+//                    entry.getValue().cleanupContainers();
+//                }
+//            }
+//        });
     }
 
     protected void doDestroy() {
@@ -115,7 +121,7 @@ public class QuotaFlow extends Destroyable {
             return rateLimitWindow;
         }
         //3.创建限流窗口
-        return rateLimitWindowSet.addRateLimitWindow(request, labelsStr);
+        return rateLimitWindowSet.addRateLimitWindow(request, labelsStr, rateLimitConfig);
     }
 
     private RateLimitWindowSet getRateLimitWindowSet(ServiceKey serviceKey) {
@@ -194,8 +200,8 @@ public class QuotaFlow extends Destroyable {
     }
 
     private boolean matchLabels(String ruleLabelKey, MatchString ruleLabelMatch, Map<String, String> labels) {
-        //设置了MatchAllValue，相当于这个规则就无效了
-        if (RuleUtils.isMatchAllValue(ruleLabelMatch)) {
+        //设置了MatchAllValue，相当于可以匹配所有
+        if (RuleUtils.isMatchAllValue(ruleLabelKey) || RuleUtils.isMatchAllValue(ruleLabelMatch)) {
             return true;
         }
         if (MapUtils.isEmpty(labels)) {

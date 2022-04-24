@@ -105,14 +105,11 @@ public class RemoteAwareBucket implements QuotaBucket {
             }
         }
         QuotaResult response;
-        boolean usedRemoteQuota = mode == TokenBucketMode.REMOTE;
         if (stopIdx >= 0) {
             //有一个扣除不成功，则进行限流
             TokenBucket tokenBucket = tokenBuckets.get(stopIdx);
-            if (usedRemoteQuota) {
-                //远程才记录滑窗, 滑窗用于上报
-                tokenBucket.confirmLimited(token, curTimeMs);
-            }
+            //远程才记录滑窗, 滑窗用于上报
+            tokenBucket.confirmLimited(token, curTimeMs);
             //归还配额
             for (int i = 0; i < stopIdx; i++) {
                 TokenBucket bucket = tokenBuckets.get(i);
@@ -122,9 +119,7 @@ public class RemoteAwareBucket implements QuotaBucket {
         } else {
             //记录分配的配额
             for (TokenBucket tokenBucket : tokenBuckets) {
-                if (usedRemoteQuota) {
-                    tokenBucket.confirmPassed(token, curTimeMs);
-                }
+                tokenBucket.confirmPassed(token, curTimeMs);
             }
             response = new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, "");
         }
@@ -152,6 +147,10 @@ public class RemoteAwareBucket implements QuotaBucket {
         if (null == tokenBucket) {
             return;
         }
+        LOG.info("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
+                        + "remoteTimeMilli {}(startMilli {}), duration {}, remote quota left {}",
+                localCurTimeMs, localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
+                remoteQuotaInfo.getRemoteQuotaLeft());
         if (remoteCurStartMs != localCurStartMs) {
             long remoteQuotaLeft = remoteQuotaInfo.getRemoteQuotaLeft();
             if (remoteCurStartMs + durationMs == localCurStartMs) {
@@ -160,14 +159,14 @@ public class RemoteAwareBucket implements QuotaBucket {
                 remoteQuotaInfo = new RemoteQuotaInfo(tokenBucket.getRuleTotal(), remoteQuotaInfo.getClientCount(),
                         localCurStartMs, durationMs);
                 LOG.warn("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
-                                + "remoteTimeMilli {}(startMilli {}), interval {}, remoteLeft is {}, reset to {}",
+                                + "remoteTimeMilli {}(startMilli {}), duration {}, remoteLeft is {}, reset to {}",
                         localCurTimeMs, localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
                         remoteQuotaLeft, remoteQuotaInfo.getRemoteQuotaLeft());
             } else {
                 tokenBucket.syncUpdateRemoteClientCount(remoteQuotaInfo);
                 //不在一个时间段内，丢弃
                 LOG.warn("[RateLimit]Drop remote quota, localTimeMilli {}(startMilli {}), "
-                                + "remoteTimeMilli {}(startMilli {}), interval {}, remoteLeft is {}", localCurTimeMs,
+                                + "remoteTimeMilli {}(startMilli {}), duration {}, remoteLeft is {}", localCurTimeMs,
                         localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
                         remoteQuotaLeft);
             }

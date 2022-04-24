@@ -36,4 +36,11 @@ public class LocalQuotaInfo {
         return quotaLimited;
     }
 
+    @Override
+    public String toString() {
+        return "LocalQuotaInfo{" +
+                "quotaUsed=" + quotaUsed +
+                ", quotaLimited=" + quotaLimited +
+                '}';
+    }
 }

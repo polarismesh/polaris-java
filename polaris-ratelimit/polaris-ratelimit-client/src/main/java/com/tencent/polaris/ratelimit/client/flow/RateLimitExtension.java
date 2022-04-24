@@ -17,12 +17,12 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
-import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
@@ -65,10 +65,10 @@ public class RateLimitExtension extends Destroyable {
             }
             rateLimiters.put(plugin.getName(), (ServiceRateLimiter) plugin);
         }
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(0,
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1,
                 new NamedThreadFactory("rateLimit-sync"));
         executor.setMaximumPoolSize(1);
-        ScheduledThreadPoolExecutor expireExecutor = new ScheduledThreadPoolExecutor(0,
+        ScheduledThreadPoolExecutor expireExecutor = new ScheduledThreadPoolExecutor(1,
                 new NamedThreadFactory("rateLimit-expire"));
         expireExecutor.setMaximumPoolSize(1);
         syncExecutor = executor;
@@ -111,7 +111,6 @@ public class RateLimitExtension extends Destroyable {
     }
 
 
-
     private static long getTaskDelayInterval() {
         Random random = new Random();
         return RateLimitConstants.STARTUP_DELAY_MS + random.nextInt(RateLimitConstants.RANGE_DELAY_MS);
@@ -119,7 +118,9 @@ public class RateLimitExtension extends Destroyable {
 
     public void stopSyncTask(String uniqueKey) {
         ScheduledFuture<?> future = scheduledTasks.remove(uniqueKey);
-        future.cancel(true);
+        if (null != future) {
+            future.cancel(true);
+        }
     }
 
     @Override

@@ -21,11 +21,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.List;
 
 public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitConfig {
 
     @JsonProperty
     private Boolean enable;
+
+    @JsonProperty
+    private String limiterService;
+
+    @JsonProperty
+    private String limiterNamespace;
+
+    @JsonProperty
+    private List<String> limiterAddresses;
 
     @JsonProperty
     private Integer maxWindowCount;
@@ -64,6 +74,30 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     public void setFallbackOnExceedWindowCount(
             Fallback fallbackOnExceedWindowCount) {
         this.fallbackOnExceedWindowCount = fallbackOnExceedWindowCount;
+    }
+
+    public String getLimiterService() {
+        return limiterService;
+    }
+
+    public void setLimiterService(String limiterService) {
+        this.limiterService = limiterService;
+    }
+
+    public String getLimiterNamespace() {
+        return limiterNamespace;
+    }
+
+    public void setLimiterNamespace(String limiterNamespace) {
+        this.limiterNamespace = limiterNamespace;
+    }
+
+    public List<String> getLimiterAddresses() {
+        return limiterAddresses;
+    }
+
+    public void setLimiterAddresses(List<String> limiterAddresses) {
+        this.limiterAddresses = limiterAddresses;
     }
 
     @Override

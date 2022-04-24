@@ -54,9 +54,12 @@ public interface RateLimitConstants {
      */
     int CONFIG_QUOTA_GLOBAL_MODE = 1;
 
-    long STARTUP_DELAY_MS = 30 * 1000;
+    long TIME_ADJUST_INTERVAL_MS = 30 * 1000;
 
-    int RANGE_DELAY_MS = 20 * 1000;
+    long STARTUP_DELAY_MS = 30;
+
+    int RANGE_DELAY_MS = 10;
+
 
     /**
      * 服务端的返回code

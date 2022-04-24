@@ -8,3 +8,7 @@ global:
     plugin:
       prometheus:
         pushgatewayAddress: 9.134.15.118:9091
+provider:
+  rateLimit:
+    limiterService: polaris.limiter
+    limiterNamespace: Polaris

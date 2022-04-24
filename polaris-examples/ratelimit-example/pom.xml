@@ -17,6 +17,8 @@
     <modules>
         <module>ratelimit-local-provider</module>
         <module>ratelimit-local-consumer</module>
+        <module>ratelimit-remote-provider</module>
+        <module>ratelimit-remote-consumer</module>
     </modules>
 
     <properties>

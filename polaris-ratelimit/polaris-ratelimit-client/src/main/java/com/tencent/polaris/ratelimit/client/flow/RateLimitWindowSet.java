@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -65,8 +66,7 @@ public class RateLimitWindowSet {
         this.clientId = clientId;
         this.serviceKey = serviceKey;
         this.rateLimitExtension = rateLimitExtension;
-        this.asyncRateLimitConnector = new AsyncRateLimitConnector(
-                rateLimitExtension.getExtensions().getConfiguration());
+        this.asyncRateLimitConnector = new AsyncRateLimitConnector();
     }
 
     public RateLimitWindow getRateLimitWindow(Rule rule, String labelsStr) {
@@ -84,13 +84,14 @@ public class RateLimitWindowSet {
      * @param labelsStr 标签
      * @return window
      */
-    public RateLimitWindow addRateLimitWindow(CommonQuotaRequest request, String labelsStr) {
+    public RateLimitWindow addRateLimitWindow(CommonQuotaRequest request, String labelsStr,
+            RateLimitConfig rateLimitConfig) {
         Rule targetRule = request.getInitCriteria().getRule();
         String revision = targetRule.getRevision().getValue();
         Function<String, RateLimitWindow> createRateLimitWindow = new Function<String, RateLimitWindow>() {
             @Override
             public RateLimitWindow apply(String label) {
-                return new RateLimitWindow(RateLimitWindowSet.this, request, label);
+                return new RateLimitWindow(RateLimitWindowSet.this, request, label, rateLimitConfig);
             }
         };
         WindowContainer container = windowByRule.computeIfAbsent(revision, new Function<String, WindowContainer>() {

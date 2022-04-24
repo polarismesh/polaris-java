@@ -47,7 +47,7 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
     }
 
     public void execute(ServiceUpdateTask serviceUpdateTask) {
-        if (getTaskType() == Type.FIRST) {
+        if (serviceUpdateTask.getTaskType() == Type.FIRST) {
             LOG.info("[ServerConnector]start to run first task {}", serviceUpdateTask);
         } else {
             LOG.debug("[ServerConnector]start to run task {}", serviceUpdateTask);
