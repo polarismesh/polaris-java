@@ -205,6 +205,8 @@ provider:
     maxWindowCount: 10000000
     # 超过最大窗口限制时的策略。pass（放通）, reject（限流）
     fallbackOnExceedWindowCount: pass
+    # 与远程限流服务端同步的最大超时时间
+    remoteSyncTimeoutMilli: 200
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量

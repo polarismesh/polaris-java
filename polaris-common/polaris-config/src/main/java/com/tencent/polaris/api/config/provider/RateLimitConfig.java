@@ -74,5 +74,5 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
      *
      * @return long, 毫秒
      */
-    long getRemoteSyncTimeout();
+    long getRemoteSyncTimeoutMilli();
 }

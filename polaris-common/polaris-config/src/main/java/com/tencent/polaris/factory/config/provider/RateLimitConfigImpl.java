@@ -43,6 +43,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     @JsonProperty
     private Fallback fallbackOnExceedWindowCount;
 
+    @JsonProperty
+    private Long remoteSyncTimeoutMilli;
+
     public boolean isEnable() {
         if (null == enable) {
             return false;
@@ -112,6 +115,15 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
+    public long getRemoteSyncTimeoutMilli() {
+        return remoteSyncTimeoutMilli;
+    }
+
+    public void setRemoteSyncTimeoutMilli(long remoteSyncTimeoutMilli) {
+        this.remoteSyncTimeoutMilli = remoteSyncTimeoutMilli;
+    }
+
+    @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             RateLimitConfig rateLimitConfig = (RateLimitConfig) defaultObject;
@@ -123,6 +135,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             }
             if (null == fallbackOnExceedWindowCount) {
                 setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
+            }
+            if (null == remoteSyncTimeoutMilli) {
+                setRemoteSyncTimeoutMilli(rateLimitConfig.getRemoteSyncTimeoutMilli());
             }
             setDefaultPluginConfig(rateLimitConfig);
         }
