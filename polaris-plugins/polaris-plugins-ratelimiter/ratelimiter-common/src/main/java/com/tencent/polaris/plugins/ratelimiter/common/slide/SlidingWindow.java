@@ -17,7 +17,12 @@
 
 package com.tencent.polaris.plugins.ratelimiter.common.slide;
 
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 public class SlidingWindow {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SlidingWindow.class);
 
     private final long windowLengthMs;
 
@@ -72,6 +77,8 @@ public class SlidingWindow {
     public void addAndGetCurrentPassed(long curTimeMs, long value) {
         Window curWindow = currentWindow(curTimeMs);
         curWindow.addAndGetPassed(value);
+        LOG.info("add passed value: passed {}, curWindow {}, curTimeMs {}", value,
+                curWindow.getCurrentWindowStartMs(), curTimeMs);
     }
 
     /**
@@ -83,6 +90,8 @@ public class SlidingWindow {
     public void addAndGetCurrentLimited(long curTimeMs, long value) {
         Window curWindow = currentWindow(curTimeMs);
         curWindow.addAndGetLimited(value);
+        LOG.info("add limited value: passed {}, curWindow {}, curTimeMs {}", value,
+                curWindow.getCurrentWindowStartMs(), curTimeMs);
     }
 
     /**
@@ -93,7 +102,11 @@ public class SlidingWindow {
      */
     public Result acquireCurrentValues(long curTimeMs) {
         Window curWindow = currentWindow(curTimeMs);
-        return new Result(curWindow.swapPassed(), curWindow.swapLimited());
+        long passed = curWindow.swapPassed();
+        long limited = curWindow.swapLimited();
+        LOG.info("acquire current value: passed {}, limited {}, curWindow {}, curTimeMs {}", passed, limited,
+                curWindow.getCurrentWindowStartMs(), curTimeMs);
+        return new Result(passed, limited);
     }
 
     /**

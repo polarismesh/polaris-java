@@ -1,18 +1,20 @@
 package com.tencent.polaris.ratelimit.client.flow;
 
-import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 
 /**
@@ -21,6 +23,8 @@ import org.slf4j.Logger;
 public class AsyncRateLimitConnector {
 
     private static final Logger LOG = LoggerFactory.getLogger(AsyncRateLimitConnector.class);
+
+    private final Object counterSetLock = new Object();
 
     /**
      * 节点到客户端连接
@@ -32,26 +36,10 @@ public class AsyncRateLimitConnector {
      */
     private final Map<String, StreamCounterSet> uniqueKeyToStream = new HashMap<>();
 
-    /**
-     * 配置信息
-     */
-    private final Configuration configuration;
-
-    /**
-     * 与服务端的时间差
-     */
-    private final AtomicLong timeDiff = new AtomicLong();
-
-    /**
-     * 最后一次同步的时间戳
-     */
-    private final AtomicLong lastSyncTimeMilli = new AtomicLong();
-
     private final List<String> coreRouters = new ArrayList<>();
 
 
-    public AsyncRateLimitConnector(Configuration configuration) {
-        this.configuration = configuration;
+    public AsyncRateLimitConnector() {
         coreRouters.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
     }
 
@@ -64,34 +52,38 @@ public class AsyncRateLimitConnector {
      * @param serviceIdentifier 服务标识
      * @return 连接流对象
      */
-    public StreamCounterSet getStreamCounterSet(Extensions extensions, ServiceKey remoteCluster, String uniqueKey,
-            ServiceIdentifier serviceIdentifier) {
-        HostIdentifier hostIdentifier = getServiceInstance(extensions, remoteCluster, uniqueKey);
+    public StreamCounterSet getStreamCounterSet(Extensions extensions, ServiceKey remoteCluster,
+            ServiceInstances remoteAddresses, String uniqueKey, ServiceIdentifier serviceIdentifier) {
+        HostIdentifier hostIdentifier = getServiceInstance(extensions, remoteCluster, remoteAddresses, uniqueKey);
         if (hostIdentifier == null) {
-            LOG.error("[getStreamCounterSet] rate limit cluster service not found.");
+            LOG.error("[getStreamCounterSet] ratelimit cluster service not found.");
             return null;
         }
         StreamCounterSet streamCounterSet = uniqueKeyToStream.get(uniqueKey);
-        if (null != streamCounterSet) {
-            if (streamCounterSet.getIdentifier().equals(hostIdentifier)) {
+        if (null != streamCounterSet && streamCounterSet.getIdentifier().equals(hostIdentifier)) {
+            return streamCounterSet;
+        }
+        synchronized (counterSetLock) {
+            if (null != streamCounterSet && streamCounterSet.getIdentifier().equals(hostIdentifier)) {
                 return streamCounterSet;
             }
-            //切换了节点，去掉初始化记录
-            Map<ServiceIdentifier, InitializeRecord> initRecord = streamCounterSet.getInitRecord();
-            if (null != initRecord) {
-                initRecord.remove(serviceIdentifier);
+            if (null != streamCounterSet) {
+                //切换了节点，去掉初始化记录
+                streamCounterSet.deleteInitRecord(serviceIdentifier);
+                //切换了节点，老的不再使用
+                if (streamCounterSet.decreaseReference()) {
+                    hostToStream.remove(hostIdentifier);
+                }
             }
-            //切换了节点，老的不再使用
-            if (streamCounterSet.decreaseReference()) {
-                hostToStream.remove(hostIdentifier);
+            streamCounterSet = hostToStream.get(hostIdentifier);
+            if (null == streamCounterSet) {
+                streamCounterSet = new StreamCounterSet(hostIdentifier);
             }
+            streamCounterSet.addReference();
+            hostToStream.put(hostIdentifier, streamCounterSet);
+            uniqueKeyToStream.put(uniqueKey, streamCounterSet);
+            return streamCounterSet;
         }
-        streamCounterSet = hostToStream.get(hostIdentifier);
-        if (null == streamCounterSet) {
-            streamCounterSet = new StreamCounterSet(this, hostIdentifier, configuration);
-        }
-        streamCounterSet.addReference();
-        return streamCounterSet;
     }
 
     /**
@@ -100,10 +92,21 @@ public class AsyncRateLimitConnector {
      * @param remoteCluster 远程集群信息
      * @return 节点标识
      */
-    private HostIdentifier getServiceInstance(Extensions extensions, ServiceKey remoteCluster, String hashValue) {
-        Instance instance = BaseFlow
-                .commonGetOneInstance(extensions, remoteCluster, coreRouters, LoadBalanceConfig.LOAD_BALANCE_RING_HASH,
-                        "grpc", hashValue);
+    private HostIdentifier getServiceInstance(Extensions extensions, ServiceKey remoteCluster,
+            ServiceInstances remoteAddresses, String hashValue) {
+        Instance instance;
+        if (null != remoteCluster) {
+            instance = BaseFlow
+                    .commonGetOneInstance(extensions, remoteCluster, coreRouters,
+                            LoadBalanceConfig.LOAD_BALANCE_RING_HASH,
+                            "grpc", hashValue);
+        } else {
+            LoadBalancer loadBalancer = (LoadBalancer) extensions.getPlugins()
+                    .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), LoadBalanceConfig.LOAD_BALANCE_RING_HASH);
+            Criteria criteria = new Criteria();
+            criteria.setHashKey(hashValue);
+            instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses);
+        }
         if (instance == null) {
             LOG.error("can not found any instance by serviceKye:{}", remoteCluster);
             return null;
@@ -113,11 +116,4 @@ public class AsyncRateLimitConnector {
         return new HostIdentifier(host, port);
     }
 
-    public AtomicLong getTimeDiff() {
-        return timeDiff;
-    }
-
-    public AtomicLong getLastSyncTimeMilli() {
-        return lastSyncTimeMilli;
-    }
 }

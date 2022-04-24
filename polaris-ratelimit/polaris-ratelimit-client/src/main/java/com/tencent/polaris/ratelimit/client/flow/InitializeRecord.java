@@ -18,8 +18,11 @@ public class InitializeRecord {
      */
     private final Map<Integer, Integer> durationRecord = Maps.newConcurrentMap();
 
+    private final long initStartTimeMilli;
+
     public InitializeRecord(RateLimitWindow rateLimitWindow) {
         this.rateLimitWindow = rateLimitWindow;
+        initStartTimeMilli = System.currentTimeMillis();
     }
 
     /**

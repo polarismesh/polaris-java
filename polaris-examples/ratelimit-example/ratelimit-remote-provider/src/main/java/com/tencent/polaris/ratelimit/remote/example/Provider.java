@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.ratelimit.local.example;
+package com.tencent.polaris.ratelimit.remote.example;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -26,6 +26,7 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
@@ -50,7 +51,7 @@ public class Provider {
 
     private static final String NAMESPACE_DEFAULT = "default";
 
-    private static final String ECHO_SERVICE_NAME = "RateLimitServiceJava";
+    private static final String ECHO_SERVICE_NAME = "RemoteRateLimitServiceJava";
 
     private static final int TTL = 5;
 
@@ -65,13 +66,14 @@ public class Provider {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
         Configuration configuration = ConfigAPIFactory.defaultConfig();
-        LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration);
-        server.createContext("/echo", new EchoServerHandler(limitAPI));
-
-        String localHost = getLocalHost(configuration);
+        SDKContext sdkContext = SDKContext.initContextByConfig(configuration);
+        LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
         int localPort = server.getAddress().getPort();
+        server.createContext("/echo", new EchoServerHandler(limitAPI, localPort));
+        System.out.println("remote ratelimit server started on port " + localPort);
+        String localHost = getLocalHost(configuration);
 
-        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
+        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
         HEARTBEAT_EXECUTOR
                 .schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
                         500,
@@ -80,7 +82,7 @@ public class Provider {
             HEARTBEAT_EXECUTOR.shutdown();
             server.stop(1);
             deregister(namespace, service, localHost, localPort, providerAPI);
-            providerAPI.close();
+            sdkContext.close();
         }));
         server.start();
     }
@@ -206,8 +208,11 @@ public class Provider {
 
         private final LimitAPI limitAPI;
 
-        public EchoServerHandler(LimitAPI limitAPI) {
+        private final int listenPort;
+
+        public EchoServerHandler(LimitAPI limitAPI, int listenPort) {
             this.limitAPI = limitAPI;
+            this.listenPort = listenPort;
         }
 
         @Override
@@ -222,7 +227,7 @@ public class Provider {
             if (quotaResponse.getCode() == QuotaResultCode.QuotaResultOk) {
                 Map<String, String> parameters = splitQuery(exchange.getRequestURI());
                 String echoValue = parameters.get("value");
-                String response = "echo: " + echoValue;
+                String response = "echo: " + echoValue + ", from: " + listenPort;
                 exchange.sendResponseHeaders(200, 0);
                 os.write(response.getBytes());
             } else {
