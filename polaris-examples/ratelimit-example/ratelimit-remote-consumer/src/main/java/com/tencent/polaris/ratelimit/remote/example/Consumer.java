@@ -88,8 +88,9 @@ public class Consumer {
                 .format("http://%s:%d%s?value=%s", targetInstance.getHost(), targetInstance.getPort(), PATH, value);
         long startMillis = System.currentTimeMillis();
         HttpResult httpResult = httpGet(urlStr);
-        long delay = System.currentTimeMillis() - startMillis;
-        System.out.printf("invoke %s, code is %d, delay is %d%n", urlStr, httpResult.code, delay);
+        long lastTimeMilli = System.currentTimeMillis();
+        long delay = lastTimeMilli - startMillis;
+        System.out.printf("%d, invoke %s, code is %d, delay is %d%n", lastTimeMilli, urlStr, httpResult.code, delay);
 
         // 3. report the invoke result to polaris-java, to eliminate the fail address
         RetStatus status = RetStatus.RetSuccess;
@@ -153,11 +154,6 @@ public class Consumer {
             for (int i = 0; i < curRate; i++) {
                 String response = invokeByNameResolution(namespace, service, echoValue, consumerAPI);
                 builder.append(i).append(": ").append(response).append("\n");
-                try {
-                    Thread.sleep(20);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
             }
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();

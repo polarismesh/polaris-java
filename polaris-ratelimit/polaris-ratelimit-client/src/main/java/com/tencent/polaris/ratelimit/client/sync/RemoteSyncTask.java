@@ -23,6 +23,7 @@ import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.flow.AsyncRateLimitConnector;
+import com.tencent.polaris.ratelimit.client.flow.InitializeRecord;
 import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow;
 import com.tencent.polaris.ratelimit.client.flow.ServiceIdentifier;
 import com.tencent.polaris.ratelimit.client.flow.StreamCounterSet;
@@ -92,6 +93,14 @@ public class RemoteSyncTask implements Runnable {
         }
     }
 
+    private boolean isInitExpired(InitializeRecord initializeRecord) {
+        if (null == initializeRecord || initializeRecord.getInitStartTimeMilli() == 0) {
+            return true;
+        }
+        return System.currentTimeMillis() - initializeRecord.getInitStartTimeMilli() >= window.getRateLimitConfig()
+                .getRemoteSyncTimeoutMilli();
+    }
+
     /**
      * 发送初始化请求
      */
@@ -109,6 +118,13 @@ public class RemoteSyncTask implements Runnable {
         StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
         //调整时间
         adjustTime(streamResource);
+
+        InitializeRecord initRecord = streamResource.getInitRecord(serviceIdentifier);
+        if (!isInitExpired(initRecord)) {
+            //未超时，先不初始化
+            return;
+        }
+
         //执行同步操作
         Builder initRequest = RateLimitInitRequest.newBuilder();
         initRequest.setClientId(window.getWindowSet().getClientId());

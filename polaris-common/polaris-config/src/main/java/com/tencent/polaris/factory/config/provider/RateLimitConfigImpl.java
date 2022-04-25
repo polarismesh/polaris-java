@@ -139,6 +139,15 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             if (null == remoteSyncTimeoutMilli) {
                 setRemoteSyncTimeoutMilli(rateLimitConfig.getRemoteSyncTimeoutMilli());
             }
+            if (null == fallbackOnExceedWindowCount) {
+                setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
+            }
+            if (null == limiterNamespace) {
+                setLimiterNamespace(rateLimitConfig.getLimiterNamespace());
+            }
+            if (null == limiterService) {
+                setLimiterService(rateLimitConfig.getLimiterService());
+            }
             setDefaultPluginConfig(rateLimitConfig);
         }
     }

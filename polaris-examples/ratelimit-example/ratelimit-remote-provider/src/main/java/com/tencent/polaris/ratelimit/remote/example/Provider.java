@@ -43,6 +43,7 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -217,6 +218,13 @@ public class Provider {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            Random random = new Random();
+            try {
+                //模拟业务逻辑处理
+                Thread.sleep(random.nextInt(30));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             QuotaRequest quotaRequest = new QuotaRequest();
             quotaRequest.setNamespace(NAMESPACE_DEFAULT);
             quotaRequest.setService(ECHO_SERVICE_NAME);

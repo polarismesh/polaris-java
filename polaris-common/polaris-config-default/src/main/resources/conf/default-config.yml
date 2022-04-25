@@ -210,6 +210,10 @@ provider:
     fallbackOnExceedWindowCount: pass
     # 与远程限流服务端同步的最大超时时间
     remoteSyncTimeoutMilli: 200
+    # 限流服务的命名空间
+    limiterNamespace: Polaris
+    # 限流服务名
+    limiterService: polaris.limiter
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量

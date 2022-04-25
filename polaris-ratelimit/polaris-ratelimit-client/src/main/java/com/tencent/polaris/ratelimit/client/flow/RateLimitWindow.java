@@ -105,6 +105,9 @@ public class RateLimitWindow {
     //限流模式
     private int configMode;
 
+    //限流配置
+    private final RateLimitConfig rateLimitConfig;
+
     /**
      * 构造函数
      *
@@ -130,7 +133,7 @@ public class RateLimitWindow {
         remoteAddresses = buildDefaultInstances(rateLimitConfig.getLimiterAddresses());
         allocatingBucket = getQuotaBucket(initCriteria, windowSet.getRateLimitExtension());
         lastAccessTimeMs.set(System.currentTimeMillis());
-
+        this.rateLimitConfig = rateLimitConfig;
         buildRemoteConfigMode();
     }
 
@@ -312,4 +315,7 @@ public class RateLimitWindow {
         return rule;
     }
 
+    public RateLimitConfig getRateLimitConfig() {
+        return rateLimitConfig;
+    }
 }
