@@ -37,4 +37,8 @@ public class InitializeRecord {
     public RateLimitWindow getRateLimitWindow() {
         return rateLimitWindow;
     }
+
+    public long getInitStartTimeMilli() {
+        return initStartTimeMilli;
+    }
 }

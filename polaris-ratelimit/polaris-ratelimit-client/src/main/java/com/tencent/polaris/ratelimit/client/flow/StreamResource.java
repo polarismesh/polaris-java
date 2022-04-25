@@ -324,6 +324,10 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         return initRecord.containsKey(serviceIdentifier);
     }
 
+    public InitializeRecord getInitRecord(ServiceIdentifier serviceIdentifier) {
+        return initRecord.get(serviceIdentifier);
+    }
+
     public Integer getCounterKey(ServiceIdentifier serviceIdentifier, Integer duration) {
         InitializeRecord initializeRecord = initRecord.get(serviceIdentifier);
         if (null == initializeRecord) {
