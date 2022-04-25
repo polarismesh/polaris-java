@@ -172,6 +172,9 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
+        if (!super.enable(routeInfo, dstSvcInfo)) {
+            return false;
+        }
         Map<String, String> metadata = routeInfo.getDestService().getMetadata();
         return !MapUtils.isEmpty(metadata);
     }

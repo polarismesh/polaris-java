@@ -126,6 +126,9 @@ consumer:
       - recoverRouter
     #描述：服务路由插件的配置
     plugin:
+      recoverRouter:
+        # 是否剔除被熔断的实例
+        excludeCircuitBreakInstances: true
       metadataRouter:
         #描述: 元数据路由降级策略。none(不降级), all(降级返回所有的节点), others(降级返回其他节点)
         metadataFailOverType: none
