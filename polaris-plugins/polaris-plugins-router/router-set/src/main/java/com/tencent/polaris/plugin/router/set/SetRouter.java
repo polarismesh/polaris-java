@@ -214,7 +214,7 @@ public class SetRouter extends AbstractServiceRouter {
 
     @Override
     public String getName() {
-        return "setRouter";
+        return ServiceRouterConfig.DEFAULT_ROUTER_SET;
     }
 
     @Override
@@ -234,6 +234,6 @@ public class SetRouter extends AbstractServiceRouter {
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
-        return true;
+        return super.enable(routeInfo, dstSvcInfo);
     }
 }

@@ -18,6 +18,7 @@
 package com.tencent.polaris.discovery.client.flow;
 
 import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
@@ -26,10 +27,7 @@ import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
-import com.tencent.polaris.api.rpc.Criteria;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
@@ -79,11 +77,47 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     }
 
     /**
-     * 构造函数
+     * 构造函数，获取健康的全部实例。只保留：isolatedRouter，recoverRouter
      *
      * @param request 请求
      * @param configuration 配置
      */
+    public CommonInstancesRequest(GetHealthyInstancesRequest request, Configuration configuration) {
+        ServiceKey dstSvcKey = new ServiceKey(request.getNamespace(), request.getService());
+        dstInstanceEventKey = new ServiceEventKey(dstSvcKey, EventType.INSTANCE);
+        svcEventKeys.add(dstInstanceEventKey);
+
+        dstRuleEventKey = new ServiceEventKey(dstSvcKey, EventType.ROUTING);
+        svcEventKeys.add(dstRuleEventKey);
+
+        srcRuleEventKey = null;
+
+        ServiceInfo dstServiceInfo = new ServiceInfo();
+        dstServiceInfo.setNamespace(request.getNamespace());
+        dstServiceInfo.setService(request.getService());
+        dstServiceInfo.setMetadata(request.getMetadata());
+
+        routeInfo = new RouteInfo(null, dstServiceInfo, null);
+        routeInfo.setIncludeUnhealthyInstances(false);
+        criteria = null;
+
+        // 关闭非必要的 Router，只保留 isolatedRouter，recoverRouter 两个最基本的 Router。
+        // 并且 recoverRouter 只过滤掉 unHealthy 的实例，不需要过滤被熔断的实例
+        routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
+        routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_RULE);
+        routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY);
+        routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_SET);
+        routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_CANARY);
+
+        BaseFlow.buildFlowControlParam(request, configuration, this);
+    }
+
+        /**
+         * 构造函数
+         *
+         * @param request 请求
+         * @param configuration 配置
+         */
     public CommonInstancesRequest(GetOneInstanceRequest request, Configuration configuration) {
         ServiceKey dstSvcKey = new ServiceKey(request.getNamespace(), request.getService());
         dstInstanceEventKey = new ServiceEventKey(dstSvcKey, EventType.INSTANCE);

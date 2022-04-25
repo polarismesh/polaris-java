@@ -90,6 +90,16 @@ public class Validator {
     }
 
     /**
+     * 校验获取批量健康服务实例的请求
+     *
+     * @param request 请求对象
+     * @throws PolarisException 校验失败会抛出异常
+     */
+    public static void validateGetHealthyInstancesRequest(GetHealthyInstancesRequest request) throws PolarisException {
+        checkCommon(request);
+    }
+
+    /**
      * 校验获取服务规则的请求
      *
      * @param request 请求对象

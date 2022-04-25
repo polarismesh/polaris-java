@@ -39,6 +39,12 @@ public interface ServiceRouterConfig extends PluginConfig, Verifier {
 
     String DEFAULT_ROUTER_NEARBY = "nearbyBasedRouter";
 
+    String DEFAULT_ROUTER_SET = "setRouter";
+
+    String DEFAULT_ROUTER_CANARY = "canaryRouter";
+
+
+
     /**
      * services.consumer.serviceRouter.beforeChain
      * 前置路由链配置
