@@ -77,7 +77,7 @@ public class SlidingWindow {
     public void addAndGetCurrentPassed(long curTimeMs, long value) {
         Window curWindow = currentWindow(curTimeMs);
         curWindow.addAndGetPassed(value);
-        LOG.info("add passed value: passed {}, curWindow {}, curTimeMs {}", value,
+        LOG.debug("add passed value: passed {}, curWindow {}, curTimeMs {}", value,
                 curWindow.getCurrentWindowStartMs(), curTimeMs);
     }
 
@@ -90,7 +90,7 @@ public class SlidingWindow {
     public void addAndGetCurrentLimited(long curTimeMs, long value) {
         Window curWindow = currentWindow(curTimeMs);
         curWindow.addAndGetLimited(value);
-        LOG.info("add limited value: passed {}, curWindow {}, curTimeMs {}", value,
+        LOG.debug("add limited value: passed {}, curWindow {}, curTimeMs {}", value,
                 curWindow.getCurrentWindowStartMs(), curTimeMs);
     }
 
@@ -104,7 +104,7 @@ public class SlidingWindow {
         Window curWindow = currentWindow(curTimeMs);
         long passed = curWindow.swapPassed();
         long limited = curWindow.swapLimited();
-        LOG.info("acquire current value: passed {}, limited {}, curWindow {}, curTimeMs {}", passed, limited,
+        LOG.debug("acquire current value: passed {}, limited {}, curWindow {}, curTimeMs {}", passed, limited,
                 curWindow.getCurrentWindowStartMs(), curTimeMs);
         return new Result(passed, limited);
     }

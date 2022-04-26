@@ -149,7 +149,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     @Override
     public void onNext(RateLimitResponse rateLimitResponse) {
-        LOG.info("ratelimit response receive is {}", rateLimitResponse);
+        LOG.debug("ratelimit response receive is {}", rateLimitResponse);
         lastRecvTime.set(System.currentTimeMillis());
         if (RateLimitCmd.INIT.equals(rateLimitResponse.getCmd())) {
             handleRateLimitInitResponse(rateLimitResponse.getRateLimitInitResponse());
@@ -171,13 +171,16 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         closeStream(true);
     }
 
-    public void addInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
+    public InitializeRecord addInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
         if (!initRecord.containsKey(serviceIdentifier)) {
+            LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
             initRecord.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
         }
+        return initRecord.get(serviceIdentifier);
     }
 
     public void deleteInitRecord(ServiceIdentifier serviceIdentifier) {
+        LOG.info("[RateLimit] delete init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
         initRecord.remove(serviceIdentifier);
     }
 
@@ -297,7 +300,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
         long latency = localReceiveTimeMilli - localSendTimeMilli;
 
-        long remoteReceiveTimeMilli = remoteSendTimeMilli + latency / 2;
+        long remoteReceiveTimeMilli = remoteSendTimeMilli + latency / 3;
         long timeDiff = remoteReceiveTimeMilli - localReceiveTimeMilli;
         timeDiffMilli.set(timeDiff);
         LOG.info("[RateLimit] adjust time to server time is {}, latency is {},diff is {}", remoteSendTimeMilli, latency,
@@ -309,7 +312,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     public boolean sendRateLimitRequest(RateLimitRequest rateLimitRequest) {
-        LOG.info("ratelimit request to send is {}", rateLimitRequest);
+        LOG.debug("ratelimit request to send is {}", rateLimitRequest);
         try {
             streamClient.onNext(rateLimitRequest);
             return true;

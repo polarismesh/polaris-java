@@ -120,6 +120,9 @@ public class RemoteSyncTask implements Runnable {
         adjustTime(streamResource);
 
         InitializeRecord initRecord = streamResource.getInitRecord(serviceIdentifier);
+        if (null == initRecord) {
+            initRecord = streamResource.addInitRecord(serviceIdentifier, window);
+        }
         if (!isInitExpired(initRecord)) {
             //未超时，先不初始化
             return;

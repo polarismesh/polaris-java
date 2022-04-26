@@ -147,7 +147,7 @@ public class RemoteAwareBucket implements QuotaBucket {
         if (null == tokenBucket) {
             return;
         }
-        LOG.info("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
+        LOG.debug("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
                         + "remoteTimeMilli {}(startMilli {}), duration {}, remote quota left {}",
                 localCurTimeMs, localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
                 remoteQuotaInfo.getRemoteQuotaLeft());
@@ -158,14 +158,14 @@ public class RemoteAwareBucket implements QuotaBucket {
                 //当前周期没有更新，则重置当前周期配额，避免出现时间周期开始时候的误限
                 remoteQuotaInfo = new RemoteQuotaInfo(tokenBucket.getRuleTotal(), remoteQuotaInfo.getClientCount(),
                         localCurStartMs, durationMs);
-                LOG.warn("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
+                LOG.debug("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
                                 + "remoteTimeMilli {}(startMilli {}), duration {}, remoteLeft is {}, reset to {}",
                         localCurTimeMs, localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
                         remoteQuotaLeft, remoteQuotaInfo.getRemoteQuotaLeft());
             } else {
                 tokenBucket.syncUpdateRemoteClientCount(remoteQuotaInfo);
                 //不在一个时间段内，丢弃
-                LOG.warn("[RateLimit]Drop remote quota, localTimeMilli {}(startMilli {}), "
+                LOG.warn("[RateLimit]drop remote quota, localTimeMilli {}(startMilli {}), "
                                 + "remoteTimeMilli {}(startMilli {}), duration {}, remoteLeft is {}", localCurTimeMs,
                         localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
                         remoteQuotaLeft);
