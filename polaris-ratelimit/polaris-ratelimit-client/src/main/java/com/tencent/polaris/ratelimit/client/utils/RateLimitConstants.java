@@ -56,6 +56,8 @@ public interface RateLimitConstants {
 
     long TIME_ADJUST_INTERVAL_MS = 30 * 1000;
 
+    long MAX_TIME_ADJUST_INTERVAL_MS = 180 * 1000;
+
     long STARTUP_DELAY_MS = 30;
 
     int RANGE_DELAY_MS = 10;

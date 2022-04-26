@@ -111,6 +111,8 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
      */
     private final AtomicLong lastSyncTimeMilli = new AtomicLong();
 
+    private final AtomicLong syncInterval = new AtomicLong(RateLimitConstants.TIME_ADJUST_INTERVAL_MS);
+
     public StreamResource(HostIdentifier identifier) {
         channel = createConnection(identifier);
         hostIdentifier = identifier;
@@ -278,7 +280,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
         //超过间隔时间才需要调整
         if (lastSyncTime > 0
-                && currentTimeMillis - lastSyncTime < RateLimitConstants.TIME_ADJUST_INTERVAL_MS) {
+                && currentTimeMillis - lastSyncTime < syncInterval.get()) {
             LOG.debug("[RateLimit] adjustTime need wait.lastSyncTimeMilli:{},sendTimeMilli:{}", lastSyncTimeMilli,
                     currentTimeMillis);
             return;
@@ -302,6 +304,10 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
         long remoteReceiveTimeMilli = remoteSendTimeMilli + latency / 3;
         long timeDiff = remoteReceiveTimeMilli - localReceiveTimeMilli;
+        if (timeDiffMilli.get() == timeDiff && syncInterval.get() < RateLimitConstants.MAX_TIME_ADJUST_INTERVAL_MS) {
+            //不断递增时延
+            syncInterval.set(syncInterval.get() + RateLimitConstants.TIME_ADJUST_INTERVAL_MS);
+        }
         timeDiffMilli.set(timeDiff);
         LOG.info("[RateLimit] adjust time to server time is {}, latency is {},diff is {}", remoteSendTimeMilli, latency,
                 timeDiff);
