@@ -22,6 +22,7 @@ import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
@@ -49,6 +50,14 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @throws PolarisException 错误码及错误信息
      */
     InstancesResponse getAllInstance(GetAllInstancesRequest req) throws PolarisException;
+
+    /**
+     * 同步获取健康的服务实例，如果全部实例都不健康，那将会返回全部实例
+     * @param req
+     * @return
+     * @throws PolarisException
+     */
+    InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException;
 
     /**
      * 同步获取服务下单个服务实例

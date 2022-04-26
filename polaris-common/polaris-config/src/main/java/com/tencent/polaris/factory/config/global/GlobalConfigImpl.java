@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.factory.config.global;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
@@ -46,6 +47,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     @JsonProperty
     private List<ServerConnectorConfigImpl> serverConnectors;
 
+    @JsonIgnore
     private Map<String, ServerConnectorConfigImpl> serverConnectorConfigMap = new ConcurrentHashMap<>();
 
     @JsonProperty
@@ -76,6 +78,15 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     public void setServerConnectors(List<ServerConnectorConfigImpl> serverConnectors) {
+        for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
+            if (serverConnectorConfigMap.containsKey(serverConnectorConfig.getId())) {
+                throw new IllegalArgumentException(
+                        String.format("Server connector config of [%s] is already exist.",
+                                serverConnectorConfig.getId()));
+            } else {
+                serverConnectorConfigMap.put(serverConnectorConfig.getId(), serverConnectorConfig);
+            }
+        }
         this.serverConnectors = serverConnectors;
     }
 
@@ -104,13 +115,6 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (CollectionUtils.isNotEmpty(serverConnectors)) {
             for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectors) {
                 serverConnectorConfig.verify();
-                if (serverConnectorConfigMap.containsKey(serverConnectorConfig.getId())) {
-                    throw new IllegalArgumentException(
-                            String.format("Server connector config of [%s] is already exist.",
-                                    serverConnectorConfig.getId()));
-                } else {
-                    serverConnectorConfigMap.put(serverConnectorConfig.getId(), serverConnectorConfig);
-                }
             }
         } else {
             ConfigUtils.validateTrue(DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(serverConnector.getProtocol()),

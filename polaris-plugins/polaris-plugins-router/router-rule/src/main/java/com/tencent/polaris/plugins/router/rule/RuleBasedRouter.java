@@ -536,11 +536,17 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
+        if (!super.enable(routeInfo, dstSvcInfo)) {
+            return false;
+        }
+
         if (routeInfo.getSourceService() == null) {
             return false;
         }
+
         List<RoutingProto.Route> dstRoutes = getRoutesFromRule(routeInfo, RuleMatchType.destRouteRuleMatch);
         List<RoutingProto.Route> srcRoutes = getRoutesFromRule(routeInfo, RuleMatchType.sourceRouteRuleMatch);
+
         return !(CollectionUtils.isEmpty(dstRoutes) && CollectionUtils.isEmpty(srcRoutes));
     }
 }

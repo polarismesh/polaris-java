@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.factory.config.provider;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.ProviderConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -40,6 +41,7 @@ public class ProviderConfigImpl implements ProviderConfig {
     @JsonProperty
     private List<RegisterConfigImpl> registers;
 
+    @JsonIgnore
     private Map<String, RegisterConfigImpl> registerConfigMap = new ConcurrentHashMap<>();
 
     @Override
@@ -56,6 +58,16 @@ public class ProviderConfigImpl implements ProviderConfig {
     }
 
     public void setRegisters(List<RegisterConfigImpl> registers) {
+        if (CollectionUtils.isNotEmpty(registers)) {
+            for (RegisterConfigImpl registerConfig : registers) {
+                if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
+                    throw new IllegalArgumentException(String.format("Register config of [%s] is already exist.",
+                            registerConfig.getServerConnectorId()));
+                } else {
+                    registerConfigMap.put(registerConfig.getServerConnectorId(), registerConfig);
+                }
+            }
+        }
         this.registers = registers;
     }
 
@@ -72,12 +84,6 @@ public class ProviderConfigImpl implements ProviderConfig {
         if (CollectionUtils.isNotEmpty(registers)) {
             for (RegisterConfigImpl registerConfig : registers) {
                 registerConfig.verify();
-                if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
-                    throw new IllegalArgumentException(String.format("Register config of [%s] is already exist.",
-                            registerConfig.getServerConnectorId()));
-                } else {
-                    registerConfigMap.put(registerConfig.getServerConnectorId(), registerConfig);
-                }
             }
         }
     }
