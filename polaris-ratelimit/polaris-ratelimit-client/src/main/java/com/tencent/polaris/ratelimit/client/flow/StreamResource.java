@@ -132,6 +132,10 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         return builder.build();
     }
 
+    public HostIdentifier getHostIdentifier() {
+        return hostIdentifier;
+    }
+
     /**
      * 关闭流
      *

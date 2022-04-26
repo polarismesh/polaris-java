@@ -127,7 +127,9 @@ public class RemoteSyncTask implements Runnable {
             //未超时，先不初始化
             return;
         }
-
+        LOG.info("[RateLimit] start to init {}, remote server {}", serviceIdentifier,
+                streamResource.getHostIdentifier());
+        initRecord.setInitStartTimeMilli(System.currentTimeMillis());
         //执行同步操作
         Builder initRequest = RateLimitInitRequest.newBuilder();
         initRequest.setClientId(window.getWindowSet().getClientId());
