@@ -36,7 +36,7 @@ public interface Consts {
 
     int MAX_CASH_COUNT = 4000;
 
-    int MAX_SERVICE_COUNT = 15000;
+    int MAX_SERVICE_COUNT = 5000;
 
     /**
      * 通过数组创建Map
