@@ -111,6 +111,8 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
      */
     private final AtomicLong lastSyncTimeMilli = new AtomicLong();
 
+    private final AtomicLong syncInterval = new AtomicLong(RateLimitConstants.TIME_ADJUST_INTERVAL_MS);
+
     public StreamResource(HostIdentifier identifier) {
         channel = createConnection(identifier);
         hostIdentifier = identifier;
@@ -149,7 +151,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     @Override
     public void onNext(RateLimitResponse rateLimitResponse) {
-        LOG.info("ratelimit response receive is {}", rateLimitResponse);
+        LOG.debug("ratelimit response receive is {}", rateLimitResponse);
         lastRecvTime.set(System.currentTimeMillis());
         if (RateLimitCmd.INIT.equals(rateLimitResponse.getCmd())) {
             handleRateLimitInitResponse(rateLimitResponse.getRateLimitInitResponse());
@@ -171,13 +173,16 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         closeStream(true);
     }
 
-    public void addInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
+    public InitializeRecord addInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
         if (!initRecord.containsKey(serviceIdentifier)) {
+            LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
             initRecord.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
         }
+        return initRecord.get(serviceIdentifier);
     }
 
     public void deleteInitRecord(ServiceIdentifier serviceIdentifier) {
+        LOG.info("[RateLimit] delete init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
         initRecord.remove(serviceIdentifier);
     }
 
@@ -275,7 +280,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
         //超过间隔时间才需要调整
         if (lastSyncTime > 0
-                && currentTimeMillis - lastSyncTime < RateLimitConstants.TIME_ADJUST_INTERVAL_MS) {
+                && currentTimeMillis - lastSyncTime < syncInterval.get()) {
             LOG.debug("[RateLimit] adjustTime need wait.lastSyncTimeMilli:{},sendTimeMilli:{}", lastSyncTimeMilli,
                     currentTimeMillis);
             return;
@@ -297,8 +302,12 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
         long latency = localReceiveTimeMilli - localSendTimeMilli;
 
-        long remoteReceiveTimeMilli = remoteSendTimeMilli + latency / 2;
+        long remoteReceiveTimeMilli = remoteSendTimeMilli + latency / 3;
         long timeDiff = remoteReceiveTimeMilli - localReceiveTimeMilli;
+        if (timeDiffMilli.get() == timeDiff && syncInterval.get() < RateLimitConstants.MAX_TIME_ADJUST_INTERVAL_MS) {
+            //不断递增时延
+            syncInterval.set(syncInterval.get() + RateLimitConstants.TIME_ADJUST_INTERVAL_MS);
+        }
         timeDiffMilli.set(timeDiff);
         LOG.info("[RateLimit] adjust time to server time is {}, latency is {},diff is {}", remoteSendTimeMilli, latency,
                 timeDiff);
@@ -309,7 +318,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     public boolean sendRateLimitRequest(RateLimitRequest rateLimitRequest) {
-        LOG.info("ratelimit request to send is {}", rateLimitRequest);
+        LOG.debug("ratelimit request to send is {}", rateLimitRequest);
         try {
             streamClient.onNext(rateLimitRequest);
             return true;

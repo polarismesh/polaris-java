@@ -51,14 +51,12 @@ public class StreamCounterSet {
         }
         synchronized (resourceLock) {
             streamResource = currentStreamResource.get();
-            if (null != streamResource && !streamResource.isEndStream()) {
-                return streamResource;
+            if (null == streamResource || streamResource.isEndStream()) {
+                LOG.info("[RateLimit] stream resource for {} not exists or destroyed, start to create", identifier);
+                streamResource = new StreamResource(identifier);
+                currentStreamResource.set(streamResource);
             }
-            LOG.info("[RateLimit] stream resource for {} not exists or destroyed, start to create", identifier);
-            StreamResource newStreamResource = new StreamResource(identifier);
-            newStreamResource.addInitRecord(serviceIdentifier, rateLimitWindow);
-            currentStreamResource.set(newStreamResource);
-            return newStreamResource;
+            return streamResource;
         }
     }
 
