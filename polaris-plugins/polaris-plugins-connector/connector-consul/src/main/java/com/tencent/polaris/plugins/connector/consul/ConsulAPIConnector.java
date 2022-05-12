@@ -59,9 +59,9 @@ import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
+import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -280,7 +280,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public List<DefaultInstance> syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
+    public ServiceInstancesResponse syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
         List<DefaultInstance> instanceList = new ArrayList<>();
         try {
             HealthServicesRequest request = HealthServicesRequest.newBuilder()
@@ -289,7 +289,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             Response<List<HealthService>> response = this.consulClient
                     .getHealthServices(serviceUpdateTask.getServiceEventKey().getService(), request);
             if (response.getValue() == null || response.getValue().isEmpty()) {
-                return Collections.emptyList();
+                return null;
             }
             for (HealthService service : response.getValue()) {
                 DefaultInstance instance = new DefaultInstance();
@@ -299,12 +299,12 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 instance.setPort(service.getService().getPort());
                 instanceList.add(instance);
             }
+            return new ServiceInstancesResponse(String.valueOf(response.getConsulIndex()), instanceList);
         } catch (ConsulException e) {
             throw ServerErrorResponseException.build(ErrorCode.SERVER_USER_ERROR.ordinal(),
                     String.format("Get service instances of %s sync failed.",
                             serviceUpdateTask.getServiceEventKey().getServiceKey()));
         }
-        return instanceList;
     }
 
     @Override

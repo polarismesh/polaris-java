@@ -61,6 +61,71 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     private final int hashCode;
 
+    /**
+     * 构造函数
+     *
+     * @param response 应答Proto
+     * @param oldSvcInstances 旧的实例列表
+     * @param loadFromFile 是否从缓存文件加载
+     */
+    public ServiceInstancesByProto(ResponseProto.DiscoverResponse response, ServiceInstancesByProto oldSvcInstances,
+            boolean loadFromFile) {
+        this.service = response.getService();
+        List<Instance> tmpInstances = new ArrayList<>();
+        Map<String, InstanceByProto> tmpInstanceMap = new HashMap<>();
+        Map<Node, InstanceByProto> tmpNodeMap = new HashMap<>();
+        int totalWeight = 0;
+        ServiceKey svcKey = new ServiceKey(this.service.getNamespace().getValue(), this.service.getName().getValue());
+        // TODO 需要判断不同来源的实例列表覆盖情况
+        if (CollectionUtils.isNotEmpty(response.getInstancesList())) {
+            for (ServiceProto.Instance instance : response.getInstancesList()) {
+                String instID = instance.getId().getValue();
+                InstanceLocalValue instanceLocalValue = null;
+                if (null != oldSvcInstances) {
+                    InstanceByProto oldInstance = oldSvcInstances.getInstance(instID);
+                    if (null != oldInstance) {
+                        instanceLocalValue = oldInstance.getInstanceLocalValue();
+                    }
+                }
+                if (null == instanceLocalValue) {
+                    //创建一个新的本地缓存实例
+                    instanceLocalValue = new DefaultInstanceLocalValue();
+                }
+                InstanceByProto targetInstance = new InstanceByProto(svcKey, instance, instanceLocalValue);
+                totalWeight += targetInstance.getWeight();
+                tmpInstances.add(targetInstance);
+                tmpInstanceMap.put(instID, targetInstance);
+                tmpNodeMap.put(new Node(targetInstance.getHost(), targetInstance.getPort()), targetInstance);
+            }
+        }
+        Collections.sort(tmpInstances);
+        hashCode = Objects.hash(svcKey, tmpInstances);
+        this.svcKey = svcKey;
+        this.instanceIdMap = Collections.unmodifiableMap(tmpInstanceMap);
+        this.nodeMap = Collections.unmodifiableMap(tmpNodeMap);
+        this.instances = Collections.unmodifiableList(tmpInstances);
+        this.totalWeight = totalWeight;
+        this.initialized = true;
+        this.metadata = Collections.unmodifiableMap(this.service.getMetadataMap());
+        this.loadedFromFile = loadFromFile;
+    }
+
+    /**
+     * 创建空的服务对象
+     */
+    public ServiceInstancesByProto() {
+        this.service = null;
+        this.svcKey = null;
+        this.initialized = false;
+        this.instances = Collections.emptyList();
+        this.instanceIdMap = Collections.emptyMap();
+        this.nodeMap = Collections.emptyMap();
+        this.metadata = Collections.emptyMap();
+        this.loadedFromFile = false;
+        this.totalWeight = 0;
+        hashCode = Objects.hash(instances);
+    }
+
     @Override
     public ServiceKey getServiceKey() {
         return svcKey;
@@ -132,70 +197,6 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     public InstanceByProto getInstanceByNode(Node node) {
         return nodeMap.get(node);
-    }
-
-    /**
-     * 构造函数
-     *
-     * @param response 应答Proto
-     * @param oldSvcInstances 旧的实例列表
-     * @param loadFromFile 是否从缓存文件加载
-     */
-    public ServiceInstancesByProto(ResponseProto.DiscoverResponse response, ServiceInstancesByProto oldSvcInstances,
-            boolean loadFromFile) {
-        this.service = response.getService();
-        List<Instance> tmpInstances = new ArrayList<>();
-        Map<String, InstanceByProto> tmpInstanceMap = new HashMap<>();
-        Map<Node, InstanceByProto> tmpNodeMap = new HashMap<>();
-        int totalWeight = 0;
-        ServiceKey svcKey = new ServiceKey(this.service.getNamespace().getValue(), this.service.getName().getValue());
-        if (CollectionUtils.isNotEmpty(response.getInstancesList())) {
-            for (ServiceProto.Instance instance : response.getInstancesList()) {
-                String instID = instance.getId().getValue();
-                InstanceLocalValue instanceLocalValue = null;
-                if (null != oldSvcInstances) {
-                    InstanceByProto oldInstance = oldSvcInstances.getInstance(instID);
-                    if (null != oldInstance) {
-                        instanceLocalValue = oldInstance.getInstanceLocalValue();
-                    }
-                }
-                if (null == instanceLocalValue) {
-                    //创建一个新的本地缓存实例
-                    instanceLocalValue = new DefaultInstanceLocalValue();
-                }
-                InstanceByProto targetInstance = new InstanceByProto(svcKey, instance, instanceLocalValue);
-                totalWeight += targetInstance.getWeight();
-                tmpInstances.add(targetInstance);
-                tmpInstanceMap.put(instID, targetInstance);
-                tmpNodeMap.put(new Node(targetInstance.getHost(), targetInstance.getPort()), targetInstance);
-            }
-        }
-        Collections.sort(tmpInstances);
-        hashCode = Objects.hash(svcKey, tmpInstances);
-        this.svcKey = svcKey;
-        this.instanceIdMap = Collections.unmodifiableMap(tmpInstanceMap);
-        this.nodeMap = Collections.unmodifiableMap(tmpNodeMap);
-        this.instances = Collections.unmodifiableList(tmpInstances);
-        this.totalWeight = totalWeight;
-        this.initialized = true;
-        this.metadata = Collections.unmodifiableMap(this.service.getMetadataMap());
-        this.loadedFromFile = loadFromFile;
-    }
-
-    /**
-     * 创建空的服务对象
-     */
-    public ServiceInstancesByProto() {
-        this.service = null;
-        this.svcKey = null;
-        this.initialized = false;
-        this.instances = Collections.emptyList();
-        this.instanceIdMap = Collections.emptyMap();
-        this.nodeMap = Collections.emptyMap();
-        this.metadata = Collections.emptyMap();
-        this.loadedFromFile = false;
-        this.totalWeight = 0;
-        hashCode = Objects.hash(instances);
     }
 
     @Override
