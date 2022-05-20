@@ -56,6 +56,8 @@ public class RouteInfo {
     private boolean includeCircuitBreakInstances;
     //元数据路由降级类型
     private MetadataFailoverType metadataFailoverType;
+    //各个路由插件依赖的 metadata 参数
+    private Map<String, Map<String, String>> routerMetadata;
 
     /**
      * 下一步的路由信息
@@ -196,5 +198,20 @@ public class RouteInfo {
 
     public void setIncludeCircuitBreakInstances(boolean includeCircuitBreakInstances) {
         this.includeCircuitBreakInstances = includeCircuitBreakInstances;
+    }
+
+    public Map<String, String> getRouterMetadata(String routerType) {
+        if (routerMetadata == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> metadata = routerMetadata.get(routerType);
+        if (metadata == null || metadata.size() == 0) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(metadata);
+    }
+
+    public void setRouterMetadata(Map<String, Map<String, String>> routerMetadata) {
+        this.routerMetadata = routerMetadata;
     }
 }

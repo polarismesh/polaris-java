@@ -55,6 +55,8 @@ import java.util.Map;
  */
 public class MetadataRouter extends AbstractServiceRouter implements PluginConfigProvider {
 
+    public static final String ROUTER_TYPE_METADATA = "metadataRoute";
+
     private static final String KEY_METADATA_FAILOVER_TYPE = "internal-metadata-failover-type";
 
     private static final Map<String, FailOverType> valueToFailoverType = new HashMap<>();
@@ -90,7 +92,7 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
             failOverType = inputToFailoverType.get(metadataFailoverType);
         }
         boolean availableInsFlag;
-        Map<String, String> reqMetadata = routeInfo.getDestService().getMetadata();
+        Map<String, String> reqMetadata = routeInfo.getRouterMetadata(ROUTER_TYPE_METADATA);
         List<Instance> instanceList = new ArrayList<>();
         for (Instance ins : instances.getInstances()) {
             availableInsFlag = true;
@@ -175,7 +177,7 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
         if (!super.enable(routeInfo, dstSvcInfo)) {
             return false;
         }
-        Map<String, String> metadata = routeInfo.getDestService().getMetadata();
+        Map<String, String> metadata = routeInfo.getRouterMetadata(ROUTER_TYPE_METADATA);
         return !MapUtils.isEmpty(metadata);
     }
 }
