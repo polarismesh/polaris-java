@@ -19,12 +19,10 @@ package com.tencent.polaris.plugins.connector.common;
 
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
-import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
@@ -84,7 +82,7 @@ public abstract class DestroyableServerConnector extends Destroyable implements 
      * @param serviceUpdateTask
      * @return instance
      */
-    public List<DefaultInstance> syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
+    public ServiceInstancesResponse syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
         return null;
     }
 
