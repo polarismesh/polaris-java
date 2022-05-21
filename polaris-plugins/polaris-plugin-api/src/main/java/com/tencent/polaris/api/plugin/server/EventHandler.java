@@ -32,4 +32,11 @@ public interface EventHandler {
      * @return 是否产生服务删除事件
      */
     boolean onEventUpdate(ServerEvent event);
+
+    /**
+     * 获取当前资源的版本号
+     * @return 版本号
+     */
+    String getRevision();
+
 }

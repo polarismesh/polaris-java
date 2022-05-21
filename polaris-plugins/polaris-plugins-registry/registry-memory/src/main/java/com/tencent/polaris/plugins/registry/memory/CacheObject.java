@@ -301,4 +301,13 @@ public class CacheObject implements EventHandler {
     public ServiceEventKey getServiceEventKey() {
         return svcEventKey;
     }
+
+    @Override
+    public String getRevision() {
+        RegistryCacheValue registryCacheValue = value.get();
+        if (null == registryCacheValue) {
+            return "";
+        }
+        return registryCacheValue.getRevision();
+    }
 }
