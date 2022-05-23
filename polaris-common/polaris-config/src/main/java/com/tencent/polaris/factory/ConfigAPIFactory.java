@@ -27,13 +27,34 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.replace.SystemPropertyPlaceholderResolver;
+import com.tencent.polaris.factory.util.PropertyPlaceholderHelper;
 import com.tencent.polaris.logging.LoggerFactory;
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
 public class ConfigAPIFactory {
 
+
     private static final Logger LOG = LoggerFactory.getLogger(ConfigAPIFactory.class);
+
+    /**
+     * Default placeholder prefix: {@value}.
+     */
+    public static final String DEFAULT_PLACEHOLDER_PREFIX = "${";
+
+    /**
+     * Default placeholder suffix: {@value}.
+     */
+    public static final String DEFAULT_PLACEHOLDER_SUFFIX = "}";
+
+    /**
+     * Default value separator: {@value}.
+     */
+    public static final String DEFAULT_VALUE_SEPARATOR = ":";
 
     /**
      * 通过配置文件加载配置对象
@@ -43,11 +64,17 @@ public class ConfigAPIFactory {
      * @throws PolarisException 文件加载异常
      */
     public static Configuration loadConfig(InputStream configStream) throws PolarisException {
+        String configText;
+        try {
+            configText = replaceConfigText(configStream);
+        } catch (Throwable e) {
+            throw new PolarisException(ErrorCode.INVALID_CONFIG, "fail to preprocess config", e);
+        }
         YAMLFactory yamlFactory = new YAMLFactory();
         ObjectMapper mapper = new ObjectMapper();
 
         try {
-            YAMLParser yamlParser = yamlFactory.createParser(configStream);
+            YAMLParser yamlParser = yamlFactory.createParser(configText);
             final JsonNode node = mapper.readTree(yamlParser);
             TreeTraversingParser treeTraversingParser = new TreeTraversingParser(node);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -56,6 +83,14 @@ public class ConfigAPIFactory {
             throw new PolarisException(
                     ErrorCode.INVALID_CONFIG, "fail to load config from stream", e);
         }
+    }
+
+    private static String replaceConfigText(InputStream configStream) {
+        String result = new BufferedReader(new InputStreamReader(configStream))
+                .lines().collect(Collectors.joining("\n"));
+        PropertyPlaceholderHelper propertyPlaceholderHelper = new PropertyPlaceholderHelper(DEFAULT_PLACEHOLDER_PREFIX,
+                DEFAULT_PLACEHOLDER_SUFFIX, DEFAULT_VALUE_SEPARATOR, false);
+        return propertyPlaceholderHelper.replacePlaceholders(result, new SystemPropertyPlaceholderResolver());
     }
 
     public static final String DEFAULT_CONFIG_PATH = "polaris.yml";
