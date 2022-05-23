@@ -1,18 +1,17 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Copyright 2002-2018 the original author or authors.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
- *
- * Licensed under the BSD 3-Clause License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * https://opensource.org/licenses/BSD-3-Clause
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed
- * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
- * CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.tencent.polaris.factory.util;
@@ -26,6 +25,12 @@ import java.util.Properties;
 import java.util.Set;
 import org.slf4j.Logger;
 
+/**
+ * Utility class for working with Strings that have placeholder values in them. A placeholder takes the form
+ * {@code ${name}}. Using {@code PropertyPlaceholderHelper} these placeholders can be substituted for
+ * user-supplied values. <p> Values for substitution can be supplied using a {@link Properties} instance or
+ * using a {@link PlaceholderResolver}.
+ */
 public class PropertyPlaceholderHelper {
 
     private static final Logger logger = LoggerFactory.getLogger(PropertyPlaceholderHelper.class);
