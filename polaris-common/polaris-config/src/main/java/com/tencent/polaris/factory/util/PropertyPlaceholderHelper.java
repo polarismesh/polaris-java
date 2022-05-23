@@ -26,6 +26,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 /**
+ * copy from https://github.com/spring-projects/spring-framework/blob/main/spring-core/src/main/java/org/springframework/util/PropertyPlaceholderHelper.java
+ *
  * Utility class for working with Strings that have placeholder values in them. A placeholder takes the form
  * {@code ${name}}. Using {@code PropertyPlaceholderHelper} these placeholders can be substituted for
  * user-supplied values. <p> Values for substitution can be supplied using a {@link Properties} instance or
