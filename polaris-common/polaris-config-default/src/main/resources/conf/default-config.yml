@@ -214,6 +214,8 @@ provider:
     limiterNamespace: Polaris
     # 限流服务名
     limiterService: polaris.limiter
+    # 匀速排队最大排队时间，ms
+    maxQueuingTime: 1000
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量
