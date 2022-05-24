@@ -46,6 +46,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     @JsonProperty
     private Long remoteSyncTimeoutMilli;
 
+    @JsonProperty
+    private Long maxQueuingTime;
+
     public boolean isEnable() {
         if (null == enable) {
             return false;
@@ -124,6 +127,15 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
+    public long getMaxQueuingTime() {
+        return maxQueuingTime;
+    }
+
+    public void setMaxQueuingTime(Long maxQueuingTime) {
+        this.maxQueuingTime = maxQueuingTime;
+    }
+
+    @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             RateLimitConfig rateLimitConfig = (RateLimitConfig) defaultObject;
@@ -147,6 +159,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             }
             if (null == limiterService) {
                 setLimiterService(rateLimitConfig.getLimiterService());
+            }
+            if (null == maxQueuingTime) {
+                setMaxQueuingTime(rateLimitConfig.getMaxQueuingTime());
             }
             setDefaultPluginConfig(rateLimitConfig);
         }
