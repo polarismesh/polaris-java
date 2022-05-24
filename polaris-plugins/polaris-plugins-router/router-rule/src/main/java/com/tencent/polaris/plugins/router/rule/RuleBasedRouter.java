@@ -32,17 +32,20 @@ import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+
 import org.slf4j.Logger;
 
 /**
@@ -54,6 +57,8 @@ import org.slf4j.Logger;
 public class RuleBasedRouter extends AbstractServiceRouter {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuleBasedRouter.class);
+    public static final String ROUTER_TYPE_RULE_BASED = "ruleRouter";
+    public static final String ROUTER_ENABLED = "enabled";
 
     private Map<String, String> globalVariablesConfig;
 
@@ -96,7 +101,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
     // 匹配source规则
     private boolean matchSource(List<RoutingProto.Source> sources, ServiceMetadata sourceService,
-            RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
+                                RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
@@ -155,7 +160,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
     // 匹配metadata
     private boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
-            boolean isMatchSource, Map<String, String> multiEnvRouterParamMap) {
+                                  boolean isMatchSource, Map<String, String> multiEnvRouterParamMap) {
         // 如果规则metadata为空, 返回成功
         if (MapUtils.isEmpty(ruleMeta)) {
             return true;
@@ -207,7 +212,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
     }
 
     private boolean isAllMetaMatched(boolean isMatchSource, boolean allMetaMatched, String ruleMetaKey,
-            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
+                                     MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
@@ -224,7 +229,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
     }
 
     private boolean matchValueByValueType(boolean isMatchSource, boolean isRegex, String ruleMetaKey,
-            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
+                                          MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
         boolean allMetaMatched = true;
 
         switch (ruleMetaValue.getValueType()) {
@@ -288,7 +293,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
 
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
-            RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
+                                                    RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
         // 获取路由规则
         List<RoutingProto.Route> routes = getRoutesFromRule(routeInfo, ruleMatchType);
         if (CollectionUtils.isEmpty(routes)) {
@@ -363,8 +368,8 @@ public class RuleBasedRouter extends AbstractServiceRouter {
     /**
      * populateSubsetsFromDest 根据destination中的规则填充分组列表
      *
-     * @param instances 实例信息
-     * @param dest 目标规则
+     * @param instances  实例信息
+     * @param dest       目标规则
      * @param subsetsMap 实例分组
      * @return 是否成功加入subset列表
      */
@@ -542,6 +547,15 @@ public class RuleBasedRouter extends AbstractServiceRouter {
 
         if (routeInfo.getSourceService() == null) {
             return false;
+        }
+
+        //默认开启，需要显示关闭
+        Map<String, String> routerMetadata = routeInfo.getRouterMetadata(ROUTER_TYPE_RULE_BASED);
+        if (MapUtils.isNotEmpty(routerMetadata)) {
+            String enabled = routerMetadata.get(ROUTER_ENABLED);
+            if (StringUtils.isNotBlank(enabled) && !Boolean.parseBoolean(enabled)) {
+                return false;
+            }
         }
 
         List<RoutingProto.Route> dstRoutes = getRoutesFromRule(routeInfo, RuleMatchType.destRouteRuleMatch);

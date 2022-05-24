@@ -47,6 +47,12 @@ public class CommonProviderRequest {
 
     private TargetServer targetServer;
 
+    private String zone;
+
+    private String region;
+
+    private String campus;
+
     public String getInstanceID() {
         return instanceID;
     }
@@ -151,6 +157,30 @@ public class CommonProviderRequest {
         this.targetServer = targetServer;
     }
 
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getCampus() {
+        return campus;
+    }
+
+    public void setCampus(String campus) {
+        this.campus = campus;
+    }
+
     @Override
     public String toString() {
         return "CommonProviderRequest{" +
@@ -166,7 +196,9 @@ public class CommonProviderRequest {
                 ", priority=" + priority +
                 ", metadata=" + metadata +
                 ", ttl=" + ttl +
-                ", targetServer=" + targetServer +
+                ", zone=" + zone +
+                ", region=" + region +
+                ", campus=" + campus +
                 '}';
     }
 
