@@ -206,6 +206,8 @@ public class Provider {
 
         private final LimitAPI limitAPI;
 
+        private long lastTimestamp = 0;
+
         public EchoServerHandler(LimitAPI limitAPI) {
             this.limitAPI = limitAPI;
         }
@@ -220,14 +222,32 @@ public class Provider {
             QuotaResponse quotaResponse = limitAPI.getQuota(quotaRequest);
             OutputStream os = exchange.getResponseBody();
             if (quotaResponse.getCode() == QuotaResultCode.QuotaResultOk) {
+                // 匀速排队等待
+                if (quotaResponse.getWaitMs() > 0) {
+                    try {
+                        Thread.sleep(quotaResponse.getWaitMs());
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 Map<String, String> parameters = splitQuery(exchange.getRequestURI());
                 String echoValue = parameters.get("value");
                 String response = "echo: " + echoValue;
                 exchange.sendResponseHeaders(200, 0);
                 os.write(response.getBytes());
+                long currentTimestamp = System.currentTimeMillis();
+                if (lastTimestamp != 0) {
+                    System.out.println(
+                            "未被限流，当前时间：" + currentTimestamp + ",与上次差值：" + (currentTimestamp - lastTimestamp));
+                } else {
+                    System.out.println("未被限流，当前时间：" + currentTimestamp);
+                }
+                lastTimestamp = currentTimestamp;
+
             } else {
                 exchange.sendResponseHeaders(429, 0);
                 os.write("request limited".getBytes());
+                System.out.println("被限流，当前时间：" + System.currentTimeMillis());
             }
             os.close();
         }

@@ -98,4 +98,24 @@ public class StringUtils {
             return text;
         }
     }
+
+    /**
+     * Test whether the given string matches the given substring
+     * at the given index.
+     *
+     * @param str the original string (or StringBuilder)
+     * @param index the index in the original string to start matching against
+     * @param substring the substring to match at the given index
+     */
+    public static boolean substringMatch(CharSequence str, int index, CharSequence substring) {
+        if (index + substring.length() > str.length()) {
+            return false;
+        }
+        for (int i = 0; i < substring.length(); i++) {
+            if (str.charAt(index + i) != substring.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

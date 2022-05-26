@@ -130,8 +130,8 @@ consumer:
         # 是否剔除被熔断的实例
         excludeCircuitBreakInstances: true
       metadataRouter:
-        #描述: 元数据路由降级策略。none(不降级), all(降级返回所有的节点), others(降级返回其他节点)
-        metadataFailOverType: none
+        #描述: 元数据路由降级策略。none(不降级), all(降级返回所有的节点), others(降级返回其他KEY的节点)
+        metadataFailOverType: all
       nearbyBasedRouter:
         #描述: 就近路由的最小匹配级别。region(大区)、zone(区域)、campus(园区)
         matchLevel: zone
@@ -214,6 +214,8 @@ provider:
     limiterNamespace: Polaris
     # 限流服务名
     limiterService: polaris.limiter
+    # 匀速排队最大排队时间，ms
+    maxQueuingTime: 1000
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量
