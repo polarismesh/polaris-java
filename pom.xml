@@ -64,7 +64,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>1.6.0-SNAPSHOT</revision>
+        <revision>1.6.0</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
