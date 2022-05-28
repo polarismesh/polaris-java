@@ -104,8 +104,13 @@ public interface LocalCacheConfig extends PluginConfig, Verifier {
      * services.consumer.localCache.serviceExpireEnable
      * 是否启用服务缓存淘汰
      *
-     * @return 淘汰
+     * @return boolean
      */
     boolean isServiceExpireEnable();
 
+    /**
+     * services.comsumer.localCache.servicePushEmptyProtectEnable 是否启用服务推空保护
+     * @return boolean
+     */
+    boolean isServicePushEmptyProtectEnable();
 }

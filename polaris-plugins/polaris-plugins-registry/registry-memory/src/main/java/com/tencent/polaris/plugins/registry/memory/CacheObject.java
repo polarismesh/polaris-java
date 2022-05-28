@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.registry.memory;
 
 import com.google.protobuf.Message;
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.registry.CacheHandler;
@@ -33,6 +34,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.pojo.ServicesByProto;
+import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -240,6 +242,15 @@ public class CacheObject implements EventHandler {
     }
 
     private void setValue(RegistryCacheValue registryCacheValue) {
+        //看推空保护开关是否开启，开启的话，判断推送的实例是否为空，如果为空就记录一下日志
+        ServiceInstancesByProto instances = (ServiceInstancesByProto) registryCacheValue;
+        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        boolean isPushEmptySwitchEnable = configuration.getConsumer().getLocalCache().isServicePushEmptyProtectEnable()
+                && CollectionUtils.isEmpty(instances.getInstances());
+        if(isPushEmptySwitchEnable && svcEventKey.getEventType() == EventType.INSTANCE) {
+            LOG.info("CacheObject: value for {} is not updated, revision {}", svcEventKey, registryCacheValue.getRevision());
+            return;
+        }
         value.set(registryCacheValue);
         LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
     }
