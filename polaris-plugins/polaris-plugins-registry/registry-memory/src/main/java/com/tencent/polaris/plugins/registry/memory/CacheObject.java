@@ -18,7 +18,6 @@
 package com.tencent.polaris.plugins.registry.memory;
 
 import com.google.protobuf.Message;
-import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.registry.CacheHandler;
@@ -34,7 +33,6 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.pojo.ServicesByProto;
-import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -217,8 +215,7 @@ public class CacheObject implements EventHandler {
                 LOG.info("OnServiceUpdate: cache {} is pending to update", svcEventKey);
                 this.registry.saveMessageToFile(serviceEventKey, (Message) message);
                 RegistryCacheValue newCachedValue = cacheHandler.messageToCacheValue(cachedValue, message, false);
-                setValue(newCachedValue);
-                if (cachedStatus == CachedStatus.CacheChanged) {
+                if (setValue(newCachedValue) && cachedStatus == CachedStatus.CacheChanged) {
                     for (ResourceEventListener listener : resourceEventListeners) {
                         listener.onResourceUpdated(svcEventKey, cachedValue, newCachedValue);
                     }
@@ -241,18 +238,21 @@ public class CacheObject implements EventHandler {
         return svcDeleted;
     }
 
-    private void setValue(RegistryCacheValue registryCacheValue) {
-        //看推空保护开关是否开启，开启的话，判断推送的实例是否为空，如果为空就记录一下日志
+    private boolean setValue(RegistryCacheValue registryCacheValue) {
+        boolean canset = true;
         ServiceInstancesByProto instances = (ServiceInstancesByProto) registryCacheValue;
-        Configuration configuration = ConfigAPIFactory.defaultConfig();
-        boolean isPushEmptySwitchEnable = configuration.getConsumer().getLocalCache().isServicePushEmptyProtectEnable()
-                && CollectionUtils.isEmpty(instances.getInstances());
-        if(isPushEmptySwitchEnable && svcEventKey.getEventType() == EventType.INSTANCE) {
-            LOG.info("CacheObject: value for {} is not updated, revision {}", svcEventKey, registryCacheValue.getRevision());
-            return;
+        if(svcEventKey.getEventType() == EventType.INSTANCE && registry.isPushEmptyProtection()) {
+            canset = !(instances.getInstances().size() == 0);
+        }
+
+        if(!canset) {
+            LOG.warn("CacheObject: value for {} is not updated, revision {}, pushEmptyProtection {}", svcEventKey,
+                    registryCacheValue.getRevision(), registry.isPushEmptyProtection());
+            return false;
         }
         value.set(registryCacheValue);
         LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
+        return true;
     }
 
     //发起注册，只要一个能够发起成功
