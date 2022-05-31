@@ -25,6 +25,7 @@ import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
@@ -84,6 +85,14 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         Validator.validateGetAllInstancesRequest(req);
         CommonInstancesRequest allRequest = new CommonInstancesRequest(req, config);
         return syncFlow.commonSyncGetAllInstances(allRequest);
+    }
+
+    @Override
+    public InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException {
+        checkAvailable("ConsumerAPI");
+        Validator.validateGetHealthyInstancesRequest(req);
+        CommonInstancesRequest healthyRequest = new CommonInstancesRequest(req, config);
+        return syncFlow.commonSyncGetInstances(healthyRequest);
     }
 
     @Override

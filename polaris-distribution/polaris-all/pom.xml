@@ -119,6 +119,14 @@
                                     <pattern>org.yaml</pattern>
                                     <shadedPattern>shade.polaris.org.yaml</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>io.grpc</pattern>
+                                    <shadedPattern>shade.polaris.io.grpc</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>io.netty</pattern>
+                                    <shadedPattern>shade.polaris.io.netty</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>

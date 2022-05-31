@@ -18,12 +18,13 @@
 package com.tencent.polaris.api.config.consumer;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 调用者配置对象
  *
- * @author andrewshan
- * @date 2019/8/20
+ * @author andrewshan, Haotian Zhang
  */
 public interface ConsumerConfig extends Verifier {
 
@@ -69,4 +70,17 @@ public interface ConsumerConfig extends Verifier {
      */
     SubscribeConfig getSubscribe();
 
+    /**
+     * Configuration of prefix of "consumer.discoveries".
+     *
+     * @return List of {@link DiscoveryConfig}
+     */
+    List<? extends DiscoveryConfig> getDiscoveries();
+
+    /**
+     * Configuration of prefix of "consumer.discoveries".
+     *
+     * @return Map of {@link DiscoveryConfig}
+     */
+    Map<String, ? extends DiscoveryConfig> getDiscoveryConfigMap();
 }

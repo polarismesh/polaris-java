@@ -81,7 +81,7 @@ public class BaseFlow {
     public static Instance commonGetOneInstance(Extensions extensions, ServiceKey serviceKey,
             List<String> coreRouterNames, String lbPolicy, String protocol, String hashKey) {
         ServiceEventKey svcEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
-        LOG.info("[ConnectionManager]start to discover service {}", svcEventKey);
+        LOG.debug("[ConnectionManager]start to discover service {}", svcEventKey);
         DefaultServiceEventKeysProvider provider = new DefaultServiceEventKeysProvider();
         provider.setSvcEventKey(svcEventKey);
         //为性能考虑，优先使用本地缓存
@@ -100,7 +100,7 @@ public class BaseFlow {
                 null, null, dstSvcInfo, null, "");
         ResourcesResponse resourcesResponse = BaseFlow
                 .syncGetResources(extensions, false, provider, flowControlParam);
-        LOG.info("[ConnectionManager]success to discover service {}", svcEventKey);
+        LOG.debug("[ConnectionManager]success to discover service {}", svcEventKey);
         ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(svcEventKey);
         RouterChainGroup sysRouterChainGroup = extensions.getSysRouterChainGroup();
         List<ServiceRouter> coreRouters = Extensions

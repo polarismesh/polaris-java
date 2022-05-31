@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.List;
 
 public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitConfig {
 
@@ -28,10 +29,25 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     private Boolean enable;
 
     @JsonProperty
+    private String limiterService;
+
+    @JsonProperty
+    private String limiterNamespace;
+
+    @JsonProperty
+    private List<String> limiterAddresses;
+
+    @JsonProperty
     private Integer maxWindowCount;
 
     @JsonProperty
     private Fallback fallbackOnExceedWindowCount;
+
+    @JsonProperty
+    private Long remoteSyncTimeoutMilli;
+
+    @JsonProperty
+    private Long maxQueuingTime;
 
     public boolean isEnable() {
         if (null == enable) {
@@ -66,6 +82,30 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
         this.fallbackOnExceedWindowCount = fallbackOnExceedWindowCount;
     }
 
+    public String getLimiterService() {
+        return limiterService;
+    }
+
+    public void setLimiterService(String limiterService) {
+        this.limiterService = limiterService;
+    }
+
+    public String getLimiterNamespace() {
+        return limiterNamespace;
+    }
+
+    public void setLimiterNamespace(String limiterNamespace) {
+        this.limiterNamespace = limiterNamespace;
+    }
+
+    public List<String> getLimiterAddresses() {
+        return limiterAddresses;
+    }
+
+    public void setLimiterAddresses(List<String> limiterAddresses) {
+        this.limiterAddresses = limiterAddresses;
+    }
+
     @Override
     public void verify() {
         ConfigUtils.validateNull(enable, "rateLimit.enable");
@@ -75,6 +115,24 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
         ConfigUtils.validatePositive(maxWindowCount, "rateLimit.maxWindowCount");
         ConfigUtils.validateNull(fallbackOnExceedWindowCount, "rateLimit.fallbackOnExceedWindowCount");
         verifyPluginConfig();
+    }
+
+    @Override
+    public long getRemoteSyncTimeoutMilli() {
+        return remoteSyncTimeoutMilli;
+    }
+
+    public void setRemoteSyncTimeoutMilli(long remoteSyncTimeoutMilli) {
+        this.remoteSyncTimeoutMilli = remoteSyncTimeoutMilli;
+    }
+
+    @Override
+    public long getMaxQueuingTime() {
+        return maxQueuingTime;
+    }
+
+    public void setMaxQueuingTime(Long maxQueuingTime) {
+        this.maxQueuingTime = maxQueuingTime;
     }
 
     @Override
@@ -89,6 +147,21 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             }
             if (null == fallbackOnExceedWindowCount) {
                 setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
+            }
+            if (null == remoteSyncTimeoutMilli) {
+                setRemoteSyncTimeoutMilli(rateLimitConfig.getRemoteSyncTimeoutMilli());
+            }
+            if (null == fallbackOnExceedWindowCount) {
+                setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
+            }
+            if (null == limiterNamespace) {
+                setLimiterNamespace(rateLimitConfig.getLimiterNamespace());
+            }
+            if (null == limiterService) {
+                setLimiterService(rateLimitConfig.getLimiterService());
+            }
+            if (null == maxQueuingTime) {
+                setMaxQueuingTime(rateLimitConfig.getMaxQueuingTime());
             }
             setDefaultPluginConfig(rateLimitConfig);
         }

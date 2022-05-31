@@ -17,10 +17,11 @@
 
 package com.tencent.polaris.plugins.connector.composite;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
+
 import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
-import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
@@ -35,6 +36,7 @@ import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
+import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.grpc.GrpcServiceUpdateTask;
@@ -60,11 +62,16 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     protected void execute() {
         CompositeConnector connector = (CompositeConnector) serverConnector;
         for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+            if (SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                 GrpcServiceUpdateTask grpcServiceUpdateTask = new GrpcServiceUpdateTask(serviceEventHandler, sc);
                 grpcServiceUpdateTask.execute(this);
                 return;
             }
+        }
+        boolean svcDeleted = this.notifyServerEvent(
+                new ServerEvent(serviceEventKey, DiscoverResponse.newBuilder().build(), null));
+        if (!svcDeleted) {
+            this.addUpdateTaskSet();
         }
     }
 
@@ -86,13 +93,19 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                 if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
                     // Get instance information list except polaris.
                     List<DefaultInstance> extendInstanceList = new ArrayList<>();
+                    CompositeRevision compositeRevision = new CompositeRevision();
+                    compositeRevision.setRevision(SERVER_CONNECTOR_GRPC,
+                            discoverResponse.getService().getRevision().getValue());
                     for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
-                            List<DefaultInstance> instanceList = sc.syncGetServiceInstances(this);
-                            if (extendInstanceList.isEmpty()) {
-                                extendInstanceList.addAll(instanceList);
-                            } else {
-                                // TODO 多数据源合并去重
+                        if (!SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+                            ServiceInstancesResponse serviceInstancesResponse = sc.syncGetServiceInstances(this);
+                            if (serviceInstancesResponse != null) {
+                                compositeRevision.setRevision(sc.getName(), serviceInstancesResponse.getRevision());
+                                if (extendInstanceList.isEmpty()) {
+                                    extendInstanceList.addAll(serviceInstancesResponse.getServiceInstanceList());
+                                } else {
+                                    // TODO 多数据源合并去重
+                                }
                             }
                         }
                     }
@@ -119,6 +132,10 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             }
                             newDiscoverResponseBuilder.addInstances(instanceBuilder.build());
                         }
+                        Service.Builder newServiceBuilder = Service.newBuilder()
+                                .mergeFrom(newDiscoverResponseBuilder.getService());
+                        newServiceBuilder.setRevision(StringValue.of(compositeRevision.getCompositeRevisionString()));
+                        newDiscoverResponseBuilder.setService(newServiceBuilder.build());
                     }
                     if (!newDiscoverResponseBuilder.getInstancesList().isEmpty()) {
                         serverEvent.setError(null);
@@ -127,7 +144,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     // Get instance information list except polaris.
                     List<ServiceInfo> extendServiceList = new ArrayList<>();
                     for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                        if (!DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                        if (!SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                             Services services = sc.syncGetServices(this);
                             if (extendServiceList.isEmpty()) {
                                 extendServiceList.addAll(services.getServices());

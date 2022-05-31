@@ -17,13 +17,28 @@
 
 package com.tencent.polaris.factory.config.provider;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RegisterConfig;
+import com.tencent.polaris.factory.util.ConfigUtils;
 
+/**
+ * Implementation of {@link RegisterConfig}.
+ *
+ * @author Haotian Zhang
+ */
 public class RegisterConfigImpl implements RegisterConfig {
 
+    @JsonProperty
     private String namespace;
 
+    @JsonProperty
     private String service;
+
+    @JsonProperty
+    private String serverConnectorId;
+
+    @JsonProperty
+    private Boolean enable;
 
     @Override
     public String getNamespace() {
@@ -44,15 +59,43 @@ public class RegisterConfigImpl implements RegisterConfig {
     }
 
     @Override
+    public String getServerConnectorId() {
+        return serverConnectorId;
+    }
+
+    public void setServerConnectorId(String serverConnectorId) {
+        this.serverConnectorId = serverConnectorId;
+    }
+
+    @Override
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
+    @Override
     public void verify() {
+        ConfigUtils.validateString(serverConnectorId,
+                "register.serverConnectorId or registers[?].serverConnectorId");
+        ConfigUtils.validateNull(enable, "register.enable or registers[?].enable");
     }
 
     @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             RegisterConfig registerConfig = (RegisterConfig) defaultObject;
-            setNamespace(registerConfig.getNamespace());
-            setService(registerConfig.getService());
+            if (null == namespace) {
+                setNamespace(registerConfig.getNamespace());
+            }
+            if (null == service) {
+                setService(registerConfig.getService());
+            }
+            if (null == enable) {
+                setEnable(registerConfig.isEnable());
+            }
         }
     }
 }

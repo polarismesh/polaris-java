@@ -1,0 +1,14 @@
+global:
+  serverConnectors:
+    - protocol: grpc
+      addresses:
+        - 9.134.15.118:8091
+  statReporter:
+    enable: true
+    plugin:
+      prometheus:
+        pushgatewayAddress: 9.134.15.118:9091
+provider:
+  rateLimit:
+    limiterService: polaris.limiter
+    limiterNamespace: Polaris

@@ -101,6 +101,7 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
         }
         ServiceInstances dstInstances = request.getDstInstances();
         RouteInfo routeInfo = new RouteInfo(request.getSourceService(), dstInstances, request.getMethod());
+        routeInfo.setRouterMetadata(request.getRouterMetadata());
         //获取路由规则
         DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
         BaseFlow.buildFlowControlParam(request, config, engineFlowControlParam);

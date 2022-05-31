@@ -20,7 +20,11 @@ package com.tencent.polaris.router.api.rpc;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 路由处理请求
@@ -34,6 +38,9 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
     private ServiceInstances dstInstances;
 
     private String method;
+
+    //各个路由插件依赖的 metadata 参数
+    private Map<String, Map<String, String>> routerMetadata;
 
     public ServiceInfo getSourceService() {
         return sourceService;
@@ -65,6 +72,28 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
     public void setDstInstances(ServiceInstances dstInstances) {
         this.dstInstances = dstInstances;
+    }
+
+    public void putRouterMetadata(String routerType, Map<String, String> metadata) {
+        if (routerMetadata == null) {
+            routerMetadata = new HashMap<>();
+        }
+        routerMetadata.put(routerType, metadata);
+    }
+
+    public Map<String, String> getRouterMetadata(String routerType) {
+        if (routerMetadata == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> metadata = routerMetadata.get(routerType);
+        if (metadata == null || metadata.size() == 0) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(metadata);
+    }
+
+    public Map<String, Map<String, String>> getRouterMetadata() {
+        return routerMetadata;
     }
 
     public static class RouterNamesGroup {

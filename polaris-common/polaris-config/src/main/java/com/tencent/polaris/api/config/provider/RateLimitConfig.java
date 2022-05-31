@@ -19,12 +19,9 @@ package com.tencent.polaris.api.config.provider;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+import java.util.List;
 
 public interface RateLimitConfig extends PluginConfig, Verifier {
-
-    enum Fallback {
-        pass, reject,
-    }
 
     /**
      * 是否开启限流功能
@@ -46,4 +43,43 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
      * @return fallback
      */
     Fallback getFallbackOnExceedWindowCount();
+
+    /**
+     * 获取限流服务端的集群服务信息
+     *
+     * @return 集群服务
+     */
+    String getLimiterService();
+
+    /**
+     * 获取限流服务端的集群命名空间信息
+     *
+     * @return 集群命名空间
+     */
+    String getLimiterNamespace();
+
+    /**
+     * 获取限流服务端的集群地址列表
+     *
+     * @return 集群地址列表
+     */
+    List<String> getLimiterAddresses();
+
+    /**
+     * 获取消息等待最长超时时间
+     *
+     * @return long, 毫秒
+     */
+    long getRemoteSyncTimeoutMilli();
+
+    /**
+     * 获取匀速排队时最大排队时间
+     *
+     * @return long，毫秒
+     */
+    long getMaxQueuingTime();
+
+    enum Fallback {
+        pass, reject,
+    }
 }

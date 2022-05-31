@@ -17,11 +17,17 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
+import com.tencent.polaris.api.pojo.DefaultInstance;
+import com.tencent.polaris.api.pojo.DefaultServiceInstances;
+import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.FlowControlParam;
 import com.tencent.polaris.client.pb.RateLimitProto.Amount;
@@ -32,6 +38,8 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
@@ -88,11 +96,17 @@ public class RateLimitWindow {
     //远程同步的集群名
     private final ServiceKey remoteCluster;
 
+    //限流的服务端地址列表
+    private final ServiceInstances remoteAddresses;
+
     //限流规则
     private final Rule rule;
 
     //限流模式
     private int configMode;
+
+    //限流配置
+    private final RateLimitConfig rateLimitConfig;
 
     /**
      * 构造函数
@@ -101,7 +115,8 @@ public class RateLimitWindow {
      * @param quotaRequest 请求
      * @param labelsStr 标签
      */
-    public RateLimitWindow(RateLimitWindowSet windowSet, CommonQuotaRequest quotaRequest, String labelsStr) {
+    public RateLimitWindow(RateLimitWindowSet windowSet, CommonQuotaRequest quotaRequest, String labelsStr,
+            RateLimitConfig rateLimitConfig) {
         status.set(WindowStatus.CREATED.ordinal());
         InitCriteria initCriteria = quotaRequest.getInitCriteria();
         Rule rule = initCriteria.getRule();
@@ -114,18 +129,46 @@ public class RateLimitWindow {
         this.hashValue = uniqueKey.hashCode();
         this.expireDurationMs = getExpireDurationMs(rule);
         this.syncParam = quotaRequest.getFlowControlParam();
-        RateLimitCluster cluster = rule.getCluster();
-        if (null != cluster && StringUtils.isNotBlank(cluster.getNamespace().getValue()) && StringUtils
-                .isNotBlank(cluster.getService().getValue())) {
-            remoteCluster = new ServiceKey(cluster.getNamespace().getValue(), cluster.getService().getValue());
-        } else {
-            remoteCluster = null;
-        }
+        remoteCluster = getLimiterClusterService(rule.getCluster(), rateLimitConfig);
+        remoteAddresses = buildDefaultInstances(rateLimitConfig.getLimiterAddresses());
         allocatingBucket = getQuotaBucket(initCriteria, windowSet.getRateLimitExtension());
         lastAccessTimeMs.set(System.currentTimeMillis());
-
+        this.rateLimitConfig = rateLimitConfig;
         buildRemoteConfigMode();
     }
+
+    private ServiceInstances buildDefaultInstances(List<String> addresses) {
+        if (CollectionUtils.isEmpty(addresses)) {
+            return null;
+        }
+        List<Instance> instances = new ArrayList<>();
+        for (String address : addresses) {
+            DefaultInstance defaultInstance = new DefaultInstance();
+            defaultInstance.setId(address);
+            String[] tokens = address.split(":");
+            defaultInstance.setHost(tokens[0]);
+            defaultInstance.setPort(Integer.parseInt(tokens[1]));
+            defaultInstance.setHealthy(true);
+            defaultInstance.setWeight(100);
+            instances.add(defaultInstance);
+        }
+        return new DefaultServiceInstances(new ServiceKey("", ""), instances);
+
+
+    }
+
+    private ServiceKey getLimiterClusterService(RateLimitCluster cluster, RateLimitConfig rateLimitConfig) {
+        if (null != cluster && StringUtils.isNotBlank(cluster.getNamespace().getValue()) && StringUtils
+                .isNotBlank(cluster.getService().getValue())) {
+            return new ServiceKey(cluster.getNamespace().getValue(), cluster.getService().getValue());
+        }
+        if (StringUtils.isNotBlank(rateLimitConfig.getLimiterNamespace()) && StringUtils
+                .isNotBlank(rateLimitConfig.getLimiterService())) {
+            return new ServiceKey(rateLimitConfig.getLimiterNamespace(), rateLimitConfig.getLimiterService());
+        }
+        return null;
+    }
+
 
     private void buildRemoteConfigMode() {
         //解析限流集群配置
@@ -133,8 +176,9 @@ public class RateLimitWindow {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
             return;
         }
-        if (StringUtils.isBlank(rule.getNamespace().getValue()) || StringUtils.isBlank(rule.getService().getValue())) {
+        if (null == remoteCluster && null == remoteAddresses) {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
+            LOG.warn("remote limiter service or addresses not configured, degrade to local mode");
             return;
         }
         this.configMode = RateLimitConstants.CONFIG_QUOTA_GLOBAL_MODE;
@@ -157,7 +201,7 @@ public class RateLimitWindow {
     }
 
     private static long getExpireDurationMs(Rule rule) {
-        return getMaxSeconds(rule) + RateLimitConstants.EXPIRE_FACTOR_MS;
+        return getMaxSeconds(rule) * 1000 + RateLimitConstants.EXPIRE_FACTOR_MS;
     }
 
     private static long getMaxSeconds(Rule rule) {
@@ -206,9 +250,6 @@ public class RateLimitWindow {
             }
             status.set(WindowStatus.DELETED.ordinal());
             //从轮询队列中剔除
-            if (null == remoteCluster) {
-                return;
-            }
             windowSet.getRateLimitExtension().stopSyncTask(uniqueKey);
         }
     }
@@ -258,6 +299,10 @@ public class RateLimitWindow {
         return remoteCluster;
     }
 
+    public ServiceInstances getRemoteAddresses() {
+        return remoteAddresses;
+    }
+
     public ServiceKey getSvcKey() {
         return svcKey;
     }
@@ -270,4 +315,7 @@ public class RateLimitWindow {
         return rule;
     }
 
+    public RateLimitConfig getRateLimitConfig() {
+        return rateLimitConfig;
+    }
 }

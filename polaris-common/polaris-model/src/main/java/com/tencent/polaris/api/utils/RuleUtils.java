@@ -18,7 +18,6 @@
 package com.tencent.polaris.api.utils;
 
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 
 public class RuleUtils {
 
@@ -26,11 +25,21 @@ public class RuleUtils {
 
     /**
      * 是否全匹配的规则
+     *
      * @param ruleMetaValue 规则匹配条件
      * @return 是否全匹配，全匹配则忽略该规则
      */
     public static boolean isMatchAllValue(MatchString ruleMetaValue) {
-        return ruleMetaValue.getType() == MatchStringType.REGEX
-                && StringUtils.equals(ruleMetaValue.getValue().getValue(), MATCH_ALL);
+        return StringUtils.equals(ruleMetaValue.getValue().getValue(), MATCH_ALL);
+    }
+
+    /**
+     * 是否全匹配的规则
+     *
+     * @param ruleMetaKey 规则匹配键
+     * @return 是否全匹配，全匹配则忽略该规则
+     */
+    public static boolean isMatchAllValue(String ruleMetaKey) {
+        return StringUtils.equals(ruleMetaKey, MATCH_ALL);
     }
 }

@@ -66,7 +66,7 @@ public class LocalTest {
         ruleBuilder1.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder1.setAmountMode(AmountMode.GLOBAL_TOTAL);
         ruleBuilder1.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(9998).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(2000).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("11111").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());

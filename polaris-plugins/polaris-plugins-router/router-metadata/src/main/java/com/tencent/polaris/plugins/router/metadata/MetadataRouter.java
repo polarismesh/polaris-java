@@ -34,6 +34,7 @@ import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +55,8 @@ import java.util.Map;
  * @date 2021/2/24 下午3:23
  */
 public class MetadataRouter extends AbstractServiceRouter implements PluginConfigProvider {
+
+    public static final String ROUTER_TYPE_METADATA = "metadataRoute";
 
     private static final String KEY_METADATA_FAILOVER_TYPE = "internal-metadata-failover-type";
 
@@ -90,7 +93,7 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
             failOverType = inputToFailoverType.get(metadataFailoverType);
         }
         boolean availableInsFlag;
-        Map<String, String> reqMetadata = routeInfo.getDestService().getMetadata();
+        Map<String, String> reqMetadata = getRouterMetadata(routeInfo);
         List<Instance> instanceList = new ArrayList<>();
         for (Instance ins : instances.getInstances()) {
             availableInsFlag = true;
@@ -172,7 +175,19 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
-        Map<String, String> metadata = routeInfo.getDestService().getMetadata();
+        if (!super.enable(routeInfo, dstSvcInfo)) {
+            return false;
+        }
+        Map<String, String> metadata = getRouterMetadata(routeInfo);
         return !MapUtils.isEmpty(metadata);
+    }
+
+    private Map<String, String> getRouterMetadata(RouteInfo routeInfo) {
+        //兼容从 destService 获取元数据
+        Map<String, String> metadata = routeInfo.getDestService().getMetadata();
+        if (MapUtils.isNotEmpty(metadata)) {
+            return metadata;
+        }
+        return routeInfo.getRouterMetadata(ROUTER_TYPE_METADATA);
     }
 }

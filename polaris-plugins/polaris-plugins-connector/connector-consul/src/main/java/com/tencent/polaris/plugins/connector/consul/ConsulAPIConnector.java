@@ -59,9 +59,9 @@ import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
+import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -91,6 +91,10 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
      */
     private boolean ieRegistered = false;
 
+    private String id;
+    private boolean isRegisterEnable = true;
+    private boolean isDiscoveryEnable = true;
+
     private ConsulClient consulClient;
 
     private ConsulContext consulContext;
@@ -98,6 +102,21 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     @Override
     public String getName() {
         return DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public boolean isRegisterEnable() {
+        return isRegisterEnable;
+    }
+
+    @Override
+    public boolean isDiscoveryEnable() {
+        return isDiscoveryEnable;
     }
 
     @Override
@@ -120,10 +139,18 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     }
 
     private void initActually(InitContext ctx, ServerConnectorConfig connectorConfig) {
+        id = connectorConfig.getId();
+        if (ctx.getConfig().getProvider().getRegisterConfigMap().containsKey(id)) {
+            isRegisterEnable = ctx.getConfig().getProvider().getRegisterConfigMap().get(id).isEnable();
+        }
+        if (ctx.getConfig().getConsumer().getDiscoveryConfigMap().containsKey(id)) {
+            isDiscoveryEnable = ctx.getConfig().getConsumer().getDiscoveryConfigMap().get(id).isEnable();
+        }
+
         String address = connectorConfig.getAddresses().get(0);
-        String[] addressSplit = address.split(":");
-        String agentHost = addressSplit[0];
-        int agentPort = Integer.parseInt(addressSplit[1]);
+        int lastIndex = address.lastIndexOf(":");
+        String agentHost = address.substring(0, lastIndex);
+        int agentPort = Integer.parseInt(address.substring(lastIndex + 1));
         consulClient = new ConsulClient(agentHost, agentPort);
 
         // Init context.
@@ -162,7 +189,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
-        if (!ieRegistered) {
+        if (isRegisterEnable() && !ieRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 LOG.info("Registering service to Consul");
@@ -171,7 +198,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 CommonProviderResponse resp = new CommonProviderResponse();
                 consulContext.setInstanceId(service.getId());
                 resp.setInstanceID(service.getId());
-                resp.setExists(true);
+                resp.setExists(false);
                 LOG.info("Registered service to Consul: " + service);
                 ieRegistered = true;
                 return resp;
@@ -253,7 +280,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public List<DefaultInstance> syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
+    public ServiceInstancesResponse syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
         List<DefaultInstance> instanceList = new ArrayList<>();
         try {
             HealthServicesRequest request = HealthServicesRequest.newBuilder()
@@ -262,7 +289,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             Response<List<HealthService>> response = this.consulClient
                     .getHealthServices(serviceUpdateTask.getServiceEventKey().getService(), request);
             if (response.getValue() == null || response.getValue().isEmpty()) {
-                return Collections.emptyList();
+                return null;
             }
             for (HealthService service : response.getValue()) {
                 DefaultInstance instance = new DefaultInstance();
@@ -272,12 +299,12 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 instance.setPort(service.getService().getPort());
                 instanceList.add(instance);
             }
+            return new ServiceInstancesResponse(String.valueOf(response.getConsulIndex()), instanceList);
         } catch (ConsulException e) {
             throw ServerErrorResponseException.build(ErrorCode.SERVER_USER_ERROR.ordinal(),
                     String.format("Get service instances of %s sync failed.",
                             serviceUpdateTask.getServiceEventKey().getServiceKey()));
         }
-        return instanceList;
     }
 
     @Override

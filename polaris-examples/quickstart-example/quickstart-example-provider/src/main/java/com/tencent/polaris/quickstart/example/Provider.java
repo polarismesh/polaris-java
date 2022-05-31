@@ -26,6 +26,7 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
@@ -62,21 +63,11 @@ public class Provider {
         String service = ECHO_SERVICE_NAME;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
-        server.createContext("/echo", new EchoServerHandler());
+        int localPort = server.getAddress().getPort();
+        server.createContext("/echo", new EchoServerHandler(localPort));
 
         Configuration configuration = ProviderExampleUtils.createConfiguration(initResult.getConfig());
         String localHost = getLocalHost(configuration);
-        int localPort = server.getAddress().getPort();
-
-//        List<ServerConnectorConfigImpl> connectorConfigList = configuration.getGlobal().getServerConnectors();
-//        for (ServerConnectorConfigImpl serverConnectorConfig : connectorConfigList) {
-//            if (DefaultPlugins.SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
-//                Map<String, String> metadata = serverConnectorConfig.getMetadata();
-//                metadata.put(MetadataMapKey.INSTANCE_ID_KEY, "EJ-111");
-//                metadata.put(MetadataMapKey.IP_ADDRESS_KEY, "localhost");
-//                metadata.put(MetadataMapKey.PREFER_IP_ADDRESS_KEY, "true");
-//            }
-//        }
 
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
         HEARTBEAT_EXECUTOR
@@ -144,7 +135,12 @@ public class Provider {
     }
 
     private static String getLocalHost(Configuration configuration) throws Exception {
-        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        String serverAddress;
+        if (CollectionUtils.isNotEmpty(configuration.getGlobal().getServerConnectors())) {
+            serverAddress = configuration.getGlobal().getServerConnectors().get(0).getAddresses().get(0);
+        } else {
+            serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+        }
         String[] tokens = serverAddress.split(":");
         try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
             return socket.getLocalAddress().getHostAddress();
@@ -174,11 +170,17 @@ public class Provider {
 
         @Override
         public void run() {
-            Provider.register(namespace, service, host, port, providerAPI);
-            // register successfully, then start to do heartbeat
-            Provider.HEARTBEAT_EXECUTOR
-                    .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL, TTL,
-                            TimeUnit.SECONDS);
+            try {
+                Provider.register(namespace, service, host, port, providerAPI);
+                // register successfully, then start to do heartbeat
+                Provider.HEARTBEAT_EXECUTOR
+                        .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL,
+                                TTL,
+                                TimeUnit.SECONDS);
+            } catch (Throwable throwable) {
+                System.out.printf(throwable.getMessage());
+            }
+
         }
     }
 
@@ -211,11 +213,17 @@ public class Provider {
 
     private static class EchoServerHandler implements HttpHandler {
 
+        private final int localPort;
+
+        public EchoServerHandler(int localPort) {
+            this.localPort = localPort;
+        }
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             Map<String, String> parameters = splitQuery(exchange.getRequestURI());
             String echoValue = parameters.get("value");
-            String response = "echo: " + echoValue;
+            String response = "echo: " + echoValue + ", from: " + localPort;
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

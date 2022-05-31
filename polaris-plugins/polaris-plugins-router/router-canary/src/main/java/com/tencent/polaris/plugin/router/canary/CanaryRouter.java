@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugin.router.canary;
 
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -72,7 +73,7 @@ public class CanaryRouter extends AbstractServiceRouter {
 
     @Override
     public String getName() {
-        return "canaryRouter";
+        return ServiceRouterConfig.DEFAULT_ROUTER_CANARY;
     }
 
     @Override
@@ -82,6 +83,10 @@ public class CanaryRouter extends AbstractServiceRouter {
 
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
+        if (!super.enable(routeInfo, dstSvcInfo)) {
+            return false;
+        }
+
         if (!dstSvcInfo.getMetadata().containsKey(canaryMetadataEnable)) {
             return false;
         }

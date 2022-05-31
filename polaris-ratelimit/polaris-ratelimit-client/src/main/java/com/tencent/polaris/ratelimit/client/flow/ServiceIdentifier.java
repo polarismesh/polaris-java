@@ -50,4 +50,13 @@ public class ServiceIdentifier {
     public int hashCode() {
         return Objects.hash(service, namespace, labels);
     }
+
+    @Override
+    public String toString() {
+        return "ServiceIdentifier{" +
+                "service='" + service + '\'' +
+                ", namespace='" + namespace + '\'' +
+                ", labels='" + labels + '\'' +
+                '}';
+    }
 }

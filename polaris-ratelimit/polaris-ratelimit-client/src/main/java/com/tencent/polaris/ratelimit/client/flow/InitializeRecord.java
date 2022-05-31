@@ -18,8 +18,11 @@ public class InitializeRecord {
      */
     private final Map<Integer, Integer> durationRecord = Maps.newConcurrentMap();
 
+    private long initStartTimeMilli;
+
     public InitializeRecord(RateLimitWindow rateLimitWindow) {
         this.rateLimitWindow = rateLimitWindow;
+
     }
 
     /**
@@ -33,5 +36,13 @@ public class InitializeRecord {
 
     public RateLimitWindow getRateLimitWindow() {
         return rateLimitWindow;
+    }
+
+    public long getInitStartTimeMilli() {
+        return initStartTimeMilli;
+    }
+
+    public void setInitStartTimeMilli(long initStartTimeMilli) {
+        this.initStartTimeMilli = initStartTimeMilli;
     }
 }

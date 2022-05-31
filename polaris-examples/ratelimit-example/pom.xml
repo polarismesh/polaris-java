@@ -11,9 +11,15 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>ratelimit-example</artifactId>
-
+    <packaging>pom</packaging>
     <name>Polaris Ratelimit Example</name>
     <description>Polaris Ratelimit Example JAR</description>
+    <modules>
+        <module>ratelimit-local-provider</module>
+        <module>ratelimit-local-consumer</module>
+        <module>ratelimit-remote-provider</module>
+        <module>ratelimit-remote-consumer</module>
+    </modules>
 
     <properties>
         <skip.maven.deploy>true</skip.maven.deploy>

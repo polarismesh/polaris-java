@@ -13,7 +13,11 @@
     <artifactId>router-example</artifactId>
     <packaging>pom</packaging>
     <name>Polaris Router Example</name>
-    <description>Polaris Router Example JAR</description>
+    <description>Polaris Router Example POM</description>
+    <modules>
+        <module>router-version-example</module>
+        <module>router-multienv-example</module>
+    </modules>
 
     <properties>
         <skip.maven.deploy>true</skip.maven.deploy>
