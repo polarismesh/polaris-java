@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.api.plugin.server;
 
+import com.tencent.polaris.api.pojo.RegistryCacheValue;
+
 /**
  * 事件回调函数
  *
@@ -38,5 +40,11 @@ public interface EventHandler {
      * @return 版本号
      */
     String getRevision();
+
+    /**
+     * 获取当前资源的本地缓存
+     * @return
+     */
+    RegistryCacheValue getValue();
 
 }
