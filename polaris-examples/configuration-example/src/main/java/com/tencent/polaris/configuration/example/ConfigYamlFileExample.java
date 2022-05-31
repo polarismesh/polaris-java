@@ -7,10 +7,8 @@ import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeEvent;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeListener;
 import com.tencent.polaris.configuration.api.core.ConfigPropertyChangeInfo;
-import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 
 /**
@@ -20,14 +18,16 @@ import java.io.InputStreamReader;
  */
 public class ConfigYamlFileExample {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
+        Utils.InitResult initResult = Utils.initConfiguration(args);
+
         String namespace = "dev";
         String fileGroup = "myGroup";
         //文件名通过 / 分割在管控端按目录格式展示
         String fileName = "root/bootstrap.yaml";
 
         //创建配置中心服务类，一般情况下只需要单例对象
-        ConfigFileService configFileService = ConfigFileServiceFactory.createConfigFileService();
+        ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
 
         //获取 yaml 格式配置文件对象，这里是唯一跟 properties 格式区别的地方
         ConfigKVFile configFile = configFileService.getConfigYamlFile(namespace, fileGroup, fileName);
