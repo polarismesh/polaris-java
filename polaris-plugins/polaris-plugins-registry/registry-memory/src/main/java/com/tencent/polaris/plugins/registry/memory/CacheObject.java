@@ -242,7 +242,6 @@ public class CacheObject implements EventHandler {
     }
 
     private boolean setValue(RegistryCacheValue registryCacheValue, Optional<String> revision) {
-        value.set(registryCacheValue);
         if (revision.isPresent()) {
             originRevision.set(revision.get());
             LOG.info("CacheObject: value for {} is updated, revision {}, originRevision: {}",
@@ -255,6 +254,7 @@ public class CacheObject implements EventHandler {
                     registryCacheValue.getRevision(), registry.isPushEmptyProtection());
             return false;
         }
+        value.set(registryCacheValue);
         LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
         return true;
     }
