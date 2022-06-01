@@ -24,6 +24,7 @@ import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
@@ -34,6 +35,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
+import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
@@ -91,6 +93,18 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                         .mergeFrom(discoverResponse);
                 CompositeConnector connector = (CompositeConnector) serverConnector;
                 if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
+                    // 由于合并多个发现结果会修改版本号，所以将 polaris 的版本号保存一份
+                    serverEvent.setPolarisRevision(discoverResponse.getService().getRevision().getValue());
+                    if (discoverResponse.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
+                        // 将 NO_CHANGE 响应转为 SUCCESS 响应，用于多个发现结果的合并
+                        newDiscoverResponseBuilder.setCode(UInt32Value.newBuilder().setValue(ServerCodes.EXECUTE_SUCCESS).build());
+                        Object value = getEventHandler().getValue();
+                        if (value != null) {
+                            // Add local cache in NO_CHANGE
+                            ServiceInstancesByProto cacheValue = (ServiceInstancesByProto) value;
+                            newDiscoverResponseBuilder.addAllInstances(cacheValue.getOriginInstancesList());
+                        }
+                    }
                     // Get instance information list except polaris.
                     List<DefaultInstance> extendInstanceList = new ArrayList<>();
                     CompositeRevision compositeRevision = new CompositeRevision();

@@ -138,6 +138,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         ServiceProto.Service.Builder builder = ServiceProto.Service.newBuilder();
         builder.setName(StringValue.newBuilder().setValue(serviceEventKey.getServiceKey().getService()).build());
         builder.setNamespace(StringValue.newBuilder().setValue(serviceEventKey.getServiceKey().getNamespace()).build());
+        builder.setRevision(StringValue.newBuilder().setValue(serviceUpdateTask.getEventHandler().getRevision()).build());
 
         RequestProto.DiscoverRequest.Builder req = RequestProto.DiscoverRequest.newBuilder();
         req.setType(GrpcUtil.buildDiscoverRequestType(serviceEventKey.getEventType())); // switch
@@ -250,7 +251,9 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             LOG.debug("[ServerConnector]receive response for {}", serviceEventKey);
         }
         PolarisException error;
-        if (!response.hasCode() || response.getCode().getValue() == ServerCodes.EXECUTE_SUCCESS) {
+        if (!response.hasCode() ||
+                response.getCode().getValue() == ServerCodes.EXECUTE_SUCCESS ||
+                response.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
             error = null;
         } else {
             int respCode = response.getCode().getValue();
