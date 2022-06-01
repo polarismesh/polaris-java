@@ -107,7 +107,7 @@ consumer:
     #描述: 缓存读写磁盘的重试间隔
     persistRetryInterval: 500ms
     #描述：服务保护推空开关
-    pushEmptyProtection: false
+    pushEmptyProtection: true
   #描述: 服务路由相关配置
   serviceRouter:
     #描述: 前置路由链

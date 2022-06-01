@@ -240,9 +240,8 @@ public class CacheObject implements EventHandler {
 
     private boolean setValue(RegistryCacheValue registryCacheValue) {
         boolean canset = true;
-        ServiceInstancesByProto instances = (ServiceInstancesByProto) registryCacheValue;
         if(svcEventKey.getEventType() == EventType.INSTANCE && registry.isPushEmptyProtection()) {
-            canset = !(instances.getInstances().size() == 0);
+            canset = !(((ServiceInstancesByProto)registryCacheValue).getInstances().size() == 0);
         }
 
         if(!canset) {

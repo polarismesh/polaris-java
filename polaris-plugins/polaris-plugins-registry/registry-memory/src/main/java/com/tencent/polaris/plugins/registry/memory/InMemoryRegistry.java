@@ -433,7 +433,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         long retryIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getPersistRetryInterval();
         this.serviceRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceRefreshInterval();
         this.serviceListRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceListRefreshInterval();
-        this.pushEmptyProtection = ctx.getConfig().getConsumer().getLocalCache().isServicePushEmptyProtectEnable();
+        this.pushEmptyProtection = ctx.getConfig().getConsumer().getLocalCache().isServicePushEmptyProtect();
         boolean configPersistEnable = ctx.getConfig().getConsumer().getLocalCache().isPersistEnable();
         persistEnable = configPersistEnable && StringUtils.isNotBlank(persistDir);
         //启动本地缓存

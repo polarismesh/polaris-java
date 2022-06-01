@@ -37,7 +37,7 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     private Boolean serviceExpireEnable;
 
     @JsonProperty
-    private Boolean servicePushEmptyProtectEnable;
+    private Boolean servicePushEmptyProtect;
 
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
@@ -137,15 +137,15 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     }
 
     @Override
-    public boolean isServicePushEmptyProtectEnable() {
-        if(null == servicePushEmptyProtectEnable) {
+    public boolean isServicePushEmptyProtect() {
+        if(null == servicePushEmptyProtect) {
             return false;
         }
-        return servicePushEmptyProtectEnable;
+        return servicePushEmptyProtect;
     }
 
-    public void setServicePushEmptyProtectEnable(Boolean servicePushEmptyProtectEnable) {
-        this.servicePushEmptyProtectEnable = servicePushEmptyProtectEnable;
+    public void setServicePushEmptyProtectEnable(Boolean servicePushEmptyProtect) {
+        this.servicePushEmptyProtect = servicePushEmptyProtect;
     }
 
     @Override
@@ -196,7 +196,7 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     @Override
     public void verify() {
         ConfigUtils.validateNull(serviceExpireEnable, "localCache.serviceExpireEnable");
-        ConfigUtils.validateNull(servicePushEmptyProtectEnable, "localCache.servicePushEmptyProtectEnable");
+        ConfigUtils.validateNull(servicePushEmptyProtect, "localCache.servicePushEmptyProtect");
         ConfigUtils.validateIntervalWithMin(serviceExpireTime, DefaultValues.MIN_SERVICE_EXPIRE_TIME_MS,
                 "localCache.serviceExpireTime");
         ConfigUtils.validateIntervalWithMin(serviceRefreshInterval, DefaultValues.MIN_SERVICE_REFRESH_INTERVAL_MS,
@@ -247,8 +247,8 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
             if (null == persistRetryInterval) {
                 setPersistRetryInterval(localCacheConfig.getPersistRetryInterval());
             }
-            if (null == servicePushEmptyProtectEnable) {
-                setServicePushEmptyProtectEnable(localCacheConfig.isServicePushEmptyProtectEnable());
+            if (null == servicePushEmptyProtect) {
+                setServicePushEmptyProtectEnable(localCacheConfig.isServicePushEmptyProtect());
             }
             setDefaultPluginConfig(localCacheConfig);
         }
@@ -267,7 +267,7 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
                 ", persistMaxWriteRetry=" + persistMaxWriteRetry +
                 ", persistMaxReadRetry=" + persistMaxReadRetry +
                 ", persistRetryInterval=" + persistRetryInterval +
-                ", servicePushEmptyProtectEnable=" + servicePushEmptyProtectEnable +
+                ", servicePushEmptyProtect=" + servicePushEmptyProtect +
                 "} " + super.toString();
     }
 }
