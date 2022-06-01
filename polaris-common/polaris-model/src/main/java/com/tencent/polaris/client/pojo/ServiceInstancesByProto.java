@@ -47,6 +47,8 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     private final List<Instance> instances;
 
+    private final List<ServiceProto.Instance> originInstancesList;
+
     private final Map<String, InstanceByProto> instanceIdMap;
 
     private final Map<Node, InstanceByProto> nodeMap;
@@ -74,10 +76,12 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         List<Instance> tmpInstances = new ArrayList<>();
         Map<String, InstanceByProto> tmpInstanceMap = new HashMap<>();
         Map<Node, InstanceByProto> tmpNodeMap = new HashMap<>();
+        List<ServiceProto.Instance> tmpOriginInstances = new ArrayList<>();
         int totalWeight = 0;
         ServiceKey svcKey = new ServiceKey(this.service.getNamespace().getValue(), this.service.getName().getValue());
         // TODO 需要判断不同来源的实例列表覆盖情况
         if (CollectionUtils.isNotEmpty(response.getInstancesList())) {
+            tmpOriginInstances.addAll(response.getInstancesList());
             for (ServiceProto.Instance instance : response.getInstancesList()) {
                 String instID = instance.getId().getValue();
                 InstanceLocalValue instanceLocalValue = null;
@@ -104,6 +108,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.instanceIdMap = Collections.unmodifiableMap(tmpInstanceMap);
         this.nodeMap = Collections.unmodifiableMap(tmpNodeMap);
         this.instances = Collections.unmodifiableList(tmpInstances);
+        this.originInstancesList = Collections.unmodifiableList(tmpOriginInstances);
         this.totalWeight = totalWeight;
         this.initialized = true;
         this.metadata = Collections.unmodifiableMap(this.service.getMetadataMap());
@@ -118,6 +123,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.svcKey = null;
         this.initialized = false;
         this.instances = Collections.emptyList();
+        this.originInstancesList = Collections.emptyList();
         this.instanceIdMap = Collections.emptyMap();
         this.nodeMap = Collections.emptyMap();
         this.metadata = Collections.emptyMap();
@@ -197,6 +203,10 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     public InstanceByProto getInstanceByNode(Node node) {
         return nodeMap.get(node);
+    }
+
+    public List<ServiceProto.Instance> getOriginInstancesList() {
+        return originInstancesList;
     }
 
     @Override
