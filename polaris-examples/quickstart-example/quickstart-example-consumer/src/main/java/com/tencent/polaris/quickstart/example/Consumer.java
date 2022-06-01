@@ -20,6 +20,7 @@ package com.tencent.polaris.quickstart.example;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -28,6 +29,8 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.logging.LoggingConsts;
+import com.tencent.polaris.quickstart.example.utils.ConsumerExampleUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -52,9 +55,10 @@ public class Consumer {
     private static final String PATH = "/echo";
 
     public static void main(String[] args) throws Exception {
+        ConsumerExampleUtils.InitResult initResult = ConsumerExampleUtils.initConsumerConfiguration(args);
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
-        ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPI();
+        ConsumerAPI consumerAPI = ConsumerExampleUtils.createConsumerAPI(initResult.getConfig());
 
         server.createContext(PATH, new EchoClientHandler(NAMESPACE_DEFAULT, ECHO_SERVICE_NAME, consumerAPI));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
