@@ -242,28 +242,21 @@ public class CacheObject implements EventHandler {
     }
 
     private boolean setValue(RegistryCacheValue registryCacheValue, Optional<String> revision) {
-        boolean canset = true;
-        if(svcEventKey.getEventType() == EventType.INSTANCE && registry.isPushEmptyProtection()) {
-            canset = !(((ServiceInstancesByProto)registryCacheValue).getInstances().size() == 0);
-        }
-
-        if(!canset) {
-            LOG.warn("CacheObject: value for {} is not updated, revision {}, pushEmptyProtection {}", svcEventKey,
-                    registryCacheValue.getRevision(), registry.isPushEmptyProtection());
-            return false;
-        }
         value.set(registryCacheValue);
         if (revision.isPresent()) {
             originRevision.set(revision.get());
             LOG.info("CacheObject: value for {} is updated, revision {}, originRevision: {}",
                     svcEventKey, registryCacheValue.getRevision(), revision.get());
-        } else {
-            LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
+        }
+        boolean canset = svcEventKey.getEventType() == EventType.INSTANCE && registry.isPushEmptyProtection()
+                            && CollectionUtils.isNotEmpty(((ServiceInstancesByProto)registryCacheValue).getInstances());
+        if(!canset) {
+            LOG.warn("CacheObject: value for {} is not updated, revision {}, pushEmptyProtection {}", svcEventKey,
+                    registryCacheValue.getRevision(), registry.isPushEmptyProtection());
+            return false;
         }
         LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
         return true;
-    }
-
     }
 
     //发起注册，只要一个能够发起成功
