@@ -6,10 +6,8 @@ import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeEvent;
 import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeListener;
 import com.tencent.polaris.configuration.api.core.ConfigPropertyChangeInfo;
-import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import org.slf4j.Logger;
 
@@ -22,13 +20,14 @@ public class ConfigPropertiesFileExample {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigPropertiesFileExample.class);
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
+        Utils.InitResult initResult = Utils.initConfiguration(args);
         String namespace = "dev";
         String fileGroup = "myGroup";
         String fileName = "application.properties";
 
         //创建配置中心服务类，一般情况下只需要单例对象
-        ConfigFileService configFileService = ConfigFileServiceFactory.createConfigFileService();
+        ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
 
         //获取 properties 格式配置文件对象
         ConfigKVFile configFile = configFileService.getConfigPropertiesFile(namespace, fileGroup, fileName);

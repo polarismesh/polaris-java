@@ -37,6 +37,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +58,8 @@ public class CacheObject implements EventHandler {
     private static final Logger LOG = LoggerFactory.getLogger(CacheObject.class);
 
     private final AtomicReference<RegistryCacheValue> value = new AtomicReference<>();
+
+    private final AtomicReference<String> originRevision = new AtomicReference<>();
 
     private final ServiceEventKey svcEventKey;
 
@@ -215,7 +218,7 @@ public class CacheObject implements EventHandler {
                 LOG.info("OnServiceUpdate: cache {} is pending to update", svcEventKey);
                 this.registry.saveMessageToFile(serviceEventKey, (Message) message);
                 RegistryCacheValue newCachedValue = cacheHandler.messageToCacheValue(cachedValue, message, false);
-                if (setValue(newCachedValue) && cachedStatus == CachedStatus.CacheChanged) {
+                if (setValue(newCachedValue, event.getPolarisRevision()) && cachedStatus == CachedStatus.CacheChanged) {
                     for (ResourceEventListener listener : resourceEventListeners) {
                         listener.onResourceUpdated(svcEventKey, cachedValue, newCachedValue);
                     }
@@ -238,7 +241,7 @@ public class CacheObject implements EventHandler {
         return svcDeleted;
     }
 
-    private boolean setValue(RegistryCacheValue registryCacheValue) {
+    private boolean setValue(RegistryCacheValue registryCacheValue, Optional<String> revision) {
         boolean canset = true;
         if(svcEventKey.getEventType() == EventType.INSTANCE && registry.isPushEmptyProtection()) {
             canset = !(((ServiceInstancesByProto)registryCacheValue).getInstances().size() == 0);
@@ -250,8 +253,17 @@ public class CacheObject implements EventHandler {
             return false;
         }
         value.set(registryCacheValue);
+        if (revision.isPresent()) {
+            originRevision.set(revision.get());
+            LOG.info("CacheObject: value for {} is updated, revision {}, originRevision: {}",
+                    svcEventKey, registryCacheValue.getRevision(), revision.get());
+        } else {
+            LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
+        }
         LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
         return true;
+    }
+
     }
 
     //发起注册，只要一个能够发起成功
@@ -310,5 +322,24 @@ public class CacheObject implements EventHandler {
      */
     public ServiceEventKey getServiceEventKey() {
         return svcEventKey;
+    }
+
+    @Override
+    public String getRevision() {
+        String revision = originRevision.get();
+        if (revision != null) {
+            return revision;
+        }
+
+        RegistryCacheValue registryCacheValue = getValue();
+        if (null == registryCacheValue) {
+            return "";
+        }
+        return registryCacheValue.getRevision();
+    }
+
+    @Override
+    public RegistryCacheValue getValue() {
+        return value.get();
     }
 }
