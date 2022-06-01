@@ -256,7 +256,7 @@ public class CacheObject implements EventHandler {
         }
         value.set(registryCacheValue);
         LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, revision.isPresent() ?
-                revision : registryCacheValue.getRevision());
+                originRevision : registryCacheValue.getRevision());
         return true;
     }
 
