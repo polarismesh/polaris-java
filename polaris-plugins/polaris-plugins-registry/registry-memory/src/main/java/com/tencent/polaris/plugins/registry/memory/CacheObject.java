@@ -247,9 +247,16 @@ public class CacheObject implements EventHandler {
             LOG.info("CacheObject: value for {} is updated, revision {}, originRevision: {}",
                     svcEventKey, registryCacheValue.getRevision(), revision.get());
         }
-        boolean canset = svcEventKey.getEventType() == EventType.INSTANCE && registry.isPushEmptyProtection()
-                            && CollectionUtils.isNotEmpty(((ServiceInstancesByProto)registryCacheValue).getInstances());
-        if(!canset) {
+
+        boolean canset = true;
+
+        if (svcEventKey.getEventType() == EventType.INSTANCE &&
+                CollectionUtils.isEmpty(((ServiceInstancesByProto) registryCacheValue).getInstances()) &&
+                registry.isPushEmptyProtection()) {
+            canset = false;
+        }
+
+        if (!canset) {
             LOG.warn("CacheObject: value for {} is not updated, revision {}, pushEmptyProtection {}", svcEventKey,
                     registryCacheValue.getRevision(), registry.isPushEmptyProtection());
             return false;
