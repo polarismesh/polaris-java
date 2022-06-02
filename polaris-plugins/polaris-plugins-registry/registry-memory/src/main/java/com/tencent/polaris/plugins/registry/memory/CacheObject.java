@@ -218,8 +218,7 @@ public class CacheObject implements EventHandler {
                 LOG.info("OnServiceUpdate: cache {} is pending to update", svcEventKey);
                 this.registry.saveMessageToFile(serviceEventKey, (Message) message);
                 RegistryCacheValue newCachedValue = cacheHandler.messageToCacheValue(cachedValue, message, false);
-                setValue(newCachedValue, event.getPolarisRevision());
-                if (cachedStatus == CachedStatus.CacheChanged) {
+                if (setValue(newCachedValue, event.getPolarisRevision()) && cachedStatus == CachedStatus.CacheChanged) {
                     for (ResourceEventListener listener : resourceEventListeners) {
                         listener.onResourceUpdated(svcEventKey, cachedValue, newCachedValue);
                     }
@@ -242,16 +241,30 @@ public class CacheObject implements EventHandler {
         return svcDeleted;
     }
 
-    private void setValue(RegistryCacheValue registryCacheValue, Optional<String> revision) {
-        value.set(registryCacheValue);
+    private boolean setValue(RegistryCacheValue registryCacheValue, Optional<String> revision) {
         if (revision.isPresent()) {
             originRevision.set(revision.get());
             LOG.info("CacheObject: value for {} is updated, revision {}, originRevision: {}",
                     svcEventKey, registryCacheValue.getRevision(), revision.get());
-        } else {
-            LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, registryCacheValue.getRevision());
         }
 
+        boolean canset = true;
+
+        if (svcEventKey.getEventType() == EventType.INSTANCE &&
+                CollectionUtils.isEmpty(((ServiceInstancesByProto) registryCacheValue).getInstances()) &&
+                registry.isPushEmptyProtection()) {
+            canset = false;
+        }
+
+        if (!canset) {
+            LOG.warn("CacheObject: value for {} is not updated, revision {}, pushEmptyProtection {}", svcEventKey,
+                    registryCacheValue.getRevision(), registry.isPushEmptyProtection());
+            return false;
+        }
+        value.set(registryCacheValue);
+        LOG.info("CacheObject: value for {} is updated, revision {}", svcEventKey, revision.isPresent() ?
+                originRevision : registryCacheValue.getRevision());
+        return true;
     }
 
     //发起注册，只要一个能够发起成功

@@ -37,6 +37,9 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     private Boolean serviceExpireEnable;
 
     @JsonProperty
+    private Boolean servicePushEmptyProtect;
+
+    @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long serviceExpireTime;
 
@@ -134,6 +137,18 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     }
 
     @Override
+    public boolean isServicePushEmptyProtect() {
+        if(null == servicePushEmptyProtect) {
+            return false;
+        }
+        return servicePushEmptyProtect;
+    }
+
+    public void setServicePushEmptyProtectEnable(Boolean servicePushEmptyProtect) {
+        this.servicePushEmptyProtect = servicePushEmptyProtect;
+    }
+
+    @Override
     public long getServiceExpireTime() {
         if (null == serviceExpireTime) {
             return 0;
@@ -181,6 +196,7 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
     @Override
     public void verify() {
         ConfigUtils.validateNull(serviceExpireEnable, "localCache.serviceExpireEnable");
+        ConfigUtils.validateNull(servicePushEmptyProtect, "localCache.servicePushEmptyProtect");
         ConfigUtils.validateIntervalWithMin(serviceExpireTime, DefaultValues.MIN_SERVICE_EXPIRE_TIME_MS,
                 "localCache.serviceExpireTime");
         ConfigUtils.validateIntervalWithMin(serviceRefreshInterval, DefaultValues.MIN_SERVICE_REFRESH_INTERVAL_MS,
@@ -231,6 +247,9 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
             if (null == persistRetryInterval) {
                 setPersistRetryInterval(localCacheConfig.getPersistRetryInterval());
             }
+            if (null == servicePushEmptyProtect) {
+                setServicePushEmptyProtectEnable(localCacheConfig.isServicePushEmptyProtect());
+            }
             setDefaultPluginConfig(localCacheConfig);
         }
     }
@@ -248,6 +267,7 @@ public class LocalCacheConfigImpl extends PluginConfigImpl implements LocalCache
                 ", persistMaxWriteRetry=" + persistMaxWriteRetry +
                 ", persistMaxReadRetry=" + persistMaxReadRetry +
                 ", persistRetryInterval=" + persistRetryInterval +
+                ", servicePushEmptyProtect=" + servicePushEmptyProtect +
                 "} " + super.toString();
     }
 }
