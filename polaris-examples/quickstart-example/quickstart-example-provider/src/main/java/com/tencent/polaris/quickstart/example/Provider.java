@@ -27,7 +27,6 @@ import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
 
