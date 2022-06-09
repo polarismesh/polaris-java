@@ -169,7 +169,7 @@ public class DiscoveryAPIFactory {
      * @return ProviderAPI对象
      */
     public static ProviderAPI createProviderAPIByAddress(String... addresses) {
-        return createProviderAPIByAddress(Arrays.asList(addresses));
+        return createProviderAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addresses));
     }
 
     /**
@@ -179,11 +179,7 @@ public class DiscoveryAPIFactory {
      * @return ProviderAPI对象
      */
     public static ProviderAPI createProviderAPIByAddress(List<String> addressList) {
-        ConfigurationImpl configuration = new ConfigurationImpl("");
-        GlobalConfigImpl globalConfig = configuration.getGlobal();
-        ServerConnectorConfigImpl serverConnector = globalConfig.getServerConnector();
-        serverConnector.setAddresses(addressList);
-        return createProviderAPIByConfig(configuration);
+        return createProviderAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addressList));
     }
 
 }
