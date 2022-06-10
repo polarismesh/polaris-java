@@ -138,7 +138,7 @@ public class ConfigAPIFactory {
      * @return 配置
      */
     public static Configuration createConfigurationByAddress(List<String> addressList) {
-        ConfigurationImpl configuration = new ConfigurationImpl("");
+        ConfigurationImpl configuration = (ConfigurationImpl) defaultConfig();
         GlobalConfigImpl globalConfig = configuration.getGlobal();
         ServerConnectorConfigImpl serverConnector = globalConfig.getServerConnector();
         serverConnector.setAddresses(addressList);
