@@ -138,7 +138,6 @@
             <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
         </module>
         <module name="AnnotationLocation">
-            <property name="tokens" value="PARAMETER_DEF"/>
             <property name="allowSamelineMultipleAnnotations" value="true"/>
         </module>
         <module name="AnnotationOnSameLine">
