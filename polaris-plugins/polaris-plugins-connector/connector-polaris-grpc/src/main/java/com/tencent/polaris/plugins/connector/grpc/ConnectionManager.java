@@ -240,7 +240,11 @@ public class ConnectionManager extends Destroyable {
         public void run() {
             ServerAddressList serverAddressList = serverAddresses.get(connID.getClusterType());
             if (null != serverAddressList) {
-                serverAddressList.switchClientOnFail(connID);
+                try {
+                    serverAddressList.switchClientOnFail(connID);
+                } catch (PolarisException e) {
+                    LOG.error("switch client on fail for {}, e:{}", connID, e);
+                }
             }
         }
     }
@@ -254,8 +258,12 @@ public class ConnectionManager extends Destroyable {
                 if (clusterType == ClusterType.BUILTIN_CLUSTER) {
                     continue;
                 }
-                ServerAddressList serverAddressList = entry.getValue();
-                serverAddressList.switchClient();
+                try {
+                    ServerAddressList serverAddressList = entry.getValue();
+                    serverAddressList.switchClient();
+                } catch (PolarisException e) {
+                    LOG.error("switch client for {}, e:{}", clusterType, e);
+                }
             }
         }
     }

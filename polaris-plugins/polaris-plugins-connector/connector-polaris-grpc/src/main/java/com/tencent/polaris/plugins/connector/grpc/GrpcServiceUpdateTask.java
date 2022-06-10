@@ -47,50 +47,54 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
     }
 
     public void execute(ServiceUpdateTask serviceUpdateTask) {
-        if (serviceUpdateTask.getTaskType() == Type.FIRST) {
-            LOG.info("[ServerConnector]start to run first task {}", serviceUpdateTask);
-        } else {
-            LOG.debug("[ServerConnector]start to run task {}", serviceUpdateTask);
-        }
-        GrpcConnector grpcConnector = (GrpcConnector) serverConnector;
-        ConnectionManager connectionManager = grpcConnector.getConnectionManager();
-        ClusterType clusterType = targetClusterType.get();
-        boolean clusterReady = connectionManager.checkReady(clusterType);
-        if (!clusterReady) {
-            //没有ready，就重试
-            LOG.info("{} service is not ready", clusterType);
-            grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
-            return;
-        }
-        if (grpcConnector.isDestroyed()) {
-            LOG.info("{} grpc connection is destroyed", clusterType);
-            grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
-            return;
-        }
-        AtomicReference<SpecStreamClient> streamClientAtomicReference = grpcConnector.getStreamClient(clusterType);
-        SpecStreamClient specStreamClient = streamClientAtomicReference.get();
-        boolean available = checkStreamClientAvailable(specStreamClient, serviceUpdateTask);
-        if (!available) {
-            LOG.debug("[ServerConnector]start to get connection for task {}", serviceUpdateTask);
-            Connection connection = null;
-            try {
-                connection = connectionManager.getConnection(GrpcUtil.OP_KEY_DISCOVER, clusterType);
-            } catch (PolarisException e) {
-                LOG.error("[ServerConnector]fail to get connection to {}", clusterType, e);
+        try {
+            if (serviceUpdateTask.getTaskType() == Type.FIRST) {
+                LOG.info("[ServerConnector]start to run first task {}", serviceUpdateTask);
+            } else {
+                LOG.debug("[ServerConnector]start to run task {}", serviceUpdateTask);
             }
-            if (null == connection) {
-                LOG.error("[ServerConnector]get null connection for {}", serviceUpdateTask);
+            GrpcConnector grpcConnector = (GrpcConnector) serverConnector;
+            ConnectionManager connectionManager = grpcConnector.getConnectionManager();
+            ClusterType clusterType = targetClusterType.get();
+            boolean clusterReady = connectionManager.checkReady(clusterType);
+            if (!clusterReady) {
+                //没有ready，就重试
+                LOG.info("{} service is not ready", clusterType);
                 grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
                 return;
             }
-            specStreamClient = new SpecStreamClient(connection, grpcConnector.getConnectionIdleTimeoutMs(),
-                    serviceUpdateTask);
-            streamClientAtomicReference.set(specStreamClient);
-            LOG.info("[ServerConnector]success to create stream client for task {}", serviceUpdateTask);
+            if (grpcConnector.isDestroyed()) {
+                LOG.info("{} grpc connection is destroyed", clusterType);
+                grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
+                return;
+            }
+            AtomicReference<SpecStreamClient> streamClientAtomicReference = grpcConnector.getStreamClient(clusterType);
+            SpecStreamClient specStreamClient = streamClientAtomicReference.get();
+            boolean available = checkStreamClientAvailable(specStreamClient, serviceUpdateTask);
+            if (!available) {
+                LOG.debug("[ServerConnector]start to get connection for task {}", serviceUpdateTask);
+                Connection connection = null;
+                try {
+                    connection = connectionManager.getConnection(GrpcUtil.OP_KEY_DISCOVER, clusterType);
+                } catch (PolarisException e) {
+                    LOG.error("[ServerConnector]fail to get connection to {}", clusterType, e);
+                }
+                if (null == connection) {
+                    LOG.error("[ServerConnector]get null connection for {}", serviceUpdateTask);
+                    grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
+                    return;
+                }
+                specStreamClient = new SpecStreamClient(connection, grpcConnector.getConnectionIdleTimeoutMs(),
+                        serviceUpdateTask);
+                streamClientAtomicReference.set(specStreamClient);
+                LOG.info("[ServerConnector]success to create stream client for task {}", serviceUpdateTask);
+            }
+            msgSendTime.set(System.currentTimeMillis());
+            totalRequests.addAndGet(1);
+            specStreamClient.sendRequest(serviceUpdateTask);
+        } catch (Exception e) {
+            LOG.error("[ServerConnector]fail to run discover task {}", this, e);
         }
-        msgSendTime.set(System.currentTimeMillis());
-        totalRequests.addAndGet(1);
-        specStreamClient.sendRequest(serviceUpdateTask);
     }
 
     @Override
