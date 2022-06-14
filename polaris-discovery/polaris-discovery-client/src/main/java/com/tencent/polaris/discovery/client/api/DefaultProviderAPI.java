@@ -13,8 +13,10 @@ import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.util.LocationUtils;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.discovery.client.util.Validator;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -51,6 +53,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     @Override
     public InstanceRegisterResponse register(InstanceRegisterRequest req) throws PolarisException {
         checkAvailable("ProviderAPI");
+        enrichLocationInfo(req);
         Validator.validateInstanceRegisterRequest(req);
         long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
         long timeout = getTimeout(req);
@@ -151,5 +154,17 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
             }
         }
         throw new PolarisException(ErrorCode.API_TIMEOUT, "heartbeat request timeout.");
+    }
+
+    private void enrichLocationInfo(InstanceRegisterRequest req) {
+        if (StringUtils.isBlank(req.getRequest().getRegion()) && StringUtils.isNotBlank(LocationUtils.getRegion())) {
+            req.setRegion(LocationUtils.getRegion());
+        }
+        if (StringUtils.isBlank(req.getRequest().getZone()) && StringUtils.isNotBlank(LocationUtils.getZone())) {
+            req.setRegion(LocationUtils.getZone());
+        }
+        if (StringUtils.isBlank(req.getRequest().getCampus()) && StringUtils.isNotBlank(LocationUtils.getCampus())) {
+            req.setRegion(LocationUtils.getCampus());
+        }
     }
 }

@@ -21,6 +21,8 @@ package com.tencent.polaris.api.plugin.server;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 
+import java.util.Optional;
+
 /**
  * 服务变更事件
  *
@@ -40,6 +42,13 @@ public class ServerEvent {
      * 获取泛型的值
      */
     private Object value;
+    /**
+     * Polaris的版本号
+     *
+     * 如果修改了value中的版本号，那么将原来Polaris的版本号保存在这里,
+     * 主要用于 CompositeServiceUpdateTask。
+     */
+    private Optional<String> polarisRevision = Optional.empty();
 
     public ServerEvent(ServiceEventKey serviceEventKey, Object value, PolarisException error) {
         this.serviceEventKey = serviceEventKey;
@@ -53,6 +62,14 @@ public class ServerEvent {
 
     public Object getValue() {
         return value;
+    }
+
+    public Optional<String> getPolarisRevision() {
+        return polarisRevision;
+    }
+
+    public void setPolarisRevision(String revision) {
+        polarisRevision = Optional.ofNullable(revision);
     }
 
     public void setValue(Object value) {

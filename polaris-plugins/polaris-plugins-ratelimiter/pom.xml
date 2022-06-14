@@ -18,6 +18,7 @@
     <modules>
         <module>ratelimiter-common</module>
         <module>ratelimiter-reject</module>
+        <module>ratelimiter-unirate</module>
     </modules>
 
     <dependencies>

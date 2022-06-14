@@ -23,10 +23,6 @@ import java.util.List;
 
 public interface RateLimitConfig extends PluginConfig, Verifier {
 
-    enum Fallback {
-        pass, reject,
-    }
-
     /**
      * 是否开启限流功能
      *
@@ -75,4 +71,15 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
      * @return long, 毫秒
      */
     long getRemoteSyncTimeoutMilli();
+
+    /**
+     * 获取匀速排队时最大排队时间
+     *
+     * @return long，毫秒
+     */
+    long getMaxQueuingTime();
+
+    enum Fallback {
+        pass, reject,
+    }
 }

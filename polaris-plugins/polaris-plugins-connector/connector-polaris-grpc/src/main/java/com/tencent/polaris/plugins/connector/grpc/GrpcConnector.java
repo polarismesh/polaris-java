@@ -42,10 +42,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
-import com.tencent.polaris.client.pb.ClientProto;
-import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
-import com.tencent.polaris.client.pb.ResponseProto;
-import com.tencent.polaris.client.pb.ServiceProto;
+import com.tencent.polaris.client.pb.*;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
@@ -53,6 +50,8 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
+import org.slf4j.Logger;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -63,7 +62,6 @@ import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
 
 /**
  * An implement of {@link ServerConnector} to connect to Polaris server.
@@ -274,6 +272,20 @@ public class GrpcConnector extends DestroyableServerConnector {
                             UInt32Value.newBuilder().setValue(req.getTtl()).build()).build());
             instanceBuilder.setHealthCheck(healthCheckBuilder.build());
         }
+
+        ModelProto.Location.Builder locationBuilder = ModelProto.Location.newBuilder();
+        if (StringUtils.isNotBlank(req.getRegion())) {
+            locationBuilder.setRegion(StringValue.newBuilder().setValue(req.getRegion()));
+        }
+        if (StringUtils.isNotBlank(req.getZone())) {
+            locationBuilder.setZone(StringValue.newBuilder().setValue(req.getZone()));
+        }
+        if (StringUtils.isNotBlank(req.getCampus())) {
+            locationBuilder.setCampus(StringValue.newBuilder().setValue(req.getCampus()));
+        }
+        ModelProto.Location location = locationBuilder.build();
+        instanceBuilder.setLocation(location);
+
         return instanceBuilder.build();
     }
 

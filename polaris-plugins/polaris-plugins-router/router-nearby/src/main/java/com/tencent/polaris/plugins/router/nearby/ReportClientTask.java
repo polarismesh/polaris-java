@@ -51,17 +51,21 @@ public class ReportClientTask implements Runnable {
 
     @Override
     public void run() {
-        ReportClientResponse rsp = doReport(clientHost, version);
-        if (null == rsp) {
-            return;
+        try {
+            ReportClientResponse rsp = doReport(clientHost, version);
+            if (null == rsp) {
+                return;
+            }
+
+            LOG.debug("current client Region:{}, Zone:{}, Campus:{}", rsp.getRegion(), rsp.getZone(), rsp.getCampus());
+
+            shareContext.setValue(LocationLevel.region.name(), rsp.getRegion());
+            shareContext.setValue(LocationLevel.zone.name(), rsp.getZone());
+            shareContext.setValue(LocationLevel.campus.name(), rsp.getCampus());
+            shareContext.notifyAllForLocationReady();
+        } catch (Exception e) {
+            LOG.error("report client throw:", e);
         }
-
-        LOG.debug("current client Region:{}, Zone:{}, Campus:{}", rsp.getRegion(), rsp.getZone(), rsp.getCampus());
-
-        shareContext.setValue(LocationLevel.region.name(), rsp.getRegion());
-        shareContext.setValue(LocationLevel.zone.name(), rsp.getZone());
-        shareContext.setValue(LocationLevel.campus.name(), rsp.getCampus());
-        shareContext.notifyAllForLocationReady();
     }
 
     private ReportClientResponse doReport(String clientHost, String version) {

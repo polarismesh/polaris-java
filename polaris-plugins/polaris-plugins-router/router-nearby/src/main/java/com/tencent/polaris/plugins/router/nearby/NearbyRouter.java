@@ -39,6 +39,7 @@ import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -62,14 +63,26 @@ import org.slf4j.Logger;
  */
 public class NearbyRouter extends AbstractServiceRouter implements PluginConfigProvider {
 
+    public static final String ROUTER_TYPE_NEAR_BY = "nearByRoute";
+    public static final String ROUTER_ENABLED = "enabled";
+    public static final String ROUTER_METADATA_KEY_ZONE = "zone";
+    public static final String ROUTER_METADATA_KEY_REGION = "region";
+    public static final String ROUTER_METADATA_KEY_CAMPUS = "campus";
+
+
     private static final Logger LOG = LoggerFactory.getLogger(NearbyRouter.class);
 
     private static final LocationLevel defaultMinLevel = LocationLevel.zone;
-
+    /**
+     * 主调的地域信息
+     */
+    private final AtomicReference<Map<LocationLevel, String>> locationInfo = new AtomicReference<>();
+    /**
+     * 等待地域信息就绪的超时时间
+     */
+    long locationReadyTimeout;
     private ValueContext valueContext;
-
     private ScheduledExecutorService reportClientExecutor;
-
     /**
      * # 默认就近区域：默认城市 matchLevel: zone # 最大就近区域，默认为空（全匹配） maxMatchLevel: all #
      * 假如开启了严格就近，插件的初始化会等待地域信息获取成功才返回，假如获取失败（server获取失败或者IP地域信息缺失），则会初始化失败，而且必须按照 strictNearby: false #
@@ -77,20 +90,10 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
      * 需要进行降级的实例比例，不健康实例达到百分之多少才进行降级。值(0, 100]。 # 默认100，即全部不健康才进行切换。
      */
     private NearbyRouterConfig config;
-
     /**
      * 降级的剩余健康比例
      */
     private double healthyPercentToDegrade;
-
-    /**
-     * 等待地域信息就绪的超时时间
-     */
-    long locationReadyTimeout;
-    /**
-     * 主调的地域信息
-     */
-    private final AtomicReference<Map<LocationLevel, String>> locationInfo = new AtomicReference<>();
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances serviceInstances)
@@ -167,28 +170,21 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         return LocationLevel.values()[current.ordinal() + 1];
     }
 
-    private static class CheckResult {
-
-        LocationLevel curLevel;
-        int healthyInstanceCount;
-        List<Instance> instances = new ArrayList<>();
-    }
-
     private CheckResult hasHealthyInstances(ServiceInstances svcInstances, Map<Level, StatusDimension> dimensions,
-            LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
+                                            LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
         String clientZone = "";
         String clientRegion = "";
         String clientCampus = "";
         if (null != clientInfo) {
-            clientZone = clientInfo.get(LocationLevel.zone);
-            clientRegion = clientInfo.get(LocationLevel.region);
-            clientCampus = clientInfo.get(LocationLevel.campus);
+            clientZone = clientInfo.getOrDefault(LocationLevel.zone, "");
+            clientRegion = clientInfo.getOrDefault(LocationLevel.region, "");
+            clientCampus = clientInfo.getOrDefault(LocationLevel.campus, "");
         }
         CheckResult checkResult = new CheckResult();
         for (Instance instance : svcInstances.getInstances()) {
             switch (targetLevel) {
                 case zone:
-                    if (clientZone.equals("") || clientZone.equals(instance.getZone())) {
+                    if (clientZone.equals("") || clientZone.equals(getInstanceZone(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance, dimensions)) {
                             checkResult.healthyInstanceCount++;
@@ -196,7 +192,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                     }
                     break;
                 case campus:
-                    if (clientCampus.equals("") || clientCampus.equals(instance.getCampus())) {
+                    if (clientCampus.equals("") || clientCampus.equals(getInstanceCampus(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance, dimensions)) {
                             checkResult.healthyInstanceCount++;
@@ -204,7 +200,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                     }
                     break;
                 case region:
-                    if (clientRegion.equals("") || clientRegion.equals(instance.getRegion())) {
+                    if (clientRegion.equals("") || clientRegion.equals(getInstanceRegion(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance, dimensions)) {
                             checkResult.healthyInstanceCount++;
@@ -222,7 +218,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         return checkResult;
     }
 
-
     private List<Instance> selectInstances(
             ServiceInstances svcInstances, LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
         List<Instance> instances = new ArrayList<>();
@@ -237,17 +232,17 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         for (Instance instance : svcInstances.getInstances()) {
             switch (targetLevel) {
                 case zone:
-                    if (clientZone.equals("") || clientZone.equals(instance.getZone())) {
+                    if (clientZone.equals("") || clientZone.equals(getInstanceZone(instance))) {
                         instances.add(instance);
                     }
                     break;
                 case campus:
-                    if (clientCampus.equals("") || clientCampus.equals(instance.getCampus())) {
+                    if (clientCampus.equals("") || clientCampus.equals(getInstanceCampus(instance))) {
                         instances.add(instance);
                     }
                     break;
                 case region:
-                    if (clientRegion.equals("") || clientRegion.equals(instance.getRegion())) {
+                    if (clientRegion.equals("") || clientRegion.equals(getInstanceRegion(instance))) {
                         instances.add(instance);
                     }
                     break;
@@ -274,7 +269,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         return PluginTypes.SERVICE_ROUTER.getBaseType();
     }
 
-
     @Override
     public void init(InitContext ctx) throws PolarisException {
         valueContext = ctx.getValueContext();
@@ -295,7 +289,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         }
     }
 
-
     /**
      * 在整个AppContext初始化完毕后调用
      *
@@ -304,6 +297,8 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
      */
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
+        //无论是不是上报模式，都初始化一次 location 信息
+        refreshLocationInfo();
         //加载本地配置文件的地址
         //TODO:
         if (null != reportClientExecutor) {
@@ -344,8 +339,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         LOG.debug("[refreshLocationInfo] locationInfo={}", clientLocationInfo);
     }
 
-    private static final String nearbyMetadataEnable = "internal-enable-nearby";
-
     @Override
     public Aspect getAspect() {
         return Aspect.MIDDLE;
@@ -360,15 +353,57 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         if (MapUtils.isEmpty(clientLocationInfo)) {
             return false;
         }
-        if (!dstSvcInfo.getMetadata().containsKey(nearbyMetadataEnable)) {
-            return false;
+        //默认关闭，需要显示打开
+        Map<String, String> routerMetadata = routeInfo.getRouterMetadata(ROUTER_TYPE_NEAR_BY);
+        if (MapUtils.isNotEmpty(routerMetadata)) {
+            String enabled = routerMetadata.get(ROUTER_ENABLED);
+            return StringUtils.isNotBlank(enabled) && Boolean.parseBoolean(enabled);
         }
-        return Boolean.parseBoolean(dstSvcInfo.getMetadata().get(nearbyMetadataEnable));
+        return false;
     }
 
     @Override
     protected void doDestroy() {
         LOG.info("reportClientExecutor has been stopped");
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{reportClientExecutor});
+    }
+
+    private String getInstanceZone(Instance instance) {
+        String zone = instance.getZone();
+        if (StringUtils.isNotBlank(zone)) {
+            return zone;
+        }
+        return getMetadata(instance, ROUTER_METADATA_KEY_ZONE);
+    }
+
+    private String getInstanceRegion(Instance instance) {
+        String region = instance.getRegion();
+        if (StringUtils.isNotBlank(region)) {
+            return region;
+        }
+        return getMetadata(instance, ROUTER_METADATA_KEY_REGION);
+    }
+
+    private String getInstanceCampus(Instance instance) {
+        String campus = instance.getCampus();
+        if (StringUtils.isNotBlank(campus)) {
+            return campus;
+        }
+        return getMetadata(instance, ROUTER_METADATA_KEY_CAMPUS);
+    }
+
+    private String getMetadata(Instance instance, String key) {
+        Map<String, String> metadata = instance.getMetadata();
+        if (MapUtils.isEmpty(metadata)) {
+            return "";
+        }
+        return metadata.get(key);
+    }
+
+    private static class CheckResult {
+
+        LocationLevel curLevel;
+        int healthyInstanceCount;
+        List<Instance> instances = new ArrayList<>();
     }
 }

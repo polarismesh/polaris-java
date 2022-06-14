@@ -106,6 +106,8 @@ consumer:
     persistMaxReadRetry: 0
     #描述: 缓存读写磁盘的重试间隔
     persistRetryInterval: 500ms
+    #描述：服务保护推空开关
+    pushEmptyProtection: true
   #描述: 服务路由相关配置
   serviceRouter:
     #描述: 前置路由链
@@ -214,6 +216,8 @@ provider:
     limiterNamespace: Polaris
     # 限流服务名
     limiterService: polaris.limiter
+    # 匀速排队最大排队时间，ms
+    maxQueuingTime: 1000
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量
