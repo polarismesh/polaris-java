@@ -25,9 +25,6 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.api.DefaultConsumerAPI;
 import com.tencent.polaris.discovery.client.api.DefaultProviderAPI;
 import com.tencent.polaris.factory.ConfigAPIFactory;
-import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
-import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 
 import java.io.InputStream;
 import java.util.Arrays;
@@ -107,11 +104,7 @@ public class DiscoveryAPIFactory {
      * @return ConsumerAPI对象
      */
     public static ConsumerAPI createConsumerAPIByAddress(List<String> addressList) {
-        ConfigurationImpl configuration = new ConfigurationImpl("");
-        GlobalConfigImpl globalConfig = configuration.getGlobal();
-        ServerConnectorConfigImpl serverConnector = globalConfig.getServerConnector();
-        serverConnector.setAddresses(addressList);
-        return createConsumerAPIByConfig(configuration);
+        return createConsumerAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addressList));
     }
 
     /**
