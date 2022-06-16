@@ -25,7 +25,10 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.api.DefaultConsumerAPI;
 import com.tencent.polaris.discovery.client.api.DefaultProviderAPI;
 import com.tencent.polaris.factory.ConfigAPIFactory;
+
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 用于创建API的工厂类型
@@ -83,6 +86,27 @@ public class DiscoveryAPIFactory {
         return DiscoveryAPIFactory.createConsumerAPIByContext(context);
     }
 
+
+    /**
+     * 通过注册地址创建ConsumerAPI
+     *
+     * @param addresses 地址
+     * @return ConsumerAPI对象
+     */
+    public static ConsumerAPI createConsumerAPIByAddress(String... addresses) {
+        return createConsumerAPIByAddress(Arrays.asList(addresses));
+    }
+
+    /**
+     * 通过注册地址创建ConsumerAPI
+     *
+     * @param addressList 地址
+     * @return ConsumerAPI对象
+     */
+    public static ConsumerAPI createConsumerAPIByAddress(List<String> addressList) {
+        return createConsumerAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addressList));
+    }
+
     /**
      * 通过默认配置创建ProviderAPI
      *
@@ -129,6 +153,26 @@ public class DiscoveryAPIFactory {
     public static ProviderAPI createProviderAPIByConfig(Configuration config) throws PolarisException {
         SDKContext context = SDKContext.initContextByConfig(config);
         return createProviderAPIByContext(context);
+    }
+
+    /**
+     * 通过注册地址创建ProviderAPI
+     *
+     * @param addresses 地址
+     * @return ProviderAPI对象
+     */
+    public static ProviderAPI createProviderAPIByAddress(String... addresses) {
+        return createProviderAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addresses));
+    }
+
+    /**
+     * 通过注册地址创建ProviderAPI
+     *
+     * @param addressList 地址
+     * @return ProviderAPI对象
+     */
+    public static ProviderAPI createProviderAPIByAddress(List<String> addressList) {
+        return createProviderAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addressList));
     }
 
 }
