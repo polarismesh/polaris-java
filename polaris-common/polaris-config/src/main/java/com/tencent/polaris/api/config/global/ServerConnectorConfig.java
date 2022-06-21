@@ -91,4 +91,25 @@ public interface ServerConnectorConfig extends PluginConfig, Verifier {
      * @return id
      */
     String getId();
+
+    /**
+     * Get trusted certificate
+     *
+     * @return trusted certificate
+     */
+    String getTrustedCertificate();
+
+    /**
+     * Get client certificate
+     *
+     * @return client certificate
+     */
+    String getClientCertificate();
+
+    /**
+     * Get client keychain
+     *
+     * @return client keychain
+     */
+    String getClientKey();
 }
