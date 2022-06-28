@@ -18,11 +18,11 @@ package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
-import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
@@ -31,7 +31,6 @@ import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
-
 import java.io.Closeable;
 
 /**
@@ -53,6 +52,16 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
 
     /**
      * 同步获取健康的服务实例，如果全部实例都不健康，那将会返回全部实例
+     *
+     * @param req
+     * @return
+     * @throws PolarisException
+     */
+    InstancesResponse getHealthyInstances(GetHealthyInstancesRequest req) throws PolarisException;
+
+    /**
+     * 同步获取健康的服务实例，如果全部实例都不健康，那将会返回全部实例
+     *
      * @param req
      * @return
      * @throws PolarisException
