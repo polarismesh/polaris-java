@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.plugins.router.nearby;
 
-import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
-
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
@@ -44,6 +42,8 @@ import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +53,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
+
+import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
 
 /**
  * 就近接入路由
@@ -117,7 +118,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
             maxLevel = LocationLevel.all;
         }
 
-        Map<LocationLevel, String> clientLocationInfo = locationInfo.get();
+        Map<LocationLevel, String> clientLocationInfo = getLocationInfo();
         if (minLevel.ordinal() >= maxLevel.ordinal()) {
             List<Instance> instances = selectInstances(serviceInstances, minAvailableLevel, clientLocationInfo);
             if (CollectionUtils.isEmpty(instances)) {
@@ -297,8 +298,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
      */
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-        //无论是不是上报模式，都初始化一次 location 信息
-        refreshLocationInfo();
         //加载本地配置文件的地址
         //TODO:
         if (null != reportClientExecutor) {
@@ -339,6 +338,13 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         LOG.debug("[refreshLocationInfo] locationInfo={}", clientLocationInfo);
     }
 
+    private Map<LocationLevel, String> getLocationInfo() {
+        if (MapUtils.isEmpty(locationInfo.get())) {
+            refreshLocationInfo();
+        }
+        return locationInfo.get();
+    }
+
     @Override
     public Aspect getAspect() {
         return Aspect.MIDDLE;
@@ -349,7 +355,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         if (!super.enable(routeInfo, dstSvcInfo)) {
             return false;
         }
-        Map<LocationLevel, String> clientLocationInfo = locationInfo.get();
+        Map<LocationLevel, String> clientLocationInfo = getLocationInfo();
         if (MapUtils.isEmpty(clientLocationInfo)) {
             return false;
         }
