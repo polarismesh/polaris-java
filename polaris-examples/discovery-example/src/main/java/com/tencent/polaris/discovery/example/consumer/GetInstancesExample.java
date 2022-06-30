@@ -45,7 +45,7 @@ public class GetInstancesExample {
             GetHealthyInstancesRequest getHealthyInstancesRequest = new GetHealthyInstancesRequest();
             getHealthyInstancesRequest.setNamespace(namespace);
             getHealthyInstancesRequest.setService(service);
-            InstancesResponse healthyInstancesResponse = consumerAPI.getHealthyInstancesInstance(getHealthyInstancesRequest);
+            InstancesResponse healthyInstancesResponse = consumerAPI.getHealthyInstances(getHealthyInstancesRequest);
             System.out.println("healthy instances count is " + healthyInstancesResponse.getInstances().length);
         }
     }
