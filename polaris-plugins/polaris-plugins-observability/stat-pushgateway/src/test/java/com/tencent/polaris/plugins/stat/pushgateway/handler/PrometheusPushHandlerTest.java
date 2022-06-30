@@ -1,12 +1,6 @@
-package com.tencent.polaris.plugins.stat.prometheus.handler;
+package com.tencent.polaris.plugins.stat.pushgateway.handler;
 
-import static com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusPushHandler.REVISION_MAX_SCOPE;
-
-import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
-import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
-import com.tencent.polaris.api.plugin.stat.DefaultRateLimitResult;
-import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
-import com.tencent.polaris.api.plugin.stat.StatInfo;
+import com.tencent.polaris.api.plugin.stat.*;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -20,17 +14,13 @@ import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMet
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.PushGateway;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Test for {@link PrometheusPushHandler}
@@ -116,8 +106,8 @@ public class PrometheusPushHandlerTest {
         result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(0), result);
 
-        LOG.info("mock sleep {} times end...", REVISION_MAX_SCOPE);
-        Thread.sleep(pushInterval * REVISION_MAX_SCOPE + 1000);
+        LOG.info("mock sleep {} times end...", PrometheusPushHandler.REVISION_MAX_SCOPE);
+        Thread.sleep(pushInterval * PrometheusPushHandler.REVISION_MAX_SCOPE + 1000);
         result = getServiceCallTotalResult(callResult);
         Assert.assertNull(result);
 

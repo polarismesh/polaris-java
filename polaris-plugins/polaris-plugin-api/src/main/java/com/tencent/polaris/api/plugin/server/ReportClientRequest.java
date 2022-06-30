@@ -1,5 +1,9 @@
 package com.tencent.polaris.api.plugin.server;
 
+import com.tencent.polaris.api.plugin.stat.ReporterMetaInfo;
+
+import java.util.List;
+
 /**
  * 客户端上报请求
  *
@@ -17,6 +21,16 @@ public class ReportClientRequest {
     private String version;
 
     private TargetServer targetServer;
+
+    private List<ReporterMetaInfo> reporterMetaInfos;
+
+    public List<ReporterMetaInfo> getReporterMetaInfos() {
+        return reporterMetaInfos;
+    }
+
+    public void setReporterMetaInfos(List<ReporterMetaInfo> reporterMetaInfos) {
+        this.reporterMetaInfos = reporterMetaInfos;
+    }
 
     public String getClientHost() {
         return clientHost;

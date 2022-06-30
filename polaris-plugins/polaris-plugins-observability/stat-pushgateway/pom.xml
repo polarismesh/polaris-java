@@ -10,7 +10,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>stat-prometheus</artifactId>
+    <artifactId>stat-pushgateway</artifactId>
     <name>Polaris Plugins Observability Prometheus</name>
     <description>Polaris Plugins Observability Prometheus JAR</description>
     <dependencies>
@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient_httpserver</artifactId>
+            <artifactId>simpleclient_pushgateway</artifactId>
             <version>${prometheus.version}</version>
         </dependency>
     </dependencies>
