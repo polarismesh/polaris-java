@@ -59,11 +59,11 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reconnectInterval;
     @JsonProperty
-    private String trustedCertificate;
+    private String trustedCAFile;
     @JsonProperty
-    private String clientCertificate;
+    private String certFile;
     @JsonProperty
-    private String clientKey;
+    private String keyFile;
     @JsonProperty
     private String id = "polaris";
 
@@ -156,18 +156,30 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     }
 
     @Override
-    public String getTrustedCertificate() {
-        return trustedCertificate;
+    public String getTrustedCAFile() {
+        return trustedCAFile;
     }
 
     @Override
-    public String getClientCertificate() {
-        return clientCertificate;
+    public String getCertFile() {
+        return certFile;
     }
 
     @Override
-    public String getClientKey() {
-        return clientKey;
+    public String getKeyFile() {
+        return keyFile;
+    }
+
+    public void setTrustedCAFile(String trustedCAFile) {
+        this.trustedCAFile = trustedCAFile;
+    }
+
+    public void setCertFile(String certFile) {
+        this.certFile = certFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        this.keyFile = keyFile;
     }
 
     public void setId(String id) {
@@ -237,9 +249,9 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
                 ", serverSwitchInterval=" + serverSwitchInterval +
                 ", connectionIdleTimeout=" + connectionIdleTimeout +
                 ", reconnectInterval=" + reconnectInterval +
-                ", trustedCertificate=" + trustedCertificate +
-                ", clientCertificate=" + clientCertificate +
-                ", clientKey=" + clientKey +
+                ", trustedCertificate=" + trustedCAFile +
+                ", clientCertificate=" + certFile +
+                ", clientKey=" + keyFile +
                 "} " + super.toString();
     }
 }

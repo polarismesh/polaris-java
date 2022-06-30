@@ -97,19 +97,19 @@ public interface ServerConnectorConfig extends PluginConfig, Verifier {
      *
      * @return trusted certificate
      */
-    String getTrustedCertificate();
+    String getTrustedCAFile();
 
     /**
      * Get client certificate
      *
      * @return client certificate
      */
-    String getClientCertificate();
+    String getCertFile();
 
     /**
      * Get client keychain
      *
      * @return client keychain
      */
-    String getClientKey();
+    String getKeyFile();
 }

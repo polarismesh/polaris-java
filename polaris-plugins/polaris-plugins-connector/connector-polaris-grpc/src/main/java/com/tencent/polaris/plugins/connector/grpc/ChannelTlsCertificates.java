@@ -61,13 +61,13 @@ public class ChannelTlsCertificates {
             X509KeyManager keyManager = null;
             if (hasTrustedCertificates(serverConnectorConfig)) {
                 trustManager = X509ManagerUtil.buildTrustManager(
-                        readCertificateFileBytes(serverConnectorConfig.getTrustedCertificate()));
+                        readCertificateFileBytes(serverConnectorConfig.getTrustedCAFile()));
             }
 
             if (hasClientCertificates(serverConnectorConfig)) {
                 keyManager = X509ManagerUtil.buildKeyManager(
-                        readCertificateFileBytes(serverConnectorConfig.getClientCertificate()),
-                        readCertificateFileBytes(serverConnectorConfig.getClientKey()));
+                        readCertificateFileBytes(serverConnectorConfig.getCertFile()),
+                        readCertificateFileBytes(serverConnectorConfig.getKeyFile()));
             }
 
             if (trustManager == null && keyManager == null) {
@@ -82,23 +82,23 @@ public class ChannelTlsCertificates {
     }
 
     private static boolean hasTrustedCertificates(ServerConnectorConfig serverConnectorConfig) {
-        return StringUtils.isNotEmpty(serverConnectorConfig.getTrustedCertificate());
+        return StringUtils.isNotEmpty(serverConnectorConfig.getTrustedCAFile());
     }
 
     private static boolean hasClientCertificates(ServerConnectorConfig serverConnectorConfig) {
-        String clientKeyChain = serverConnectorConfig.getClientKey();
-        String clientCertificate = serverConnectorConfig.getClientCertificate();
-        if (StringUtils.isEmpty(clientCertificate) && StringUtils.isEmpty(clientKeyChain)) {
+        String keyFile = serverConnectorConfig.getKeyFile();
+        String certFile = serverConnectorConfig.getCertFile();
+        if (StringUtils.isEmpty(certFile) && StringUtils.isEmpty(keyFile)) {
             LOG.debug("The server connector configuration has no client certificates and key chain.");
             return false;
         }
 
-        if (StringUtils.isNotEmpty(clientCertificate) && StringUtils.isEmpty(clientKeyChain)) {
+        if (StringUtils.isNotEmpty(certFile) && StringUtils.isEmpty(keyFile)) {
             LOG.warn("The server connector configuration has client certificates but not client key chain");
             return false;
         }
 
-        if (StringUtils.isEmpty(clientCertificate) && StringUtils.isNotEmpty(clientKeyChain)) {
+        if (StringUtils.isEmpty(certFile) && StringUtils.isNotEmpty(keyFile)) {
             LOG.warn("The server connector configuration has client key chain but not client certificates");
             return false;
         }
