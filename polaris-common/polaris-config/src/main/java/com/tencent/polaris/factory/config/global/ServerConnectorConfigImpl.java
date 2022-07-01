@@ -59,6 +59,12 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reconnectInterval;
     @JsonProperty
+    private String trustedCAFile;
+    @JsonProperty
+    private String certFile;
+    @JsonProperty
+    private String keyFile;
+    @JsonProperty
     private String id = "polaris";
 
     @Override
@@ -149,6 +155,33 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
         return id;
     }
 
+    @Override
+    public String getTrustedCAFile() {
+        return trustedCAFile;
+    }
+
+    @Override
+    public String getCertFile() {
+        return certFile;
+    }
+
+    @Override
+    public String getKeyFile() {
+        return keyFile;
+    }
+
+    public void setTrustedCAFile(String trustedCAFile) {
+        this.trustedCAFile = trustedCAFile;
+    }
+
+    public void setCertFile(String certFile) {
+        this.certFile = certFile;
+    }
+
+    public void setKeyFile(String keyFile) {
+        this.keyFile = keyFile;
+    }
+
     public void setId(String id) {
         this.id = id;
     }
@@ -216,6 +249,9 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
                 ", serverSwitchInterval=" + serverSwitchInterval +
                 ", connectionIdleTimeout=" + connectionIdleTimeout +
                 ", reconnectInterval=" + reconnectInterval +
+                ", trustedCertificate=" + trustedCAFile +
+                ", clientCertificate=" + certFile +
+                ", clientKey=" + keyFile +
                 "} " + super.toString();
     }
 }
