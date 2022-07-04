@@ -26,7 +26,7 @@ You should be able to get off the ground quite quickly by cloning the project yo
          <dependency>
              <groupId>com.tencent.polaris</groupId>
              <artifactId>polaris-dependencies</artifactId>
-             <version>1.4.0</version>
+             <version>1.6.1</version>
              <type>pom</type>
              <scope>import</scope>
          </dependency>
