@@ -17,16 +17,27 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
+import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
+import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricName;
+import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricValue.NULL_VALUE;
+
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.logging.LoggerFactory;
-import com.tencent.polaris.plugins.stat.common.model.*;
+import com.tencent.polaris.plugins.stat.common.model.AbstractSignatureStatInfoCollector;
+import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
+import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoCollector;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoCollectorContainer;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoHandler;
+import com.tencent.polaris.plugins.stat.common.model.StatInfoRevisionCollector;
+import com.tencent.polaris.plugins.stat.common.model.StatMetric;
+import com.tencent.polaris.plugins.stat.common.model.StatRevisionMetric;
+import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
-import org.slf4j.Logger;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,13 +45,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
-import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricName;
-import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricValue.NULL_VALUE;
+import org.slf4j.Logger;
 
 /**
  * 通过向Prometheus PushGateWay推送StatInfo消息来处理StatInfo。
+ *
+ * @author wallezhang
  */
 public class PrometheusHandler implements StatInfoHandler {
 

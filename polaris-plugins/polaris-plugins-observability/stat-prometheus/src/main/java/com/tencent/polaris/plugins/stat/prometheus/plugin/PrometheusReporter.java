@@ -33,26 +33,28 @@ import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.StatInfoHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
+import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHttpServer;
 import com.tencent.polaris.version.Version;
-import io.prometheus.client.exporter.HTTPServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
 
+/**
+ * PrometheusReporter plugin
+ *
+ * @author wallezhang
+ */
 public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusReporter.class);
     private StatInfoHandler statInfoHandler;
-    private HTTPServer httpServer;
-    private String host;
+    private PrometheusHttpServer httpServer;
     private ScheduledExecutorService reportClientExecutor;
 
     @Override
@@ -68,15 +70,12 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             if (config.getPort() == -1) {
                 return;
             }
-            host = StringUtils.isBlank(config.getHost()) ? extensions.getValueContext().getHost() : config.getHost();
+            String host =
+                    StringUtils.isBlank(config.getHost()) ? extensions.getValueContext().getHost() : config.getHost();
             statInfoHandler = new PrometheusHandler(host);
-            try {
-                httpServer = new HTTPServer(host, config.getPort(), true);
-                reportClientExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(getName()));
-                reportClient(extensions);
-            } catch (IOException e) {
-                LOGGER.error("Start prometheus http server exception.", e);
-            }
+            httpServer = new PrometheusHttpServer(host, config.getPort());
+            reportClientExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(getName()));
+            reportClient(extensions);
         }
     }
 
@@ -89,7 +88,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     @Override
     public ReporterMetaInfo metaInfo() {
-        return new ReporterMetaInfo(host, httpServer.getPort(), "/metrics", "http", getName());
+        return new ReporterMetaInfo(httpServer.getHost(), httpServer.getPort(), "/metrics", "http", getName());
     }
 
     @Override
@@ -113,6 +112,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             statInfoHandler.stopHandle();
             statInfoHandler = null;
         }
+        if (reportClientExecutor != null) {
+            reportClientExecutor.shutdown();
+            reportClientExecutor = null;
+        }
+        if (httpServer != null) {
+            httpServer.stopServer();
+            httpServer = null;
+        }
     }
 
     /**
@@ -125,7 +132,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             reportClientExecutor.scheduleAtFixedRate(() -> {
                 ServerConnector serverConnector = extensions.getServerConnector();
                 ReportClientRequest reportClientRequest = new ReportClientRequest();
-                reportClientRequest.setClientHost(host);
+                reportClientRequest.setClientHost(extensions.getValueContext().getHost());
                 reportClientRequest.setVersion(Version.VERSION);
                 reportClientRequest.setReporterMetaInfos(Collections.singletonList(metaInfo()));
                 try {

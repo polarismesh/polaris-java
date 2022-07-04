@@ -31,15 +31,25 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.server.*;
+import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
+import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
+import com.tencent.polaris.api.plugin.server.ReportClientRequest;
+import com.tencent.polaris.api.plugin.server.ReportClientResponse;
+import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
+import com.tencent.polaris.api.plugin.server.TargetServer;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
-import com.tencent.polaris.client.pb.*;
+import com.tencent.polaris.client.pb.ClientProto;
 import com.tencent.polaris.client.pb.ClientProto.Client;
 import com.tencent.polaris.client.pb.ClientProto.Client.Builder;
 import com.tencent.polaris.client.pb.ClientProto.StatInfo;
+import com.tencent.polaris.client.pb.ModelProto;
+import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
+import com.tencent.polaris.client.pb.ResponseProto;
+import com.tencent.polaris.client.pb.ServiceProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
@@ -47,14 +57,19 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
-import org.slf4j.Logger;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import org.slf4j.Logger;
 
 /**
  * An implement of {@link ServerConnector} to connect to Polaris server.
@@ -78,6 +93,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     private String id;
     private boolean isRegisterEnable = true;
     private boolean isDiscoveryEnable = true;
+    private String clientInstanceId;
 
     /**
      * 发送消息的线程池
@@ -147,6 +163,7 @@ public class GrpcConnector extends DestroyableServerConnector {
         updateServiceExecutor = new ScheduledThreadPoolExecutor(1,
                 new NamedThreadFactory(getName() + "-update-service"));
         updateServiceExecutor.setMaximumPoolSize(1);
+        clientInstanceId = UUID.randomUUID().toString();
         initialized = true;
     }
 
@@ -315,6 +332,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                         .setPath(StringValue.newBuilder().setValue(reporterMetaInfo.getPath()).build())
                         .setProtocol(StringValue.newBuilder().setValue(reporterMetaInfo.getProtocol()).build())
                         .build())));
+        builder.setId(StringValue.newBuilder().setValue(clientInstanceId).build());
         return builder.build();
     }
 

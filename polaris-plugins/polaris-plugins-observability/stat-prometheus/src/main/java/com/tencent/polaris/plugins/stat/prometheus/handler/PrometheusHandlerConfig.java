@@ -20,9 +20,12 @@ package com.tencent.polaris.plugins.stat.prometheus.handler;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+ * @author wallezhang
+ */
 public class PrometheusHandlerConfig implements Verifier {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusHandlerConfig.class);
@@ -33,7 +36,7 @@ public class PrometheusHandlerConfig implements Verifier {
     private Integer port = 28080;
 
     @JsonProperty
-    private String path = "/metric";
+    private String path = "/metrics";
 
     @JsonProperty
     private String pushgatewayAddress;
