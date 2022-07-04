@@ -73,6 +73,7 @@ public class ConnectionManager extends Destroyable {
     private final Map<ClusterType, CompletableFuture<String>> readyNotifiers = new HashMap<>();
     private final String clientId;
     private Extensions extensions;
+    private final ChannelTlsCertificates tlsCertificates;
 
     /**
      * 构造器
@@ -139,6 +140,7 @@ public class ConnectionManager extends Destroyable {
         switchIntervalMs = serverConnectorConfig.getServerSwitchInterval();
         switchExecutorService = Executors
                 .newSingleThreadScheduledExecutor(new NamedThreadFactory("connection-manager"));
+        tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
     }
 
     public void setExtensions(Extensions extensions) {
@@ -458,6 +460,10 @@ public class ConnectionManager extends Destroyable {
             try {
                 ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(connID.getHost(), connID.getPort())
                         .usePlaintext();
+                if (tlsCertificates != null) {
+                    ManagedChannelUtil.setChannelTls(builder, tlsCertificates);
+                    builder.useTransportSecurity();
+                }
                 ManagedChannel channel = builder.build();
                 return new Connection(channel, connID, ConnectionManager.this);
             } catch (Throwable e) {
