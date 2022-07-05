@@ -164,18 +164,13 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         if (response.hasCode()) {
             errorCode = ServerCodes.convertServerErrorToRpcError(response.getCode().getValue());
         }
-        ServiceProto.Service service;
-        if (CollectionUtils.isNotEmpty(response.getServicesList())) {
-            service = response.getServicesList().get(0);
-        } else {
-            service = response.getService();
-        }
-        if (null == service || StringUtils.isEmpty(service.getNamespace().getValue()) || StringUtils
-                .isEmpty(service.getName().getValue())) {
+        ServiceProto.Service service = response.getService();
+        EventType eventType = GrpcUtil.buildEventType(response.getType());
+        if (!eventType.equals(EventType.SERVICE) && (StringUtils.isEmpty(service.getNamespace().getValue())
+                || StringUtils.isEmpty(service.getName().getValue()))) {
             return new ValidResult(null, ErrorCode.INVALID_SERVER_RESPONSE,
                     "service is empty, response text is " + response.toString());
         }
-        EventType eventType = GrpcUtil.buildEventType(response.getType());
         if (eventType == EventType.UNKNOWN) {
             return new ValidResult(null, ErrorCode.INVALID_SERVER_RESPONSE,
                     "invalid event type " + response.getType());
