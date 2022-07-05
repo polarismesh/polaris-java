@@ -53,6 +53,7 @@ public class PrometheusHttpServer {
     private final ExecutorService executor;
     private final String host;
     private int port;
+    private String path;
 
     public PrometheusHttpServer(String host, int port) {
         this(host, port, DEFAULT_PATH);
@@ -61,6 +62,7 @@ public class PrometheusHttpServer {
     public PrometheusHttpServer(String host, int port, String path) {
         try {
             this.host = host;
+            this.path = path;
             setServerPort(port);
             threadFactory = new DaemonNamedThreadFactory("prometheus-http");
             httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 3);
@@ -139,6 +141,10 @@ public class PrometheusHttpServer {
 
     public int getPort() {
         return port;
+    }
+
+    public String getPath() {
+        return path;
     }
 
     private static final class DaemonNamedThreadFactory extends NamedThreadFactory {

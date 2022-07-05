@@ -88,7 +88,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     @Override
     public ReporterMetaInfo metaInfo() {
-        return new ReporterMetaInfo(httpServer.getHost(), httpServer.getPort(), "/metrics", "http", getName());
+        return ReporterMetaInfo.builder().protocol("http").path(httpServer.getPath()).host(httpServer.getHost())
+                .port(httpServer.getPort()).target(getName()).build();
     }
 
     @Override

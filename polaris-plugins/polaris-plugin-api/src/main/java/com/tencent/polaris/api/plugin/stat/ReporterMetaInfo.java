@@ -30,51 +30,70 @@ public class ReporterMetaInfo {
     private String protocol;
     private String target;
 
-    public ReporterMetaInfo(String host, Integer port, String path, String protocol, String target) {
-        this.host = host;
-        this.port = port;
-        this.path = path;
-        this.protocol = protocol;
-        this.target = target;
-    }
-
     public String getTarget() {
         return target;
-    }
-
-    public void setTarget(String target) {
-        this.target = target;
     }
 
     public String getHost() {
         return host;
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
-
     public Integer getPort() {
         return port;
-    }
-
-    public void setPort(Integer port) {
-        this.port = port;
     }
 
     public String getPath() {
         return path;
     }
 
-    public void setPath(String path) {
-        this.path = path;
-    }
-
     public String getProtocol() {
         return protocol;
     }
 
-    public void setProtocol(String protocol) {
-        this.protocol = protocol;
+    public static ReporterMetaInfoBuilder builder() {
+        return new ReporterMetaInfoBuilder();
+    }
+
+    public static final class ReporterMetaInfoBuilder {
+        private String host;
+        private Integer port;
+        private String path;
+        private String protocol;
+        private String target;
+
+        public ReporterMetaInfoBuilder host(String host) {
+            this.host = host;
+            return this;
+        }
+
+        public ReporterMetaInfoBuilder port(Integer port) {
+            this.port = port;
+            return this;
+        }
+
+        public ReporterMetaInfoBuilder path(String path) {
+            this.path = path;
+            return this;
+        }
+
+        public ReporterMetaInfoBuilder protocol(String protocol) {
+            this.protocol = protocol;
+            return this;
+        }
+
+        public ReporterMetaInfoBuilder target(String target) {
+            this.target = target;
+            return this;
+        }
+
+        public ReporterMetaInfo build() {
+            ReporterMetaInfo reporterMetaInfo = new ReporterMetaInfo();
+            reporterMetaInfo.target = this.target;
+            reporterMetaInfo.host = this.host;
+            reporterMetaInfo.port = this.port;
+            reporterMetaInfo.path = this.path;
+            reporterMetaInfo.protocol = this.protocol;
+            return reporterMetaInfo;
+        }
     }
 }
