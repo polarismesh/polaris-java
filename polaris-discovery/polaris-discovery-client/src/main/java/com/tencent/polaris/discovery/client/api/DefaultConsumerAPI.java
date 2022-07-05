@@ -95,7 +95,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         return syncFlow.commonSyncGetInstances(healthyRequest);
     }
 
-    @Deprecated
     @Override
     public InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException {
         return getHealthyInstances(req);
