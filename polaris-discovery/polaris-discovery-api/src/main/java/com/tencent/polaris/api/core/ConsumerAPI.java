@@ -66,6 +66,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @return
      * @throws PolarisException
      */
+    @Deprecated
     InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException;
 
     /**
