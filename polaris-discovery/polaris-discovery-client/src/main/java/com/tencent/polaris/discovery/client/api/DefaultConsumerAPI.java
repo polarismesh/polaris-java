@@ -69,14 +69,13 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
-        syncFlow.init(context.getExtensions());
-        asyncFlow.init(syncFlow);
-        watchFlow.init(context.getExtensions(), syncFlow);
     }
 
     @Override
     protected void subInit() throws PolarisException {
-
+        syncFlow.init(sdkContext.getExtensions());
+        asyncFlow.init(syncFlow);
+        watchFlow.init(sdkContext.getExtensions(), syncFlow);
     }
 
     @Override

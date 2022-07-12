@@ -21,8 +21,10 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.registry.AbstractResourceEventListener;
+import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
+import com.tencent.polaris.api.pojo.ServiceChangeEvent.OneInstanceUpdate;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.InstancesResponse;
@@ -31,9 +33,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
-import org.slf4j.Logger;
 import com.tencent.polaris.logging.LoggerFactory;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,27 +43,26 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import org.slf4j.Logger;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @author Haotian Zhang
  */
 public class WatchFlow {
 
     private static final Logger LOG = LoggerFactory.getLogger(SyncFlow.class);
-
-    private Extensions extensions;
-
-    private SyncFlow syncFlow;
-
-    private DispatchExecutor executor;
-
-    private final AtomicBoolean initialize = new AtomicBoolean(false);
-
+    private static final Logger UPDATE_EVENT_LOG = LoggerFactory.getLogger("polaris-update-event");
     private static final Map<ServiceKey, Set<ServiceListener>> watchers = new ConcurrentHashMap<>();
+    private final AtomicBoolean initialize = new AtomicBoolean(false);
+    private Extensions extensions;
+    private SyncFlow syncFlow;
+    private DispatchExecutor executor;
 
     public void init(Extensions extensions, SyncFlow syncFlow) {
         this.extensions = extensions;
         this.syncFlow = syncFlow;
+        initFlow();
     }
 
     /**
@@ -72,7 +71,6 @@ public class WatchFlow {
      * @return WatchServiceResponse
      */
     public WatchServiceResponse commonWatchService(CommonWatchServiceRequest request) throws PolarisException {
-        initFlow();
         ServiceKey serviceKey = request.getSvcEventKey().getServiceKey();
         InstancesResponse response = syncFlow.commonSyncGetAllInstances(request.getAllRequest());
         watchers.computeIfAbsent(request.getSvcEventKey().getServiceKey(),
@@ -91,7 +89,6 @@ public class WatchFlow {
      * @throws PolarisException
      */
     public WatchServiceResponse commonUnWatchService(CommonUnWatchServiceRequest request) throws PolarisException {
-        initFlow();
         boolean result = true;
 
         Set<ServiceListener> listeners = watchers.get(request.getSvcEventKey().getServiceKey());
@@ -112,6 +109,34 @@ public class WatchFlow {
             extensions.getLocalRegistry().registerResourceListener(new InstanceChangeListener());
             executor = new DispatchExecutor(extensions.getConfiguration().getConsumer().getSubscribe()
                     .getCallbackConcurrency());
+        }
+    }
+
+    /**
+     * 由于使用移步处理ServiceChangeEvent，为了保证同一个Service下的Event按事件发生顺序通知给Listener，需要保证同一个Service
+     * 的Event是由同一个Thread进行处理
+     */
+    private static class DispatchExecutor {
+
+        private final Executor[] executors;
+
+        public DispatchExecutor(int nThread) {
+            if (nThread < 1) {
+                nThread = 1;
+            }
+
+            this.executors = new Executor[nThread];
+
+            for (int i = 0; i < nThread; i++) {
+                this.executors[i] = Executors.newFixedThreadPool(1,
+                        new NamedThreadFactory("service-watch-dispatch" + i));
+            }
+        }
+
+        public void execute(ServiceKey serviceKey, Runnable command) {
+            int code = serviceKey.hashCode();
+            Executor executor = executors[code % executors.length];
+            executor.execute(command);
         }
     }
 
@@ -143,38 +168,55 @@ public class WatchFlow {
                         .deleteInstances(Utils.checkDeleteInstances(oldIns, newIns))
                         .allInstances(newIns.getInstances())
                         .build();
-
-                Set<ServiceListener> listeners = watchers.getOrDefault(svcEventKey.getServiceKey(), Collections.emptySet());
+                logChangeInstances(svcEventKey, event, oldIns, newIns);
+                Set<ServiceListener> listeners = watchers.getOrDefault(svcEventKey.getServiceKey(),
+                        Collections.emptySet());
                 listeners.forEach(serviceListener -> consumer.accept(event, serviceListener));
             }
         }
-    }
 
-    /**
-     * 由于使用移步处理ServiceChangeEvent，为了保证同一个Service下的Event按事件发生顺序通知给Listener，需要保证同一个Service
-     * 的Event是由同一个Thread进行处理
-     */
-    private static class DispatchExecutor {
-
-        private final Executor[] executors;
-
-        public DispatchExecutor(int nThread) {
-            if (nThread < 1) {
-                nThread = 1;
+        /**
+         * Print change of instances.
+         *
+         * @param svcEventKey
+         * @param event
+         * @param oldIns
+         * @param newIns
+         */
+        private void logChangeInstances(ServiceEventKey svcEventKey, ServiceChangeEvent event,
+                ServiceInstancesByProto oldIns, ServiceInstancesByProto newIns) {
+            UPDATE_EVENT_LOG.info(
+                    "service instances of {} change, oldRevision {}, newRevision {}, oldCount {}, newCount {}.",
+                    svcEventKey, oldIns.getRevision(), newIns.getRevision(), oldIns.getInstances().size(),
+                    newIns.getInstances().size());
+            // Added instances.
+            for (Instance addInst : event.getAddInstances()) {
+                UPDATE_EVENT_LOG.info("add instance of {}: [{}:{}, status: {}].",
+                        svcEventKey, addInst.getHost(), addInst.getPort(), totalInstanceInfo(addInst));
             }
-
-            this.executors = new Executor[nThread];
-
-            for (int i = 0; i < nThread; i++) {
-                this.executors[i] = Executors.newFixedThreadPool(1,
-                        new NamedThreadFactory("service-watch-dispatch" + i));
+            // Updated instances.
+            for (OneInstanceUpdate oneInstanceUpdate : event.getUpdateInstances()) {
+                UPDATE_EVENT_LOG.info("modify instance of {} from [{}:{}, status: {}] to [{}:{}, status: {}].",
+                        svcEventKey, oneInstanceUpdate.getBefore().getHost(), oneInstanceUpdate.getBefore().getPort(),
+                        totalInstanceInfo(oneInstanceUpdate.getBefore()), oneInstanceUpdate.getAfter().getHost(),
+                        oneInstanceUpdate.getAfter().getPort(), totalInstanceInfo(oneInstanceUpdate.getAfter()));
+            }
+            // Deleted instances.
+            for (Instance delInst : event.getDeleteInstances()) {
+                UPDATE_EVENT_LOG.info("delete instance of {}: [{}:{}, status: {}].",
+                        svcEventKey, delInst.getHost(), delInst.getPort(), totalInstanceInfo(delInst));
             }
         }
 
-        public void execute(ServiceKey serviceKey, Runnable command) {
-            int code = serviceKey.hashCode();
-            Executor executor = executors[code % executors.length];
-            executor.execute(command);
+        /**
+         * Generate info of instance.
+         *
+         * @param instance
+         * @return
+         */
+        private String totalInstanceInfo(Instance instance) {
+            return String.format("healthy:%s;isolate:%s;weight:%s", instance.isHealthy(), instance.isIsolated(),
+                    instance.getWeight());
         }
     }
 }
