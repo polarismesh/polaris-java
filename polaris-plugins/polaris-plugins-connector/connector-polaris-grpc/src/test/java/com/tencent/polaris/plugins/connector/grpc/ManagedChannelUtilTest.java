@@ -23,6 +23,7 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
+import java.io.File;
 import javax.net.ssl.SSLException;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.Test;
@@ -43,9 +44,10 @@ public class ManagedChannelUtilTest {
 
     private ChannelTlsCertificates buildTlsCertificates() {
         ServerConnectorConfigImpl connectorConfig = new ServerConnectorConfigImpl();
-        connectorConfig.setTrustedCAFile(ManagedChannelUtilTest.class.getResource("/server.crt").getFile());
-        connectorConfig.setCertFile(ManagedChannelUtilTest.class.getResource("/client.crt").getFile());
-        connectorConfig.setKeyFile(ManagedChannelUtilTest.class.getResource("/client.key").getFile());
+        connectorConfig.setTrustedCAFile(
+                ManagedChannelUtilTest.class.getResource(File.separator + "server.crt").getFile());
+        connectorConfig.setCertFile(ManagedChannelUtilTest.class.getResource(File.separator + "client.crt").getFile());
+        connectorConfig.setKeyFile(ManagedChannelUtilTest.class.getResource(File.separator + "client.key").getFile());
 
         return ChannelTlsCertificates.build(connectorConfig);
     }
