@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.discovery.client.flow;
 
+import static com.tencent.polaris.logging.LoggingConsts.LOGGING_UPDATE_EVENT_ASYNC;
+
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -52,7 +54,7 @@ import org.slf4j.Logger;
 public class WatchFlow {
 
     private static final Logger LOG = LoggerFactory.getLogger(SyncFlow.class);
-    private static final Logger UPDATE_EVENT_LOG = LoggerFactory.getLogger("polaris-update-event");
+    private static final Logger UPDATE_EVENT_LOG = LoggerFactory.getLogger(LOGGING_UPDATE_EVENT_ASYNC);
     private static final Map<ServiceKey, Set<ServiceListener>> watchers = new ConcurrentHashMap<>();
     private final AtomicBoolean initialize = new AtomicBoolean(false);
     private Extensions extensions;

@@ -22,6 +22,11 @@
                     value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
         </layout>
     </appender>
+    <appender name="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="512"/>
+        <param name="Blocking" value="false"/>
+        <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
+    </appender>
 
     <logger name="com.tencent.polaris" additivity="false">
         <level value="INFO"/>
@@ -30,5 +35,9 @@
     <logger name="polaris-update-event" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
+    </logger>
+    <logger name="polaris-update-event-async" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"/>
     </logger>
 </log4j:configuration>
