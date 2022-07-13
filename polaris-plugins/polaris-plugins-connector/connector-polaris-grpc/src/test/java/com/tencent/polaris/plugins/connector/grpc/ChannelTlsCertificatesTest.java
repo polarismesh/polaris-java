@@ -21,7 +21,6 @@ package com.tencent.polaris.plugins.connector.grpc;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
-import java.io.File;
 import java.security.Key;
 import javax.net.ssl.X509TrustManager;
 import org.junit.Before;
@@ -48,9 +47,9 @@ public class ChannelTlsCertificatesTest {
     @Test
     public void testHasNoTrustedCert() {
         serverConnectorConfig.setCertFile(
-                ChannelTlsCertificatesTest.class.getResource(File.separator + "client.crt").getFile());
+                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.crt").getFile());
         serverConnectorConfig.setKeyFile(
-                ChannelTlsCertificatesTest.class.getResource(File.separator + "client.key").getFile());
+                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.key").getFile());
         ChannelTlsCertificates tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
         assertThat(tlsCertificates).isNotNull();
         assertThat(tlsCertificates.getTrustManager()).isNull();
@@ -62,9 +61,9 @@ public class ChannelTlsCertificatesTest {
     @Test
     public void testHasNoCertFile() {
         serverConnectorConfig.setTrustedCAFile(
-                ChannelTlsCertificatesTest.class.getResource(File.separator + "server.crt").getFile());
+                ChannelTlsCertificatesTest.class.getClassLoader().getResource("server.crt").getFile());
         serverConnectorConfig.setKeyFile(
-                ChannelTlsCertificatesTest.class.getResource(File.separator + "client.key").getFile());
+                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.key").getFile());
         ChannelTlsCertificates tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
         assertThat(tlsCertificates).isNotNull().extracting(ChannelTlsCertificates::getTrustManager).isNotNull()
                 .extracting(X509TrustManager::getAcceptedIssuers)
@@ -75,9 +74,9 @@ public class ChannelTlsCertificatesTest {
     @Test
     public void testHasNoKeyFile() {
         serverConnectorConfig.setTrustedCAFile(
-                ChannelTlsCertificatesTest.class.getResource(File.separator + "server.crt").getFile());
+                ChannelTlsCertificatesTest.class.getClassLoader().getResource("server.crt").getFile());
         serverConnectorConfig.setCertFile(
-                ChannelTlsCertificatesTest.class.getResource(File.separator + "client.crt").getFile());
+                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.crt").getFile());
         ChannelTlsCertificates tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
         assertThat(tlsCertificates).isNotNull().extracting(ChannelTlsCertificates::getTrustManager).isNotNull()
                 .extracting(X509TrustManager::getAcceptedIssuers)
