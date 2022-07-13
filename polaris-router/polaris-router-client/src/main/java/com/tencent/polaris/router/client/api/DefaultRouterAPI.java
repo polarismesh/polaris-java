@@ -46,9 +46,11 @@ import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest.RouterNamesGroup;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
 import com.tencent.polaris.router.client.util.RouterValidator;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import org.slf4j.Logger;
 
 /**
@@ -102,6 +104,9 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
         ServiceInstances dstInstances = request.getDstInstances();
         RouteInfo routeInfo = new RouteInfo(request.getSourceService(), dstInstances, request.getMethod());
         routeInfo.setRouterMetadata(request.getRouterMetadata());
+        if (request.getMetadataFailoverType() != null) {
+            routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
+        }
         //获取路由规则
         DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
         BaseFlow.buildFlowControlParam(request, config, engineFlowControlParam);
