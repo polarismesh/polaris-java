@@ -64,7 +64,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>1.8.0-SNAPSHOT</revision>
+        <revision>1.7.1-SNAPSHOT</revision>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -83,6 +83,7 @@
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.9</logback.version>
         <log4j2.version>2.17.2</log4j2.version>
+        <disruptor.version>3.4.4</disruptor.version>
         <log4j.version>1.2.17</log4j.version>
         <junit.version>4.13.1</junit.version>
         <assertj.version>3.16.1</assertj.version>

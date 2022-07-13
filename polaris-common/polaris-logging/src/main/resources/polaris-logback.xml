@@ -21,12 +21,43 @@
         </encoder>
     </appender>
 
+    <appender name="POLARIS_UPDATE_EVENT_LOG_FILE"
+            class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/polaris-update-event.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/polaris-update-event.log.%i</fileNamePattern>
+            <maxIndex>${polaris-update-event.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${polaris-update-event.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"
+            class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>512</queueSize>
+        <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
+    </appender>
+
     <logger name="com.tencent.polaris" level="${polaris.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_LOG_FILE"/>
     </logger>
 
-    <root level="info">
-        <appender-ref ref="POLARIS_LOG_FILE"/>
-    </root>
+    <logger name="polaris-update-event" level="${polaris-update-event.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
+    </logger>
+
+    <logger name="polaris-update-event-async" level="${polaris-update-event.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"/>
+    </logger>
 </configuration>
