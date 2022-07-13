@@ -35,6 +35,11 @@ public interface DefaultPlugins {
     String SERVER_CONNECTOR_CONSUL = "consul";
 
     /**
+     * Name of Nacos Server Connector
+     */
+    String SERVER_CONNECTOR_NACOS = "nacos";
+
+    /**
      * Name of composite server connector.
      */
     String SERVER_CONNECTOR_COMPOSITE = "composite";
