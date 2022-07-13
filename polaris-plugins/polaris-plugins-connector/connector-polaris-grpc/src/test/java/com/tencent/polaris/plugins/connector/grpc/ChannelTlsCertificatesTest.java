@@ -21,6 +21,9 @@ package com.tencent.polaris.plugins.connector.grpc;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.security.Key;
 import javax.net.ssl.X509TrustManager;
 import org.junit.Before;
@@ -45,11 +48,11 @@ public class ChannelTlsCertificatesTest {
     }
 
     @Test
-    public void testHasNoTrustedCert() {
+    public void testHasNoTrustedCert() throws URISyntaxException {
         serverConnectorConfig.setCertFile(
-                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.crt").getFile());
+                getCurrentPath(ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.crt")));
         serverConnectorConfig.setKeyFile(
-                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.key").getFile());
+                getCurrentPath(ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.key")));
         ChannelTlsCertificates tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
         assertThat(tlsCertificates).isNotNull();
         assertThat(tlsCertificates.getTrustManager()).isNull();
@@ -59,11 +62,11 @@ public class ChannelTlsCertificatesTest {
     }
 
     @Test
-    public void testHasNoCertFile() {
+    public void testHasNoCertFile() throws URISyntaxException {
         serverConnectorConfig.setTrustedCAFile(
-                ChannelTlsCertificatesTest.class.getClassLoader().getResource("server.crt").getFile());
+                getCurrentPath(ChannelTlsCertificatesTest.class.getClassLoader().getResource("server.crt")));
         serverConnectorConfig.setKeyFile(
-                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.key").getFile());
+                getCurrentPath(ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.key")));
         ChannelTlsCertificates tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
         assertThat(tlsCertificates).isNotNull().extracting(ChannelTlsCertificates::getTrustManager).isNotNull()
                 .extracting(X509TrustManager::getAcceptedIssuers)
@@ -72,15 +75,19 @@ public class ChannelTlsCertificatesTest {
     }
 
     @Test
-    public void testHasNoKeyFile() {
+    public void testHasNoKeyFile() throws URISyntaxException {
         serverConnectorConfig.setTrustedCAFile(
-                ChannelTlsCertificatesTest.class.getClassLoader().getResource("server.crt").getFile());
+                getCurrentPath(ChannelTlsCertificatesTest.class.getClassLoader().getResource("server.crt")));
         serverConnectorConfig.setCertFile(
-                ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.crt").getFile());
+                getCurrentPath(ChannelTlsCertificatesTest.class.getClassLoader().getResource("client.crt")));
         ChannelTlsCertificates tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
         assertThat(tlsCertificates).isNotNull().extracting(ChannelTlsCertificates::getTrustManager).isNotNull()
                 .extracting(X509TrustManager::getAcceptedIssuers)
                 .extracting(x509Certificates -> x509Certificates.length).isEqualTo(1);
         assertThat(tlsCertificates.getKeyManager()).isNull();
+    }
+
+    private String getCurrentPath(URL url) throws URISyntaxException {
+        return Paths.get(url.toURI()).toString();
     }
 }

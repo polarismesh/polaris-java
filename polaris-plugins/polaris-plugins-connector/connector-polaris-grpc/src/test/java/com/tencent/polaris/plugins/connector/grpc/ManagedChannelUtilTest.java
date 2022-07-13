@@ -23,6 +23,9 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.NettyChannelBuilder;
 import io.netty.handler.ssl.SslContext;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import javax.net.ssl.SSLException;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.Test;
@@ -33,7 +36,7 @@ import org.junit.Test;
 public class ManagedChannelUtilTest {
 
     @Test
-    public void testSetChannelTls() throws SSLException {
+    public void testSetChannelTls() throws SSLException, URISyntaxException {
         ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress("127.0.0.1", 8091).usePlaintext();
         ManagedChannelUtil.setChannelTls(builder, buildTlsCertificates());
         assertThat(builder.getClass().getName()).isEqualTo("io.grpc.netty.NettyChannelBuilder");
@@ -41,13 +44,20 @@ public class ManagedChannelUtilTest {
                 .asInstanceOf(InstanceOfAssertFactories.type(SslContext.class)).isNotNull();
     }
 
-    private ChannelTlsCertificates buildTlsCertificates() {
+    private ChannelTlsCertificates buildTlsCertificates() throws URISyntaxException {
         ServerConnectorConfigImpl connectorConfig = new ServerConnectorConfigImpl();
         connectorConfig.setTrustedCAFile(
-                ManagedChannelUtilTest.class.getClassLoader().getResource("server.crt").getFile());
-        connectorConfig.setCertFile(ManagedChannelUtilTest.class.getClassLoader().getResource("client.crt").getFile());
-        connectorConfig.setKeyFile(ManagedChannelUtilTest.class.getClassLoader().getResource("client.key").getFile());
+                getCurrentPath(ManagedChannelUtilTest.class.getClassLoader().getResource("server.crt")));
+        connectorConfig.setCertFile(
+                getCurrentPath(ManagedChannelUtilTest.class.getClassLoader().getResource("client.crt")));
+        connectorConfig.setKeyFile(
+                getCurrentPath(ManagedChannelUtilTest.class.getClassLoader().getResource("client.key")));
 
         return ChannelTlsCertificates.build(connectorConfig);
+    }
+
+
+    private String getCurrentPath(URL url) throws URISyntaxException {
+        return Paths.get(url.toURI()).toString();
     }
 }
