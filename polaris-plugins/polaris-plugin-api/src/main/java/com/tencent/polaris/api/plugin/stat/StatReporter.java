@@ -34,5 +34,10 @@ public interface StatReporter extends Plugin {
      */
     void reportStat(StatInfo statInfo);
 
-
+    /**
+     * Get stat reporter metadata info
+     *
+     * @return ReporterMetaInfo
+     */
+    ReporterMetaInfo metaInfo();
 }

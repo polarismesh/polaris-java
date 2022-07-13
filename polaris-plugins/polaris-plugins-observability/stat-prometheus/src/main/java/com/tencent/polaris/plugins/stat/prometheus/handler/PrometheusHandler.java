@@ -38,10 +38,7 @@ import com.tencent.polaris.plugins.stat.common.model.StatRevisionMetric;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
-import io.prometheus.client.exporter.PushGateway;
-import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -52,59 +49,36 @@ import org.slf4j.Logger;
 
 /**
  * 通过向Prometheus PushGateWay推送StatInfo消息来处理StatInfo。
+ *
+ * @author wallezhang
  */
-public class PrometheusPushHandler implements StatInfoHandler {
+public class PrometheusHandler implements StatInfoHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PrometheusHandler.class);
 
-    public static final int PUSH_DEFAULT_INTERVAL_MILLI = 30 * 1000;
-    public static final String PUSH_DEFAULT_JOB_NAME = "polaris-client";
-    public static final String PUSH_GROUP_KEY = "instance";
+    public static final int DEFAULT_INTERVAL_MILLI = 30 * 1000;
     public static final int REVISION_MAX_SCOPE = 2;
-
     // schedule
     private final AtomicBoolean firstHandle = new AtomicBoolean(false);
-    private ScheduledExecutorService scheduledPushTask;
+    private ScheduledExecutorService scheduledAggregationTask;
     // storage
     private StatInfoCollectorContainer container;
     // push
     private final String callerIp;
-    private final String jobName;
-    private final String instanceName;
-    private final long pushIntervalMilli;
     private final CollectorRegistry promRegistry;
     private final Map<String, Gauge> sampleMapping;
-    private final ServiceDiscoveryProvider addressProvider;
-    private String pushAddress;
-    private PushGateway pushGateway;
-
-    public PrometheusPushHandler(String callerIp, PrometheusPushHandlerConfig config, ServiceDiscoveryProvider provider,
-            String jobName, String instanceName) {
-        this(callerIp, config.getPushInterval(), provider, jobName, instanceName);
-    }
 
     /**
      * 构造函数
      *
      * @param callerIp 调用者Ip
-     * @param pushIntervalS 向PushGateWay推送的时间间隔
-     * @param provider push的地址提供者
      */
-    private PrometheusPushHandler(String callerIp, Long pushIntervalS, ServiceDiscoveryProvider provider,
-            String jobName, String instanceName) {
+    public PrometheusHandler(String callerIp) {
         this.callerIp = callerIp;
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
-        this.promRegistry = new CollectorRegistry(true);
-        this.addressProvider = provider;
-        this.jobName = jobName;
-        this.instanceName = instanceName;
-        if (null != pushIntervalS) {
-            this.pushIntervalMilli = pushIntervalS;
-        } else {
-            this.pushIntervalMilli = PUSH_DEFAULT_INTERVAL_MILLI;
-        }
-        this.scheduledPushTask = Executors.newSingleThreadScheduledExecutor();
+        this.promRegistry = CollectorRegistry.defaultRegistry;
+        this.scheduledAggregationTask = Executors.newSingleThreadScheduledExecutor();
         initSampleMapping(MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY,
                 SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
         initSampleMapping(MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY,
@@ -128,7 +102,7 @@ public class PrometheusPushHandler implements StatInfoHandler {
     @Override
     public void handle(StatInfo statInfo) {
         if (firstHandle.compareAndSet(false, true)) {
-            startSchedulePushTask();
+            startScheduleAggregationTask();
         }
 
         if (null == statInfo) {
@@ -178,69 +152,38 @@ public class PrometheusPushHandler implements StatInfoHandler {
             container = null;
         }
 
-        if (scheduledPushTask != null) {
-            scheduledPushTask.shutdown();
-            scheduledPushTask = null;
+        if (scheduledAggregationTask != null) {
+            scheduledAggregationTask.shutdown();
+            scheduledAggregationTask = null;
         }
     }
 
-    private void startSchedulePushTask() {
-        if (null != container && null != scheduledPushTask && null != sampleMapping) {
-            this.scheduledPushTask.scheduleWithFixedDelay(this::doPush,
-                    pushIntervalMilli,
-                    pushIntervalMilli,
+    private void startScheduleAggregationTask() {
+        if (null != container && null != scheduledAggregationTask && null != sampleMapping) {
+            this.scheduledAggregationTask.scheduleWithFixedDelay(this::doAggregation,
+                    DEFAULT_INTERVAL_MILLI,
+                    DEFAULT_INTERVAL_MILLI,
                     TimeUnit.MILLISECONDS);
-            LOG.info("start schedule push task, task interval {}", pushIntervalMilli);
+            LOG.info("start schedule metric aggregation task, task interval {}", DEFAULT_INTERVAL_MILLI);
         }
     }
 
-    private void doPush() {
-        try {
-            putDataFromContainerInOrder(container.getInsCollector(),
-                    container.getInsCollector().getCurrentRevision(),
-                    SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
-            putDataFromContainerInOrder(container.getRateLimitCollector(),
-                    container.getRateLimitCollector().getCurrentRevision(),
-                    SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
-            putDataFromContainerInOrder(container.getCircuitBreakerCollector(),
-                    0,
-                    SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
+    private void doAggregation() {
+        putDataFromContainerInOrder(container.getInsCollector(),
+                container.getInsCollector().getCurrentRevision(),
+                SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
+        putDataFromContainerInOrder(container.getRateLimitCollector(),
+                container.getRateLimitCollector().getCurrentRevision(),
+                SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
+        putDataFromContainerInOrder(container.getCircuitBreakerCollector(),
+                0,
+                SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
 
-            try {
-                if (null == pushAddress && null != addressProvider) {
-                    setPushAddress(addressProvider.getAddress());
-                }
-
-                if (null == pushAddress) {
-                    return;
-                }
-
-                if (getPushGateway() == null) {
-                    LOG.info("init push-gateway {} ", pushAddress);
-                    setPushGateway(new PushGateway(pushAddress));
-                }
-
-                pushGateway.pushAdd(promRegistry, jobName, Collections.singletonMap(PUSH_GROUP_KEY, instanceName));
-                //pushGateway.pushAdd(promRegistry, jobName, Collections.emptyMap());
-                LOG.info("push result to push-gateway {} success", pushAddress);
-            } catch (IOException exception) {
-                LOG.error("push result to push-gateway {} encountered exception, exception:{}", pushAddress,
-                        exception.getMessage());
-                setPushGateway(null);
-                setPushAddress(null);
-                return;
+        for (StatInfoCollector<?, ? extends StatMetric> s : container.getCollectors()) {
+            if (s instanceof StatInfoRevisionCollector<?>) {
+                long currentRevision = ((StatInfoRevisionCollector<?>) s).incRevision();
+                LOG.debug("RevisionCollector inc current revision to {}", currentRevision);
             }
-
-            for (StatInfoCollector<?, ? extends StatMetric> s : container.getCollectors()) {
-                if (s instanceof StatInfoRevisionCollector<?>) {
-                    long currentRevision = ((StatInfoRevisionCollector<?>) s).incRevision();
-                    LOG.debug("RevisionCollector inc current revision to {}", currentRevision);
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("push result to push-gateway {} encountered exception, exception:{}", pushAddress,
-                    e.getMessage());
-            e.printStackTrace();
         }
     }
 
@@ -413,18 +356,6 @@ public class PrometheusPushHandler implements StatInfoHandler {
         }
 
         return host + ":" + port;
-    }
-
-    protected void setPushAddress(String address) {
-        this.pushAddress = address;
-    }
-
-    protected void setPushGateway(PushGateway pushGateway) {
-        this.pushGateway = pushGateway;
-    }
-
-    protected PushGateway getPushGateway() {
-        return this.pushGateway;
     }
 
     protected CollectorRegistry getPromRegistry() {

@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.stat.prometheus.handler;
+package com.tencent.polaris.plugins.stat.pushgateway.handler;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
@@ -25,9 +25,10 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
 
 public class ServiceDiscoveryProvider {
 
