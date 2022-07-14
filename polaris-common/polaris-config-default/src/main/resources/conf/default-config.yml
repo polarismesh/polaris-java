@@ -74,10 +74,15 @@ global:
     enable: false
     plugin:
       prometheus:
-        #描述: 上报给prometheus pushgateway的地址
-        pushgatewayAddress: 127.0.0.1:9090
-        #描述: 上报给pushgateway的时间间隔
-        pushInterval: 10s
+        #描述: 设置 prometheus http-server 的监听端口
+        #类型:int
+        #默认值: 28080
+        #如果设置为负数，则不会开启默认的http-server，如果设置为0，则随机选择一个可用端口进行启动 http-server
+        port: 28080
+        #描述: 设置 prometheus http-server 的拉取path
+        #类型:string
+        #默认值: /metric
+        path: /metric
 #描述: 主调端配置
 consumer:
   # Switch of discovery.
