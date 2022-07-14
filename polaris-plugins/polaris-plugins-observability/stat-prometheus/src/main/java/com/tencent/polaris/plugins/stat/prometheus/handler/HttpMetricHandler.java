@@ -17,9 +17,12 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
+import static com.tencent.polaris.api.config.global.StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exporter.common.TextFormat;
 import java.io.ByteArrayOutputStream;
@@ -31,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
+import org.slf4j.Logger;
 
 /**
  * Handle prometheus http server metric requests
@@ -38,6 +42,8 @@ import java.util.zip.GZIPOutputStream;
  * @author wallezhang
  */
 public class HttpMetricHandler implements HttpHandler {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HttpMetricHandler.class);
 
     private final CollectorRegistry collectorRegistry;
     private final LocalByteArray response = new LocalByteArray();
@@ -78,7 +84,7 @@ public class HttpMetricHandler implements HttpHandler {
             exchange.sendResponseHeaders(200, response.size());
             response.writeTo(exchange.getResponseBody());
         }
-
+        LOG.info("Metrics is pulled by " + DEFAULT_REPORTER_PROMETHEUS);
         exchange.close();
     }
 
