@@ -31,14 +31,14 @@ public class PrometheusHttpServerTest {
     private PrometheusHttpServer httpServer;
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         httpServer.stopServer();
     }
 
     @Test
     public void testHttpServerWithPort() throws IOException {
-        httpServer = new PrometheusHttpServer("127.0.0.1", 28080);
-        URL metricsUrl = new URL("http://127.0.0.1:28080/metrics");
+        httpServer = new PrometheusHttpServer("127.0.0.1", 18080);
+        URL metricsUrl = new URL("http://127.0.0.1:18080/metrics");
         HttpURLConnection metricsConn = (HttpURLConnection) metricsUrl.openConnection();
         metricsConn.setRequestMethod("GET");
         metricsConn.connect();
@@ -61,8 +61,8 @@ public class PrometheusHttpServerTest {
 
     @Test
     public void testHttpServerWithPath() throws IOException {
-        httpServer = new PrometheusHttpServer("127.0.0.1", 28080, "/customMetrics");
-        URL metricsUrl = new URL("http://127.0.0.1:28080/customMetrics");
+        httpServer = new PrometheusHttpServer("127.0.0.1", 18081, "/customMetrics");
+        URL metricsUrl = new URL("http://127.0.0.1:18081/customMetrics");
         HttpURLConnection metricsConn = (HttpURLConnection) metricsUrl.openConnection();
         metricsConn.setRequestMethod("GET");
         metricsConn.connect();
