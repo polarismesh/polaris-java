@@ -17,8 +17,10 @@ mvn clean install
 ### 如何引入依赖
 
 在 dependencyManagement 中添加如下配置：
+
 ```xml
-<dependencyManagement>        
+
+<dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
@@ -30,6 +32,7 @@ mvn clean install
     </dependencies>
 </dependencyManagement>
 ```
+
 然后在 dependencies 中添加自己所需使用的依赖即可使用。
 
 ## 功能样例
