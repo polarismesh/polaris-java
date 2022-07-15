@@ -19,7 +19,6 @@ mvn clean install
 在 dependencyManagement 中添加如下配置：
 
 ```xml
-
 <dependencyManagement>
     <dependencies>
         <dependency>
