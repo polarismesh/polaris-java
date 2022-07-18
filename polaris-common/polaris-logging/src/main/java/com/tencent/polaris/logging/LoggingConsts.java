@@ -17,9 +17,17 @@
 
 package com.tencent.polaris.logging;
 
+/**
+ * Constants of Logging.
+ *
+ * @author Haotian Zhang
+ */
 public interface LoggingConsts {
 
     String LOGGING_CONFIG_PROPERTY = "polaris.logging.config";
 
     String LOGGING_PATH_PROPERTY = "polaris.log.home";
+
+    String LOGGING_UPDATE_EVENT = "polaris-update-event";
+    String LOGGING_UPDATE_EVENT_ASYNC = "polaris-update-event-async";
 }

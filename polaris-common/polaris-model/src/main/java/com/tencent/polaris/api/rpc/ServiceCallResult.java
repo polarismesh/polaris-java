@@ -81,7 +81,7 @@ public class ServiceCallResult implements InstanceGauge {
     private String subset;
 
     /**
-     * 方法
+     * 方法，指HTTP Path，不是HTTP Method
      */
     private String method;
 
@@ -98,12 +98,20 @@ public class ServiceCallResult implements InstanceGauge {
         return host;
     }
 
+    public void setHost(String host) {
+        this.host = host;
+    }
+
     @Override
     public int getPort() {
         if (null != instance) {
             return instance.getPort();
         }
         return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
     @Override
@@ -123,6 +131,10 @@ public class ServiceCallResult implements InstanceGauge {
         return namespace;
     }
 
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
     @Override
     public String getService() {
         if (null != instance) {
@@ -131,28 +143,16 @@ public class ServiceCallResult implements InstanceGauge {
         return service;
     }
 
+    public void setService(String service) {
+        this.service = service;
+    }
+
     @Override
     public String getInstanceId() {
         if (null == instance) {
             return "";
         }
         return instance.getId();
-    }
-
-    public void setService(String service) {
-        this.service = service;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     @Override
@@ -174,13 +174,13 @@ public class ServiceCallResult implements InstanceGauge {
     }
 
     @Override
-    public void setInstance(Instance instance) {
-        this.instance = instance;
+    public Instance getInstance() {
+        return instance;
     }
 
     @Override
-    public Instance getInstance() {
-        return instance;
+    public void setInstance(Instance instance) {
+        this.instance = instance;
     }
 
     @Override

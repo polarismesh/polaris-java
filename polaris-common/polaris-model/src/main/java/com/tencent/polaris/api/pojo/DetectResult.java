@@ -22,36 +22,30 @@ import java.util.Date;
 /**
  * 健康探测结果
  *
- * @author andrewshan
- * @date 2019/8/21
+ * @author andrewshan, Haotian Zhang
  */
 public class DetectResult {
-
-    /**
-     * 探测类型，与插件名相同
-     */
-    private String detectType;
 
     /**
      * 探测持续时间
      */
     private final long elapseTime;
-
     /**
      * 上一次的探测时间
      */
     private final Date lastDetectTime;
-
-
     /**
      * 探测返回结果
      */
     private final RetStatus retStatus;
-
     /**
      * 下一次探测时间
      */
     private final Date nextDetectTime;
+    /**
+     * 探测类型，与插件名相同
+     */
+    private String detectType;
 
     public DetectResult(RetStatus retStatus, long elapseTime, Date lastDetectTime, Date nextDetectTime) {
         this.retStatus = retStatus;
@@ -89,5 +83,16 @@ public class DetectResult {
 
     public Date getNextDetectTime() {
         return nextDetectTime;
+    }
+
+    @Override
+    public String toString() {
+        return "DetectResult{" +
+                "detectType='" + detectType + '\'' +
+                ", elapseTime=" + elapseTime +
+                ", lastDetectTime=" + lastDetectTime +
+                ", retStatus=" + retStatus +
+                ", nextDetectTime=" + nextDetectTime +
+                '}';
     }
 }

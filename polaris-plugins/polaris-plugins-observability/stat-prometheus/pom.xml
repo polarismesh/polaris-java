@@ -13,6 +13,11 @@
     <artifactId>stat-prometheus</artifactId>
     <name>Polaris Plugins Observability Prometheus</name>
     <description>Polaris Plugins Observability Prometheus JAR</description>
+
+    <properties>
+        <powermock.version>2.0.9</powermock.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
@@ -27,8 +32,21 @@
         </dependency>
         <dependency>
             <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient_pushgateway</artifactId>
+            <artifactId>simpleclient_httpserver</artifactId>
             <version>${prometheus.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-module-junit4</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.powermock</groupId>
+            <artifactId>powermock-api-mockito2</artifactId>
+            <version>${powermock.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
