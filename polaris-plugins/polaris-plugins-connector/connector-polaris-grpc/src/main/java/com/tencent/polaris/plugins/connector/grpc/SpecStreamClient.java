@@ -209,12 +209,27 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             if (null == serviceEventKey) {
                 if (CollectionUtils.isNotEmpty(pendingTask.values())) {
                     notifyTasks.addAll(pendingTask.values());
+
+                    for (ServiceUpdateTask task : pendingTask.values()) {
+                        PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
+                                String.format("[ServerConnector]code %s, fail to query service %s from server(%s): %s",
+                                        validResult.getErrorCode(), task.getServiceEventKey(),
+                                        connection.getConnID(), validResult.getMessage()));
+                        task.notifyServerEvent(new ServerEvent(task.getServiceEventKey(), null, error));
+                    }
+
                     pendingTask.clear();
                 }
             } else {
                 ServiceUpdateTask task = pendingTask.remove(serviceEventKey);
                 if (null != task) {
                     notifyTasks.add(task);
+                    PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
+                            String.format("[ServerConnector]code %s, fail to query service %s from server(%s): %s",
+                                    validResult.getErrorCode(), task.getServiceEventKey(),
+                                    connection.getConnID(), validResult.getMessage()));
+                    task.notifyServerEvent(new ServerEvent(task.getServiceEventKey(), null, error));
+
                 }
             }
         }
@@ -252,19 +267,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         } else {
             LOG.debug("[ServerConnector]receive response for {}", serviceEventKey);
         }
-        PolarisException error;
-        if (!response.hasCode() ||
-                response.getCode().getValue() == ServerCodes.EXECUTE_SUCCESS ||
-                response.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
-            error = null;
-        } else {
-            int respCode = response.getCode().getValue();
-            String info = response.getInfo().getValue();
-            error = ServerErrorResponseException.build(respCode,
-                    String.format("[ServerConnector]code %d, fail to query service %s from server(%s): %s", respCode,
-                            serviceKey, connection.getConnID(), info));
-        }
-        boolean svcDeleted = updateTask.notifyServerEvent(new ServerEvent(serviceEventKey, response, error));
+        boolean svcDeleted = updateTask.notifyServerEvent(new ServerEvent(serviceEventKey, response, null));
         if (!svcDeleted) {
             updateTask.addUpdateTaskSet();
         }

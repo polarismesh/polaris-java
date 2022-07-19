@@ -42,7 +42,7 @@ global:
   #描述: SDK api调用相关配置
   api:
     #描述: api超时时间
-    timeout: 5s
+    timeout: 1s
     #描述: 客户端给服务端定时上报自身信息的间隔
     reportInterval: 10m
     #描述: api因为网络原因调用失败后的最大重试次数

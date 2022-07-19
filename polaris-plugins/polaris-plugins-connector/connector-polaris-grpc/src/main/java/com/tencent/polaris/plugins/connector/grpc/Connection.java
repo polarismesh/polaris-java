@@ -272,5 +272,16 @@ public class Connection {
         public int hashCode() {
             return Objects.hash(id, serviceKey, clusterType, host, port, protocol);
         }
+
+        @Override
+        public String toString() {
+            return "ConnID{" +
+                    "serviceKey=" + serviceKey +
+                    ", clusterType=" + clusterType +
+                    ", host='" + host + '\'' +
+                    ", port=" + port +
+                    ", protocol='" + protocol + '\'' +
+                    '}';
+        }
     }
 }

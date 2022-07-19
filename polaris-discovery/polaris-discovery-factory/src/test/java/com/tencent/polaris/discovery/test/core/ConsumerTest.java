@@ -176,6 +176,7 @@ public class ConsumerTest {
                 request.setNamespace(NAMESPACE_TEST);
                 request.setService(NOT_EXISTS_SERVICE);
                 InstancesResponse oneInstance = consumerAPI.getOneInstance(request);
+                LOG.info(oneInstance.getServiceInstances().getRevision());
                 Assert.assertFalse(oneInstance.isServiceExist());
             }
             //把实例加上去，可以重新获取
@@ -188,9 +189,11 @@ public class ConsumerTest {
             GetOneInstanceRequest request = new GetOneInstanceRequest();
             request.setNamespace(NAMESPACE_TEST);
             request.setService(NOT_EXISTS_SERVICE);
+            Thread.sleep(3000);
             InstancesResponse oneInstance = consumerAPI.getOneInstance(request);
             Assert.assertEquals(1, oneInstance.getInstances().length);
-
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

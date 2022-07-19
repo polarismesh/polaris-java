@@ -165,7 +165,7 @@ public class QuotaFlow extends Destroyable {
     }
 
     private Rule lookupRule(ServiceRule serviceRule, Map<String, String> labels) {
-        if (null == serviceRule.getRule()) {
+        if (null == serviceRule || null == serviceRule.getRule()) {
             return null;
         }
         RateLimit rateLimitProto = (RateLimit) serviceRule.getRule();
