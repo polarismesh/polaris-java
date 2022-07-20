@@ -14,39 +14,41 @@ You should be able to get off the ground quite quickly by cloning the project yo
  ```
  mvn clean install
  ```
- 
- ## How to Use
- 
- ### Add maven dependency
- 
- These artifacts are available from Maven Central via BOM:
- ```xml
- <dependencyManagement>        
-     <dependencies>
-         <dependency>
-             <groupId>com.tencent.polaris</groupId>
-             <artifactId>polaris-dependencies</artifactId>
-             <version>1.6.1</version>
-             <type>pom</type>
-             <scope>import</scope>
-         </dependency>
-     </dependencies>
- </dependencyManagement>
- ```
- add the module in dependencies.
- 
- ## Examples
- 
- A polaris-examples module is included in our project for you to get started with polaris-java quickly. It contains an example, and you can refer to the readme file in the example project for a quick walkthrough.
- 
- [QuickStart Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/quickstart-example)
- 
- [Discovery Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/discovery-example)
- 
- [Router Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/router-example)
- 
- [CircuitBreaker Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/circuitbreaker-example)
- 
- [RateLimit Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/ratelimit-example)
- 
+
+## How to Use
+
+### Add maven dependency
+
+These artifacts are available from Maven Central via BOM:
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-dependencies</artifactId>
+            <version>${latest.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+add the module in dependencies.
+
+## Examples
+
+A polaris-examples module is included in our project for you to get started with polaris-java quickly. It contains an example, and you can refer to the readme file in the example project for a quick walkthrough.
+
+[QuickStart Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/quickstart-example)
+
+[Discovery Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/discovery-example)
+
+[Router Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/router-example)
+
+[CircuitBreaker Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/circuitbreaker-example)
+
+[RateLimit Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/ratelimit-example)
+
 [Configuration Example](https://github.com/polarismesh/polaris-java/tree/main/polaris-examples/configuration-example)
