@@ -51,10 +51,6 @@ import org.slf4j.Logger;
  */
 public class CacheObject implements EventHandler {
 
-    public static final ServicesByProto EMPTY_SERVICE = new ServicesByProto();
-    public static final ServiceInstancesByProto EMPTY_INSTANCES = new ServiceInstancesByProto();
-    public static final ServiceRuleByProto EMPTY_SERVICE_RULE = new ServiceRuleByProto();
-
     private static final Logger LOG = LoggerFactory.getLogger(CacheObject.class);
 
     private final AtomicReference<RegistryCacheValue> value = new AtomicReference<>();
