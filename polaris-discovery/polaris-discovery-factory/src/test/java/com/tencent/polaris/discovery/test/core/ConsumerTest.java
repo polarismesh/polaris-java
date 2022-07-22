@@ -189,7 +189,7 @@ public class ConsumerTest {
             GetOneInstanceRequest request = new GetOneInstanceRequest();
             request.setNamespace(NAMESPACE_TEST);
             request.setService(NOT_EXISTS_SERVICE);
-            Thread.sleep(3000);
+            Thread.sleep(13000);
             InstancesResponse oneInstance = consumerAPI.getOneInstance(request);
             Assert.assertEquals(1, oneInstance.getInstances().length);
         } catch (InterruptedException e) {
