@@ -38,15 +38,15 @@
                 additivity="false">
             <AppenderRef ref="POLARIS_LOG_FILE"/>
         </Logger>
-        <Logger name="polaris-update-event"
+        <Logger name="polaris-update-event-async"
                 level="${sys:polaris-update-event.log.level:-info}"
                 additivity="false">
             <AppenderRef ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
         </Logger>
-        <AsyncLogger name="polaris-update-event-async"
-                level="${sys:polaris-update-event.log.level:-info}"
-                additivity="false">
-            <AppenderRef ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
-        </AsyncLogger>
+<!--        <AsyncLogger name="polaris-update-event-async"-->
+<!--                level="${sys:polaris-update-event.log.level:-info}"-->
+<!--                additivity="false">-->
+<!--            <AppenderRef ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>-->
+<!--        </AsyncLogger>-->
     </Loggers>
 </Configuration>
