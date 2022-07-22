@@ -139,6 +139,9 @@ consumer:
       metadataRouter:
         #描述: 元数据路由降级策略。none(不降级), all(降级返回所有的节点), others(降级返回其他KEY的节点)
         metadataFailOverType: all
+      ruleBasedRouter:
+        #描述：规则路由降级策略。all（降级返回所有的节点）,none(不降级)
+        failoverType: all
       nearbyBasedRouter:
         #描述: 就近路由的最小匹配级别。region(大区)、zone(区域)、campus(园区)
         matchLevel: zone
