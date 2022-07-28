@@ -17,7 +17,11 @@
 
 package com.tencent.polaris.plugins.outlier.detector.http;
 
+import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -37,35 +41,40 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/9/19
  */
-public class HttpHealthChecker implements HealthChecker {
+public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpHealthChecker.class);
 
     private static final int EXPECT_CODE = 200;
 
+    private Config config;
+
     @Override
     public DetectResult detectInstance(Instance instance) throws PolarisException {
         try {
-            //TODO 从配置读取
-            String pattern = "/detect";
+            String pattern = config.getPath();
 
             String path = String.format("http://%s:%d%s", instance.getHost(), instance.getPort(), pattern);
             java.net.URL url = new java.net.URL(path);
             java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
 
             conn.setRequestMethod("GET");
-            conn.setConnectTimeout(3 * 1000);// 连接超时
-            conn.setReadTimeout(3 * 1000);// 读取超时
+            conn.setConnectTimeout(config.getTimeout().intValue());// 连接超时
+            conn.setReadTimeout(config.getTimeout().intValue());// 读取超时
 
             if (conn.getResponseCode() == EXPECT_CODE) {
                 return new DetectResult(RetStatus.RetSuccess);
             }
             return new DetectResult(RetStatus.RetFail);
         } catch (Exception e) {
-            LOG.error("http detect exception, service:{}, host:{}, port:{}, e:{}", instance.getService(),
+            LOG.debug("http detect exception, service:{}, host:{}, port:{}, e:{}", instance.getService(),
                     instance.getHost(), instance.getPort(), e);
             return new DetectResult(RetStatus.RetFail);
         }
+    }
+    @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return Config.class;
     }
 
     @Override
@@ -80,12 +89,17 @@ public class HttpHealthChecker implements HealthChecker {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-
+        OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
+        Config cfg = outlierDetection.getPluginConfig(getName(), Config.class);
+        if (cfg == null) {
+            throw new PolarisException(ErrorCode.INVALID_CONFIG,
+                    String.format("plugin %s config is missing", getName()));
+        }
+        this.config = cfg;
     }
 
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-
     }
 
     @Override
