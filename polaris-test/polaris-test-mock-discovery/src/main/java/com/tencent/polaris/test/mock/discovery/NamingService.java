@@ -376,6 +376,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 instances = services.get(serviceKey);
                 if (CollectionUtils.isNotEmpty(instances)) {
                     builder.addAllInstances(instances);
+                    service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
                 }
                 builder.setType(DiscoverResponseType.INSTANCE);
                 break;
@@ -385,6 +386,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 routing = serviceRoutings.get(serviceKey);
                 if (null != routing) {
                     builder.setRouting(routing);
+                    service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
                 }
                 builder.setType(DiscoverResponseType.ROUTING);
                 break;
@@ -392,6 +394,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 circuitBreaker = serviceCircuitBreakers.get(serviceKey);
                 if (null != circuitBreaker) {
                     builder.setCircuitBreaker(circuitBreaker);
+                    service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
                 }
                 builder.setType(DiscoverResponseType.CIRCUIT_BREAKER);
                 break;
@@ -399,6 +402,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 rateLimit = serviceRateLimits.get(serviceKey);
                 if (null != rateLimit) {
                     builder.setRateLimit(rateLimit);
+                    service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
                 }
                 builder.setType(DiscoverResponseType.RATE_LIMIT);
                 break;
@@ -438,7 +442,6 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
             builder.setInfo(StringValue.newBuilder().setValue(info).build());
         }
         builder.setService(service);
-
         return builder.build();
     }
 

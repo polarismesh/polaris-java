@@ -21,6 +21,8 @@ package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.Services;
+
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -37,6 +39,9 @@ public class ServicesResponse extends BaseEntity  {
     }
 
     public List<ServiceInfo> getServices() {
+        if (services == null) {
+            return Collections.emptyList();
+        }
         return services.getServices();
     }
 

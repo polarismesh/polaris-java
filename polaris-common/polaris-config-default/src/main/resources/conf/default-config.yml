@@ -42,7 +42,7 @@ global:
   #描述: SDK api调用相关配置
   api:
     #描述: api超时时间
-    timeout: 5s
+    timeout: 1s
     #描述: 客户端给服务端定时上报自身信息的间隔
     reportInterval: 10m
     #描述: api因为网络原因调用失败后的最大重试次数
@@ -139,6 +139,9 @@ consumer:
       metadataRouter:
         #描述: 元数据路由降级策略。none(不降级), all(降级返回所有的节点), others(降级返回其他KEY的节点)
         metadataFailOverType: all
+      ruleBasedRouter:
+        #描述：规则路由降级策略。all（降级返回所有的节点）,none(不降级)
+        failoverType: all
       nearbyBasedRouter:
         #描述: 就近路由的最小匹配级别。region(大区)、zone(区域)、campus(园区)
         matchLevel: zone
