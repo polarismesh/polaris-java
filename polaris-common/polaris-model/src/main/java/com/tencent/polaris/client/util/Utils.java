@@ -66,8 +66,8 @@ public class Utils {
             return StringUtils.replace(path, "$HOME", userHome);
         }
         if (path.startsWith("$USER_DIR")) {
-            String userHome = System.getProperty("user.dir");
-            return StringUtils.replace(path, "$USER_DIR", userHome);
+            String userDir = System.getProperty("user.dir");
+            return StringUtils.replace(path, "$USER_DIR", userDir);
         }
         return path;
     }
