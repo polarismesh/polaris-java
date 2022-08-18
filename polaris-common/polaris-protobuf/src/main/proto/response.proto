@@ -62,6 +62,9 @@ message DiscoverResponse {
     RATE_LIMIT = 4;
     CIRCUIT_BREAKER = 5;
     SERVICES = 6;
+    reserved 7 to 11;
+    reserved "MESH", "MESH_CONFIG", "FLUX_DBREFRESH", "FLUX_SDK", "FLUX_SERVER";
+    NAMESPACES = 12;
   }
 
   DiscoverResponseType type = 3;
@@ -71,4 +74,6 @@ message DiscoverResponse {
   RateLimit rateLimit = 7;
   CircuitBreaker circuitBreaker = 8;
   repeated Service services = 9;
+  repeated Namespace namespaces = 10;
+  reserved 11 to 13;
 }
