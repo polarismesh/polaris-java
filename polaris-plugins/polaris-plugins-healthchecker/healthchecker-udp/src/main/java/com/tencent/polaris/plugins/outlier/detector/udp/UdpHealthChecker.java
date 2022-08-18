@@ -77,8 +77,7 @@ public class UdpHealthChecker implements HealthChecker, PluginConfigProvider  {
             return new DetectResult(RetStatus.RetSuccess);
 
         } catch (Exception e) {
-            LOG.debug("udp detect instance exception, host:{}, port:{}, e:{}", instance.getHost(), instance.getPort(),
-                    e);
+            LOG.warn("udp detect instance exception, host:{}, port:{}.", instance.getHost(), instance.getPort());
             return new DetectResult(RetStatus.RetFail);
         } finally {
             if (socket != null) {

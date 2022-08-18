@@ -67,8 +67,8 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
             }
             return new DetectResult(RetStatus.RetFail);
         } catch (Exception e) {
-            LOG.debug("http detect exception, service:{}, host:{}, port:{}, e:{}", instance.getService(),
-                    instance.getHost(), instance.getPort(), e);
+            LOG.warn("http detect exception, service:{}, host:{}, port:{}.", instance.getService(),
+                    instance.getHost(), instance.getPort());
             return new DetectResult(RetStatus.RetFail);
         }
     }

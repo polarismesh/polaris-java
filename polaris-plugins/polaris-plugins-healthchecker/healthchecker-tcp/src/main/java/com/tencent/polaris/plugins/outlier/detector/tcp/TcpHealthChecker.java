@@ -87,7 +87,7 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
             return new DetectResult(RetStatus.RetFail);
 
         } catch (IOException e) {
-            LOG.debug("tcp detect instance, create sock exception, host:{}, port:{}, e:{}", host, port, e);
+            LOG.warn("tcp detect instance, create sock exception, host:{}, port:{}.", host, port);
             return new DetectResult(RetStatus.RetFail);
         } finally {
             if (socket != null) {
