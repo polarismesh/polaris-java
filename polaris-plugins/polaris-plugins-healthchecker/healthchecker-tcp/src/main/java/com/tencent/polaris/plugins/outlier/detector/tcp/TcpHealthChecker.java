@@ -17,7 +17,12 @@
 
 package com.tencent.polaris.plugins.outlier.detector.tcp;
 
+import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
+import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -41,9 +46,11 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/9/19
  */
-public class TcpHealthChecker implements HealthChecker {
+public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(TcpHealthChecker.class);
+
+    private Config config;
 
     @Override
     public DetectResult detectInstance(Instance instance) throws PolarisException {
@@ -54,8 +61,8 @@ public class TcpHealthChecker implements HealthChecker {
         try {
             socket = new Socket(host, port);
             //TODO 从配置中读取
-            String sendStr = "detect";
-            String expectRecvStr = "ok";
+            String sendStr = config.getSend();
+            String expectRecvStr = config.getReceive();
 
             boolean needSendData = !(sendStr == null || "".equals(sendStr));
             if (!needSendData) {
@@ -80,8 +87,8 @@ public class TcpHealthChecker implements HealthChecker {
             return new DetectResult(RetStatus.RetFail);
 
         } catch (IOException e) {
-            LOG.info("tcp detect instance, create sock exception, host:{}, port:{}, e:{}", host, port, e);
-            return null;
+            LOG.warn("tcp detect instance, create sock exception, host:{}, port:{}.", host, port);
+            return new DetectResult(RetStatus.RetFail);
         } finally {
             if (socket != null) {
                 try {
@@ -109,9 +116,15 @@ public class TcpHealthChecker implements HealthChecker {
                 // 当返回-1时代表已经读完，防止死循环
                 return recvBytes;
             }
-        } while (tempLen >= 0 || recvLen >= maxLen);
+        } while ( recvLen >= maxLen);
 
         return recvBytes;
+    }
+
+
+    @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return Config.class;
     }
 
     @Override
@@ -126,7 +139,13 @@ public class TcpHealthChecker implements HealthChecker {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-
+        OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
+        Config cfg = outlierDetection.getPluginConfig(getName(), Config.class);
+        if (cfg == null) {
+            throw new PolarisException(ErrorCode.INVALID_CONFIG,
+                    String.format("plugin %s config is missing", getName()));
+        }
+        this.config = cfg;
     }
 
     @Override

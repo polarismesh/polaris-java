@@ -197,9 +197,29 @@ consumer:
     checkPeriod: 30s
     #描述：主动探测插件链
     chain:
-      - http
       - tcp
       - udp
+      - http
+    plugin:
+      # 描述:基于TCP的故障探测策略
+      tcp:
+        # 描述:tcp发送的探测包，为空则默认只做连接探测
+        send: ""
+        # 描述:期望接收的TCP回复包，为空则默认只做连接或发包探测
+        receive: ""
+      # 描述:基于TCP的故障探测策略
+      udp:
+        # 描述:探测超时时间
+        timeout: 100ms
+        # 描述:udp发送的探测包，假如不配置，则不启动UDP探测
+        send: ""
+        # 描述:期望接收的UDP回复包，假如不配置，则不启动UDP探测
+        receive: ""
+      http:
+        # 描述:探测超时时间
+        timeout: 100ms
+        # 描述:http探测路径，必选字段，假如不配置，则不启用http探测
+        path: /ping
   #服务订阅相关配置
   subscribe:
     #服务订阅执行回调Listener的线程数量

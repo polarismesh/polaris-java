@@ -370,7 +370,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
             InstanceByProto instance = (InstanceByProto) instanceProperty.getInstance();
             InstanceLocalValue instanceLocalValue = instance.getInstanceLocalValue();
             Map<String, Object> properties = instanceProperty.getProperties();
-            LOG.info("update instance properties for instance {}, properties {}", instance.getId(), properties);
+            LOG.info("update instance properties for instance id:{}, host:{}, port{}, properties {}", instance.getId(),
+                    instance.getHost(), instance.getPort(), properties);
             for (Map.Entry<String, Object> entry : properties.entrySet()) {
                 switch (entry.getKey()) {
                     case InstanceProperty.PROPERTY_CIRCUIT_BREAKER_STATUS:
