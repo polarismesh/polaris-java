@@ -8,7 +8,9 @@ This example illustrates how to use polaris-java for consumer or provider applic
 
 ### Connect to polaris
 
-1. Add dependency polaris-all in the pom.xml file in your project.
+1.Make sure you have correctly config `dependencyManagement`，refer：[add-maven-dependency](https://github.com/polarismesh/polaris-java#add-maven-dependency)
+
+2. Add dependency polaris-all in the pom.xml file in your project.
 ```
 <dependency>
     <groupId>com.tencent.polaris</groupId>
@@ -16,7 +18,7 @@ This example illustrates how to use polaris-java for consumer or provider applic
 </dependency>
 ```
 
-2. Add polaris server address configurations to file /src/main/resources/polaris.yml.
+3. Add polaris server address configurations to file /src/main/resources/polaris.yml.
 ```
 global:
   serverConnector:

@@ -19,7 +19,7 @@ You should be able to get off the ground quite quickly by cloning the project yo
 
 ### Add maven dependency
 
-These artifacts are available from Maven Central via BOM:
+Modify pom.xml in application root, add dependencyManagement for polaris-java:
 
 ```xml
 <dependencyManagement>
@@ -27,7 +27,7 @@ These artifacts are available from Maven Central via BOM:
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-dependencies</artifactId>
-            <version>${latest.version}</version>
+            <version>1.7.3</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
