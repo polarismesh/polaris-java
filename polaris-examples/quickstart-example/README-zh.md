@@ -8,7 +8,9 @@
 
 ### 如何接入
 
-1. 首先，修改 pom.xml 文件，引入 polaris-all。
+1. 首先，确保已经正确配置polaris-java的`dependencyManagement`，参考：[add-maven-dependency](https://github.com/polarismesh/polaris-java/blob/main/README-zh.md#%E5%A6%82%E4%BD%95%E5%BC%95%E5%85%A5%E4%BE%9D%E8%B5%96)
+
+2. 修改 pom.xml 文件，引入 polaris-all。
 ```
 <dependency>
     <groupId>com.tencent.polaris</groupId>
@@ -16,7 +18,7 @@
 </dependency>
 ```
 
-2. 在应用的 /src/main/resources/polaris.yml 配置文件中配置 Polaris Server 地址。
+3. 在应用的 /src/main/resources/polaris.yml 配置文件中配置 Polaris Server 地址。
 ```
 global:
   serverConnector:
