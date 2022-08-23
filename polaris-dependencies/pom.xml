@@ -241,7 +241,11 @@
                 <artifactId>stat-prometheus</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>stat-pushgateway</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- polaris-plugins-ratelimiter-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
