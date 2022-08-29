@@ -33,6 +33,15 @@ import java.io.Closeable;
 public interface ProviderAPI extends AutoCloseable, Closeable {
 
     /**
+     * Register instance, minimum supported version of polaris-server is v1.10.0
+     *
+     * @param req register request
+     * @return service register response
+     * @throws PolarisException polaris exception
+     */
+    InstanceRegisterResponse registerInstance(InstanceRegisterRequest req) throws PolarisException;
+
+    /**
      * 同步注册服务实例
      *
      * @param req 注册请求

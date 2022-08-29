@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.server;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import java.util.Map;
 
 /**
  * 【扩展点接口】services server代理，封装了server对接的逻辑
@@ -49,10 +50,12 @@ public interface ServerConnector extends Plugin {
      * 同步注册服务
      *
      * @param req 注册请求
+     * @param customHeader 自定义请求头
      * @return 注册应答
      * @throws PolarisException 注册过程出现的错误
      */
-    CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException;
+    CommonProviderResponse registerInstance(CommonProviderRequest req, Map<String, String> customHeader)
+            throws PolarisException;
 
     /**
      * 同步反注册服务

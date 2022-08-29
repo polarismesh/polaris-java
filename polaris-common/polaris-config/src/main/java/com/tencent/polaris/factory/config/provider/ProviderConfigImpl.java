@@ -35,6 +35,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ProviderConfigImpl implements ProviderConfig {
 
+    /**
+     * 默认最小注册重试间隔, 30秒, 单位: 毫秒
+     */
+    private final static long DEFAULT_MIN_REGISTER_INTERVAL = 30 * 1000;
     @JsonProperty
     private RateLimitConfigImpl rateLimit;
 
@@ -44,9 +48,17 @@ public class ProviderConfigImpl implements ProviderConfig {
     @JsonIgnore
     private Map<String, RegisterConfigImpl> registerConfigMap = new ConcurrentHashMap<>();
 
+    @JsonProperty
+    private long minRegisterInterval;
+
     @Override
     public RateLimitConfigImpl getRateLimit() {
         return rateLimit;
+    }
+
+    @Override
+    public long getMinRegisterInterval() {
+        return minRegisterInterval;
     }
 
     @Override
@@ -92,6 +104,9 @@ public class ProviderConfigImpl implements ProviderConfig {
     public void setDefault(Object defaultObject) {
         if (null == rateLimit) {
             rateLimit = new RateLimitConfigImpl();
+        }
+        if (minRegisterInterval == 0) {
+            minRegisterInterval = DEFAULT_MIN_REGISTER_INTERVAL;
         }
         if (null != defaultObject) {
             ProviderConfig providerConfig = (ProviderConfig) defaultObject;
