@@ -59,7 +59,9 @@ public class InstanceProperty {
     @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "InstanceProperty{" +
-                "instance=" + instance +
+                "id=" + instance.getId() +
+                ", host=" + instance.getHost() +
+                ", port=" + instance.getPort() +
                 ", properties=" + properties +
                 '}';
     }

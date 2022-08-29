@@ -78,7 +78,7 @@ public class ServiceCallResultChecker implements ServiceCallResultListener {
         if (outlierDetection.getWhen() != When.never) {
             detectTaskExecutors = Executors.newSingleThreadScheduledExecutor();
             long checkPeriodMs = outlierDetection.getCheckPeriod();
-            detectTask = new InstancesDetectTask(extensions);
+            detectTask = new InstancesDetectTask(extensions, outlierDetection.getWhen());
             detectTaskExecutors.scheduleAtFixedRate(detectTask, checkPeriodMs, checkPeriodMs, TimeUnit.MILLISECONDS);
         }
     }

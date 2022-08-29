@@ -17,7 +17,11 @@
 
 package com.tencent.polaris.plugins.outlier.detector.udp;
 
+import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -40,22 +44,23 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/9/19
  */
-public class UdpHealthChecker implements HealthChecker {
+public class UdpHealthChecker implements HealthChecker, PluginConfigProvider  {
 
     private static final Logger LOG = LoggerFactory.getLogger(UdpHealthChecker.class);
+
+    private Config config;
 
     @Override
     public DetectResult detectInstance(Instance instance) throws PolarisException {
         DatagramSocket socket = null;
         try {
-            //TODO 从配置中读取
-            String sendStr = "detect";
+            String sendStr = config.getSend();
             InetAddress inet = InetAddress.getByName(instance.getHost());
             byte[] sendBytes = sendStr.getBytes("UTF8");
 
             socket = new DatagramSocket();
             // 两秒接收不到数据认为超时，防止获取不到连接一直在receive阻塞
-            socket.setSoTimeout(2000);
+            socket.setSoTimeout(config.getTimeout().intValue());
             //发送数据
             DatagramPacket sendPacket = new DatagramPacket(sendBytes, sendBytes.length, inet, instance.getPort());
             socket.send(sendPacket);
@@ -64,7 +69,7 @@ public class UdpHealthChecker implements HealthChecker {
             socket.receive(recvPacket);
 
             socket.close();
-            String expectRecvStr = "ok";
+            String expectRecvStr = config.getReceive();
             byte[] expectRecvBytes = expectRecvStr.getBytes("UTF8");
             if (!Arrays.equals(Arrays.copyOfRange(recvBuf, 0, expectRecvBytes.length), expectRecvBytes)) {
                 return new DetectResult(RetStatus.RetFail);
@@ -72,9 +77,8 @@ public class UdpHealthChecker implements HealthChecker {
             return new DetectResult(RetStatus.RetSuccess);
 
         } catch (Exception e) {
-            LOG.error("udp detect instance exception, host:{}, port:{}, e:{}", instance.getHost(), instance.getPort(),
-                    e);
-            return null;
+            LOG.warn("udp detect instance exception, host:{}, port:{}.", instance.getHost(), instance.getPort());
+            return new DetectResult(RetStatus.RetFail);
         } finally {
             if (socket != null) {
                 socket.close();
@@ -82,6 +86,10 @@ public class UdpHealthChecker implements HealthChecker {
         }
     }
 
+    @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return Config.class;
+    }
     @Override
     public String getName() {
         return DefaultValues.DEFAULT_HEALTH_CHECKER_UDP;
@@ -94,7 +102,13 @@ public class UdpHealthChecker implements HealthChecker {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-
+        OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
+        Config cfg = outlierDetection.getPluginConfig(getName(), Config.class);
+        if (cfg == null) {
+            throw new PolarisException(ErrorCode.INVALID_CONFIG,
+                    String.format("plugin %s config is missing", getName()));
+        }
+        this.config = cfg;
     }
 
     @Override
