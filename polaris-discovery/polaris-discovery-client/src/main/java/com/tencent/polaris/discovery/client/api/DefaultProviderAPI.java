@@ -12,21 +12,17 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
-import com.tencent.polaris.api.rpc.RegisterStateCache;
-import com.tencent.polaris.api.rpc.RegisterStateCache.RegisterState;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.LocationUtils;
-import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.discovery.client.flow.AsyncRegisterFlow;
+import com.tencent.polaris.discovery.client.flow.RegisterStateManager;
 import com.tencent.polaris.discovery.client.util.Validator;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 
 /**
@@ -38,23 +34,18 @@ import org.slf4j.Logger;
 public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultProviderAPI.class);
-    /**
-     * 异步注册header key
-     */
-    private static final String HEADER_KEY_ASYNC_REGIS = "async-regis";
-    private final static int DEFAULT_INSTANCE_TTL = 5;
-    private final static int HEARTBEAT_FAIL_COUNT_THRESHOLD = 2;
+    private static final int DEFAULT_INSTANCE_TTL = 5;
+    private final AsyncRegisterFlow asyncRegisterFlow;
     private ServerConnector serverConnector;
-    private ScheduledThreadPoolExecutor asyncRegisterExecutor;
 
     public DefaultProviderAPI(SDKContext sdkContext) {
         super(sdkContext);
+        asyncRegisterFlow = new AsyncRegisterFlow(sdkContext);
     }
 
     @Override
     protected void subInit() {
         serverConnector = sdkContext.getExtensions().getServerConnector();
-        asyncRegisterExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("async-register"));
     }
 
     private ErrorCode exceptionToErrorCode(Exception exception) {
@@ -69,75 +60,13 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
         if (req.getTtl() == null) {
             req.setTtl(DEFAULT_INSTANCE_TTL);
         }
-        InstanceRegisterResponse instanceRegisterResponse = doRegister(req, createRegisterV2Header());
-        RegisterState registerState = RegisterStateCache.putRegisterState(req);
-        if (registerState != null) {
-            registerState.setTaskFuture(
-                    asyncRegisterExecutor.scheduleWithFixedDelay(() -> doRunHeartbeat(registerState), req.getTtl(),
-                            req.getTtl(), TimeUnit.SECONDS));
-        }
-        return instanceRegisterResponse;
+        return asyncRegisterFlow.registerInstance(req, this::doRegister, this::heartbeat);
     }
 
     @Override
     protected void doDestroy() {
-        RegisterStateCache.destroy();
+        RegisterStateManager.destroy();
         super.doDestroy();
-    }
-
-    private Map<String, String> createRegisterV2Header() {
-        Map<String, String> header = new HashMap<>(1);
-        header.put(HEADER_KEY_ASYNC_REGIS, "true");
-        return header;
-    }
-
-    private void doRunHeartbeat(RegisterState registerState) {
-        InstanceRegisterRequest registerRequest = registerState.getInstanceRegisterRequest();
-        LOG.info("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
-                registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                registerRequest.getPort());
-        try {
-            heartbeat(buildHeartbeatRequest(registerRequest));
-            LOG.info("[AsyncHeartbeat]Instance heartbeat success, namespace:{}, service:{}, host:{}, port:{}",
-                    registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort());
-            return;
-        } catch (PolarisException e) {
-            registerState.incrementFailCount();
-            LOG.error(
-                    "[AsyncHeartbeat]Instance heartbeat failed, namespace:{}, service:{}, host:{}, port:{}, serverErrCode:{}, heartbeat fail count:{}",
-                    registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort(), e.getServerErrCode(), registerState.getHeartbeatFailCounter());
-        }
-
-        long minRegisterInterval = sdkContext.getConfig().getProvider().getMinRegisterInterval();
-        long sinceFirstRegister = System.currentTimeMillis() - registerState.getFirstRegisterTime();
-        if (sinceFirstRegister < minRegisterInterval
-                || registerState.getHeartbeatFailCounter() < HEARTBEAT_FAIL_COUNT_THRESHOLD) {
-            return;
-        }
-        try {
-            doRegister(registerRequest, createRegisterV2Header());
-            LOG.info("[AsyncHeartbeat]Re-register instance success, namespace:{}, service:{}, host:{}, port:{}",
-                    registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort());
-            registerState.resetFailCount();
-        } catch (PolarisException e) {
-            LOG.error(
-                    "[AsyncHeartbeat]Re-register instance failed, namespace:{}, service:{}, host:{}, port:{}, serverErrCode:{}",
-                    registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort(), e.getServerErrCode());
-        }
-    }
-
-    private InstanceHeartbeatRequest buildHeartbeatRequest(InstanceRegisterRequest registerRequest) {
-        InstanceHeartbeatRequest instanceHeartbeatRequest = new InstanceHeartbeatRequest();
-        instanceHeartbeatRequest.setService(registerRequest.getService());
-        instanceHeartbeatRequest.setNamespace(registerRequest.getNamespace());
-        instanceHeartbeatRequest.setToken(registerRequest.getToken());
-        instanceHeartbeatRequest.setHost(registerRequest.getHost());
-        instanceHeartbeatRequest.setPort(registerRequest.getPort());
-        return instanceHeartbeatRequest;
     }
 
     @Override
@@ -185,7 +114,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     public void deRegister(InstanceDeregisterRequest req) throws PolarisException {
         checkAvailable("ProviderAPI");
         Validator.validateInstanceDeregisterRequest(req);
-        RegisterStateCache.removeRegisterState(req);
+        RegisterStateManager.removeRegisterState(sdkContext, req);
         long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
         long timeout = getTimeout(req);
         while (timeout > 0) {

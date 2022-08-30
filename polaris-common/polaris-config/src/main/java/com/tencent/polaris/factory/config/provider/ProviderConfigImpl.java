@@ -39,6 +39,7 @@ public class ProviderConfigImpl implements ProviderConfig {
      * 默认最小注册重试间隔, 30秒, 单位: 毫秒
      */
     private final static long DEFAULT_MIN_REGISTER_INTERVAL = 30 * 1000;
+    
     @JsonProperty
     private RateLimitConfigImpl rateLimit;
 

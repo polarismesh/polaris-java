@@ -15,57 +15,76 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.rpc;
+package com.tencent.polaris.discovery.client.flow;
 
+import com.tencent.polaris.api.rpc.CommonProviderBaseEntity;
+import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
+import com.tencent.polaris.client.api.SDKContext;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
 /**
- * 服务注册状态缓存
+ * 注册状态管理器
  *
  * @author wallezhang
  */
-public class RegisterStateCache {
+public class RegisterStateManager {
 
-    private final static Map<String, RegisterState> REGISTER_STATES = new ConcurrentHashMap<>();
+    private final static Map<String, Map<String, RegisterState>> REGISTER_STATES = new ConcurrentHashMap<>();
 
     /**
      * Put instance register state to cache
      *
+     * @param sdkContext sdk context
      * @param instanceRegisterRequest instance register request
      * @return Return new instance register state object if it is not cached, otherwise null
      */
-    public static RegisterState putRegisterState(InstanceRegisterRequest instanceRegisterRequest) {
+    public static RegisterState putRegisterState(SDKContext sdkContext,
+            InstanceRegisterRequest instanceRegisterRequest) {
         String registerStateKey = buildRegisterStateKey(instanceRegisterRequest);
-        RegisterState registerState = REGISTER_STATES.get(registerStateKey);
-        if (registerState == null) {
-            registerState = new RegisterState();
+        Map<String, RegisterState> sdkRegisterStates = REGISTER_STATES.computeIfAbsent(
+                sdkContext.getValueContext().getClientId(), clientId -> new ConcurrentHashMap<>());
+        if (sdkRegisterStates.containsKey(registerStateKey)) {
+            return null;
+        }
+        return sdkRegisterStates.computeIfAbsent(registerStateKey, unused -> {
+            RegisterState registerState = new RegisterState();
             registerState.setInstanceRegisterRequest(instanceRegisterRequest);
             registerState.setFirstRegisterTime(System.currentTimeMillis());
-            REGISTER_STATES.put(registerStateKey, registerState);
             return registerState;
-        }
-        return null;
+        });
     }
 
     /**
      * Remove the instance heartbeat task and cancel the task
      *
+     * @param sdkContext sdk context
      * @param instanceDeregisterRequest instance deregister request
      */
-    public static void removeRegisterState(InstanceDeregisterRequest instanceDeregisterRequest) {
+    public static void removeRegisterState(SDKContext sdkContext, InstanceDeregisterRequest instanceDeregisterRequest) {
+        Map<String, RegisterState> sdkRegisterStates = REGISTER_STATES.get(
+                sdkContext.getValueContext().getClientId());
+        if (sdkRegisterStates == null) {
+            return;
+        }
+
         String registerStateKey = buildRegisterStateKey(instanceDeregisterRequest);
-        RegisterState registerState = REGISTER_STATES.remove(registerStateKey);
-        if (registerState != null) {
-            registerState.getTaskFuture().cancel(false);
+        RegisterState removedState = sdkRegisterStates.remove(registerStateKey);
+        if (removedState != null) {
+            removedState.getTaskFuture().cancel(false);
         }
     }
 
     public static void destroy() {
-        for (RegisterState registerState : REGISTER_STATES.values()) {
-            registerState.getTaskFuture().cancel(false);
-        }
+        REGISTER_STATES.values().forEach(sdkRegisterStates -> {
+            for (RegisterState registerState : sdkRegisterStates.values()) {
+                registerState.getTaskFuture().cancel(false);
+            }
+            sdkRegisterStates.clear();
+        });
+        REGISTER_STATES.clear();
     }
 
     private static String buildRegisterStateKey(CommonProviderBaseEntity baseEntity) {
