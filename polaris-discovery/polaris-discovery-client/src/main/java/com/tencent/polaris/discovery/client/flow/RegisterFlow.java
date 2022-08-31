@@ -36,9 +36,9 @@ import org.slf4j.Logger;
  *
  * @author wallezhang
  */
-public class AsyncRegisterFlow {
+public class RegisterFlow {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AsyncRegisterFlow.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RegisterFlow.class);
     /**
      * 异步注册header key
      */
@@ -47,7 +47,7 @@ public class AsyncRegisterFlow {
     private final SDKContext sdkContext;
     private final ScheduledThreadPoolExecutor asyncRegisterExecutor;
 
-    public AsyncRegisterFlow(SDKContext sdkContext) {
+    public RegisterFlow(SDKContext sdkContext) {
         this.sdkContext = sdkContext;
         this.asyncRegisterExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("async-register"));
     }

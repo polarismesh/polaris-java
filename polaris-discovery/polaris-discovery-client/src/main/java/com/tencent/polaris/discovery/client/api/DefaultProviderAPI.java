@@ -18,7 +18,7 @@ import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.LocationUtils;
 import com.tencent.polaris.client.util.Utils;
-import com.tencent.polaris.discovery.client.flow.AsyncRegisterFlow;
+import com.tencent.polaris.discovery.client.flow.RegisterFlow;
 import com.tencent.polaris.discovery.client.flow.RegisterStateManager;
 import com.tencent.polaris.discovery.client.util.Validator;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -35,12 +35,12 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultProviderAPI.class);
     private static final int DEFAULT_INSTANCE_TTL = 5;
-    private final AsyncRegisterFlow asyncRegisterFlow;
+    private final RegisterFlow registerFlow;
     private ServerConnector serverConnector;
 
     public DefaultProviderAPI(SDKContext sdkContext) {
         super(sdkContext);
-        asyncRegisterFlow = new AsyncRegisterFlow(sdkContext);
+        registerFlow = new RegisterFlow(sdkContext);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
         if (req.getTtl() == null) {
             req.setTtl(DEFAULT_INSTANCE_TTL);
         }
-        return asyncRegisterFlow.registerInstance(req, this::doRegister, this::heartbeat);
+        return registerFlow.registerInstance(req, this::doRegister, this::heartbeat);
     }
 
     @Override

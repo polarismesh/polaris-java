@@ -47,7 +47,10 @@ public interface ProviderAPI extends AutoCloseable, Closeable {
      * @param req 注册请求
      * @return 服务实例ID
      * @throws PolarisException 错误码及异常信息
+     * @deprecated Recommend to use #{@link ProviderAPI#registerInstance(InstanceRegisterRequest)} method instead when
+     *         using polaris-server v1.10.0
      */
+    @Deprecated
     InstanceRegisterResponse register(InstanceRegisterRequest req) throws PolarisException;
 
     /**
@@ -63,7 +66,10 @@ public interface ProviderAPI extends AutoCloseable, Closeable {
      *
      * @param req 服务实例ID
      * @throws PolarisException 错误码及异常信息
+     * @deprecated Recommend to use #{@link ProviderAPI#registerInstance(InstanceRegisterRequest)} method instead when
+     *         using polaris-server v1.10.0
      */
+    @Deprecated
     void heartbeat(InstanceHeartbeatRequest req) throws PolarisException;
 
     /**
