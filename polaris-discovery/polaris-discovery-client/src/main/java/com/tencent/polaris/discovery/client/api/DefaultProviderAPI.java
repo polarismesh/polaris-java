@@ -65,7 +65,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
 
     @Override
     protected void doDestroy() {
-        RegisterStateManager.destroy();
+        RegisterStateManager.destroy(sdkContext);
         super.doDestroy();
     }
 

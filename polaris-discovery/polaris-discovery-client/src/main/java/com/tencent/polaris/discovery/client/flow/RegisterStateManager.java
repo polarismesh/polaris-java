@@ -22,6 +22,7 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.client.api.SDKContext;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 
@@ -64,27 +65,22 @@ public class RegisterStateManager {
      * @param instanceDeregisterRequest instance deregister request
      */
     public static void removeRegisterState(SDKContext sdkContext, InstanceDeregisterRequest instanceDeregisterRequest) {
-        Map<String, RegisterState> sdkRegisterStates = REGISTER_STATES.get(
-                sdkContext.getValueContext().getClientId());
-        if (sdkRegisterStates == null) {
-            return;
-        }
-
-        String registerStateKey = buildRegisterStateKey(instanceDeregisterRequest);
-        RegisterState removedState = sdkRegisterStates.remove(registerStateKey);
-        if (removedState != null) {
-            removedState.getTaskFuture().cancel(false);
-        }
+        Optional.ofNullable(REGISTER_STATES.get(sdkContext.getValueContext().getClientId()))
+                .ifPresent(sdkRegisterStates -> {
+                    String registerStateKey = buildRegisterStateKey(instanceDeregisterRequest);
+                    Optional.ofNullable(sdkRegisterStates.remove(registerStateKey))
+                            .ifPresent(registerState -> registerState.getTaskFuture().cancel(false));
+                });
     }
 
-    public static void destroy() {
-        REGISTER_STATES.values().forEach(sdkRegisterStates -> {
-            for (RegisterState registerState : sdkRegisterStates.values()) {
-                registerState.getTaskFuture().cancel(false);
-            }
-            sdkRegisterStates.clear();
-        });
-        REGISTER_STATES.clear();
+    public static void destroy(SDKContext sdkContext) {
+        Optional.ofNullable(REGISTER_STATES.remove(sdkContext.getValueContext().getClientId()))
+                .ifPresent(sdkRegisterStates -> {
+                    for (RegisterState registerState : sdkRegisterStates.values()) {
+                        registerState.getTaskFuture().cancel(false);
+                    }
+                    sdkRegisterStates.clear();
+                });
     }
 
     private static String buildRegisterStateKey(CommonProviderBaseEntity baseEntity) {
