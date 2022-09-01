@@ -209,7 +209,8 @@ public class GrpcConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
+    public CommonProviderResponse registerInstance(CommonProviderRequest req, Map<String, String> customHeader)
+            throws PolarisException {
         if (!isRegisterEnable()) {
             return null;
         }
@@ -223,6 +224,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            GrpcUtil.attachRequestHeader(stub, customHeader);
             ResponseProto.Response registerInstanceResponse = stub.registerInstance(buildRegisterInstanceRequest(req));
             GrpcUtil.checkResponse(registerInstanceResponse);
             if (!registerInstanceResponse.hasInstance()) {

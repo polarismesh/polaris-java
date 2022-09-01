@@ -48,4 +48,11 @@ public interface ProviderConfig extends Verifier {
      * @return 配置
      */
     RateLimitConfig getRateLimit();
+
+    /**
+     * Get minimal register interval millisecond
+     *
+     * @return minimal register interval millisecond
+     */
+    long getMinRegisterInterval();
 }

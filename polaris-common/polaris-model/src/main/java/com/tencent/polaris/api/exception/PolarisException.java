@@ -26,6 +26,7 @@ package com.tencent.polaris.api.exception;
 public class PolarisException extends RuntimeException {
 
     private final ErrorCode code;
+    private int serverErrCode;
 
     public PolarisException(ErrorCode code) {
         this.code = code;
@@ -50,6 +51,14 @@ public class PolarisException extends RuntimeException {
             builder.append(", cause: ").append(cause.getMessage());
         }
         return builder.toString();
+    }
+
+    public int getServerErrCode() {
+        return serverErrCode;
+    }
+
+    public void setServerErrCode(int serverErrCode) {
+        this.serverErrCode = serverErrCode;
     }
 
     public ErrorCode getCode() {

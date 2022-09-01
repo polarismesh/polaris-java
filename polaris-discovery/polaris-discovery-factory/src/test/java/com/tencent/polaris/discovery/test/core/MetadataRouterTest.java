@@ -31,12 +31,14 @@ public class MetadataRouterTest {
 
     public static final String METADATA_SERVICE = "192000705:65767";
     public static final String METADATA_SERVICE_1 = "192000705:65584";
+    private static final String POLARIS_SERVER_ADDRESS_PROPERTY = "POLARIS_SEVER_ADDRESS";
     private NamingServer namingServer;
 
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(-1);
+            System.setProperty(POLARIS_SERVER_ADDRESS_PROPERTY, String.format("127.0.0.1:%d", namingServer.getPort()));
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
@@ -78,6 +80,7 @@ public class MetadataRouterTest {
     public void after() {
         if (null != namingServer) {
             namingServer.terminate();
+            System.clearProperty(POLARIS_SERVER_ADDRESS_PROPERTY);
         }
     }
 

@@ -36,6 +36,14 @@ public class TestUtils {
         return addressStr.split(",");
     }
 
+    private static String[] getServerAddressFromProperties() {
+        String addressStr = System.getProperty(SERVER_ADDRESS_ENV);
+        if (StringUtils.isBlank(addressStr)) {
+            return null;
+        }
+        return addressStr.split(",");
+    }
+
     /**
      * 从环境变量中获取服务端地址并创建配置
      *
@@ -44,6 +52,9 @@ public class TestUtils {
     public static Configuration configWithEnvAddress() {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
         String[] addresses = getServerAddressFromEnv();
+        if (addresses == null) {
+            addresses = getServerAddressFromProperties();
+        }
         if (null != addresses) {
             ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
             configurationImpl.setDefault();

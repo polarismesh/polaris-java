@@ -1,0 +1,137 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package com.tencent.polaris.discovery.client.flow;
+
+import com.tencent.polaris.api.rpc.CommonProviderBaseEntity;
+import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
+import com.tencent.polaris.client.api.SDKContext;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+
+/**
+ * 注册状态管理器
+ *
+ * @author wallezhang
+ */
+public class RegisterStateManager {
+
+    private final static Map<String, Map<String, RegisterState>> REGISTER_STATES = new ConcurrentHashMap<>();
+
+    /**
+     * Put instance register state to cache
+     *
+     * @param sdkContext sdk context
+     * @param instanceRegisterRequest instance register request
+     * @return Return new instance register state object if it is not cached, otherwise null
+     */
+    public static RegisterState putRegisterState(SDKContext sdkContext,
+            InstanceRegisterRequest instanceRegisterRequest) {
+        String registerStateKey = buildRegisterStateKey(instanceRegisterRequest);
+        Map<String, RegisterState> sdkRegisterStates = REGISTER_STATES.computeIfAbsent(
+                sdkContext.getValueContext().getClientId(), clientId -> new ConcurrentHashMap<>());
+        if (sdkRegisterStates.containsKey(registerStateKey)) {
+            return null;
+        }
+        return sdkRegisterStates.computeIfAbsent(registerStateKey, unused -> {
+            RegisterState registerState = new RegisterState();
+            registerState.setInstanceRegisterRequest(instanceRegisterRequest);
+            registerState.setFirstRegisterTime(System.currentTimeMillis());
+            return registerState;
+        });
+    }
+
+    /**
+     * Remove the instance heartbeat task and cancel the task
+     *
+     * @param sdkContext sdk context
+     * @param instanceDeregisterRequest instance deregister request
+     */
+    public static void removeRegisterState(SDKContext sdkContext, InstanceDeregisterRequest instanceDeregisterRequest) {
+        Optional.ofNullable(REGISTER_STATES.get(sdkContext.getValueContext().getClientId()))
+                .ifPresent(sdkRegisterStates -> {
+                    String registerStateKey = buildRegisterStateKey(instanceDeregisterRequest);
+                    Optional.ofNullable(sdkRegisterStates.remove(registerStateKey))
+                            .ifPresent(registerState -> registerState.getTaskFuture().cancel(false));
+                });
+    }
+
+    public static void destroy(SDKContext sdkContext) {
+        Optional.ofNullable(REGISTER_STATES.remove(sdkContext.getValueContext().getClientId()))
+                .ifPresent(sdkRegisterStates -> {
+                    for (RegisterState registerState : sdkRegisterStates.values()) {
+                        registerState.getTaskFuture().cancel(false);
+                    }
+                    sdkRegisterStates.clear();
+                });
+    }
+
+    private static String buildRegisterStateKey(CommonProviderBaseEntity baseEntity) {
+        return String.format("%s##%s##%s##%s", baseEntity.getNamespace(), baseEntity.getService(), baseEntity.getHost(),
+                baseEntity.getPort());
+    }
+
+    public static final class RegisterState {
+
+        private InstanceRegisterRequest instanceRegisterRequest;
+        private long firstRegisterTime;
+        private ScheduledFuture<?> taskFuture;
+        private int heartbeatFailCounter = 0;
+
+        /**
+         * Increment fail count by one
+         */
+        public void incrementFailCount() {
+            heartbeatFailCounter += 1;
+        }
+
+        public int getHeartbeatFailCounter() {
+            return heartbeatFailCounter;
+        }
+
+        public void resetFailCount() {
+            heartbeatFailCounter = 0;
+        }
+
+        public InstanceRegisterRequest getInstanceRegisterRequest() {
+            return instanceRegisterRequest;
+        }
+
+        public void setInstanceRegisterRequest(InstanceRegisterRequest instanceRegisterRequest) {
+            this.instanceRegisterRequest = instanceRegisterRequest;
+        }
+
+        public long getFirstRegisterTime() {
+            return firstRegisterTime;
+        }
+
+        public void setFirstRegisterTime(long firstRegisterTime) {
+            this.firstRegisterTime = firstRegisterTime;
+        }
+
+        public ScheduledFuture<?> getTaskFuture() {
+            return taskFuture;
+        }
+
+        public void setTaskFuture(ScheduledFuture<?> taskFuture) {
+            this.taskFuture = taskFuture;
+        }
+    }
+}

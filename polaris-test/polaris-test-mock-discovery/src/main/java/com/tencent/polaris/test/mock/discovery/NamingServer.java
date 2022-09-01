@@ -25,12 +25,23 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
 
 public class NamingServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(NamingServer.class);
-
+    /**
+     * The minimal random port
+     */
+    private static final int MIN_RANDOM_PORT = 20000;
+    /**
+     * The maximum random port
+     */
+    private static final int MAX_RANDOM_PORT = 65535;
     private final Server server;
 
     private final int port;
@@ -42,6 +53,51 @@ public class NamingServer {
         server = ServerBuilder.forPort(port).addService(
                 ServerInterceptors.intercept(namingService, new HeaderInterceptor())).build();
         this.port = port;
+    }
+
+    public static NamingServer startNamingServer(int port) throws IOException {
+        if (port <= 0) {
+            port = selectRandomPort();
+        }
+        NamingServer namingServer = new NamingServer(port);
+        namingServer.start();
+        Node node = new Node("127.0.0.1", port);
+        InstanceParameter parameter = new InstanceParameter();
+        parameter.setHealthy(true);
+        parameter.setIsolated(false);
+        parameter.setProtocol("grpc");
+        parameter.setWeight(100);
+        // 注册系统集群地址
+        namingServer.getNamingService().addInstance(
+                new ServiceKey("Polaris", "polaris.discover"), node, parameter);
+        namingServer.getNamingService().addInstance(
+                new ServiceKey("Polaris", "polaris.healthcheck"), node, parameter);
+        return namingServer;
+    }
+
+    public static int selectRandomPort() {
+        int randomPort = ThreadLocalRandom.current().nextInt(MIN_RANDOM_PORT, MAX_RANDOM_PORT);
+        while (!isPortAvailable(randomPort)) {
+            randomPort = ThreadLocalRandom.current().nextInt(MIN_RANDOM_PORT, MAX_RANDOM_PORT);
+        }
+        return randomPort;
+    }
+
+    private static boolean isPortAvailable(int port) {
+        try {
+            bindPort("0.0.0.0", port);
+            bindPort(InetAddress.getLocalHost().getHostAddress(), port);
+            bindPort(InetAddress.getLoopbackAddress().getHostAddress(), port);
+            return true;
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private static void bindPort(String host, int port) throws IOException {
+        try (Socket socket = new Socket()) {
+            socket.bind(new InetSocketAddress(host, port));
+        }
     }
 
     public void start() throws IOException {
@@ -59,22 +115,5 @@ public class NamingServer {
 
     public NamingService getNamingService() {
         return namingService;
-    }
-
-    public static NamingServer startNamingServer(int port) throws IOException {
-        NamingServer namingServer = new NamingServer(port);
-        namingServer.start();
-        Node node = new Node("127.0.0.1", port);
-        InstanceParameter parameter = new InstanceParameter();
-        parameter.setHealthy(true);
-        parameter.setIsolated(false);
-        parameter.setProtocol("grpc");
-        parameter.setWeight(100);
-        // 注册系统集群地址
-        namingServer.getNamingService().addInstance(
-                new ServiceKey("Polaris", "polaris.discover"), node, parameter);
-        namingServer.getNamingService().addInstance(
-                new ServiceKey("Polaris", "polaris.healthcheck"), node, parameter);
-        return namingServer;
     }
 }
