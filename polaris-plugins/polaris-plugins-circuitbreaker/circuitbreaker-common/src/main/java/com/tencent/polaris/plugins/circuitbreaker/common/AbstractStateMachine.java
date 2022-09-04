@@ -115,11 +115,7 @@ public abstract class AbstractStateMachine<T extends Verifier> implements StateM
                 || cbStatus.getStatus() != CircuitBreakerStatus.Status.HALF_OPEN) {
             return null;
         }
-        HalfOpenCounter halfOpenCounter = getHalfOpenCounter(parameter.getPluginId(), instance);
-        if (null == halfOpenCounter) {
-            return null;
-        }
-        return halfOpenCounter;
+        return getHalfOpenCounter(parameter.getPluginId(), instance);
     }
 
     @Override

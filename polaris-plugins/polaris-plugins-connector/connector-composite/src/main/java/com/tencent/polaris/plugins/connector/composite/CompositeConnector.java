@@ -40,6 +40,7 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
@@ -155,12 +156,13 @@ public class CompositeConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
+    public CommonProviderResponse registerInstance(CommonProviderRequest req, Map<String, String> customHeader)
+            throws PolarisException {
         checkDestroyed();
         CommonProviderResponse response = null;
         CommonProviderResponse extendResponse = null;
         for (DestroyableServerConnector sc : serverConnectors) {
-            CommonProviderResponse temp = sc.registerInstance(req);
+            CommonProviderResponse temp = sc.registerInstance(req, customHeader);
             if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
                 response = temp;
             } else {
