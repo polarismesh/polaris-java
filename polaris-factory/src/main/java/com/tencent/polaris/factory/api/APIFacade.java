@@ -33,6 +33,10 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.configuration.api.core.ConfigFile;
+import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
@@ -57,6 +61,8 @@ public class APIFacade {
 
     private static LimitAPI limitAPI;
 
+    private static ConfigFileService configFileService;
+
     private static final Object lock = new Object();
 
     private static final AtomicBoolean inited = new AtomicBoolean(false);
@@ -74,6 +80,7 @@ public class APIFacade {
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
             providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
             limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
+            configFileService = ConfigFileServiceFactory.createConfigFileService(sdkContext);
         }
     }
 
@@ -197,6 +204,33 @@ public class APIFacade {
         InstancesResponse instancesResp = consumerAPI.getInstances(getInstancesRequest);
         ServiceInstances serviceInstances = instancesResp.toServiceInstances();
         return serviceInstances.getInstances();
+    }
+
+    public ConfigKVFile getConfigPropertiesFile(String namespace, String fileGroup, String fileName) {
+        if (!inited.get()) {
+            LOGGER.info("polaris not inited, get config file fail");
+            return null;
+        }
+
+        return configFileService.getConfigPropertiesFile(namespace, fileGroup, fileName);
+    }
+
+    public ConfigKVFile getConfigYamlFile(String namespace, String fileGroup, String fileName) {
+        if (!inited.get()) {
+            LOGGER.info("polaris not inited, get config file fail");
+            return null;
+        }
+
+        return configFileService.getConfigYamlFile(namespace, fileGroup, fileName);
+    }
+
+    public ConfigFile getConfigFile(String namespace, String fileGroup, String fileName) {
+        if (!inited.get()) {
+            LOGGER.info("polaris not inited, get config file fail");
+            return null;
+        }
+
+        return configFileService.getConfigFile(namespace, fileGroup, fileName);
     }
 
     public static class ConfigurationModifier {
