@@ -18,12 +18,7 @@
 package com.tencent.polaris.ratelimit.api.rpc;
 
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
-import com.tencent.polaris.api.utils.CollectionUtils;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 //配额查询请求
 public class QuotaRequest extends RequestBaseEntity {
@@ -34,7 +29,7 @@ public class QuotaRequest extends RequestBaseEntity {
 
     private String method;
 
-    private Set<MatchArgument> arguments = new HashSet<>();
+    private Map<String, String> labels;
 
     private int count = 1;
 
@@ -54,31 +49,12 @@ public class QuotaRequest extends RequestBaseEntity {
         this.service = service;
     }
 
-    /**
-     * Deprecated: use getArguments instead
-     *
-     * @return labels
-     */
-    @Deprecated
     public Map<String, String> getLabels() {
-        Map<String, String> values = new HashMap<>();
-        for (MatchArgument matchArgument : arguments) {
-            matchArgument.toLabel(values);
-        }
-        return values;
+        return labels;
     }
 
-    /**
-     * Deprecated: use setArguments instead
-     */
-    @Deprecated
     public void setLabels(Map<String, String> labels) {
-        if (CollectionUtils.isEmpty(labels)) {
-            return;
-        }
-        for (Map.Entry<String, String> entry : labels.entrySet()) {
-            arguments.add(MatchArgument.fromLabel(entry.getKey(), entry.getValue()));
-        }
+        this.labels = labels;
     }
 
     public int getCount() {
@@ -97,26 +73,14 @@ public class QuotaRequest extends RequestBaseEntity {
         this.method = method;
     }
 
-    public Set<MatchArgument> getArguments() {
-        return arguments;
-    }
-
-    public void setArguments(Set<MatchArgument> arguments) {
-        if (CollectionUtils.isEmpty(arguments)) {
-            this.arguments = Collections.emptySet();
-        } else {
-            this.arguments = arguments;
-        }
-    }
-
     @Override
     public String toString() {
         return "QuotaRequest{" +
                 "namespace='" + namespace + '\'' +
                 ", service='" + service + '\'' +
                 ", method='" + method + '\'' +
-                ", arguments=" + arguments +
+                ", labels=" + labels +
                 ", count=" + count +
-                "} " + super.toString();
+                '}';
     }
 }

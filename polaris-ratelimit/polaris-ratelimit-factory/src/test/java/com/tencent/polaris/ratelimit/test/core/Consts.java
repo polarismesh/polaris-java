@@ -26,21 +26,17 @@ public interface Consts {
 
     String LOCAL_LIMIT_SERVICE = "java_local_limit";
 
-    String MULTI_LIMIT_SERVICE = "java_multi_limit";
-
     String LABEL_METHOD = "method";
 
     String METHOD_PAY = "pay";
 
     String METHOD_CASH = "cash";
 
-    String HEADER_KEY = "uid";
+    int MAX_PAY_COUNT = 2000;
 
-    String HEADER_VALUE = "king";
+    int MAX_CASH_COUNT = 4000;
 
-    int MAX_PAY_COUNT = 20;
-
-    int MAX_CASH_COUNT = 40;
+    int MAX_SERVICE_COUNT = 5000;
 
     /**
      * 通过数组创建Map

@@ -18,18 +18,18 @@
 package com.tencent.polaris.ratelimit.client.pojo;
 
 import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.FlowControlParam;
-import com.tencent.polaris.ratelimit.api.rpc.MatchArgument;
+import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,40 +40,53 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
 
     private final String method;
 
-    private final Map<Integer, Map<String, String>> arguments;
+    private final Map<String, String> labels;
 
     private final int count;
 
     //服务规则
     private ServiceRule rateLimitRule;
 
+    //实际命中的规则
+    private final InitCriteria initCriteria;
+
+    //规则中含有正则表达式扩散
+    private boolean regexSpread;
+
     private final FlowControlParam flowControlParam;
 
     public CommonQuotaRequest(QuotaRequest quotaRequest, Configuration configuration) {
         svcEventKey = new ServiceEventKey(new ServiceKey(quotaRequest.getNamespace(), quotaRequest.getService()),
                 EventType.RATE_LIMITING);
-        arguments = parseArguments(quotaRequest.getArguments());
+        if (null == quotaRequest.getLabels()) {
+            labels = new HashMap<>();
+        } else {
+            labels = quotaRequest.getLabels();
+        }
         method = quotaRequest.getMethod();
+        if (StringUtils.isNotBlank(method)) {
+            labels.put("method", method);
+        }
         count = quotaRequest.getCount();
-        flowControlParam = new DefaultFlowControlParam();
+        initCriteria = new InitCriteria();
+        this.flowControlParam = new DefaultFlowControlParam();
         BaseFlow.buildFlowControlParam(quotaRequest, configuration, flowControlParam);
-    }
-
-    private Map<Integer, Map<String, String>> parseArguments(Collection<MatchArgument> arguments) {
-        Map<Integer, Map<String, String>> argumentMap = new HashMap<>();
-        if (CollectionUtils.isEmpty(arguments)) {
-            return argumentMap;
-        }
-        for (MatchArgument argument : arguments) {
-            Map<String, String> stringMatchArgumentMap = argumentMap
-                    .computeIfAbsent(argument.getType().ordinal(), k -> new HashMap<>());
-            stringMatchArgumentMap.put(argument.getKey(), argument.getValue());
-        }
-        return argumentMap;
     }
 
     public void setRateLimitRule(ServiceRule rateLimitRule) {
         this.rateLimitRule = rateLimitRule;
+    }
+
+    public void setRegexSpread(boolean regexSpread) {
+        this.regexSpread = regexSpread;
+    }
+
+    public boolean isRegexSpread() {
+        return regexSpread;
+    }
+
+    public void setTargetRule(Rule targetRule) {
+        this.initCriteria.setRule(targetRule);
     }
 
     @Override
@@ -91,16 +104,16 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
         return svcEventKey;
     }
 
-    public String getMethod() {
-        return method;
-    }
-
-    public Map<Integer, Map<String, String>> getArguments() {
-        return arguments;
+    public Map<String, String> getLabels() {
+        return labels;
     }
 
     public ServiceRule getRateLimitRule() {
         return rateLimitRule;
+    }
+
+    public InitCriteria getInitCriteria() {
+        return initCriteria;
     }
 
     public FlowControlParam getFlowControlParam() {

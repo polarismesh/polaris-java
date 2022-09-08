@@ -22,17 +22,16 @@ import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.client.pb.RateLimitProto.Amount;
-import com.tencent.polaris.client.pb.RateLimitProto.MatchArgument;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit.Builder;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.AmountMode;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
@@ -41,9 +40,7 @@ import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,18 +60,26 @@ public class LocalTest {
         ServiceKey serviceKey = new ServiceKey(Consts.NAMESPACE_TEST, Consts.LOCAL_LIMIT_SERVICE);
         namingServer.getNamingService().addService(serviceKey);
         Builder rateLimitBuilder = RateLimit.newBuilder();
+        Rule.Builder ruleBuilder1 = Rule.newBuilder();
+        ruleBuilder1.setType(Type.LOCAL);
+        ruleBuilder1.setPriority(UInt32Value.newBuilder().setValue(1).build());
+        ruleBuilder1.setAction(StringValue.newBuilder().setValue("reject").build());
+        ruleBuilder1.setAmountMode(AmountMode.GLOBAL_TOTAL);
+        ruleBuilder1.addAmounts(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(2000).build()).setValidDuration(
+                        Duration.newBuilder().setSeconds(1).build()));
+        ruleBuilder1.setRevision(StringValue.newBuilder().setValue("11111").build());
+        rateLimitBuilder.addRules(ruleBuilder1.build());
 
         Rule.Builder ruleBuilder2 = Rule.newBuilder();
         ruleBuilder2.setType(Type.LOCAL);
         ruleBuilder2.setPriority(UInt32Value.newBuilder().setValue(0).build());
         ruleBuilder2.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder2.setAmountMode(AmountMode.GLOBAL_TOTAL);
-        ruleBuilder2.addArguments(
-                MatchArgument.newBuilder().setType(MatchArgument.Type.CUSTOM).setKey(Consts.LABEL_METHOD)
-                        .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
-                                StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build()));
+        ruleBuilder2.putLabels(Consts.LABEL_METHOD, MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+                StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build());
         ruleBuilder2.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(19).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1998).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder2.setRevision(StringValue.newBuilder().setValue("22222").build());
         rateLimitBuilder.addRules(ruleBuilder2.build());
@@ -84,12 +89,10 @@ public class LocalTest {
         ruleBuilder3.setPriority(UInt32Value.newBuilder().setValue(0).build());
         ruleBuilder3.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder3.setAmountMode(AmountMode.GLOBAL_TOTAL);
-        ruleBuilder3.addArguments(
-                MatchArgument.newBuilder().setType(MatchArgument.Type.CUSTOM).setKey(Consts.LABEL_METHOD)
-                        .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
-                                StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build()));
+        ruleBuilder3.putLabels(Consts.LABEL_METHOD, MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+                StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build());
         ruleBuilder3.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(9).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(998).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder3.setRevision(StringValue.newBuilder().setValue("33333").build());
         rateLimitBuilder.addRules(ruleBuilder3.build());
@@ -108,15 +111,8 @@ public class LocalTest {
         QuotaRequest payRequest = new QuotaRequest();
         payRequest.setNamespace(Consts.NAMESPACE_TEST);
         payRequest.setService(Consts.LOCAL_LIMIT_SERVICE);
-        Set<com.tencent.polaris.ratelimit.api.rpc.MatchArgument> matchArgumentSet = new HashSet<>();
-        for (Map.Entry<String, String> entry : labels.entrySet()) {
-            com.tencent.polaris.ratelimit.api.rpc.MatchArgument matchArgument = com.tencent.polaris.ratelimit.api.rpc.MatchArgument
-                    .buildCustom(entry.getKey(), entry.getValue());
-            matchArgumentSet.add(matchArgument);
-        }
-        if (!CollectionUtils.isEmpty(matchArgumentSet)) {
-            payRequest.setArguments(matchArgumentSet);
-        }
+        payRequest.setCount(1);
+        payRequest.setLabels(labels);
         boolean payLimit = false;
         boolean payPass = false;
         for (int i = 0; i < maxCount; i++) {
@@ -131,19 +127,33 @@ public class LocalTest {
         Assert.assertTrue(payLimit);
     }
 
+    private static void adjustTime() {
+        long step = 20;
+        while (true) {
+            long curTimeMs = System.currentTimeMillis();
+            long startTimeMs = SlidingWindow.calculateStartTimeMs(curTimeMs, 1000);
+            if (curTimeMs - startTimeMs + step > 1000) {
+                Utils.sleepUninterrupted(step);
+                continue;
+            }
+            break;
+        }
+    }
+
     @Test
     public void testSingleThreadLimit() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
-            RateLimitUtils.adjustTime();
+            adjustTime();
             testQuotaAcquire(limitAPI,
                     Consts.createSingleValueMap(new String[]{Consts.LABEL_METHOD}, new String[]{Consts.METHOD_PAY}),
                     Consts.MAX_PAY_COUNT);
             testQuotaAcquire(limitAPI,
                     Consts.createSingleValueMap(new String[]{Consts.LABEL_METHOD}, new String[]{Consts.METHOD_CASH}),
                     Consts.MAX_CASH_COUNT);
+            testQuotaAcquire(limitAPI, null, Consts.MAX_SERVICE_COUNT);
             System.out.println("start to wait expired");
-            Utils.sleepUninterrupted(5 * 1000);
+            Utils.sleepUninterrupted(10 * 1000);
         }
     }
 }

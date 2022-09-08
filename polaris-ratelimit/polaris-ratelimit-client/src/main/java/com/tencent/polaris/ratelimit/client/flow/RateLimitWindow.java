@@ -116,8 +116,9 @@ public class RateLimitWindow {
      * @param labelsStr 标签
      */
     public RateLimitWindow(RateLimitWindowSet windowSet, CommonQuotaRequest quotaRequest, String labelsStr,
-            RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
+            RateLimitConfig rateLimitConfig) {
         status.set(WindowStatus.CREATED.ordinal());
+        InitCriteria initCriteria = quotaRequest.getInitCriteria();
         Rule rule = initCriteria.getRule();
         this.rule = rule;
         this.windowSet = windowSet;
