@@ -15,15 +15,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.connector.grpc.codec;
+package com.tencent.polaris.api.plugin.registry;
 
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.registry.CacheHandler.CachedStatus;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import com.tencent.polaris.client.pb.ServiceProto.Service;
@@ -31,11 +29,24 @@ import com.tencent.polaris.logging.LoggerFactory;
 import java.util.function.Function;
 import org.slf4j.Logger;
 
-public class CommonHandler {
+public abstract class AbstractCacheHandler implements CacheHandler {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CommonHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractCacheHandler.class);
 
     private static final String emptyReplaceHolder = "<empty>";
+
+    protected abstract String getRevision(DiscoverResponse discoverResponse);
+
+    @Override
+    public CachedStatus compareMessage(RegistryCacheValue oldValue, Object newValue) {
+        return compareMessage(getTargetEventType(), oldValue, (DiscoverResponse) newValue,
+                new Function<DiscoverResponse, String>() {
+                    @Override
+                    public String apply(DiscoverResponse discoverResponse) {
+                        return getRevision(discoverResponse);
+                    }
+                });
+    }
 
     /**
      * 比较消息

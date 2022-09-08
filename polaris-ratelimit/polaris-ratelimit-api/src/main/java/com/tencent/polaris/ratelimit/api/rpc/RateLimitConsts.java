@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making CL5 available.
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
@@ -15,26 +15,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.utils;
+package com.tencent.polaris.ratelimit.api.rpc;
 
-import java.util.Collection;
-import java.util.Map;
+public interface RateLimitConsts {
 
-public class CollectionUtils {
+    String LABEL_KEY_METHOD = "$method";
 
-    public static boolean isEmpty(Collection<?> coll) {
-        return coll == null || coll.isEmpty();
-    }
+    String LABEL_KEY_HEADER = "$header.";
 
-    public static boolean isNotEmpty(Collection<?> coll) {
-        return !isEmpty(coll);
-    }
+    String LABEL_KEY_QUERY = "$query.";
 
-    public static boolean isEmpty(Map<?, ?> map) {
-        return map == null || map.isEmpty();
-    }
+    String LABEL_KEY_CALLER_SERVICE = "$caller_service.";
 
-    public static boolean isNotEmpty(Map<?, ?> map) {
-        return !isEmpty(map);
-    }
+    String LABEL_KEY_CALLER_IP = "$caller_ip";
 }

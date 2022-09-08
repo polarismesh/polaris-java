@@ -17,14 +17,13 @@
 
 package com.tencent.polaris.plugins.connector.grpc.codec;
 
-import com.tencent.polaris.api.plugin.registry.CacheHandler;
+import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
-import java.util.function.Function;
 
-public class ServiceInstancesCacheHandler implements CacheHandler {
+public class ServiceInstancesCacheHandler extends AbstractCacheHandler {
 
     @Override
     public EventType getTargetEventType() {
@@ -32,15 +31,8 @@ public class ServiceInstancesCacheHandler implements CacheHandler {
     }
 
     @Override
-    public CachedStatus compareMessage(RegistryCacheValue oldValue, Object newValue) {
-        DiscoverResponse discoverResponse = (DiscoverResponse) newValue;
-        return CommonHandler.compareMessage(getTargetEventType(), oldValue, discoverResponse,
-                new Function<DiscoverResponse, String>() {
-                    @Override
-                    public String apply(DiscoverResponse discoverResponse) {
-                        return discoverResponse.getService().getRevision().getValue();
-                    }
-                });
+    protected String getRevision(DiscoverResponse discoverResponse) {
+        return discoverResponse.getService().getRevision().getValue();
     }
 
     @Override
