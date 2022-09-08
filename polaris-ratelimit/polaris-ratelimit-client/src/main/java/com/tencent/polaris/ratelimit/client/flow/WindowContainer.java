@@ -71,4 +71,30 @@ public class WindowContainer {
         return mainWindow;
     }
 
+    /**
+     * 检查并淘汰窗口
+     *
+     * @return 是否淘汰
+     */
+    public boolean checkAndExpireWindows() {
+        if (null != mainWindow) {
+            return mainWindow.isExpired();
+        }
+        int expiredLabels = 0;
+        for (Map.Entry<String, RateLimitWindow> entry : windowByLabel.entrySet()) {
+            String labelKey = entry.getKey();
+            RateLimitWindow window = entry.getValue();
+            if (window.isExpired()) {
+                expiredLabels++;
+                window = windowByLabel.remove(labelKey);
+                if (null != window) {
+                    window.unInit();
+                }
+            }
+        }
+        if (expiredLabels > 0) {
+            LOG.info("[RateLimit]{} labels has been cleanup by expired, service {}", expiredLabels, serviceKey);
+        }
+        return false;
+    }
 }

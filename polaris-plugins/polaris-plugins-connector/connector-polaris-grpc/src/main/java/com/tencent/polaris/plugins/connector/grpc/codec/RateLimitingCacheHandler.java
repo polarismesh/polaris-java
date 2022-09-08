@@ -17,36 +17,48 @@
 
 package com.tencent.polaris.plugins.connector.grpc.codec;
 
+import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CircuitBreaker;
+import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
+import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import java.util.ArrayList;
+import java.util.List;
 
-public class CircuitBreakCacheHandler extends AbstractCacheHandler {
+public class RateLimitingCacheHandler extends AbstractCacheHandler {
 
     @Override
     public EventType getTargetEventType() {
-        return EventType.CIRCUIT_BREAKING;
+        return EventType.RATE_LIMITING;
     }
 
     @Override
     protected String getRevision(DiscoverResponse discoverResponse) {
-        CircuitBreaker circuitBreaker = discoverResponse.getCircuitBreaker();
-        if (null == circuitBreaker) {
+        RateLimit rateLimit = discoverResponse.getRateLimit();
+        if (null == rateLimit) {
             return "";
         }
-        return circuitBreaker.getRevision().getValue();
+        return rateLimit.getRevision().getValue();
     }
 
     @Override
     public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded) {
         DiscoverResponse discoverResponse = (DiscoverResponse) newValue;
-        CircuitBreaker circuitBreaker = discoverResponse.getCircuitBreaker();
-        String revision = "";
-        if (null != circuitBreaker) {
-            revision = circuitBreaker.getRevision().getValue();
-        }
-        return new ServiceRuleByProto(circuitBreaker, revision, isCacheLoaded, getTargetEventType());
+        RateLimit rateLimit = discoverResponse.getRateLimit();
+        String revision = getRevision(discoverResponse);
+        List<Rule> rulesList = rateLimit.getRulesList();
+        //需要做一次排序,PB中的数据不可变，需要单独构建一份
+        List<Rule> sortedRules = new ArrayList<>(rulesList);
+        sortedRules.sort((o1, o2) -> {
+            if (o1.getPriority().getValue() != o2.getPriority().getValue()) {
+                return o1.getPriority().getValue() - o2.getPriority().getValue();
+            }
+            return o1.getId().getValue().compareTo(o2.getId().getValue());
+        });
+        RateLimit newRateLimit = RateLimit.newBuilder().addAllRules(sortedRules)
+                .setRevision(StringValue.newBuilder().setValue(revision).build()).build();
+        return new ServiceRuleByProto(newRateLimit, revision, isCacheLoaded, getTargetEventType());
     }
 }

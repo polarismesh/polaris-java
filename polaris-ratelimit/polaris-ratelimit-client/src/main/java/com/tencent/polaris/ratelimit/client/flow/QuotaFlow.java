@@ -22,9 +22,7 @@ import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult.Code;
 import com.tencent.polaris.api.plugin.registry.AbstractResourceEventListener;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
@@ -39,13 +37,10 @@ import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
-import com.tencent.polaris.client.pb.RateLimitProto;
-import com.tencent.polaris.client.pb.RateLimitProto.MatchArgument;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
-import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import java.util.ArrayList;
@@ -80,6 +75,15 @@ public class QuotaFlow extends Destroyable {
         rateLimitExtension = new RateLimitExtension(extensions);
         rateLimitConfig = rateLimitExtension.getExtensions().getConfiguration().getProvider().getRateLimit();
         extensions.getLocalRegistry().registerResourceListener(new RateLimitRuleListener());
+        //TODO: 淘汰后无法重新进行限流，先对淘汰功能进行屏蔽
+//        rateLimitExtension.submitExpireJob(new Runnable() {
+//            @Override
+//            public void run() {
+//                for (Map.Entry<ServiceKey, RateLimitWindowSet> entry : svcToWindowSet.entrySet()) {
+//                    entry.getValue().cleanupContainers();
+//                }
+//            }
+//        });
     }
 
     protected void doDestroy() {
@@ -87,55 +91,37 @@ public class QuotaFlow extends Destroyable {
     }
 
     public QuotaResponse getQuota(CommonQuotaRequest request) throws PolarisException {
-        List<RateLimitWindow> windows = lookupRateLimitWindow(request);
-        if (CollectionUtils.isEmpty(windows)) {
+        RateLimitWindow rateLimitWindow = lookupRateLimitWindow(request);
+        if (null == rateLimitWindow) {
             //没有限流规则，直接放通
             return new QuotaResponse(
                     new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.RULE_NOT_EXISTS));
         }
-        long maxWaitMs = 0;
-        for (RateLimitWindow rateLimitWindow : windows) {
-            rateLimitWindow.init();
-            QuotaResponse quotaResponse = new QuotaResponse(rateLimitWindow.allocateQuota(request.getCount()));
-            if (quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
-                //一个限流则直接限流
-                return quotaResponse;
-            }
-            if (quotaResponse.getWaitMs() > maxWaitMs) {
-                maxWaitMs = quotaResponse.getWaitMs();
-            }
-        }
-        return new QuotaResponse(new QuotaResult(Code.QuotaResultOk, maxWaitMs, ""));
+        rateLimitWindow.init();
+        return new QuotaResponse(rateLimitWindow.allocateQuota(request.getCount()));
     }
 
-    private List<RateLimitWindow> lookupRateLimitWindow(CommonQuotaRequest request) throws PolarisException {
+    private RateLimitWindow lookupRateLimitWindow(CommonQuotaRequest request) throws PolarisException {
         //1.获取限流规则
         ResourcesResponse resourcesResponse = BaseFlow
                 .syncGetResources(rateLimitExtension.getExtensions(), false, request, request.getFlowControlParam());
         ServiceRule serviceRule = resourcesResponse.getServiceRule(request.getSvcEventKey());
         //2.进行规则匹配
-        List<RateLimitWindow> windows = new ArrayList<>();
-        List<Rule> rules = lookupRules(serviceRule, request.getMethod(), request.getArguments());
-        if (CollectionUtils.isEmpty(rules)) {
-            return windows;
+        Rule rule = lookupRule(serviceRule, request.getLabels());
+        if (null == rule) {
+            return null;
         }
+        request.setTargetRule(rule);
+        //3.获取已有的限流窗口
         ServiceKey serviceKey = request.getSvcEventKey().getServiceKey();
-        for (Rule rule : rules) {
-            InitCriteria initCriteria = new InitCriteria();
-            initCriteria.setRule(rule);
-            String labelsStr = formatLabelsToStr(request, initCriteria);
-            //3.获取已有的限流窗口
-            RateLimitWindowSet rateLimitWindowSet = getRateLimitWindowSet(serviceKey);
-            RateLimitWindow rateLimitWindow = rateLimitWindowSet.getRateLimitWindow(rule, labelsStr);
-            if (null != rateLimitWindow) {
-                windows.add(rateLimitWindow);
-            } else {
-                //3.创建限流窗口
-                windows.add(rateLimitWindowSet.addRateLimitWindow(request, labelsStr, rateLimitConfig, initCriteria));
-            }
-
+        String labelsStr = formatLabelsToStr(request);
+        RateLimitWindowSet rateLimitWindowSet = getRateLimitWindowSet(serviceKey);
+        RateLimitWindow rateLimitWindow = rateLimitWindowSet.getRateLimitWindow(rule, labelsStr);
+        if (null != rateLimitWindow) {
+            return rateLimitWindow;
         }
-        return windows;
+        //3.创建限流窗口
+        return rateLimitWindowSet.addRateLimitWindow(request, labelsStr, rateLimitConfig);
     }
 
     private RateLimitWindowSet getRateLimitWindowSet(ServiceKey serviceKey) {
@@ -151,86 +137,34 @@ public class QuotaFlow extends Destroyable {
         });
     }
 
-    private static String formatLabelsToStr(CommonQuotaRequest request, InitCriteria initCriteria) {
-        Rule rule = initCriteria.getRule();
-        MatchString method = rule.getMethod();
-        boolean regexCombine = rule.getRegexCombine().getValue();
-        String methodValue = "";
-        if (null != method && !RuleUtils.isMatchAllValue(method)) {
-            if (regexCombine && method.getType() != MatchStringType.EXACT) {
-                methodValue = method.getValue().getValue();
-            } else {
-                methodValue = request.getMethod();
-                if (method.getType() != MatchStringType.EXACT) {
-                    //正则表达式扩散
-                    initCriteria.setRegexSpread(true);
-                }
-            }
+    private static String formatLabelsToStr(CommonQuotaRequest request) {
+        Rule rule = request.getInitCriteria().getRule();
+        Map<String, String> labels = request.getLabels();
+        if (rule.getLabelsCount() == 0 || MapUtils.isEmpty(labels)) {
+            return "";
         }
-        List<MatchArgument> argumentsList = rule.getArgumentsList();
         List<String> tmpList = new ArrayList<>();
-        Map<Integer, Map<String, String>> arguments = request.getArguments();
-        for (MatchArgument matchArgument : argumentsList) {
-            String labelValue;
-            MatchString matcher = matchArgument.getValue();
-            if (regexCombine && matcher.getType() != MatchStringType.EXACT) {
-                labelValue = matcher.getValue().getValue();
+        boolean regexCombine = rule.getRegexCombine().getValue();
+        Map<String, MatchString> labelsMap = rule.getLabelsMap();
+        for (Map.Entry<String, MatchString> entry : labelsMap.entrySet()) {
+            MatchString matcher = entry.getValue();
+            String labelEntry;
+            if (matcher.getType() == MatchStringType.REGEX && regexCombine) {
+                labelEntry = entry.getKey() + RateLimitConstants.DEFAULT_KV_SEPARATOR + matcher.getValue().getValue();
             } else {
-                Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
-                labelValue = getLabelValue(matchArgument, stringStringMap);
-                if (matcher.getType() != MatchStringType.EXACT) {
+                labelEntry = entry.getKey() + RateLimitConstants.DEFAULT_KV_SEPARATOR + labels.get(entry.getKey());
+                if (matcher.getType() == MatchStringType.REGEX) {
                     //正则表达式扩散
-                    initCriteria.setRegexSpread(true);
+                    request.setRegexSpread(true);
                 }
             }
-            String labelEntry = getLabelEntry(matchArgument, labelValue);
-            if (StringUtils.isNotBlank(labelEntry)) {
-                tmpList.add(labelEntry);
-            }
+            tmpList.add(labelEntry);
         }
         Collections.sort(tmpList);
-        return methodValue + RateLimitConstants.DEFAULT_ENTRY_SEPARATOR + String
-                .join(RateLimitConstants.DEFAULT_ENTRY_SEPARATOR, tmpList);
+        return String.join(RateLimitConstants.DEFAULT_ENTRY_SEPARATOR, tmpList);
     }
 
-    private static String getLabelEntry(RateLimitProto.MatchArgument matchArgument, String labelValue) {
-        switch (matchArgument.getType()) {
-            case CUSTOM:
-            case HEADER:
-            case QUERY:
-            case CALLER_SERVICE: {
-                return matchArgument.getType().name() + RateLimitConstants.DEFAULT_KV_SEPARATOR + matchArgument.getKey()
-                        + RateLimitConstants.DEFAULT_KV_SEPARATOR + labelValue;
-            }
-            case METHOD:
-            case CALLER_IP: {
-                return matchArgument.getType().name() + RateLimitConstants.DEFAULT_KV_SEPARATOR + labelValue;
-            }
-            default:
-                return "";
-        }
-    }
-
-    private static String getLabelValue(RateLimitProto.MatchArgument matchArgument,
-            Map<String, String> stringStringMap) {
-        switch (matchArgument.getType()) {
-            case CUSTOM:
-            case HEADER:
-            case QUERY:
-            case CALLER_SERVICE: {
-                return stringStringMap.get(matchArgument.getKey());
-            }
-            case METHOD:
-            case CALLER_IP: {
-                return stringStringMap.values().iterator().next();
-            }
-            default:
-                return stringStringMap.get(matchArgument.getKey());
-        }
-    }
-
-    private List<Rule> lookupRules(ServiceRule serviceRule, String method,
-            Map<Integer, Map<String, String>> arguments) {
+    private Rule lookupRule(ServiceRule serviceRule, Map<String, String> labels) {
         if (null == serviceRule || null == serviceRule.getRule()) {
             return null;
         }
@@ -239,7 +173,6 @@ public class QuotaFlow extends Destroyable {
         if (CollectionUtils.isEmpty(rulesList)) {
             return null;
         }
-        List<Rule> matchRules = new ArrayList<>();
         for (Rule rule : rulesList) {
             if (null != rule.getDisable() && rule.getDisable().getValue()) {
                 continue;
@@ -248,80 +181,46 @@ public class QuotaFlow extends Destroyable {
                 //没有amount的规则就忽略
                 continue;
             }
-            //match method
-            MatchString methodMatcher = rule.getMethod();
-            if (null != methodMatcher) {
-                boolean matchMethod = matchStringValue(methodMatcher, method);
-                if (!matchMethod) {
-                    continue;
+            if (rule.getLabelsCount() == 0) {
+                return rule;
+            }
+            boolean allMatchLabels = true;
+            Map<String, MatchString> labelsMap = rule.getLabelsMap();
+            for (Map.Entry<String, MatchString> entry : labelsMap.entrySet()) {
+                if (!matchLabels(entry.getKey(), entry.getValue(), labels)) {
+                    allMatchLabels = false;
+                    break;
                 }
             }
-            List<RateLimitProto.MatchArgument> argumentsList = rule.getArgumentsList();
-            boolean matched = true;
-            if (CollectionUtils.isNotEmpty(argumentsList)) {
-                for (RateLimitProto.MatchArgument matchArgument : argumentsList) {
-                    Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
-                    if (CollectionUtils.isEmpty(stringStringMap)) {
-                        matched = false;
-                        break;
-                    }
-                    String labelValue = getLabelValue(matchArgument, stringStringMap);
-                    if (null == labelValue) {
-                        matched = false;
-                    } else {
-                        matched = matchStringValue(matchArgument.getValue(), labelValue);
-                    }
-                    if (!matched) {
-                        break;
-                    }
-                }
-            }
-            if (matched) {
-                matchRules.add(rule);
+            if (allMatchLabels) {
+                return rule;
             }
         }
-        return matchRules;
+        return null;
     }
 
-    private boolean matchStringValue(MatchString matchString, String value) {
-        MatchStringType matchType = matchString.getType();
-        FlowCache flowCache = rateLimitExtension.getExtensions().getFlowCache();
-        String matchValue = matchString.getValue().getValue();
-        if (RuleUtils.isMatchAllValue(matchValue)) {
+    private boolean matchLabels(String ruleLabelKey, MatchString ruleLabelMatch, Map<String, String> labels) {
+        //设置了MatchAllValue，相当于可以匹配所有
+        if (RuleUtils.isMatchAllValue(ruleLabelKey) || RuleUtils.isMatchAllValue(ruleLabelMatch)) {
             return true;
         }
-        switch (matchType) {
-            case EXACT: {
-                return StringUtils.equals(value, matchValue);
-            }
-            case REGEX: {
-                //正则表达式匹配
-                Pattern pattern = flowCache.loadOrStoreCompiledRegex(matchValue);
-                return pattern.matcher(value).find();
-            }
-            case NOT_EQUALS: {
-                return !StringUtils.equals(value, matchValue);
-            }
-            case IN: {
-                String[] tokens = matchValue.split(",");
-                for (String token : tokens) {
-                    if (StringUtils.equals(token, value)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            case NOT_IN: {
-                String[] tokens = matchValue.split(",");
-                for (String token : tokens) {
-                    if (StringUtils.equals(token, value)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
+        if (MapUtils.isEmpty(labels)) {
+            return false;
         }
-        return false;
+        //集成的路由规则不包含这个key，就不匹配
+        if (!labels.containsKey(ruleLabelKey)) {
+            return false;
+        }
+        String labelValue = labels.get(ruleLabelKey);
+        FlowCache flowCache = rateLimitExtension.getExtensions().getFlowCache();
+        MatchStringType matchType = ruleLabelMatch.getType();
+        String matchValue = ruleLabelMatch.getValue().getValue();
+        if (matchType == MatchStringType.REGEX) {
+            //正则表达式匹配
+            Pattern pattern = flowCache.loadOrStoreCompiledRegex(matchValue);
+            return pattern.matcher(labelValue).find();
+        }
+        return StringUtils.equals(labelValue, matchValue);
     }
 
     private static Map<String, Rule> parseRules(RegistryCacheValue oldValue) {
