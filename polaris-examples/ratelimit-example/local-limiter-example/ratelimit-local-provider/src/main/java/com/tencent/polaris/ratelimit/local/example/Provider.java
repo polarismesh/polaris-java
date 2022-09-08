@@ -214,10 +214,12 @@ public class Provider {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            Map<String, String> parameters = splitQuery(exchange.getRequestURI());
             QuotaRequest quotaRequest = new QuotaRequest();
             quotaRequest.setNamespace(NAMESPACE_DEFAULT);
             quotaRequest.setService(ECHO_SERVICE_NAME);
             quotaRequest.setMethod("/echo");
+            quotaRequest.setLabels(parameters);
             quotaRequest.setCount(1);
             QuotaResponse quotaResponse = limitAPI.getQuota(quotaRequest);
             OutputStream os = exchange.getResponseBody();
@@ -230,7 +232,6 @@ public class Provider {
                         e.printStackTrace();
                     }
                 }
-                Map<String, String> parameters = splitQuery(exchange.getRequestURI());
                 String echoValue = parameters.get("value");
                 String response = "echo: " + echoValue;
                 exchange.sendResponseHeaders(200, 0);

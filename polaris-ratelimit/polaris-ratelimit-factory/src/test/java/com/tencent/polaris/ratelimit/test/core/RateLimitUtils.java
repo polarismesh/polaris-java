@@ -15,26 +15,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.utils;
+package com.tencent.polaris.ratelimit.test.core;
 
-import java.util.Collection;
-import java.util.Map;
+import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
 
-public class CollectionUtils {
+public class RateLimitUtils {
 
-    public static boolean isEmpty(Collection<?> coll) {
-        return coll == null || coll.isEmpty();
-    }
-
-    public static boolean isNotEmpty(Collection<?> coll) {
-        return !isEmpty(coll);
-    }
-
-    public static boolean isEmpty(Map<?, ?> map) {
-        return map == null || map.isEmpty();
-    }
-
-    public static boolean isNotEmpty(Map<?, ?> map) {
-        return !isEmpty(map);
+    public static void adjustTime() {
+        long step = 20;
+        while (true) {
+            long curTimeMs = System.currentTimeMillis();
+            long startTimeMs = SlidingWindow.calculateStartTimeMs(curTimeMs, 1000);
+            if (curTimeMs - startTimeMs + step > 1000) {
+                com.tencent.polaris.client.util.Utils.sleepUninterrupted(step);
+                continue;
+            }
+            break;
+        }
     }
 }

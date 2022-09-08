@@ -26,11 +26,17 @@ public interface Consts {
 
     String LOCAL_LIMIT_SERVICE = "java_local_limit";
 
+    String MULTI_LIMIT_SERVICE = "java_multi_limit";
+
     String LABEL_METHOD = "method";
 
     String METHOD_PAY = "pay";
 
     String METHOD_CASH = "cash";
+
+    String HEADER_KEY = "uid";
+
+    String HEADER_VALUE = "king";
 
     int MAX_PAY_COUNT = 2000;
 
