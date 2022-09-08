@@ -62,7 +62,7 @@ public class RuleMatchTest {
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(10093);
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
