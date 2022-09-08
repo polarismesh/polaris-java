@@ -15,27 +15,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.ratelimit.api.rpc;
+package com.tencent.polaris.ratelimit.test.core;
 
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
+import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
 
-public class QuotaResponse {
+public class RateLimitUtils {
 
-    private final QuotaResult quotaResult;
-
-    public QuotaResponse(QuotaResult quotaResult) {
-        this.quotaResult = quotaResult;
-    }
-
-    public QuotaResultCode getCode() {
-        return QuotaResultCode.values()[quotaResult.getCode().ordinal()];
-    }
-
-    public long getWaitMs() {
-        return quotaResult.getWaitMs();
-    }
-
-    public String getInfo() {
-        return quotaResult.getInfo();
+    public static void adjustTime() {
+        long step = 20;
+        while (true) {
+            long curTimeMs = System.currentTimeMillis();
+            long startTimeMs = SlidingWindow.calculateStartTimeMs(curTimeMs, 1000);
+            if (curTimeMs - startTimeMs + step > 1000) {
+                com.tencent.polaris.client.util.Utils.sleepUninterrupted(step);
+                continue;
+            }
+            break;
+        }
     }
 }

@@ -30,16 +30,16 @@ public class RuleUtils {
      * @return 是否全匹配，全匹配则忽略该规则
      */
     public static boolean isMatchAllValue(MatchString ruleMetaValue) {
-        return StringUtils.equals(ruleMetaValue.getValue().getValue(), MATCH_ALL);
+        return isMatchAllValue(ruleMetaValue.getValue().getValue());
     }
 
     /**
      * 是否全匹配的规则
      *
-     * @param ruleMetaKey 规则匹配键
+     * @param value 规则匹配键
      * @return 是否全匹配，全匹配则忽略该规则
      */
-    public static boolean isMatchAllValue(String ruleMetaKey) {
-        return StringUtils.equals(ruleMetaKey, MATCH_ALL);
+    public static boolean isMatchAllValue(String value) {
+        return StringUtils.isEmpty(value) || StringUtils.equals(value, MATCH_ALL);
     }
 }

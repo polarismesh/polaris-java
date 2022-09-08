@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making CL5 available.
+ * Tencent is pleased to support the open source community by making Polaris available.
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
@@ -19,7 +19,7 @@ package com.tencent.polaris.api.plugin.ratelimiter;
 
 public class QuotaResult {
 
-   public enum Code {
+    public enum Code {
         /**
          * OK，代表请求可以通过
          */

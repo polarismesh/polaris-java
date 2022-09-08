@@ -17,25 +17,15 @@
 
 package com.tencent.polaris.ratelimit.api.rpc;
 
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
+public interface RateLimitConsts {
 
-public class QuotaResponse {
+    String LABEL_KEY_METHOD = "$method";
 
-    private final QuotaResult quotaResult;
+    String LABEL_KEY_HEADER = "$header.";
 
-    public QuotaResponse(QuotaResult quotaResult) {
-        this.quotaResult = quotaResult;
-    }
+    String LABEL_KEY_QUERY = "$query.";
 
-    public QuotaResultCode getCode() {
-        return QuotaResultCode.values()[quotaResult.getCode().ordinal()];
-    }
+    String LABEL_KEY_CALLER_SERVICE = "$caller_service.";
 
-    public long getWaitMs() {
-        return quotaResult.getWaitMs();
-    }
-
-    public String getInfo() {
-        return quotaResult.getInfo();
-    }
+    String LABEL_KEY_CALLER_IP = "$caller_ip";
 }
