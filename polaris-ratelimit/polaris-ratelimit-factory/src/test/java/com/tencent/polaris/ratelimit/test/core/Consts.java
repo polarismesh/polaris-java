@@ -38,11 +38,9 @@ public interface Consts {
 
     String HEADER_VALUE = "king";
 
-    int MAX_PAY_COUNT = 2000;
+    int MAX_PAY_COUNT = 20;
 
-    int MAX_CASH_COUNT = 4000;
-
-    int MAX_SERVICE_COUNT = 5000;
+    int MAX_CASH_COUNT = 40;
 
     /**
      * 通过数组创建Map

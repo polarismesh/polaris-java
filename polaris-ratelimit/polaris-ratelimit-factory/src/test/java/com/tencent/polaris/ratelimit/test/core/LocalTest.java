@@ -74,7 +74,7 @@ public class LocalTest {
                         .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
                                 StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build()));
         ruleBuilder2.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1998).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(19).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder2.setRevision(StringValue.newBuilder().setValue("22222").build());
         rateLimitBuilder.addRules(ruleBuilder2.build());
@@ -89,7 +89,7 @@ public class LocalTest {
                         .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
                                 StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build()));
         ruleBuilder3.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(998).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(9).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder3.setRevision(StringValue.newBuilder().setValue("33333").build());
         rateLimitBuilder.addRules(ruleBuilder3.build());

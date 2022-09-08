@@ -67,7 +67,7 @@ public class MultiRuleTest {
         ruleBuilder1.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder1.setAmountMode(AmountMode.GLOBAL_TOTAL);
         ruleBuilder1.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(2000).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(20).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("11111").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());
@@ -80,7 +80,7 @@ public class MultiRuleTest {
         ruleBuilder2.setMethod(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
                 StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build());
         ruleBuilder2.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1500).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(15).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder2.setRevision(StringValue.newBuilder().setValue("22222").build());
         rateLimitBuilder.addRules(ruleBuilder2.build());
@@ -93,7 +93,7 @@ public class MultiRuleTest {
         ruleBuilder3.setMethod(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
                 StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build());
         ruleBuilder3.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1500).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(15).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder3.setRevision(StringValue.newBuilder().setValue("33333").build());
         rateLimitBuilder.addRules(ruleBuilder3.build());
@@ -110,7 +110,7 @@ public class MultiRuleTest {
                         MatchString.newBuilder().setValue(StringValue.newBuilder().setValue(Consts.HEADER_VALUE))
                                 .setType(MatchStringType.EXACT).build()).build());
         ruleBuilder4.addAmounts(
-                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(3000).build()).setValidDuration(
+                Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(30).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder4.setRevision(StringValue.newBuilder().setValue("44444").build());
         rateLimitBuilder.addRules(ruleBuilder4.build());
@@ -149,7 +149,7 @@ public class MultiRuleTest {
             // first query header
             boolean hasLimited = false;
             boolean hasPassed = false;
-            for (int i = 0; i < 1600; i++) {
+            for (int i = 0; i < 16; i++) {
                 QuotaResponse quotaResponse = quotaAcquire(limitAPI, Consts.METHOD_PAY, Consts.HEADER_VALUE);
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
@@ -173,7 +173,7 @@ public class MultiRuleTest {
             // first query header
             boolean hasLimited = false;
             boolean hasPassed = false;
-            for (int i = 0; i < 1300; i++) {
+            for (int i = 0; i < 13; i++) {
                 QuotaResponse quotaResponse = quotaAcquire(limitAPI, Consts.METHOD_PAY, Consts.HEADER_VALUE);
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
@@ -187,7 +187,7 @@ public class MultiRuleTest {
 
             hasLimited = false;
             hasPassed = false;
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10; i++) {
                 QuotaResponse quotaResponse = quotaAcquire(limitAPI, Consts.METHOD_CASH, null);
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
