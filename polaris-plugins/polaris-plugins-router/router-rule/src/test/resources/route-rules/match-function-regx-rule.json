@@ -1,0 +1,35 @@
+{
+  "service": "RuleTestService",
+  "namespace": "Test",
+  "inbounds": [
+    {
+      "sources": [
+        {
+          "service": "*",
+          "namespace": "*",
+          "metadata": {
+            "req": {
+              "type": "REGEX",
+              "value": "polaris*mesh"
+            }
+          }
+        }
+      ],
+      "destinations": [
+        {
+          "service": "RuleTestService",
+          "namespace": "Test",
+          "metadata": {
+            "version": {
+              "type": "EXACT",
+              "value": "2.0.0"
+            }
+          },
+          "priority": 0,
+          "weight": 100,
+          "isolate": false
+        }
+      ]
+    }
+  ]
+}
