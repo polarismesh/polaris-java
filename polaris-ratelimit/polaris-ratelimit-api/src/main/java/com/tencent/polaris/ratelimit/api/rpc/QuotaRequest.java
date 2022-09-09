@@ -34,7 +34,7 @@ public class QuotaRequest extends RequestBaseEntity {
 
     private String method;
 
-    private Set<MatchArgument> arguments = new HashSet<>();
+    private Set<Argument> arguments = new HashSet<>();
 
     private int count = 1;
 
@@ -62,7 +62,7 @@ public class QuotaRequest extends RequestBaseEntity {
     @Deprecated
     public Map<String, String> getLabels() {
         Map<String, String> values = new HashMap<>();
-        for (MatchArgument matchArgument : arguments) {
+        for (Argument matchArgument : arguments) {
             matchArgument.toLabel(values);
         }
         return values;
@@ -77,7 +77,7 @@ public class QuotaRequest extends RequestBaseEntity {
             return;
         }
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-            arguments.add(MatchArgument.fromLabel(entry.getKey(), entry.getValue()));
+            arguments.add(Argument.fromLabel(entry.getKey(), entry.getValue()));
         }
     }
 
@@ -97,11 +97,11 @@ public class QuotaRequest extends RequestBaseEntity {
         this.method = method;
     }
 
-    public Set<MatchArgument> getArguments() {
+    public Set<Argument> getArguments() {
         return arguments;
     }
 
-    public void setArguments(Set<MatchArgument> arguments) {
+    public void setArguments(Set<Argument> arguments) {
         if (CollectionUtils.isEmpty(arguments)) {
             this.arguments = Collections.emptySet();
         } else {

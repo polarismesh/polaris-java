@@ -21,7 +21,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import java.util.Map;
 import java.util.Objects;
 
-public class MatchArgument {
+public class Argument {
 
     public enum ArgumentType {
         CUSTOM, METHOD, HEADER, QUERY, CALLER_SERVICE, CALLER_IP
@@ -33,7 +33,7 @@ public class MatchArgument {
 
     private final String value;
 
-    private MatchArgument(ArgumentType type, String key, String value) {
+    private Argument(ArgumentType type, String key, String value) {
         this.type = type;
         this.key = key;
         this.value = value;
@@ -51,37 +51,37 @@ public class MatchArgument {
         return value;
     }
 
-    public static MatchArgument buildCustom(String key, String value) {
-        return new MatchArgument(ArgumentType.CUSTOM, StringUtils.defaultString(key), StringUtils.defaultString(value));
+    public static Argument buildCustom(String key, String value) {
+        return new Argument(ArgumentType.CUSTOM, StringUtils.defaultString(key), StringUtils.defaultString(value));
     }
 
-    public static MatchArgument buildMethod(String method) {
-        return new MatchArgument(ArgumentType.METHOD, "", StringUtils.defaultString(method));
+    public static Argument buildMethod(String method) {
+        return new Argument(ArgumentType.METHOD, "", StringUtils.defaultString(method));
     }
 
-    public static MatchArgument buildHeader(String headerKey, String headerValue) {
-        return new MatchArgument(ArgumentType.HEADER, StringUtils.defaultString(headerKey),
+    public static Argument buildHeader(String headerKey, String headerValue) {
+        return new Argument(ArgumentType.HEADER, StringUtils.defaultString(headerKey),
                 StringUtils.defaultString(headerValue));
     }
 
-    public static MatchArgument buildQuery(String queryKey, String queryValue) {
-        return new MatchArgument(ArgumentType.QUERY, StringUtils.defaultString(queryKey),
+    public static Argument buildQuery(String queryKey, String queryValue) {
+        return new Argument(ArgumentType.QUERY, StringUtils.defaultString(queryKey),
                 StringUtils.defaultString(queryValue));
     }
 
-    public static MatchArgument buildCallerService(String namespace, String service) {
-        return new MatchArgument(ArgumentType.CALLER_SERVICE, StringUtils.defaultString(namespace),
+    public static Argument buildCallerService(String namespace, String service) {
+        return new Argument(ArgumentType.CALLER_SERVICE, StringUtils.defaultString(namespace),
                 StringUtils.defaultString(service));
     }
 
-    public static MatchArgument buildCallerIP(String callerIP) {
-        return new MatchArgument(ArgumentType.CALLER_IP, "", StringUtils.defaultString(callerIP));
+    public static Argument buildCallerIP(String callerIP) {
+        return new Argument(ArgumentType.CALLER_IP, "", StringUtils.defaultString(callerIP));
     }
 
-    public static MatchArgument fromLabel(String labelKey, String labelValue) {
+    public static Argument fromLabel(String labelKey, String labelValue) {
         labelKey = StringUtils.defaultString(labelKey);
         if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_METHOD)) {
-            return buildMethod(labelKey);
+            return buildMethod(labelValue);
         }
         if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_CALLER_IP)) {
             return buildCallerIP(labelValue);
@@ -135,10 +135,10 @@ public class MatchArgument {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MatchArgument)) {
+        if (!(o instanceof Argument)) {
             return false;
         }
-        MatchArgument that = (MatchArgument) o;
+        Argument that = (Argument) o;
         return type == that.type &&
                 Objects.equals(key, that.key) &&
                 Objects.equals(value, that.value);

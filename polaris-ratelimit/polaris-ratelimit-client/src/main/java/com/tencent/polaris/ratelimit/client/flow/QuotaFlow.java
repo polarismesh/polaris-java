@@ -40,7 +40,6 @@ import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.client.pb.RateLimitProto;
-import com.tencent.polaris.client.pb.RateLimitProto.MatchArgument;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -167,10 +166,10 @@ public class QuotaFlow extends Destroyable {
                 }
             }
         }
-        List<MatchArgument> argumentsList = rule.getArgumentsList();
+        List<RateLimitProto.MatchArgument> argumentsList = rule.getArgumentsList();
         List<String> tmpList = new ArrayList<>();
         Map<Integer, Map<String, String>> arguments = request.getArguments();
-        for (MatchArgument matchArgument : argumentsList) {
+        for (RateLimitProto.MatchArgument matchArgument : argumentsList) {
             String labelValue;
             MatchString matcher = matchArgument.getValue();
             if (regexCombine && matcher.getType() != MatchStringType.EXACT) {

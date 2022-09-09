@@ -27,7 +27,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.FlowControlParam;
-import com.tencent.polaris.ratelimit.api.rpc.MatchArgument;
+import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import java.util.Collection;
 import java.util.HashMap;
@@ -59,12 +59,12 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
         BaseFlow.buildFlowControlParam(quotaRequest, configuration, flowControlParam);
     }
 
-    private Map<Integer, Map<String, String>> parseArguments(Collection<MatchArgument> arguments) {
+    private Map<Integer, Map<String, String>> parseArguments(Collection<Argument> arguments) {
         Map<Integer, Map<String, String>> argumentMap = new HashMap<>();
         if (CollectionUtils.isEmpty(arguments)) {
             return argumentMap;
         }
-        for (MatchArgument argument : arguments) {
+        for (Argument argument : arguments) {
             Map<String, String> stringMatchArgumentMap = argumentMap
                     .computeIfAbsent(argument.getType().ordinal(), k -> new HashMap<>());
             stringMatchArgumentMap.put(argument.getKey(), argument.getValue());
