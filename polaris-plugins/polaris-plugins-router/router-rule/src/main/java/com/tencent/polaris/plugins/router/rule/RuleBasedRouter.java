@@ -223,15 +223,6 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
-//        if (ruleMetaValue.getType() == MatchString.MatchStringType.REGEX) {
-//            // 正则匹配
-//            allMetaMatched = matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
-//                    multiEnvRouterParamMap);
-//        } else {
-//            // 精确匹配
-//            allMetaMatched = matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
-//                    multiEnvRouterParamMap);
-//        }
 
         allMetaMatched = matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
                 multiEnvRouterParamMap);
