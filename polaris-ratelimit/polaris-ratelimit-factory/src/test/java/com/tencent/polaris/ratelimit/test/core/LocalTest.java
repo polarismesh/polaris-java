@@ -34,6 +34,7 @@ import com.tencent.polaris.client.pb.RateLimitProto.Rule.AmountMode;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
+import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
@@ -110,9 +111,9 @@ public class LocalTest {
         QuotaRequest payRequest = new QuotaRequest();
         payRequest.setNamespace(Consts.NAMESPACE_TEST);
         payRequest.setService(Consts.LOCAL_LIMIT_SERVICE);
-        Set<com.tencent.polaris.ratelimit.api.rpc.MatchArgument> matchArgumentSet = new HashSet<>();
+        Set<Argument> matchArgumentSet = new HashSet<>();
         for (Map.Entry<String, String> entry : labels.entrySet()) {
-            com.tencent.polaris.ratelimit.api.rpc.MatchArgument matchArgument = com.tencent.polaris.ratelimit.api.rpc.MatchArgument
+            Argument matchArgument = Argument
                     .buildCustom(entry.getKey(), entry.getValue());
             matchArgumentSet.add(matchArgument);
         }

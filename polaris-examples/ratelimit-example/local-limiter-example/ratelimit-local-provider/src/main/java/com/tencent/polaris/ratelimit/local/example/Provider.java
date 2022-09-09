@@ -30,7 +30,7 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
-import com.tencent.polaris.ratelimit.api.rpc.MatchArgument;
+import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
@@ -224,9 +224,9 @@ public class Provider {
             quotaRequest.setNamespace(NAMESPACE_DEFAULT);
             quotaRequest.setService(ECHO_SERVICE_NAME);
             quotaRequest.setMethod("/echo");
-            Set<MatchArgument> matchArgumentSet = new HashSet<>();
+            Set<Argument> matchArgumentSet = new HashSet<>();
             for (Map.Entry<String, String> entry : parameters.entrySet()) {
-                MatchArgument matchArgument = MatchArgument.buildQuery(entry.getKey(), entry.getValue());
+                Argument matchArgument = Argument.buildQuery(entry.getKey(), entry.getValue());
                 matchArgumentSet.add(matchArgument);
             }
             quotaRequest.setArguments(matchArgumentSet);

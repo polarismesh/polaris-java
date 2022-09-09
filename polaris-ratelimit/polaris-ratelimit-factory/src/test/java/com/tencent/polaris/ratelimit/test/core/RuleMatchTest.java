@@ -33,6 +33,7 @@ import com.tencent.polaris.client.pb.RateLimitProto.Rule.AmountMode;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
+import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
@@ -160,8 +161,8 @@ public class RuleMatchTest {
             payRequest.setMethod(method);
         }
         if (null != headerValue) {
-            Set<com.tencent.polaris.ratelimit.api.rpc.MatchArgument> matchArguments = new HashSet<>();
-            matchArguments.add(com.tencent.polaris.ratelimit.api.rpc.MatchArgument
+            Set<Argument> matchArguments = new HashSet<>();
+            matchArguments.add(Argument
                     .buildHeader(Consts.HEADER_KEY, headerValue));
             payRequest.setArguments(matchArguments);
         }
