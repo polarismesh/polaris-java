@@ -37,6 +37,7 @@ import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
+import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 
 /**
@@ -221,19 +223,14 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
-        if (ruleMetaValue.getType() == MatchString.MatchStringType.REGEX) {
-            // 正则匹配
-            allMetaMatched = matchValueByValueType(isMatchSource, true, ruleMetaKey, ruleMetaValue, destMetaValue,
-                    multiEnvRouterParamMap);
-        } else {
-            // 精确匹配
-            allMetaMatched = matchValueByValueType(isMatchSource, false, ruleMetaKey, ruleMetaValue, destMetaValue,
-                    multiEnvRouterParamMap);
-        }
+
+        allMetaMatched = matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
+                multiEnvRouterParamMap);
+
         return allMetaMatched;
     }
 
-    private boolean matchValueByValueType(boolean isMatchSource, boolean isRegex, String ruleMetaKey,
+    private boolean matchValueByValueType(boolean isMatchSource, String ruleMetaKey,
                                           MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
         boolean allMetaMatched = true;
 
@@ -250,15 +247,15 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                     } else {
                         String ruleValue = multiEnvRouterParamMap.get(ruleMetaKey);
                         // contains key
-                        allMetaMatched = matchValue(isRegex, destMetaValue, ruleValue);
+                        allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleValue);
                     }
                 }
                 break;
             case VARIABLE:
                 if (globalVariablesConfig.containsKey(ruleMetaKey)) {
                     // 1.先从配置获取
-                    String ruleValue = (String) globalVariablesConfig.get(ruleMetaKey);
-                    allMetaMatched = matchValue(isRegex, destMetaValue, ruleValue);
+                    String ruleValue = globalVariablesConfig.get(ruleMetaKey);
+                    allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleValue);
                 } else {
                     // 2.从环境变量中获取  key从规则中获取
                     String key = ruleMetaValue.getValue().getValue();
@@ -266,7 +263,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                         allMetaMatched = false;
                     } else {
                         String value = System.getenv(key);
-                        allMetaMatched = matchValue(isRegex, destMetaValue, value);
+                        allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, value);
                     }
                     if (!System.getenv().containsKey(key) || !System.getenv(key).equals(destMetaValue)) {
                         allMetaMatched = false;
@@ -274,28 +271,11 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 }
                 break;
             default:
-                allMetaMatched = matchValue(isRegex, destMetaValue, ruleMetaValue.getValue().getValue());
+                allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleMetaValue.getValue().getValue());
         }
 
         return allMetaMatched;
     }
-
-    private boolean matchValue(boolean isRegex, String destMetaValue, String ruleValue) {
-        boolean allMetaMatched = true;
-
-        if (isRegex) {
-            boolean match = Utils.regMatch(ruleValue, destMetaValue);
-            if (!match) {
-                allMetaMatched = false;
-            }
-        } else {
-            if (!destMetaValue.equals(ruleValue)) {
-                allMetaMatched = false;
-            }
-        }
-        return allMetaMatched;
-    }
-
 
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
                                                     RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
@@ -311,7 +291,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             }
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("getRuleFilteredInstances, route:{}", route.toString());
+                LOG.debug("getRuleFilteredInstances, route:{}", route);
             }
 
             // 匹配source规则
