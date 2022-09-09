@@ -26,9 +26,11 @@ import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
+import com.tencent.polaris.ratelimit.api.rpc.MatchArgument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
@@ -40,8 +42,10 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -65,13 +69,14 @@ public class Provider {
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
         Configuration configuration = ConfigAPIFactory.defaultConfig();
-        LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration);
+        SDKContext sdkContext = SDKContext.initContextByConfig(configuration);
+        LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByContext(sdkContext);
         server.createContext("/echo", new EchoServerHandler(limitAPI));
 
         String localHost = getLocalHost(configuration);
         int localPort = server.getAddress().getPort();
 
-        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
+        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(sdkContext);
         HEARTBEAT_EXECUTOR
                 .schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
                         500,
@@ -80,7 +85,7 @@ public class Provider {
             HEARTBEAT_EXECUTOR.shutdown();
             server.stop(1);
             deregister(namespace, service, localHost, localPort, providerAPI);
-            providerAPI.close();
+            sdkContext.close();
         }));
         server.start();
     }
@@ -219,7 +224,12 @@ public class Provider {
             quotaRequest.setNamespace(NAMESPACE_DEFAULT);
             quotaRequest.setService(ECHO_SERVICE_NAME);
             quotaRequest.setMethod("/echo");
-            quotaRequest.setLabels(parameters);
+            Set<MatchArgument> matchArgumentSet = new HashSet<>();
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                MatchArgument matchArgument = MatchArgument.buildQuery(entry.getKey(), entry.getValue());
+                matchArgumentSet.add(matchArgument);
+            }
+            quotaRequest.setArguments(matchArgumentSet);
             quotaRequest.setCount(1);
             QuotaResponse quotaResponse = limitAPI.getQuota(quotaRequest);
             OutputStream os = exchange.getResponseBody();

@@ -77,7 +77,7 @@ public class PrometheusHandler implements StatInfoHandler {
         this.callerIp = callerIp;
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
-        this.promRegistry = CollectorRegistry.defaultRegistry;
+        this.promRegistry = new CollectorRegistry(true);
         this.scheduledAggregationTask = Executors.newSingleThreadScheduledExecutor();
         initSampleMapping(MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY,
                 SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
