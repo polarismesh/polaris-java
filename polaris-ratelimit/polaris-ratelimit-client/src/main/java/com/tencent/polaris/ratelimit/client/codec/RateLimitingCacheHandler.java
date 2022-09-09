@@ -112,23 +112,23 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
             // transfer the labels to arguments
             List<MatchArgument> arguments = new ArrayList<>();
             for (Map.Entry<String, MatchString> entry : rule.getLabelsMap().entrySet()) {
-                String labelKey = entry.getKey();
+                String labelKey = StringUtils.defaultString(entry.getKey());
                 if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_METHOD)) {
                     arguments.add(MatchArgument.newBuilder().setType(Type.METHOD).setValue(entry.getValue()).build());
                 } else if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_CALLER_IP)) {
                     arguments
                             .add(MatchArgument.newBuilder().setType(Type.CALLER_IP).setValue(entry.getValue()).build());
-                } else if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_HEADER)) {
+                } else if (labelKey.startsWith(RateLimitConsts.LABEL_KEY_HEADER)) {
                     arguments
                             .add(MatchArgument.newBuilder().setType(Type.HEADER)
                                     .setKey(labelKey.substring(RateLimitConsts.LABEL_KEY_HEADER.length()))
                                     .setValue(entry.getValue()).build());
-                } else if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_QUERY)) {
+                } else if (labelKey.startsWith(RateLimitConsts.LABEL_KEY_QUERY)) {
                     arguments
                             .add(MatchArgument.newBuilder().setType(Type.QUERY)
                                     .setKey(labelKey.substring(RateLimitConsts.LABEL_KEY_QUERY.length()))
                                     .setValue(entry.getValue()).build());
-                } else if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_CALLER_SERVICE)) {
+                } else if (labelKey.startsWith(RateLimitConsts.LABEL_KEY_CALLER_SERVICE)) {
                     arguments
                             .add(MatchArgument.newBuilder().setType(Type.CALLER_SERVICE)
                                     .setKey(labelKey.substring(RateLimitConsts.LABEL_KEY_CALLER_SERVICE.length()))
