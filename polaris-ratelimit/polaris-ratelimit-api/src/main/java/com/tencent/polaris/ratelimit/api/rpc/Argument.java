@@ -81,7 +81,7 @@ public class Argument {
     public static Argument fromLabel(String labelKey, String labelValue) {
         labelKey = StringUtils.defaultString(labelKey);
         if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_METHOD)) {
-            return buildMethod(labelKey);
+            return buildMethod(labelValue);
         }
         if (StringUtils.equals(labelKey, RateLimitConsts.LABEL_KEY_CALLER_IP)) {
             return buildCallerIP(labelValue);
