@@ -22,6 +22,7 @@ import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.RateLimitProto.MatchArgument;
@@ -78,7 +79,7 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
         if (CollectionUtils.isNotEmpty(argumentsList)) {
             return RULE_ARGUMENT_LEVEL + argumentsList.size();
         }
-        if (null != method) {
+        if (null != method && !RuleUtils.isMatchAllValue(method)) {
             return RULE_METHOD_LEVEL;
         }
         return RULE_SERVICE_LEVEL;
