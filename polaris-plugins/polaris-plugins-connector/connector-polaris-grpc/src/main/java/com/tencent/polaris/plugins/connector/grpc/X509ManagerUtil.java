@@ -32,13 +32,13 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
+import org.apache.commons.codec.binary.Base64;
 
 /**
  * X.509 manager utils
@@ -109,7 +109,7 @@ public final class X509ManagerUtil {
             managerFactory.init(keyStore, "".toCharArray());
             return (X509KeyManager) managerFactory.getKeyManagers()[0];
         } catch (UnrecoverableKeyException | CertificateException | KeyStoreException | IOException |
-                 NoSuchAlgorithmException | InvalidKeySpecException e) {
+                NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new SSLException("Build X.509 key manager error", e);
         }
     }
@@ -121,7 +121,7 @@ public final class X509ManagerUtil {
             clientKey = clientKey.replace(PKCS8_PRIVATE_KEY_BEGIN, "");
             clientKey = clientKey.replace(PKCS8_PRIVATE_KEY_END, "");
             clientKey = clientKey.trim().replaceAll(System.lineSeparator(), "");
-            return Base64.getDecoder().decode(clientKey);
+            return Base64.decodeBase64(clientKey);
         }
         return clientKeyChain;
     }

@@ -51,12 +51,14 @@ import org.junit.Test;
 
 public class LocalTest {
 
+    private static final int PORT = 10091;
+
     private NamingServer namingServer;
 
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(PORT);
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
@@ -133,7 +135,7 @@ public class LocalTest {
 
     @Test
     public void testSingleThreadLimit() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             testQuotaAcquire(limitAPI,

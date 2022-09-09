@@ -49,12 +49,14 @@ import org.junit.Test;
 
 public class MultiRuleTest {
 
+    private static final int PORT = 10092;
+
     private NamingServer namingServer;
 
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(PORT);
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
@@ -143,7 +145,7 @@ public class MultiRuleTest {
 
     @Test
     public void testGetQuotaLayer2() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             // first query header
@@ -167,7 +169,7 @@ public class MultiRuleTest {
 
     @Test
     public void testGetQuotaLayer3() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             // first query header
