@@ -104,7 +104,7 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
                 retRules.add(rule);
                 continue;
             }
-            if (!CollectionUtils.isNotEmpty(rule.getArgumentsList())) {
+            if (CollectionUtils.isNotEmpty(rule.getArgumentsList())) {
                 // new server version, already transfer to arguments
                 retRules.add(rule);
                 continue;
