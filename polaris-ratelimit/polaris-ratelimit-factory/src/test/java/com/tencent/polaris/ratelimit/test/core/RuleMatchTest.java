@@ -49,6 +49,8 @@ import org.junit.Test;
 
 public class RuleMatchTest {
 
+    private static final int PORT = 10093;
+
     private static final String MATCH_REGEX_SERVICE = "match_regex_service";
 
     private static final String MATCH_NOT_EQUALS_SERVICE = "match_not_equals_service";
@@ -62,7 +64,7 @@ public class RuleMatchTest {
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10093);
+            namingServer = NamingServer.startNamingServer(PORT);
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
@@ -168,7 +170,7 @@ public class RuleMatchTest {
 
     @Test
     public void testGetQuotaRegex() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             // first query header
@@ -205,7 +207,7 @@ public class RuleMatchTest {
 
     @Test
     public void testGetQuotaNotEqual() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             // first query header
@@ -244,7 +246,7 @@ public class RuleMatchTest {
 
     @Test
     public void testGetQuotaIn() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             // first query header
@@ -294,7 +296,7 @@ public class RuleMatchTest {
 
     @Test
     public void testGetQuotaNotIn() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
+        Configuration configuration = TestUtils.createSimpleConfiguration(PORT);
         try (LimitAPI limitAPI = LimitAPIFactory.createLimitAPIByConfig(configuration)) {
             RateLimitUtils.adjustTime();
             // first query header
