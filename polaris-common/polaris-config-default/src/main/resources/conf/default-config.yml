@@ -155,6 +155,15 @@ consumer:
         unhealthyPercentToDegrade: 100
         #描述: 是否通过上报方式获取地域信息
         enableReportLocalAddress: false
+        # 描述:大区
+        # 类型:string
+        region: ""
+        # 描述:区域
+        # 类型:string
+        zone: ""
+        # 描述:园区
+        # 类型:string
+        campus: ""
   #描述:负载均衡相关配置
   loadbalancer:
     #描述: 负载均衡类型（已注册的负载均衡插件名）

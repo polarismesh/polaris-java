@@ -47,6 +47,15 @@ public class NearbyRouterConfig implements Verifier {
     @JsonProperty
     private Integer unhealthyPercentToDegrade;
 
+    @JsonProperty
+    private String region;
+
+    @JsonProperty
+    private String zone;
+
+    @JsonProperty
+    private String campus;
+
     public LocationLevel getMatchLevel() {
         return matchLevel;
     }
@@ -95,6 +104,30 @@ public class NearbyRouterConfig implements Verifier {
         this.enableReportLocalAddress = enableReportLocalAddress;
     }
 
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
+    }
+
+    public String getCampus() {
+        return campus;
+    }
+
+    public void setCampus(String campus) {
+        this.campus = campus;
+    }
+
     @Override
     public void verify() {
         ConfigUtils.validateNull(enableReportLocalAddress, "enableReportLocalAddress");
@@ -133,6 +166,15 @@ public class NearbyRouterConfig implements Verifier {
             if (null == unhealthyPercentToDegrade) {
                 setUnhealthyPercentToDegrade(nearbyRouterConfig.getUnhealthyPercentToDegrade());
             }
+            if (null == region) {
+                setRegion(nearbyRouterConfig.getRegion());
+            }
+            if (null == zone) {
+                setZone(nearbyRouterConfig.getZone());
+            }
+            if (null == campus) {
+                setCampus(nearbyRouterConfig.getCampus());
+            }
         }
     }
 
@@ -141,6 +183,9 @@ public class NearbyRouterConfig implements Verifier {
     public String toString() {
         return "NearbyRouterConfig{" +
                 "enableReportLocalAddress=" + enableReportLocalAddress +
+                ", region=" + region +
+                ", zone=" + zone +
+                ", campus=" + campus +
                 ", matchLevel='" + matchLevel + '\'' +
                 ", maxMatchLevel='" + maxMatchLevel + '\'' +
                 ", strictNearby=" + strictNearby +
