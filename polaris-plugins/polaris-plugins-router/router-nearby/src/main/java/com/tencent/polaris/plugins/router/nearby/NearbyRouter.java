@@ -299,14 +299,23 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
         //加载本地配置文件的地址
-        if (this.config.getRegion().isEmpty() || this.config.getZone().isEmpty() || this.config.getCampus().isEmpty()) {
+        if (!this.config.getRegion().isEmpty() || !this.config.getZone().isEmpty() || !this.config.getCampus().isEmpty()) {
             LOG.info("config client location Region:{}, Zone:{}, Campus:{}", this.config.getRegion(),
                     this.config.getZone(), this.config.getCampus());
-            valueContext.setValue(LocationLevel.region.name(), this.config.getRegion());
-            valueContext.setValue(LocationLevel.zone.name(), this.config.getZone());
-            valueContext.setValue(LocationLevel.campus.name(), this.config.getCampus());
+
+            if(!config.getRegion().isEmpty()){
+                valueContext.setValue(LocationLevel.region.name(), this.config.getRegion());
+            }
+            if(!config.getZone().isEmpty()){
+                valueContext.setValue(LocationLevel.zone.name(), this.config.getZone());
+            }
+            if(!config.getCampus().isEmpty()){
+                valueContext.setValue(LocationLevel.campus.name(), this.config.getCampus());
+            }
             valueContext.notifyAllForLocationReady();
         }
+
+
 
         if (null != reportClientExecutor) {
             //执行并定时进行客户端上报
