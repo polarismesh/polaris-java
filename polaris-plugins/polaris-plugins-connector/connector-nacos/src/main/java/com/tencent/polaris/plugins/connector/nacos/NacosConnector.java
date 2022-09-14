@@ -52,9 +52,9 @@ import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
@@ -175,19 +175,6 @@ public class NacosConnector extends DestroyableServerConnector {
         return properties;
     }
 
-  public static void main(String[] args) {
-    Pattern addressPattern =
-        Pattern.compile("([a-zA-Z\\d]+(:)[a-zA-Z\\d~!@&%#_]+@)?(.*)(:)\\d+(/[a-zA-Z\\d-]*)?$");
-      boolean matched = addressPattern.matcher("nacos:nacos@127.0.0.1:8848/namespace").find();
-    System.out.println(matched);
-
-      matched = addressPattern.matcher("nacos:nacos@127.0.0.1:8848").find();
-      System.out.println(matched);
-
-      matched = addressPattern.matcher("127.0.0.1:8848").find();
-      System.out.println(matched);
-  }
-
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
         // do nothing
@@ -204,7 +191,7 @@ public class NacosConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public CommonProviderResponse registerInstance(CommonProviderRequest req) throws PolarisException {
+    public CommonProviderResponse registerInstance(CommonProviderRequest req, Map<String, String> customHeader) throws PolarisException {
         CommonProviderResponse response = new CommonProviderResponse();
         if (isRegisterEnable() && !isRegistered) {
             try {
@@ -260,7 +247,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-        this.registerInstance(req);
+        // do nothing
     }
 
     @Override
@@ -292,7 +279,7 @@ public class NacosConnector extends DestroyableServerConnector {
                 instance.setPort(service.getPort());
                 instance.setHealthy(service.isHealthy());
                 instance.setMetadata(service.getMetadata());
-                instance.setIsolated(service.isEphemeral());
+                instance.setIsolated(service.isEnabled());
                 instanceList.add(instance);
             }
             return new ServiceInstancesResponse(String.valueOf(System.currentTimeMillis()), instanceList);
