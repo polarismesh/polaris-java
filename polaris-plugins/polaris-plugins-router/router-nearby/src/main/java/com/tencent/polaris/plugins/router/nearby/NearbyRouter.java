@@ -299,23 +299,25 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
         //加载本地配置文件的地址
-        if (!this.config.getRegion().isEmpty() || !this.config.getZone().isEmpty() || !this.config.getCampus().isEmpty()) {
+        boolean locationInfoLoaded = false;
+
+        if(!config.getRegion().isEmpty()){
+            valueContext.setValue(LocationLevel.region.name(), this.config.getRegion());
+            locationInfoLoaded =true;
+        }
+        if(!config.getZone().isEmpty()){
+            valueContext.setValue(LocationLevel.zone.name(), this.config.getZone());
+            locationInfoLoaded =true;
+        }
+        if(!config.getCampus().isEmpty()){
+            valueContext.setValue(LocationLevel.campus.name(), this.config.getCampus());
+            locationInfoLoaded =true;
+        }
+        if(locationInfoLoaded){
             LOG.info("config client location Region:{}, Zone:{}, Campus:{}", this.config.getRegion(),
                     this.config.getZone(), this.config.getCampus());
-
-            if(!config.getRegion().isEmpty()){
-                valueContext.setValue(LocationLevel.region.name(), this.config.getRegion());
-            }
-            if(!config.getZone().isEmpty()){
-                valueContext.setValue(LocationLevel.zone.name(), this.config.getZone());
-            }
-            if(!config.getCampus().isEmpty()){
-                valueContext.setValue(LocationLevel.campus.name(), this.config.getCampus());
-            }
             valueContext.notifyAllForLocationReady();
         }
-
-
 
         if (null != reportClientExecutor) {
             //执行并定时进行客户端上报
