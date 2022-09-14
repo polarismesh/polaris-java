@@ -114,7 +114,7 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
             try {
                 List<ConfigFile> watchConfigFiles = assembleWatchConfigFiles();
 
-                LOGGER.info("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
+                LOGGER.debug("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
                         retryPolicy.getCurrentDelayTime());
 
                 ConfigFileResponse response = configFileConnector.watchConfigFiles(watchConfigFiles);

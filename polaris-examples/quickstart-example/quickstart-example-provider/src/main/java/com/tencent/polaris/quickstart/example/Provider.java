@@ -29,7 +29,6 @@ import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -39,9 +38,6 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class Provider {
 
@@ -52,8 +48,6 @@ public class Provider {
     private static final int TTL = 5;
 
     private static final int LISTEN_PORT = 15800;
-
-    private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
 
     public static void main(String[] args) throws Exception {
         ProviderExampleUtils.InitResult initResult = ProviderExampleUtils.initProviderConfiguration(args);
@@ -69,12 +63,8 @@ public class Provider {
         String localHost = getLocalHost(configuration);
 
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
-        HEARTBEAT_EXECUTOR
-                .schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
-                        500,
-                        TimeUnit.MILLISECONDS);
+        register(namespace, service, localHost, localPort, providerAPI);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            HEARTBEAT_EXECUTOR.shutdown();
             server.stop(1);
             deregister(namespace, service, localHost, localPort, providerAPI);
             providerAPI.close();
@@ -91,7 +81,7 @@ public class Provider {
         registerRequest.setHost(host);
         registerRequest.setPort(port);
         registerRequest.setTtl(TTL);
-        InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
     }
@@ -143,70 +133,6 @@ public class Provider {
         String[] tokens = serverAddress.split(":");
         try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
             return socket.getLocalAddress().getHostAddress();
-        }
-    }
-
-    private static class RegisterTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final ProviderAPI providerAPI;
-
-        public RegisterTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            try {
-                Provider.register(namespace, service, host, port, providerAPI);
-                // register successfully, then start to do heartbeat
-                Provider.HEARTBEAT_EXECUTOR
-                        .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL,
-                                TTL,
-                                TimeUnit.SECONDS);
-            } catch (Throwable throwable) {
-                System.out.printf(throwable.getMessage());
-            }
-
-        }
-    }
-
-    private static class HeartbeatTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final ProviderAPI providerAPI;
-
-        public HeartbeatTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            Provider.heartbeat(namespace, service, host, port, providerAPI);
         }
     }
 

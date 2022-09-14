@@ -129,7 +129,7 @@ public class BaseFlow {
      */
     public static ServiceInstances processServiceRouters(RouteInfo routeInfo, ServiceInstances dstInstances,
             RouterChainGroup routerChainGroup) throws PolarisException {
-        if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
+        if (null == dstInstances || CollectionUtils.isEmpty(dstInstances.getInstances())) {
             return dstInstances;
         }
         boolean processed = false;
@@ -223,7 +223,7 @@ public class BaseFlow {
                     //可重试异常，尝试进行重试
                     currentTime = Utils.sleepUninterrupted(controlParam.getRetryIntervalMs());
                 } else {
-                    throw (PolarisException) cause;
+                    break;
                 }
             } catch (TimeoutException e) {
                 break;
@@ -237,7 +237,7 @@ public class BaseFlow {
         String errMsg = String.format("timeout while waiting response for svcEventKeys %s, svcEventKey %s",
                 paramProvider.getSvcEventKeys(), paramProvider.getSvcEventKey());
         LOG.warn(errMsg);
-        throw new PolarisException(ErrorCode.API_TIMEOUT, errMsg);
+        return new ResourcesResponse();
     }
 
     private static boolean readResourcesFromLocalCache(ServiceEventKeysProvider paramProvider,

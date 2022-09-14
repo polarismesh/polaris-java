@@ -41,6 +41,8 @@ import java.util.Objects;
  */
 public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheValue {
 
+    public static final ServiceInstancesByProto EMPTY_INSTANCES = new ServiceInstancesByProto();
+
     private final ServiceProto.Service service;
 
     private final ServiceKey svcKey;

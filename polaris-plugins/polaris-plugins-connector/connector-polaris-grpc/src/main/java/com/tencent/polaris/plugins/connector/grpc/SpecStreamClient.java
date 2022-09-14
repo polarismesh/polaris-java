@@ -164,18 +164,13 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         if (response.hasCode()) {
             errorCode = ServerCodes.convertServerErrorToRpcError(response.getCode().getValue());
         }
-        ServiceProto.Service service;
-        if (CollectionUtils.isNotEmpty(response.getServicesList())) {
-            service = response.getServicesList().get(0);
-        } else {
-            service = response.getService();
-        }
-        if (null == service || StringUtils.isEmpty(service.getNamespace().getValue()) || StringUtils
-                .isEmpty(service.getName().getValue())) {
+        ServiceProto.Service service = response.getService();
+        EventType eventType = GrpcUtil.buildEventType(response.getType());
+        if (!eventType.equals(EventType.SERVICE) && (StringUtils.isEmpty(service.getNamespace().getValue())
+                || StringUtils.isEmpty(service.getName().getValue()))) {
             return new ValidResult(null, ErrorCode.INVALID_SERVER_RESPONSE,
                     "service is empty, response text is " + response.toString());
         }
-        EventType eventType = GrpcUtil.buildEventType(response.getType());
         if (eventType == EventType.UNKNOWN) {
             return new ValidResult(null, ErrorCode.INVALID_SERVER_RESPONSE,
                     "invalid event type " + response.getType());
@@ -197,8 +192,15 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      */
     public void exceptionCallback(ValidResult validResult) {
         this.closeStream(false);
-        LOG.debug("[ServerConnector]exceptionCallback: errCode {}, info {}, serviceEventKey {}",
-                validResult.getErrorCode(), validResult.getMessage(), validResult.getServiceEventKey());
+        if (validResult.getMessage().contains("EOF")) {
+            // print debug log when message contains "EOF" and it is not a normal exception.
+            LOG.debug("[ServerConnector]exceptionCallback: errCode {}, info {}, serviceEventKey {}",
+                    validResult.getErrorCode(), validResult.getMessage(), validResult.getServiceEventKey());
+        } else {
+            LOG.error("[ServerConnector]exceptionCallback: errCode {}, info {}, serviceEventKey {}",
+                    validResult.getErrorCode(), validResult.getMessage(), validResult.getServiceEventKey());
+        }
+
         //report down
         connection.reportFail();
         List<ServiceUpdateTask> notifyTasks = new ArrayList<>();
@@ -207,12 +209,27 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             if (null == serviceEventKey) {
                 if (CollectionUtils.isNotEmpty(pendingTask.values())) {
                     notifyTasks.addAll(pendingTask.values());
+
+                    for (ServiceUpdateTask task : pendingTask.values()) {
+                        PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
+                                String.format("[ServerConnector]code %s, fail to query service %s from server(%s): %s",
+                                        validResult.getErrorCode(), task.getServiceEventKey(),
+                                        connection.getConnID(), validResult.getMessage()));
+                        task.notifyServerEvent(new ServerEvent(task.getServiceEventKey(), null, error));
+                    }
+
                     pendingTask.clear();
                 }
             } else {
                 ServiceUpdateTask task = pendingTask.remove(serviceEventKey);
                 if (null != task) {
                     notifyTasks.add(task);
+                    PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
+                            String.format("[ServerConnector]code %s, fail to query service %s from server(%s): %s",
+                                    validResult.getErrorCode(), task.getServiceEventKey(),
+                                    connection.getConnID(), validResult.getMessage()));
+                    task.notifyServerEvent(new ServerEvent(task.getServiceEventKey(), null, error));
+
                 }
             }
         }
@@ -250,19 +267,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         } else {
             LOG.debug("[ServerConnector]receive response for {}", serviceEventKey);
         }
-        PolarisException error;
-        if (!response.hasCode() ||
-                response.getCode().getValue() == ServerCodes.EXECUTE_SUCCESS ||
-                response.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
-            error = null;
-        } else {
-            int respCode = response.getCode().getValue();
-            String info = response.getInfo().getValue();
-            error = ServerErrorResponseException.build(respCode,
-                    String.format("[ServerConnector]code %d, fail to query service %s from server(%s): %s", respCode,
-                            serviceKey, connection.getConnID(), info));
-        }
-        boolean svcDeleted = updateTask.notifyServerEvent(new ServerEvent(serviceEventKey, response, error));
+        boolean svcDeleted = updateTask.notifyServerEvent(new ServerEvent(serviceEventKey, response, null));
         if (!svcDeleted) {
             updateTask.addUpdateTaskSet();
         }

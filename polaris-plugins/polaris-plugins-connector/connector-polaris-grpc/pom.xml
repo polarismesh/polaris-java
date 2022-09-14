@@ -27,10 +27,15 @@
             <artifactId>connector-common</artifactId>
             <version>${project.version}</version>
         </dependency>
-	<dependency>
+        <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-logging</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>${commons.codec.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

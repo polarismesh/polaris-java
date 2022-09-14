@@ -18,6 +18,8 @@
 package com.tencent.polaris.plugins.router.rule;
 
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
+import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -29,11 +31,13 @@ import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
+import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.client.pb.RoutingProto;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -46,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 
 /**
@@ -54,13 +59,15 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/8/28
  */
-public class RuleBasedRouter extends AbstractServiceRouter {
+public class RuleBasedRouter extends AbstractServiceRouter implements PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(RuleBasedRouter.class);
     public static final String ROUTER_TYPE_RULE_BASED = "ruleRouter";
     public static final String ROUTER_ENABLED = "enabled";
 
     private Map<String, String> globalVariablesConfig;
+
+    private RuleBasedRouterConfig routerConfig;
 
     /**
      * 根据路由规则进行服务实例过滤, 并返回过滤后的实例列表
@@ -216,19 +223,14 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
-        if (ruleMetaValue.getType() == MatchString.MatchStringType.REGEX) {
-            // 正则匹配
-            allMetaMatched = matchValueByValueType(isMatchSource, true, ruleMetaKey, ruleMetaValue, destMetaValue,
-                    multiEnvRouterParamMap);
-        } else {
-            // 精确匹配
-            allMetaMatched = matchValueByValueType(isMatchSource, false, ruleMetaKey, ruleMetaValue, destMetaValue,
-                    multiEnvRouterParamMap);
-        }
+
+        allMetaMatched = matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
+                multiEnvRouterParamMap);
+
         return allMetaMatched;
     }
 
-    private boolean matchValueByValueType(boolean isMatchSource, boolean isRegex, String ruleMetaKey,
+    private boolean matchValueByValueType(boolean isMatchSource, String ruleMetaKey,
                                           MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
         boolean allMetaMatched = true;
 
@@ -245,15 +247,15 @@ public class RuleBasedRouter extends AbstractServiceRouter {
                     } else {
                         String ruleValue = multiEnvRouterParamMap.get(ruleMetaKey);
                         // contains key
-                        allMetaMatched = matchValue(isRegex, destMetaValue, ruleValue);
+                        allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleValue);
                     }
                 }
                 break;
             case VARIABLE:
                 if (globalVariablesConfig.containsKey(ruleMetaKey)) {
                     // 1.先从配置获取
-                    String ruleValue = (String) globalVariablesConfig.get(ruleMetaKey);
-                    allMetaMatched = matchValue(isRegex, destMetaValue, ruleValue);
+                    String ruleValue = globalVariablesConfig.get(ruleMetaKey);
+                    allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleValue);
                 } else {
                     // 2.从环境变量中获取  key从规则中获取
                     String key = ruleMetaValue.getValue().getValue();
@@ -261,7 +263,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
                         allMetaMatched = false;
                     } else {
                         String value = System.getenv(key);
-                        allMetaMatched = matchValue(isRegex, destMetaValue, value);
+                        allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, value);
                     }
                     if (!System.getenv().containsKey(key) || !System.getenv(key).equals(destMetaValue)) {
                         allMetaMatched = false;
@@ -269,28 +271,11 @@ public class RuleBasedRouter extends AbstractServiceRouter {
                 }
                 break;
             default:
-                allMetaMatched = matchValue(isRegex, destMetaValue, ruleMetaValue.getValue().getValue());
+                allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleMetaValue.getValue().getValue());
         }
 
         return allMetaMatched;
     }
-
-    private boolean matchValue(boolean isRegex, String destMetaValue, String ruleValue) {
-        boolean allMetaMatched = true;
-
-        if (isRegex) {
-            boolean match = Utils.regMatch(ruleValue, destMetaValue);
-            if (!match) {
-                allMetaMatched = false;
-            }
-        } else {
-            if (!destMetaValue.equals(ruleValue)) {
-                allMetaMatched = false;
-            }
-        }
-        return allMetaMatched;
-    }
-
 
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
                                                     RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
@@ -306,7 +291,7 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             }
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("getRuleFilteredInstances, route:{}", route.toString());
+                LOG.debug("getRuleFilteredInstances, route:{}", route);
             }
 
             // 匹配source规则
@@ -473,9 +458,20 @@ public class RuleBasedRouter extends AbstractServiceRouter {
             case destRuleSucc:
                 return new RouteResult(destFilteredInstances, RouteResult.State.Next);
             default:
-                LOG.error("route rule not match, rule status: {}, not matched source {}", ruleStatus,
+                LOG.warn("route rule not match, rule status: {}, not matched source {}", ruleStatus,
                         routeInfo.getSourceService());
-                return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
+
+                //请求里的配置优先级高于配置文件
+                RuleBasedRouterFailoverType failoverType = routeInfo.getRuleBasedRouterFailoverType();
+                if (failoverType == null) {
+                    failoverType = routerConfig.getFailoverType();
+                }
+
+                if (failoverType == RuleBasedRouterFailoverType.none) {
+                    return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
+                }
+                
+                return new RouteResult(instances.getInstances(), RouteResult.State.Next);
         }
     }
 
@@ -525,6 +521,11 @@ public class RuleBasedRouter extends AbstractServiceRouter {
     }
 
     @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return RuleBasedRouterConfig.class;
+    }
+
+    @Override
     public PluginType getType() {
         return PluginTypes.SERVICE_ROUTER.getBaseType();
     }
@@ -532,6 +533,8 @@ public class RuleBasedRouter extends AbstractServiceRouter {
     @Override
     public void init(InitContext ctx) throws PolarisException {
         globalVariablesConfig = ctx.getConfig().getGlobal().getSystem().getVariables();
+        this.routerConfig = ctx.getConfig().getConsumer().getServiceRouter()
+                .getPluginConfig(getName(), RuleBasedRouterConfig.class);
     }
 
     @Override
@@ -562,5 +565,10 @@ public class RuleBasedRouter extends AbstractServiceRouter {
         List<RoutingProto.Route> srcRoutes = getRoutesFromRule(routeInfo, RuleMatchType.sourceRouteRuleMatch);
 
         return !(CollectionUtils.isEmpty(dstRoutes) && CollectionUtils.isEmpty(srcRoutes));
+    }
+
+    //just for test
+    void setRouterConfig(RuleBasedRouterConfig routerConfig) {
+        this.routerConfig = routerConfig;
     }
 }

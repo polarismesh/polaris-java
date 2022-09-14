@@ -21,6 +21,7 @@ import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
+import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.StringUtils;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,6 +57,8 @@ public class RouteInfo {
     private boolean includeCircuitBreakInstances;
     //元数据路由降级类型
     private MetadataFailoverType metadataFailoverType;
+    //规则路由降级类型
+    private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
     //各个路由插件依赖的 metadata 参数
     private Map<String, Map<String, String>> routerMetadata;
 
@@ -110,6 +113,14 @@ public class RouteInfo {
 
     public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
         this.metadataFailoverType = metadataFailoverType;
+    }
+
+    public RuleBasedRouterFailoverType getRuleBasedRouterFailoverType() {
+        return ruleBasedRouterFailoverType;
+    }
+
+    public void setRuleBasedRouterFailoverType(RuleBasedRouterFailoverType ruleBasedRouterFailoverType) {
+        this.ruleBasedRouterFailoverType = ruleBasedRouterFailoverType;
     }
 
     public Map<Level, StatusDimension> getStatusDimensions() {

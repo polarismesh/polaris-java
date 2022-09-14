@@ -92,14 +92,20 @@
             <artifactId>polaris-circuitbreaker-client</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>circuitbreaker-errrate</artifactId>
+            <artifactId>healthchecker-http</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>circuitbreaker-errcount</artifactId>
+            <artifactId>healthchecker-tcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>healthchecker-udp</artifactId>
             <version>${project.version}</version>
         </dependency>
 

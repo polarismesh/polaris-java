@@ -16,20 +16,22 @@ mvn clean install
 
 ### 如何引入依赖
 
-在 dependencyManagement 中添加如下配置：
+修改应用程序的pom.xml，在 dependencyManagement 中添加如下配置：
+
 ```xml
-<dependencyManagement>        
+<dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-dependencies</artifactId>
-            <version>1.4.0</version>
+            <version>1.7.3</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
     </dependencies>
 </dependencyManagement>
 ```
+
 然后在 dependencies 中添加自己所需使用的依赖即可使用。
 
 ## 功能样例

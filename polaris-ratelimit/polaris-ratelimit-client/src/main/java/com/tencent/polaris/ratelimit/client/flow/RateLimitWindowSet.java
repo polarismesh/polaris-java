@@ -18,6 +18,7 @@
 package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
+import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -85,20 +86,20 @@ public class RateLimitWindowSet {
      * @return window
      */
     public RateLimitWindow addRateLimitWindow(CommonQuotaRequest request, String labelsStr,
-            RateLimitConfig rateLimitConfig) {
-        Rule targetRule = request.getInitCriteria().getRule();
+            RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
+        Rule targetRule = initCriteria.getRule();
         String revision = targetRule.getRevision().getValue();
         Function<String, RateLimitWindow> createRateLimitWindow = new Function<String, RateLimitWindow>() {
             @Override
             public RateLimitWindow apply(String label) {
-                return new RateLimitWindow(RateLimitWindowSet.this, request, label, rateLimitConfig);
+                return new RateLimitWindow(RateLimitWindowSet.this, request, label, rateLimitConfig, initCriteria);
             }
         };
         WindowContainer container = windowByRule.computeIfAbsent(revision, new Function<String, WindowContainer>() {
             @Override
             public WindowContainer apply(String s) {
                 RateLimitWindow window = createRateLimitWindow.apply(labelsStr);
-                return new WindowContainer(serviceKey, labelsStr, window, request.isRegexSpread());
+                return new WindowContainer(serviceKey, labelsStr, window, initCriteria.isRegexSpread());
             }
         });
         RateLimitWindow mainWindow = container.getLabelWindow(labelsStr);
@@ -120,24 +121,6 @@ public class RateLimitWindowSet {
             }
             LOG.info("[RateLimit]container {} for service {} has been stopped", rule, serviceKey);
             container.stopSyncTasks();
-        }
-    }
-
-    public void cleanupContainers() {
-        int rulesExpired = 0;
-        for (Map.Entry<String, WindowContainer> entry : windowByRule.entrySet()) {
-            String revision = entry.getKey();
-            boolean expired = entry.getValue().checkAndExpireWindows();
-            if (expired) {
-                rulesExpired++;
-                WindowContainer container = windowByRule.remove(revision);
-                if (null != container) {
-                    container.getMainWindow().unInit();
-                }
-            }
-        }
-        if (rulesExpired > 0) {
-            LOG.info("[RateLimit]{} rules has been cleanup by expired, service {}", rulesExpired, serviceKey);
         }
     }
 

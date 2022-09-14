@@ -20,6 +20,8 @@ package com.tencent.polaris.api.rpc;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
+import com.tencent.polaris.api.utils.StringUtils;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -75,8 +77,12 @@ public class InstancesResponse extends BaseEntity {
         return new ServiceInstancesWrap(serviceInstances, Arrays.asList(getInstances()), totalWeight);
     }
 
+    public ServiceInstances getServiceInstances() {
+        return serviceInstances;
+    }
+
     public boolean isServiceExist() {
-        return this.serviceInstances.isInitialized();
+        return StringUtils.isNotBlank(this.serviceInstances.getRevision());
     }
 
     @Override

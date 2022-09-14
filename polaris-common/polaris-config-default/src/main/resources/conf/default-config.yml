@@ -42,7 +42,7 @@ global:
   #描述: SDK api调用相关配置
   api:
     #描述: api超时时间
-    timeout: 5s
+    timeout: 1s
     #描述: 客户端给服务端定时上报自身信息的间隔
     reportInterval: 10m
     #描述: api因为网络原因调用失败后的最大重试次数
@@ -74,10 +74,15 @@ global:
     enable: false
     plugin:
       prometheus:
-        #描述: 上报给prometheus pushgateway的地址
-        pushgatewayAddress: 127.0.0.1:9090
-        #描述: 上报给pushgateway的时间间隔
-        pushInterval: 10s
+        #描述: 设置 prometheus http-server 的监听端口
+        #类型:int
+        #默认值: 28080
+        #如果设置为负数，则不会开启默认的http-server，如果设置为0，则随机选择一个可用端口进行启动 http-server
+        port: 28080
+        #描述: 设置 prometheus http-server 的拉取path
+        #类型:string
+        #默认值: /metric
+        path: /metric
 #描述: 主调端配置
 consumer:
   # Switch of discovery.
@@ -134,6 +139,9 @@ consumer:
       metadataRouter:
         #描述: 元数据路由降级策略。none(不降级), all(降级返回所有的节点), others(降级返回其他KEY的节点)
         metadataFailOverType: all
+      ruleBasedRouter:
+        #描述：规则路由降级策略。all（降级返回所有的节点）,none(不降级)
+        failoverType: all
       nearbyBasedRouter:
         #描述: 就近路由的最小匹配级别。region(大区)、zone(区域)、campus(园区)
         matchLevel: zone
@@ -189,9 +197,29 @@ consumer:
     checkPeriod: 30s
     #描述：主动探测插件链
     chain:
-      - http
       - tcp
       - udp
+      - http
+    plugin:
+      # 描述:基于TCP的故障探测策略
+      tcp:
+        # 描述:tcp发送的探测包，为空则默认只做连接探测
+        send: ""
+        # 描述:期望接收的TCP回复包，为空则默认只做连接或发包探测
+        receive: ""
+      # 描述:基于TCP的故障探测策略
+      udp:
+        # 描述:探测超时时间
+        timeout: 100ms
+        # 描述:udp发送的探测包，假如不配置，则不启动UDP探测
+        send: ""
+        # 描述:期望接收的UDP回复包，假如不配置，则不启动UDP探测
+        receive: ""
+      http:
+        # 描述:探测超时时间
+        timeout: 100ms
+        # 描述:http探测路径，必选字段，假如不配置，则不启用http探测
+        path: /ping
   #服务订阅相关配置
   subscribe:
     #服务订阅执行回调Listener的线程数量

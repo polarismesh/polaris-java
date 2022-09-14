@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.client.util;
 
+import com.tencent.polaris.api.pojo.DetectResult;
+import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
@@ -24,6 +26,7 @@ import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
+import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -65,6 +68,10 @@ public class Utils {
             String userHome = System.getProperty("user.home");
             return StringUtils.replace(path, "$HOME", userHome);
         }
+        if (path.startsWith("$USER_DIR")) {
+            String userDir = System.getProperty("user.dir");
+            return StringUtils.replace(path, "$USER_DIR", userDir);
+        }
         return path;
     }
 
@@ -88,6 +95,10 @@ public class Utils {
 
     public static boolean isHealthyInstance(Instance instance, Map<Level, StatusDimension> dimensions) {
         if (!instance.isHealthy()) {
+            return false;
+        }
+        DetectResult detectResult = ((InstanceByProto) instance).getDetectResult();
+        if (detectResult != null && detectResult.getRetStatus() != RetStatus.RetSuccess) {
             return false;
         }
         for (StatusDimension statusDimension : dimensions.values()) {
