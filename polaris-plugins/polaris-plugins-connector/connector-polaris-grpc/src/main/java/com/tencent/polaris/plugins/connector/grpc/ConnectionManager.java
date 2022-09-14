@@ -73,6 +73,7 @@ public class ConnectionManager extends Destroyable {
     private final Map<ClusterType, CompletableFuture<String>> readyNotifiers = new HashMap<>();
     private final String clientId;
     private Extensions extensions;
+    private final ChannelTlsCertificates tlsCertificates;
 
     /**
      * 构造器
@@ -139,6 +140,7 @@ public class ConnectionManager extends Destroyable {
         switchIntervalMs = serverConnectorConfig.getServerSwitchInterval();
         switchExecutorService = Executors
                 .newSingleThreadScheduledExecutor(new NamedThreadFactory("connection-manager"));
+        tlsCertificates = ChannelTlsCertificates.build(serverConnectorConfig);
     }
 
     public void setExtensions(Extensions extensions) {
@@ -240,7 +242,11 @@ public class ConnectionManager extends Destroyable {
         public void run() {
             ServerAddressList serverAddressList = serverAddresses.get(connID.getClusterType());
             if (null != serverAddressList) {
-                serverAddressList.switchClientOnFail(connID);
+                try {
+                    serverAddressList.switchClientOnFail(connID);
+                } catch (PolarisException e) {
+                    LOG.error("switch client on fail for {}, e:{}", connID, e);
+                }
             }
         }
     }
@@ -254,8 +260,12 @@ public class ConnectionManager extends Destroyable {
                 if (clusterType == ClusterType.BUILTIN_CLUSTER) {
                     continue;
                 }
-                ServerAddressList serverAddressList = entry.getValue();
-                serverAddressList.switchClient();
+                try {
+                    ServerAddressList serverAddressList = entry.getValue();
+                    serverAddressList.switchClient();
+                } catch (PolarisException e) {
+                    LOG.error("switch client for {}, e:{}", clusterType, e);
+                }
             }
         }
     }
@@ -450,6 +460,10 @@ public class ConnectionManager extends Destroyable {
             try {
                 ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(connID.getHost(), connID.getPort())
                         .usePlaintext();
+                if (tlsCertificates != null) {
+                    ManagedChannelUtil.setChannelTls(builder, tlsCertificates);
+                    builder.useTransportSecurity();
+                }
                 ManagedChannel channel = builder.build();
                 return new Connection(channel, connID, ConnectionManager.this);
             } catch (Throwable e) {

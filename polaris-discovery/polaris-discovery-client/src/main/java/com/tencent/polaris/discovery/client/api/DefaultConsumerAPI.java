@@ -21,11 +21,11 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
-import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
@@ -69,14 +69,13 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
-        syncFlow.init(context.getExtensions());
-        asyncFlow.init(syncFlow);
-        watchFlow.init(context.getExtensions(), syncFlow);
     }
 
     @Override
     protected void subInit() throws PolarisException {
-
+        syncFlow.init(sdkContext.getExtensions());
+        asyncFlow.init(syncFlow);
+        watchFlow.init(sdkContext.getExtensions(), syncFlow);
     }
 
     @Override
@@ -88,11 +87,16 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     }
 
     @Override
-    public InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException {
+    public InstancesResponse getHealthyInstances(GetHealthyInstancesRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetHealthyInstancesRequest(req);
         CommonInstancesRequest healthyRequest = new CommonInstancesRequest(req, config);
         return syncFlow.commonSyncGetInstances(healthyRequest);
+    }
+
+    @Override
+    public InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException {
+        return getHealthyInstances(req);
     }
 
     @Override

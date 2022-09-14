@@ -80,16 +80,21 @@ public class RemoteSyncTask implements Runnable {
 
     @Override
     public void run() {
-        switch (window.getStatus()) {
-            case CREATED:
-            case DELETED:
-                break;
-            case INITIALIZING:
-                doRemoteInit();
-                break;
-            default:
-                doRemoteAcquire();
-                break;
+        LOG.debug("remote sync task:{}", window.getStatus());
+        try {
+            switch (window.getStatus()) {
+                case CREATED:
+                case DELETED:
+                    break;
+                case INITIALIZING:
+                    doRemoteInit();
+                    break;
+                default:
+                    doRemoteAcquire();
+                    break;
+            }
+        } catch (Exception e) {
+            LOG.error("remote sync task:{}", window.getStatus(), e);
         }
     }
 

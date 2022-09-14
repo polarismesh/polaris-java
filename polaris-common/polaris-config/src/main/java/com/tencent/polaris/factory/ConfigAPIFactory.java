@@ -27,14 +27,19 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.factory.replace.SystemPropertyPlaceholderResolver;
 import com.tencent.polaris.factory.util.PropertyPlaceholderHelper;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
 
 public class ConfigAPIFactory {
 
@@ -125,4 +130,29 @@ public class ConfigAPIFactory {
         configuration.setDefault();
         return configuration;
     }
+
+    /**
+     * 通过设置地址创建配置
+     *
+     * @param addressList 地址
+     * @return 配置
+     */
+    public static Configuration createConfigurationByAddress(List<String> addressList) {
+        ConfigurationImpl configuration = (ConfigurationImpl) defaultConfig();
+        GlobalConfigImpl globalConfig = configuration.getGlobal();
+        ServerConnectorConfigImpl serverConnector = globalConfig.getServerConnector();
+        serverConnector.setAddresses(addressList);
+        return configuration;
+    }
+
+    /**
+     * 通过设置地址创建配置
+     *
+     * @param addresses 地址
+     * @return 配置
+     */
+    public static Configuration createConfigurationByAddress(String... addresses) {
+        return createConfigurationByAddress(Arrays.asList(addresses));
+    }
+
 }

@@ -27,7 +27,9 @@ public class MetadataRouterConfig implements Verifier {
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             MetadataRouterConfig metadataRouterConfig = (MetadataRouterConfig) defaultObject;
-            setMetadataFailOverType(metadataRouterConfig.getMetadataFailOverType());
+            if (metadataFailOverType == null) {
+                setMetadataFailOverType(metadataRouterConfig.getMetadataFailOverType());
+            }
         }
     }
 

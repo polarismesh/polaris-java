@@ -19,7 +19,9 @@ package com.tencent.polaris.router.api.rpc;
 
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.utils.MapUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +43,8 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
     //各个路由插件依赖的 metadata 参数
     private Map<String, Map<String, String>> routerMetadata;
+    //元数据路由降级策略
+    private MetadataFailoverType metadataFailoverType;
 
     public ServiceInfo getSourceService() {
         return sourceService;
@@ -75,10 +79,27 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
     }
 
     public void putRouterMetadata(String routerType, Map<String, String> metadata) {
+        if (MapUtils.isEmpty(metadata)) {
+            return;
+        }
         if (routerMetadata == null) {
             routerMetadata = new HashMap<>();
         }
         routerMetadata.put(routerType, metadata);
+    }
+
+    public void addRouterMetadata(String routerType, Map<String, String> metadata) {
+        if (MapUtils.isEmpty(metadata)) {
+            return;
+        }
+
+        if (routerMetadata == null) {
+            routerMetadata = new HashMap<>();
+        }
+
+        Map<String, String> subRouterMetadata = routerMetadata.computeIfAbsent(routerType, k -> new HashMap<>());
+
+        subRouterMetadata.putAll(metadata);
     }
 
     public Map<String, String> getRouterMetadata(String routerType) {
@@ -94,6 +115,14 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
     public Map<String, Map<String, String>> getRouterMetadata() {
         return routerMetadata;
+    }
+
+    public MetadataFailoverType getMetadataFailoverType() {
+        return metadataFailoverType;
+    }
+
+    public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
+        this.metadataFailoverType = metadataFailoverType;
     }
 
     public static class RouterNamesGroup {

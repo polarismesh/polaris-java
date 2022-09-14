@@ -22,7 +22,7 @@ import java.util.Date;
 /**
  * 健康探测结果
  *
- * @author andrewshan
+ * @author andrewshan, Haotian Zhang
  * @date 2019/8/21
  */
 public class DetectResult {
@@ -31,11 +31,6 @@ public class DetectResult {
      * 探测类型，与插件名相同
      */
     private String detectType;
-
-    /**
-     * 探测持续时间
-     */
-    private final long elapseTime;
 
     /**
      * 上一次的探测时间
@@ -48,23 +43,9 @@ public class DetectResult {
      */
     private final RetStatus retStatus;
 
-    /**
-     * 下一次探测时间
-     */
-    private final Date nextDetectTime;
-
-    public DetectResult(RetStatus retStatus, long elapseTime, Date lastDetectTime, Date nextDetectTime) {
-        this.retStatus = retStatus;
-        this.elapseTime = elapseTime;
-        this.lastDetectTime = lastDetectTime;
-        this.nextDetectTime = nextDetectTime;
-    }
-
     public DetectResult(RetStatus retStatus) {
         this.retStatus = retStatus;
-        this.elapseTime = 0;
         this.lastDetectTime = new Date();
-        this.nextDetectTime = new Date();
     }
 
     public String getDetectType() {
@@ -75,10 +56,6 @@ public class DetectResult {
         this.detectType = detectType;
     }
 
-    public long getElapseTime() {
-        return elapseTime;
-    }
-
     public RetStatus getRetStatus() {
         return retStatus;
     }
@@ -87,7 +64,13 @@ public class DetectResult {
         return lastDetectTime;
     }
 
-    public Date getNextDetectTime() {
-        return nextDetectTime;
+    @Override
+    @SuppressWarnings("checkstyle:all")
+    public String toString() {
+        return "DetectResult{" +
+                "Type=" + detectType +
+                ", retStatus=" + retStatus +
+                ", lastDetectTime=" + lastDetectTime.getTime() +
+                '}';
     }
 }

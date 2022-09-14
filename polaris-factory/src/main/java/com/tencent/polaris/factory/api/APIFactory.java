@@ -22,6 +22,8 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
@@ -205,5 +207,36 @@ public class APIFactory {
      */
     public static LimitAPI createLimitAPIByConfig(Configuration config) throws PolarisException {
         return LimitAPIFactory.createLimitAPIByConfig(config);
+    }
+
+    /**
+     * 通过默认配置创建配置中心核心服务门面类 ConfigFileService
+     * @return 配置中心核心服务类 ConfigFileService
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static ConfigFileService createConfigFileService() throws PolarisException {
+        return ConfigFileServiceFactory.createConfigFileService();
+    }
+
+    /**
+     * 通过SDK上下文创建配置中心核心服务门面类 ConfigFileService
+     *
+     * @param context SDK上下文，包含插件列表，配置对象等信息
+     * @return 配置中心核心服务类 ConfigFileService
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static ConfigFileService createConfigFileService(SDKContext context) throws PolarisException {
+        return ConfigFileServiceFactory.createConfigFileService(context);
+    }
+
+    /**
+     * 通过配置对象创建配置中心核心服务门面类 ConfigFileService
+     *
+     * @param config 配置对象
+     * @return 配置中心核心服务类 ConfigFileService
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static ConfigFileService createConfigFileService(Configuration config) throws PolarisException {
+        return ConfigFileServiceFactory.createConfigFileService(config);
     }
 }

@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.plugins.router.nearby;
 
-import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
-
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
@@ -44,6 +42,7 @@ import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +54,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.slf4j.Logger;
+import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
 
 /**
  * 就近接入路由
@@ -64,6 +63,7 @@ import org.slf4j.Logger;
  * @date 2019/11/10
  */
 public class NearbyRouter extends AbstractServiceRouter implements PluginConfigProvider {
+
     public static final String ROUTER_TYPE_NEAR_BY = "nearByRoute";
     public static final String ROUTER_ENABLED = "enabled";
     public static final String ROUTER_METADATA_KEY_ZONE = "zone";
@@ -74,11 +74,16 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     private static final Logger LOG = LoggerFactory.getLogger(NearbyRouter.class);
 
     private static final LocationLevel defaultMinLevel = LocationLevel.zone;
-
+    /**
+     * 主调的地域信息
+     */
+    private final AtomicReference<Map<LocationLevel, String>> locationInfo = new AtomicReference<>();
+    /**
+     * 等待地域信息就绪的超时时间
+     */
+    long locationReadyTimeout;
     private ValueContext valueContext;
-
     private ScheduledExecutorService reportClientExecutor;
-
     /**
      * # 默认就近区域：默认城市 matchLevel: zone # 最大就近区域，默认为空（全匹配） maxMatchLevel: all #
      * 假如开启了严格就近，插件的初始化会等待地域信息获取成功才返回，假如获取失败（server获取失败或者IP地域信息缺失），则会初始化失败，而且必须按照 strictNearby: false #
@@ -86,20 +91,10 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
      * 需要进行降级的实例比例，不健康实例达到百分之多少才进行降级。值(0, 100]。 # 默认100，即全部不健康才进行切换。
      */
     private NearbyRouterConfig config;
-
     /**
      * 降级的剩余健康比例
      */
     private double healthyPercentToDegrade;
-
-    /**
-     * 等待地域信息就绪的超时时间
-     */
-    long locationReadyTimeout;
-    /**
-     * 主调的地域信息
-     */
-    private final AtomicReference<Map<LocationLevel, String>> locationInfo = new AtomicReference<>();
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances serviceInstances)
@@ -123,7 +118,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
             maxLevel = LocationLevel.all;
         }
 
-        Map<LocationLevel, String> clientLocationInfo = locationInfo.get();
+        Map<LocationLevel, String> clientLocationInfo = getLocationInfo();
         if (minLevel.ordinal() >= maxLevel.ordinal()) {
             List<Instance> instances = selectInstances(serviceInstances, minAvailableLevel, clientLocationInfo);
             if (CollectionUtils.isEmpty(instances)) {
@@ -176,22 +171,15 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         return LocationLevel.values()[current.ordinal() + 1];
     }
 
-    private static class CheckResult {
-
-        LocationLevel curLevel;
-        int healthyInstanceCount;
-        List<Instance> instances = new ArrayList<>();
-    }
-
     private CheckResult hasHealthyInstances(ServiceInstances svcInstances, Map<Level, StatusDimension> dimensions,
                                             LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
         String clientZone = "";
         String clientRegion = "";
         String clientCampus = "";
         if (null != clientInfo) {
-            clientZone = clientInfo.get(LocationLevel.zone);
-            clientRegion = clientInfo.get(LocationLevel.region);
-            clientCampus = clientInfo.get(LocationLevel.campus);
+            clientZone = clientInfo.getOrDefault(LocationLevel.zone, "");
+            clientRegion = clientInfo.getOrDefault(LocationLevel.region, "");
+            clientCampus = clientInfo.getOrDefault(LocationLevel.campus, "");
         }
         CheckResult checkResult = new CheckResult();
         for (Instance instance : svcInstances.getInstances()) {
@@ -230,7 +218,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         }
         return checkResult;
     }
-
 
     private List<Instance> selectInstances(
             ServiceInstances svcInstances, LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
@@ -283,7 +270,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         return PluginTypes.SERVICE_ROUTER.getBaseType();
     }
 
-
     @Override
     public void init(InitContext ctx) throws PolarisException {
         valueContext = ctx.getValueContext();
@@ -304,7 +290,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         }
     }
 
-
     /**
      * 在整个AppContext初始化完毕后调用
      *
@@ -313,8 +298,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
      */
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-        //无论是不是上报模式，都初始化一次 location 信息
-        refreshLocationInfo();
         //加载本地配置文件的地址
         //TODO:
         if (null != reportClientExecutor) {
@@ -355,6 +338,12 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         LOG.debug("[refreshLocationInfo] locationInfo={}", clientLocationInfo);
     }
 
+    private Map<LocationLevel, String> getLocationInfo() {
+        if (MapUtils.isEmpty(locationInfo.get())) {
+            refreshLocationInfo();
+        }
+        return locationInfo.get();
+    }
 
     @Override
     public Aspect getAspect() {
@@ -366,7 +355,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         if (!super.enable(routeInfo, dstSvcInfo)) {
             return false;
         }
-        Map<LocationLevel, String> clientLocationInfo = locationInfo.get();
+        Map<LocationLevel, String> clientLocationInfo = getLocationInfo();
         if (MapUtils.isEmpty(clientLocationInfo)) {
             return false;
         }
@@ -415,5 +404,12 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
             return "";
         }
         return metadata.get(key);
+    }
+
+    private static class CheckResult {
+
+        LocationLevel curLevel;
+        int healthyInstanceCount;
+        List<Instance> instances = new ArrayList<>();
     }
 }

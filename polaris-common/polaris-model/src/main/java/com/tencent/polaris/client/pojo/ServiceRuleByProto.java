@@ -31,6 +31,8 @@ import com.tencent.polaris.api.pojo.ServiceRule;
  */
 public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
+    public static final ServiceRuleByProto EMPTY_SERVICE_RULE = new ServiceRuleByProto();
+
     private final Message ruleValue;
 
     private final String revision;

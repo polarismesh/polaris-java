@@ -15,10 +15,8 @@
     <name>Polaris Ratelimit Example</name>
     <description>Polaris Ratelimit Example JAR</description>
     <modules>
-        <module>ratelimit-local-provider</module>
-        <module>ratelimit-local-consumer</module>
-        <module>ratelimit-remote-provider</module>
-        <module>ratelimit-remote-consumer</module>
+        <module>local-limiter-example</module>
+        <module>global-limiter-example</module>
     </modules>
 
     <properties>

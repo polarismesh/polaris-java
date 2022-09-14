@@ -18,8 +18,11 @@ import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.LocationUtils;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.discovery.client.flow.RegisterFlow;
+import com.tencent.polaris.discovery.client.flow.RegisterStateManager;
 import com.tencent.polaris.discovery.client.util.Validator;
 import com.tencent.polaris.logging.LoggerFactory;
+import java.util.Map;
 import org.slf4j.Logger;
 
 /**
@@ -31,11 +34,13 @@ import org.slf4j.Logger;
 public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultProviderAPI.class);
-
+    private static final int DEFAULT_INSTANCE_TTL = 5;
+    private final RegisterFlow registerFlow;
     private ServerConnector serverConnector;
 
     public DefaultProviderAPI(SDKContext sdkContext) {
         super(sdkContext);
+        registerFlow = new RegisterFlow(sdkContext);
     }
 
     @Override
@@ -51,7 +56,25 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     }
 
     @Override
+    public InstanceRegisterResponse registerInstance(InstanceRegisterRequest req) throws PolarisException {
+        if (req.getTtl() == null) {
+            req.setTtl(DEFAULT_INSTANCE_TTL);
+        }
+        return registerFlow.registerInstance(req, this::doRegister, this::heartbeat);
+    }
+
+    @Override
+    protected void doDestroy() {
+        RegisterStateManager.destroy(sdkContext);
+        super.doDestroy();
+    }
+
+    @Override
     public InstanceRegisterResponse register(InstanceRegisterRequest req) throws PolarisException {
+        return doRegister(req, null);
+    }
+
+    private InstanceRegisterResponse doRegister(InstanceRegisterRequest req, Map<String, String> customHeader) {
         checkAvailable("ProviderAPI");
         enrichLocationInfo(req);
         Validator.validateInstanceRegisterRequest(req);
@@ -62,7 +85,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
             ServiceCallResult serviceCallResult = new ServiceCallResult();
             CommonProviderRequest request = req.getRequest();
             try {
-                CommonProviderResponse response = serverConnector.registerInstance(request);
+                CommonProviderResponse response = serverConnector.registerInstance(request, customHeader);
                 LOG.info("register {}/{} instance {} succ", req.getNamespace(), req.getService(),
                         response.getInstanceID());
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);
@@ -91,6 +114,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     public void deRegister(InstanceDeregisterRequest req) throws PolarisException {
         checkAvailable("ProviderAPI");
         Validator.validateInstanceDeregisterRequest(req);
+        RegisterStateManager.removeRegisterState(sdkContext, req);
         long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
         long timeout = getTimeout(req);
         while (timeout > 0) {

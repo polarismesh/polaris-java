@@ -65,6 +65,9 @@ import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pojo.InstanceByProto;
+import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -178,7 +181,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
                 filter.isInternalRequest());
         if (null == resourceCache) {
-            return CacheObject.EMPTY_SERVICE_RULE;
+            return ServiceRuleByProto.EMPTY_SERVICE_RULE;
         }
         return (ServiceRule) resourceCache;
     }
@@ -203,7 +206,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
                 filter.isInternalRequest());
         if (null == resourceCache) {
-            return CacheObject.EMPTY_INSTANCES;
+            return ServiceInstancesByProto.EMPTY_INSTANCES;
         }
         return (ServiceInstances) resourceCache;
     }
@@ -218,7 +221,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
                 filter.isInternalRequest());
         if (null == resourceCache) {
-            return CacheObject.EMPTY_SERVICE;
+            return ServicesByProto.EMPTY_SERVICES;
         }
         return (Services) resourceCache;
     }
@@ -367,7 +370,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
             InstanceByProto instance = (InstanceByProto) instanceProperty.getInstance();
             InstanceLocalValue instanceLocalValue = instance.getInstanceLocalValue();
             Map<String, Object> properties = instanceProperty.getProperties();
-            LOG.info("update instance properties for instance {}, properties {}", instance.getId(), properties);
+            LOG.info("update instance properties for instance id:{}, host:{}, port{}, properties {}", instance.getId(),
+                    instance.getHost(), instance.getPort(), properties);
             for (Map.Entry<String, Object> entry : properties.entrySet()) {
                 switch (entry.getKey()) {
                     case InstanceProperty.PROPERTY_CIRCUIT_BREAKER_STATUS:

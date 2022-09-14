@@ -25,6 +25,9 @@ public class InitCriteria {
 
     private Rule rule;
 
+    //规则中含有正则表达式扩散
+    private boolean regexSpread;
+
     public void setRule(Rule rule) {
         this.rule = rule;
     }
@@ -39,5 +42,13 @@ public class InitCriteria {
 
     public void setWindowKey(String windowKey) {
         this.windowKey = windowKey;
+    }
+
+    public boolean isRegexSpread() {
+        return regexSpread;
+    }
+
+    public void setRegexSpread(boolean regexSpread) {
+        this.regexSpread = regexSpread;
     }
 }

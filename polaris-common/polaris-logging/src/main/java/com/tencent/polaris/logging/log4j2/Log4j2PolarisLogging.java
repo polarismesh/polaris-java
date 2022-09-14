@@ -30,6 +30,8 @@ import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
+import static com.tencent.polaris.logging.LoggingConsts.LOGGING_UPDATE_EVENT;
+
 public class Log4j2PolarisLogging extends AbstractPolarisLogging {
 
     private static final String LOG4J2_LOCATION = "classpath:polaris-log4j2.xml";
@@ -59,7 +61,7 @@ public class Log4j2PolarisLogging extends AbstractPolarisLogging {
         }
         Map<String, LoggerConfig> loggers = configuration.getLoggers();
         for (String name : loggers.keySet()) {
-            if (name.startsWith(LOGGER_PREFIX)) {
+            if (name.startsWith(LOGGER_PREFIX) || name.contains(LOGGING_UPDATE_EVENT)) {
                 contextConfiguration.addLogger(name, loggers.get(name));
             }
         }

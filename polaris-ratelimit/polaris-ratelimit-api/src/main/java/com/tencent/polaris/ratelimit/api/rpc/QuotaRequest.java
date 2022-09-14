@@ -1,5 +1,5 @@
 /*
- * Tencent is pleased to support the open source community by making CL5 available.
+ * Tencent is pleased to support the open source community by making Polaris available.
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
@@ -18,7 +18,12 @@
 package com.tencent.polaris.ratelimit.api.rpc;
 
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.utils.CollectionUtils;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 //配额查询请求
 public class QuotaRequest extends RequestBaseEntity {
@@ -29,7 +34,7 @@ public class QuotaRequest extends RequestBaseEntity {
 
     private String method;
 
-    private Map<String, String> labels;
+    private Set<Argument> arguments = new HashSet<>();
 
     private int count = 1;
 
@@ -49,12 +54,31 @@ public class QuotaRequest extends RequestBaseEntity {
         this.service = service;
     }
 
+    /**
+     * Deprecated: use getArguments instead
+     *
+     * @return labels
+     */
+    @Deprecated
     public Map<String, String> getLabels() {
-        return labels;
+        Map<String, String> values = new HashMap<>();
+        for (Argument matchArgument : arguments) {
+            matchArgument.toLabel(values);
+        }
+        return values;
     }
 
+    /**
+     * Deprecated: use setArguments instead
+     */
+    @Deprecated
     public void setLabels(Map<String, String> labels) {
-        this.labels = labels;
+        if (CollectionUtils.isEmpty(labels)) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : labels.entrySet()) {
+            arguments.add(Argument.fromLabel(entry.getKey(), entry.getValue()));
+        }
     }
 
     public int getCount() {
@@ -73,14 +97,26 @@ public class QuotaRequest extends RequestBaseEntity {
         this.method = method;
     }
 
+    public Set<Argument> getArguments() {
+        return arguments;
+    }
+
+    public void setArguments(Set<Argument> arguments) {
+        if (CollectionUtils.isEmpty(arguments)) {
+            this.arguments = Collections.emptySet();
+        } else {
+            this.arguments = arguments;
+        }
+    }
+
     @Override
     public String toString() {
         return "QuotaRequest{" +
                 "namespace='" + namespace + '\'' +
                 ", service='" + service + '\'' +
                 ", method='" + method + '\'' +
-                ", labels=" + labels +
+                ", arguments=" + arguments +
                 ", count=" + count +
-                '}';
+                "} " + super.toString();
     }
 }

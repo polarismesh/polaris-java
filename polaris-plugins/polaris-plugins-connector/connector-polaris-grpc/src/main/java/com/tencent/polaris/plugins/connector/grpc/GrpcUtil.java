@@ -5,12 +5,15 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.pb.RequestProto.DiscoverRequest.DiscoverRequestType;
 import com.tencent.polaris.client.pb.ResponseProto;
 import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import io.grpc.Metadata;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.MetadataUtils;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -127,6 +130,23 @@ public class GrpcUtil {
         MetadataUtils.attachHeaders(stub, extraHeaders);
     }
 
+    /**
+     * 为GRPC请求添加自定义请求头部信息
+     *
+     * @param stub 请求桩
+     * @param customHeader 自定义header
+     * @param <T> 桩类型
+     */
+    public static <T extends AbstractStub<T>> void attachRequestHeader(T stub, Map<String, String> customHeader) {
+        if (MapUtils.isEmpty(customHeader)) {
+            return;
+        }
+        Metadata customMetadata = new Metadata();
+        for (Entry<String, String> header : customHeader.entrySet()) {
+            customMetadata.put(Metadata.Key.of(header.getKey(), Metadata.ASCII_STRING_MARSHALLER), header.getValue());
+        }
+        MetadataUtils.attachHeaders(stub, customMetadata);
+    }
 
     public static void checkResponse(ResponseProto.Response response) throws PolarisException {
         if (!response.hasCode()) {
@@ -137,8 +157,10 @@ public class GrpcUtil {
             return;
         }
         String info = response.getInfo().getValue();
-        throw new PolarisException(ErrorCode.SERVER_USER_ERROR,
+        PolarisException exception = new PolarisException(ErrorCode.SERVER_USER_ERROR,
                 String.format("server error %d: %s", respCode, info));
+        exception.setServerErrCode(respCode);
+        throw exception;
     }
 
 

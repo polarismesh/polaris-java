@@ -21,6 +21,10 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.Services;
+import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.client.pojo.ServicesByProto;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -66,7 +70,11 @@ public class ResourcesResponse {
      * @return ServiceRuleResponse
      */
     public ServiceInstances getServiceInstances(ServiceEventKey svcEventKey) {
-        return instancesMap.get(svcEventKey);
+        ServiceInstances serviceInstances= instancesMap.get(svcEventKey);
+        if (null == serviceInstances) {
+            serviceInstances = ServiceInstancesByProto.EMPTY_INSTANCES;
+        }
+        return serviceInstances;
     }
 
     /**
@@ -104,7 +112,11 @@ public class ResourcesResponse {
      * @return ServiceRuleResponse
      */
     public ServiceRule getServiceRule(ServiceEventKey svcEventKey) {
-        return rules.get(svcEventKey);
+        ServiceRule serviceRule = rules.get(svcEventKey);
+        if (serviceRule == null) {
+            serviceRule = ServiceRuleByProto.EMPTY_SERVICE_RULE;
+        }
+        return serviceRule;
     }
 
     /**
@@ -114,7 +126,11 @@ public class ResourcesResponse {
      * @return Services 服务列表
      */
     public Services getServices(ServiceEventKey svcEventKey) {
-        return servicesMap.get(svcEventKey);
+        Services services = servicesMap.get(svcEventKey);
+        if (services == null) {
+            services = ServicesByProto.EMPTY_SERVICES;
+        }
+        return services;
     }
 
     /**

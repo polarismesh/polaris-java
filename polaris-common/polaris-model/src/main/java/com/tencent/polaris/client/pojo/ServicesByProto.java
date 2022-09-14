@@ -32,6 +32,8 @@ import java.util.Objects;
 
 public class ServicesByProto implements Services, RegistryCacheValue {
 
+    public static final ServicesByProto EMPTY_SERVICES = new ServicesByProto();
+
     private final List<ServiceInfo> services;
 
     private final boolean initialized;
