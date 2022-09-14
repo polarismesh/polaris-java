@@ -17,14 +17,11 @@
 
 package com.tencent.polaris.plugins.connector.nacos;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
-import static com.tencent.polaris.api.exception.ErrorCode.PLUGIN_ERROR;
-
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.google.common.collect.Lists;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
@@ -57,6 +54,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
+
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
+import static com.tencent.polaris.api.exception.ErrorCode.PLUGIN_ERROR;
 
 /**
  * An implement of {@link ServerConnector} to connect to Nacos Server.
@@ -65,7 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class NacosConnector extends DestroyableServerConnector {
 
-    private static final String INSTANCE_NAME = "%s#%s#%d";
+    private static final String INSTANCE_NAME = "%s$%s#%s#%d";
 
     /**
      * If server connector initialized .
@@ -96,6 +98,8 @@ public class NacosConnector extends DestroyableServerConnector {
      * Nacos Naming Service Instance .
      */
     private NamingService namingService;
+
+    private static final int NACOS_SERVICE_PAGESIZE = 10;
 
     @Override
     public String getName() {
@@ -141,7 +145,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
     private Properties decodeNacosConfigProperties(ServerConnectorConfig config) {
         Properties properties = new Properties();
-        // Nacos Address URI: nacos:nacos@127.0.0.1:8848
+        // Nacos Address URI: nacos:nacos@127.0.0.1:8848/namespace
         String address = config.getAddresses().get(0);
         if (address.indexOf("@") > 0) {
             String[] parts = address.split("@");
@@ -150,13 +154,39 @@ public class NacosConnector extends DestroyableServerConnector {
                 properties.put(PropertyKeyConst.USERNAME, auths[0]);
                 properties.put(PropertyKeyConst.PASSWORD, auths[1]);
             }
-            properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
+            if (parts[1].indexOf("/") > 0) {
+                String[] subparts = parts[1].split("/");
+                if (subparts.length == 1) {
+                    properties.put(PropertyKeyConst.SERVER_ADDR, subparts[0]);
+                    properties.put(PropertyKeyConst.NAMESPACE, "default");
+                } else if (subparts.length > 1) {
+                    properties.put(PropertyKeyConst.SERVER_ADDR, subparts[0]);
+                    properties.put(PropertyKeyConst.NAMESPACE, subparts[1]);
+                }
+            } else {
+                properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
+                properties.put(PropertyKeyConst.NAMESPACE, "default");
+            }
         } else {
             properties.put(PropertyKeyConst.USERNAME, "nacos");
             properties.put(PropertyKeyConst.PASSWORD, "nacos");
+            properties.put(PropertyKeyConst.NAMESPACE, "default");
         }
         return properties;
     }
+
+  public static void main(String[] args) {
+    Pattern addressPattern =
+        Pattern.compile("([a-zA-Z\\d]+(:)[a-zA-Z\\d~!@&%#_]+@)?(.*)(:)\\d+(/[a-zA-Z\\d-]*)?$");
+      boolean matched = addressPattern.matcher("nacos:nacos@127.0.0.1:8848/namespace").find();
+    System.out.println(matched);
+
+      matched = addressPattern.matcher("nacos:nacos@127.0.0.1:8848").find();
+      System.out.println(matched);
+
+      matched = addressPattern.matcher("127.0.0.1:8848").find();
+      System.out.println(matched);
+  }
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
@@ -178,7 +208,7 @@ public class NacosConnector extends DestroyableServerConnector {
         CommonProviderResponse response = new CommonProviderResponse();
         if (isRegisterEnable() && !isRegistered) {
             try {
-                String instanceId = String.format(INSTANCE_NAME, req.getService(), req.getHost(), req.getPort());
+                String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), req.getService(), req.getHost(), req.getPort());
                 Instance instance = new Instance();
                 instance.setInstanceId(instanceId);
                 instance.setClusterName(DEFAULT_CLUSTER_NAME);
@@ -206,7 +236,7 @@ public class NacosConnector extends DestroyableServerConnector {
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
         if (isRegistered) {
             try {
-                String instanceId = String.format(INSTANCE_NAME, req.getService(), req.getHost(), req.getPort());
+                String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), req.getService(), req.getHost(), req.getPort());
                 Instance instance = new Instance();
                 instance.setInstanceId(instanceId);
                 instance.setClusterName(DEFAULT_CLUSTER_NAME);
@@ -230,7 +260,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-        // do nothing
+        this.registerInstance(req);
     }
 
     @Override
@@ -260,9 +290,12 @@ public class NacosConnector extends DestroyableServerConnector {
                 instance.setService(service.getServiceName());
                 instance.setHost(service.getIp());
                 instance.setPort(service.getPort());
+                instance.setHealthy(service.isHealthy());
+                instance.setMetadata(service.getMetadata());
+                instance.setIsolated(service.isEphemeral());
                 instanceList.add(instance);
             }
-            return new ServiceInstancesResponse("NaN", instanceList);
+            return new ServiceInstancesResponse(String.valueOf(System.currentTimeMillis()), instanceList);
         } catch (NacosException e) {
             throw ServerErrorResponseException.build(ErrorCode.SERVER_USER_ERROR.ordinal(),
                 String.format("Get service instances of %s sync failed.",
@@ -274,14 +307,11 @@ public class NacosConnector extends DestroyableServerConnector {
     public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
         Services services = new ServicesByProto(new ArrayList<>());
         try {
-            List<Instance> serviceList =
-                this.namingService.getAllInstances(serviceUpdateTask.getServiceEventKey().getService(),
-                    DEFAULT_GROUP, Lists.newArrayList(DEFAULT_CLUSTER_NAME));
+            ListView<String> serviceList = this.namingService.getServicesOfServer(1, NACOS_SERVICE_PAGESIZE, DEFAULT_GROUP);
 
-            for (Instance instance : serviceList) {
+            for (String instance : serviceList.getData()) {
                 ServiceInfo serviceInfo = new ServiceInfo();
-                serviceInfo.setService(instance.getServiceName());
-                serviceInfo.setMetadata(instance.getMetadata());
+                serviceInfo.setService(instance);
                 services.getServices().add(serviceInfo);
             }
         } catch (NacosException e) {

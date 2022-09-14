@@ -197,7 +197,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      */
     public void exceptionCallback(ValidResult validResult) {
         this.closeStream(false);
-        LOG.error("[ServerConnector]exceptionCallback: errCode {}, info {}, serviceEventKey {}",
+        LOG.debug("[ServerConnector]exceptionCallback: errCode {}, info {}, serviceEventKey {}",
                 validResult.getErrorCode(), validResult.getMessage(), validResult.getServiceEventKey());
         //report down
         connection.reportFail();
