@@ -158,19 +158,19 @@ public class NacosConnector extends DestroyableServerConnector {
                 String[] subparts = parts[1].split("/");
                 if (subparts.length == 1) {
                     properties.put(PropertyKeyConst.SERVER_ADDR, subparts[0]);
-                    properties.put(PropertyKeyConst.NAMESPACE, "default");
+                    properties.put(PropertyKeyConst.NAMESPACE, "public");
                 } else if (subparts.length > 1) {
                     properties.put(PropertyKeyConst.SERVER_ADDR, subparts[0]);
                     properties.put(PropertyKeyConst.NAMESPACE, subparts[1]);
                 }
             } else {
                 properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
-                properties.put(PropertyKeyConst.NAMESPACE, "default");
+                properties.put(PropertyKeyConst.NAMESPACE, "public");
             }
         } else {
             properties.put(PropertyKeyConst.USERNAME, "nacos");
             properties.put(PropertyKeyConst.PASSWORD, "nacos");
-            properties.put(PropertyKeyConst.NAMESPACE, "default");
+            properties.put(PropertyKeyConst.NAMESPACE, "public");
         }
         return properties;
     }
