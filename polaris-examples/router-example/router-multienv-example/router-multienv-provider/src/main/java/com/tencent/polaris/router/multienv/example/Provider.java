@@ -25,6 +25,7 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
@@ -264,7 +265,7 @@ public class Provider {
                 GetOneInstanceRequest getOneInstanceRequest = new GetOneInstanceRequest();
                 getOneInstanceRequest.setNamespace(NAMESPACE_DEFAULT);
                 getOneInstanceRequest.setService(nextService);
-                ServiceInfo serviceInfo = new ServiceInfo();
+                SourceService serviceInfo = new SourceService();
                 serviceInfo.setNamespace(NAMESPACE_DEFAULT);
                 serviceInfo.setService(service);
                 serviceInfo.setMetadata(metadata);

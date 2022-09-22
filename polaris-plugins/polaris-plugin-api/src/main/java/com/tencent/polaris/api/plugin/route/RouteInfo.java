@@ -18,6 +18,7 @@ package com.tencent.polaris.api.plugin.route;
 
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
@@ -36,7 +37,7 @@ import java.util.Map;
 public class RouteInfo {
 
     //源服务信息
-    private final ServiceMetadata sourceService;
+    private final SourceService sourceService;
     //目的服务信息
     private final ServiceMetadata destService;
 
@@ -76,7 +77,7 @@ public class RouteInfo {
      * @param destRouteRule 目标规则
      * @param method 接口名
      */
-    public RouteInfo(ServiceMetadata sourceService, ServiceRule sourceRouteRule,
+    public RouteInfo(SourceService sourceService, ServiceRule sourceRouteRule,
             ServiceMetadata destService, ServiceRule destRouteRule, String method) {
         this.sourceService = sourceService;
         this.sourceRouteRule = sourceRouteRule;
@@ -103,7 +104,7 @@ public class RouteInfo {
      * @param destService 目标服务
      * @param method 接口名
      */
-    public RouteInfo(ServiceMetadata sourceService, ServiceMetadata destService, String method) {
+    public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method) {
         this(sourceService, null, destService, null, method);
     }
 
@@ -179,7 +180,7 @@ public class RouteInfo {
         chainEnable.put(routerType, false);
     }
 
-    public ServiceMetadata getSourceService() {
+    public SourceService getSourceService() {
         return sourceService;
     }
 

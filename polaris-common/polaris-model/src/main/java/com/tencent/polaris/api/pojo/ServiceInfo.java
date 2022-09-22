@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.api.pojo;
 
-import java.util.Comparator;
 import java.util.Map;
 
 /**
