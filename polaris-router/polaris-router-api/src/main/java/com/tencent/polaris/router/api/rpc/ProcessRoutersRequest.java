@@ -17,16 +17,19 @@
 
 package com.tencent.polaris.router.api.rpc;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
-import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.api.utils.CollectionUtils;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 路由处理请求
@@ -42,7 +45,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
     private String method;
 
     //各个路由插件依赖的 metadata 参数
-    private Map<String, Map<String, String>> routerMetadata;
+    private Map<String, Set<RouteArgument>> routerArgument;
     //元数据路由降级策略
     private MetadataFailoverType metadataFailoverType;
 
@@ -78,43 +81,62 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
         this.dstInstances = dstInstances;
     }
 
-    public void putRouterMetadata(String routerType, Map<String, String> metadata) {
-        if (MapUtils.isEmpty(metadata)) {
+    public void putRouterArgument(String routerType, Set<RouteArgument> arguments) {
+        if (CollectionUtils.isEmpty(arguments)) {
             return;
         }
-        if (routerMetadata == null) {
-            routerMetadata = new HashMap<>();
+        if (routerArgument == null) {
+            routerArgument = new HashMap<>();
         }
-        routerMetadata.put(routerType, metadata);
+
+        routerArgument.put(routerType, arguments);
     }
 
-    public void addRouterMetadata(String routerType, Map<String, String> metadata) {
-        if (MapUtils.isEmpty(metadata)) {
+    public void addRouterMetadata(String routerType, Set<RouteArgument> arguments) {
+        if (CollectionUtils.isEmpty(arguments)) {
             return;
         }
 
-        if (routerMetadata == null) {
-            routerMetadata = new HashMap<>();
+        if (routerArgument == null) {
+            routerArgument = new HashMap<>();
         }
 
-        Map<String, String> subRouterMetadata = routerMetadata.computeIfAbsent(routerType, k -> new HashMap<>());
-
-        subRouterMetadata.putAll(metadata);
+        Set<RouteArgument> subArguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
+        subArguments.addAll(arguments);
     }
 
     public Map<String, String> getRouterMetadata(String routerType) {
-        if (routerMetadata == null) {
+        if (routerArgument == null) {
             return Collections.emptyMap();
         }
-        Map<String, String> metadata = routerMetadata.get(routerType);
-        if (metadata == null || metadata.size() == 0) {
+        Set<RouteArgument> arguments = routerArgument.get(routerType);
+        if (arguments == null || arguments.size() == 0) {
             return Collections.emptyMap();
         }
-        return Collections.unmodifiableMap(metadata);
+
+        Map<String, String> labels = new HashMap<>();
+        arguments.forEach(entry -> {
+            entry.toLabel(labels);
+        });
+
+        return Collections.unmodifiableMap(labels);
     }
 
+    @Deprecated
     public Map<String, Map<String, String>> getRouterMetadata() {
+        Map<String, Map<String, String>> routerMetadata = new HashMap<>();
+
+        routerArgument.forEach((s, arguments) -> {
+            routerMetadata.computeIfAbsent(s, key -> new HashMap<>());
+            Map<String, String> labels = routerMetadata.get(s);
+            arguments.forEach(routeArgument -> routeArgument.toLabel(labels));
+        });
+
         return routerMetadata;
+    }
+
+    public Map<String, Set<RouteArgument>> getRouterArguments() {
+        return Collections.unmodifiableMap(routerArgument);
     }
 
     public MetadataFailoverType getMetadataFailoverType() {

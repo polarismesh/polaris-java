@@ -24,6 +24,7 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
@@ -74,7 +75,7 @@ public class Consumer {
         GetOneInstanceRequest getOneInstanceRequest = new GetOneInstanceRequest();
         getOneInstanceRequest.setNamespace(namespace);
         getOneInstanceRequest.setService(service);
-        ServiceInfo serviceInfo = new ServiceInfo();
+        SourceService serviceInfo = new SourceService();
         serviceInfo.setMetadata(parameters);
         getOneInstanceRequest.setServiceInfo(serviceInfo);
         InstancesResponse oneInstance = consumerAPI.getOneInstance(getOneInstanceRequest);

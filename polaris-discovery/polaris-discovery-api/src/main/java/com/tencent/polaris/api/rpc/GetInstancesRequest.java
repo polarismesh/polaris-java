@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.pojo.SourceService;
 import java.util.Map;
 
 /**
@@ -36,7 +37,7 @@ public class GetInstancesRequest extends RequestBaseEntity {
     /**
      * 主调方服务信息
      */
-    private ServiceMetadata serviceInfo;
+    private SourceService serviceInfo;
 
     /**
      * 是否返回熔断实例，默认否
@@ -87,11 +88,11 @@ public class GetInstancesRequest extends RequestBaseEntity {
     }
 
 
-    public ServiceMetadata getServiceInfo() {
+    public SourceService getServiceInfo() {
         return serviceInfo;
     }
 
-    public void setServiceInfo(ServiceMetadata serviceInfo) {
+    public void setServiceInfo(SourceService serviceInfo) {
         this.serviceInfo = serviceInfo;
     }
 

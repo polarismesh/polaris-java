@@ -9,6 +9,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
@@ -97,7 +98,7 @@ public class ServiceDynamicRuleTest {
         Map<String, String> map = new HashMap<>();
         map.put("uid", "144115217417489762");
 
-        ServiceInfo serviceInfo = new ServiceInfo();
+        SourceService serviceInfo = new SourceService();
         serviceInfo.setNamespace(NAMESPACE_PRODUCTION);
         serviceInfo.setService(RULE_ROUTER_SERVICE);
         serviceInfo.setMetadata(map);
