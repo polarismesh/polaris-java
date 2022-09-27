@@ -105,34 +105,15 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
         subArguments.addAll(arguments);
     }
 
-    public Map<String, String> getRouterMetadata(String routerType) {
+    public Set<RouteArgument> getRouterArguments(String routerType) {
         if (routerArgument == null) {
-            return Collections.emptyMap();
+            return Collections.emptySet();
         }
         Set<RouteArgument> arguments = routerArgument.get(routerType);
         if (arguments == null || arguments.size() == 0) {
-            return Collections.emptyMap();
+            return Collections.emptySet();
         }
-
-        Map<String, String> labels = new HashMap<>();
-        arguments.forEach(entry -> {
-            entry.toLabel(labels);
-        });
-
-        return Collections.unmodifiableMap(labels);
-    }
-
-    @Deprecated
-    public Map<String, Map<String, String>> getRouterMetadata() {
-        Map<String, Map<String, String>> routerMetadata = new HashMap<>();
-
-        routerArgument.forEach((s, arguments) -> {
-            routerMetadata.computeIfAbsent(s, key -> new HashMap<>());
-            Map<String, String> labels = routerMetadata.get(s);
-            arguments.forEach(routeArgument -> routeArgument.toLabel(labels));
-        });
-
-        return routerMetadata;
+        return Collections.unmodifiableSet(arguments);
     }
 
     public Map<String, Set<RouteArgument>> getRouterArguments() {

@@ -31,6 +31,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
@@ -102,8 +103,11 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
             coreRouters = extensions.getConfigRouterChainGroup().getCoreRouters();
         }
         ServiceInstances dstInstances = request.getDstInstances();
-        RouteInfo routeInfo = new RouteInfo(request.getSourceService(), dstInstances, request.getMethod());
-        routeInfo.setRouterMetadata(request.getRouterMetadata());
+        SourceService sourceService = new SourceService();
+        sourceService.setService(request.getSourceService().getService());
+        sourceService.setNamespace(request.getSourceService().getNamespace());
+        RouteInfo routeInfo = new RouteInfo(sourceService, dstInstances, request.getMethod());
+        routeInfo.setRouterArguments(request.getRouterArguments());
         if (request.getMetadataFailoverType() != null) {
             routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
         }

@@ -23,6 +23,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
@@ -41,6 +42,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Consumer {
 
@@ -66,17 +68,15 @@ public class Consumer {
         server.start();
     }
 
-    private static String invokeByNameResolution(String namespace, String service, Map<String, String> parameters,
+    private static String invokeByNameResolution(String namespace, String service, Set<RouteArgument> arguments, String echoValue,
             ConsumerAPI consumerAPI) {
         System.out.println("namespace " + namespace + ", service " + service);
-        String echoValue = parameters.get("value");
-
         // 1. we need to do naming resolution to get a load balanced host and port
         GetOneInstanceRequest getOneInstanceRequest = new GetOneInstanceRequest();
         getOneInstanceRequest.setNamespace(namespace);
         getOneInstanceRequest.setService(service);
         SourceService serviceInfo = new SourceService();
-        serviceInfo.setMetadata(parameters);
+        serviceInfo.setArguments(arguments);
         getOneInstanceRequest.setServiceInfo(serviceInfo);
         InstancesResponse oneInstance = consumerAPI.getOneInstance(getOneInstanceRequest);
         Instance[] instances = oneInstance.getInstances();
@@ -140,7 +140,7 @@ public class Consumer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             Map<String, String> parameters = splitQuery(exchange.getRequestURI());
-            String response = invokeByNameResolution(namespace, service, parameters, consumerAPI);
+            String response = invokeByNameResolution(namespace, service, null, parameters.get("value"), consumerAPI);
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());

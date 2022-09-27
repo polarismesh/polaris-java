@@ -95,11 +95,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     }
 
     @Override
-    public InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException {
-        return getHealthyInstances(req);
-    }
-
-    @Override
     public InstancesResponse getOneInstance(GetOneInstanceRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetOneInstanceRequest(req);

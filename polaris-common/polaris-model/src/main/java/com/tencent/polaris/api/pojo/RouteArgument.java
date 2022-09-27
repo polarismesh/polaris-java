@@ -177,12 +177,10 @@ public class RouteArgument {
 
     @Override
     public String toString() {
-        return "MatchArgument{" +
+        return "RouteArgument{" +
                 "type=" + type +
                 ", key='" + key + '\'' +
                 ", value='" + value + '\'' +
                 '}';
     }
-
-
 }
