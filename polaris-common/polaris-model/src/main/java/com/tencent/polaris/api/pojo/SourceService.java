@@ -23,11 +23,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class SourceService extends ServiceInfo {
+
+
     private Set<RouteArgument> arguments = new HashSet<>();
 
     public Set<RouteArgument> getArguments() {
@@ -46,9 +49,7 @@ public class SourceService extends ServiceInfo {
         }
     }
 
-    @Override
-    @Deprecated
-    public Map<String, String> getMetadata() {
+    public Map<String, String> getLabels() {
         if (CollectionUtils.isEmpty(arguments)) {
             return super.getMetadata();
         }
@@ -56,5 +57,11 @@ public class SourceService extends ServiceInfo {
         Map<String, String> labels = new HashMap<>();
         arguments.forEach(entry -> entry.toLabel(labels));
         return labels;
+    }
+
+    @Deprecated
+    @Override
+    public void setMetadata(Map<String, String> metadata) {
+        metadata.forEach((key, value) -> appendArguments(RouteArgument.fromLabel(key, value)));
     }
 }

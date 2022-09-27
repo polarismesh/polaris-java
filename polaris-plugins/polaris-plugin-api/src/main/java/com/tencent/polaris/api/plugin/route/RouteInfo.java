@@ -16,6 +16,7 @@
 
 package com.tencent.polaris.api.plugin.route;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.SourceService;
@@ -27,6 +28,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 服务路由信息
@@ -223,7 +225,13 @@ public class RouteInfo {
         return Collections.unmodifiableMap(metadata);
     }
 
-    public void setRouterMetadata(Map<String, Map<String, String>> routerMetadata) {
+    public void setRouterArguments(Map<String, Set<RouteArgument>> routerArguments) {
+        Map<String, Map<String, String>> routerMetadata = new HashMap<>();
+        routerArguments.forEach((s, arguments) -> {
+            routerMetadata.computeIfAbsent(s, key -> new HashMap<>());
+            Map<String, String> labels = routerMetadata.get(s);
+            arguments.forEach(routeArgument -> routeArgument.toLabel(labels));
+        });
         this.routerMetadata = routerMetadata;
     }
 }

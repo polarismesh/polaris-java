@@ -156,7 +156,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             }
 
             matched = matchMetadata(
-                    source.getMetadataMap(), sourceService.getMetadata(), true, multiEnvRouterParamMap);
+                    source.getMetadataMap(), sourceService.getLabels(), true, multiEnvRouterParamMap);
             if (matched) {
                 break;
             }
