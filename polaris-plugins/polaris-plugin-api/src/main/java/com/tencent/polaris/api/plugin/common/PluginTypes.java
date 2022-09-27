@@ -23,6 +23,7 @@ import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
+import com.tencent.polaris.api.plugin.location.LocationProvider;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
@@ -43,6 +44,11 @@ public enum PluginTypes {
      * 流程缓存扩展点
      */
     FLOW_CACHE(new PluginType(FlowCache.class, 0)),
+
+    /**
+     * 地理位置信息提供着扩展点
+     */
+    LOCAL_PROVIDER(new PluginType(LocationProvider.class, 0)),
 
     /**
      * 本地缓存扩展点

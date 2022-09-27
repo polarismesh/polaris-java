@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package v1;
+
+import "client.proto";
+import "request.proto";
+import "response.proto";
+
+option java_package = "com.tencent.polaris.client.pb";
+option java_outer_classname = "LocationGRPCService";
+
+message LocationRequest {
+  string client_ip = 1 [json_name = "client_ip"];
+}
+
+message LocationResponse {
+  string region = 1;
+  string zone = 2;
+  string campus = 3;
+}
+
+service LocationGRPC {
+  // 获取客户端地理位置信息
+  rpc GetLocation(LocationRequest) returns(LocationResponse) {}
+}

@@ -27,5 +27,7 @@
         <module>polaris-plugins-registry</module>
         <module>polaris-plugins-cache</module>
         <module>polaris-plugins-configuration-connector</module>
-    </modules>
+		<module>polaris-plugins-location</module>
+		<module>polaris-plugins-location/location-provider-base</module>
+	</modules>
 </project>
