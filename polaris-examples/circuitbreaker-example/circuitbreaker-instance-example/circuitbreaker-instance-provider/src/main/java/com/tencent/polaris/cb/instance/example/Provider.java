@@ -27,6 +27,7 @@ import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -42,26 +43,26 @@ import java.util.concurrent.TimeUnit;
 
 public class Provider {
 
-    private static final String NAMESPACE_DEFAULT = "default";
+	private static final String NAMESPACE_DEFAULT = "default";
 
-    private static final String ECHO_SERVICE_NAME = "CircuitBreakerServiceJava";
+	private static final String ECHO_SERVICE_NAME = "CircuitBreakerServiceJava";
 
-    private static final int LISTEN_PORT = 0;
+	private static final int LISTEN_PORT = 0;
 
-    private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+	private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
 
-    public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {
 
-        String namespace = NAMESPACE_DEFAULT;
-        String service = ECHO_SERVICE_NAME;
+		String namespace = NAMESPACE_DEFAULT;
+		String service = ECHO_SERVICE_NAME;
 
-        HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
-        int localPort = server.getAddress().getPort();
-        System.out.println("CircuitBreaker provider server listen port is " + localPort);
-        server.createContext("/echo", new EchoServerHandler(localPort));
+		HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
+		int localPort = server.getAddress().getPort();
+		System.out.println("CircuitBreaker provider server listen port is " + localPort);
+		server.createContext("/echo", new EchoServerHandler(localPort));
 
-        Configuration configuration = ConfigAPIFactory.defaultConfig();
-        String localHost = getLocalHost(configuration);
+		Configuration configuration = ConfigAPIFactory.defaultConfig();
+		String localHost = getLocalHost(configuration);
 
 //        List<ServerConnectorConfigImpl> connectorConfigList = configuration.getGlobal().getServerConnectors();
 //        for (ServerConnectorConfigImpl serverConnectorConfig : connectorConfigList) {
@@ -73,110 +74,113 @@ public class Provider {
 //            }
 //        }
 
-        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
-        HEARTBEAT_EXECUTOR
-                .schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
-                        500,
-                        TimeUnit.MILLISECONDS);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            HEARTBEAT_EXECUTOR.shutdown();
-            server.stop(1);
-            deregister(namespace, service, localHost, localPort, providerAPI);
-            providerAPI.close();
-        }));
-        server.start();
-    }
+		ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
+		HEARTBEAT_EXECUTOR
+				.schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
+						500,
+						TimeUnit.MILLISECONDS);
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			HEARTBEAT_EXECUTOR.shutdown();
+			server.stop(1);
+			deregister(namespace, service, localHost, localPort, providerAPI);
+			providerAPI.close();
+		}));
+		server.start();
+	}
 
-    // do the instance register
-    private static void register(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
-        registerRequest.setNamespace(namespace);
-        registerRequest.setService(service);
-        registerRequest.setHost(host);
-        registerRequest.setPort(port);
-        InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
-        System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
-                host, port, service, namespace, registerResp.getInstanceId());
-    }
+	// do the instance register
+	private static void register(String namespace, String service, String host, int port,
+			ProviderAPI providerAPI) {
+		InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
+		registerRequest.setNamespace(namespace);
+		registerRequest.setService(service);
+		registerRequest.setHost(host);
+		registerRequest.setPort(port);
+		InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
+		System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
+				host, port, service, namespace, registerResp.getInstanceId());
+	}
 
-    // do the instance deregister
-    private static void deregister(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        InstanceDeregisterRequest deregisterRequest = new InstanceDeregisterRequest();
-        deregisterRequest.setNamespace(namespace);
-        deregisterRequest.setService(service);
-        deregisterRequest.setHost(host);
-        deregisterRequest.setPort(port);
-        providerAPI.deRegister(deregisterRequest);
-        System.out.printf("deregister instance, address is %s:%d%n", host, port);
-    }
+	// do the instance deregister
+	private static void deregister(String namespace, String service, String host, int port,
+			ProviderAPI providerAPI) {
+		InstanceDeregisterRequest deregisterRequest = new InstanceDeregisterRequest();
+		deregisterRequest.setNamespace(namespace);
+		deregisterRequest.setService(service);
+		deregisterRequest.setHost(host);
+		deregisterRequest.setPort(port);
+		providerAPI.deRegister(deregisterRequest);
+		System.out.printf("deregister instance, address is %s:%d%n", host, port);
+	}
 
-    private static Map<String, String> splitQuery(URI uri) throws UnsupportedEncodingException {
-        Map<String, String> query_pairs = new LinkedHashMap<>();
-        String query = uri.getQuery();
-        String[] pairs = query.split("&");
-        for (String pair : pairs) {
-            int idx = pair.indexOf("=");
-            query_pairs.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
-                    URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
-        }
-        return query_pairs;
-    }
+	private static Map<String, String> splitQuery(URI uri) throws UnsupportedEncodingException {
+		Map<String, String> query_pairs = new LinkedHashMap<>();
+		String query = uri.getQuery();
+		String[] pairs = query.split("&");
+		for (String pair : pairs) {
+			int idx = pair.indexOf("=");
+			query_pairs.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
+					URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
+		}
+		return query_pairs;
+	}
 
-    private static String getLocalHost(Configuration configuration) throws Exception {
-        String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
-        String[] tokens = serverAddress.split(":");
-        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
-            return socket.getLocalAddress().getHostAddress();
-        }
-    }
+	private static String getLocalHost(Configuration configuration) throws Exception {
+		String serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
+		String[] tokens = serverAddress.split(":");
+		try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+			return socket.getLocalAddress().getHostAddress();
+		}
+	}
 
-    private static class RegisterTask implements Runnable {
+	private static class RegisterTask implements Runnable {
 
-        private final String namespace;
+		private final String namespace;
 
-        private final String service;
+		private final String service;
 
-        private final String host;
+		private final String host;
 
-        private final int port;
+		private final int port;
 
-        private final ProviderAPI providerAPI;
+		private final ProviderAPI providerAPI;
 
-        public RegisterTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
+		public RegisterTask(String namespace, String service, String host, int port,
+				ProviderAPI providerAPI) {
+			this.namespace = namespace;
+			this.service = service;
+			this.host = host;
+			this.port = port;
+			this.providerAPI = providerAPI;
+		}
 
-        @Override
-        public void run() {
-            Provider.register(namespace, service, host, port, providerAPI);
-        }
-    }
+		@Override
+		public void run() {
+			Provider.register(namespace, service, host, port, providerAPI);
+		}
+	}
 
-    private static class EchoServerHandler implements HttpHandler {
+	private static class EchoServerHandler implements HttpHandler {
 
-        private final int port;
+		private final int port;
 
-        public EchoServerHandler(int port) {
-            this.port = port;
-        }
+		public EchoServerHandler(int port) {
+			this.port = port;
+		}
 
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            Map<String, String> parameters = splitQuery(exchange.getRequestURI());
-            String echoValue = parameters.get("value");
-            String response = "echo: " + echoValue + ", port: " + port;
-            exchange.sendResponseHeaders(200, 0);
-            OutputStream os = exchange.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
-        }
-    }
+		@Override
+		public void handle(HttpExchange exchange) throws IOException {
+			Map<String, String> parameters = splitQuery(exchange.getRequestURI());
+			String echoValue = parameters.get("value");
+			String response = "echo: " + echoValue + ", port: " + port;
+			if ("ex".equals(echoValue)) {
+				throw new IOException("5000");
+			}
+			exchange.sendResponseHeaders(200, 0);
+			OutputStream os = exchange.getResponseBody();
+			os.write(response.getBytes());
+			os.close();
+		}
+	}
 
 }
