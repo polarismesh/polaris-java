@@ -188,6 +188,7 @@ public class Extensions {
             valueContext.setValue(LocationLevel.region.name(), location.getRegion().getValue());
             valueContext.setValue(LocationLevel.zone.name(), location.getZone().getValue());
             valueContext.setValue(LocationLevel.campus.name(), location.getCampus().getValue());
+            valueContext.notifyAllForLocationReady();
             break;
         }
     }
