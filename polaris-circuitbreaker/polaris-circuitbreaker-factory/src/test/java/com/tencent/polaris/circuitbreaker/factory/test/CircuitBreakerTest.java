@@ -19,6 +19,7 @@ package com.tencent.polaris.circuitbreaker.factory.test;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
 import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
+import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
@@ -59,7 +60,8 @@ public class CircuitBreakerTest {
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(-1);
+            System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
