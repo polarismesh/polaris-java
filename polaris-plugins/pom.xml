@@ -28,6 +28,5 @@
         <module>polaris-plugins-cache</module>
         <module>polaris-plugins-configuration-connector</module>
 		<module>polaris-plugins-location</module>
-		<module>polaris-plugins-location/location-provider-base</module>
 	</modules>
 </project>

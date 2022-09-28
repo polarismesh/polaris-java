@@ -22,16 +22,24 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.LocationGRPCGrpc;
 import com.tencent.polaris.client.pb.LocationGRPCService;
 import com.tencent.polaris.client.pb.ModelProto;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugin.location.base.BaseLocationProvider;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import org.slf4j.Logger;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RemoteServiceLocationProvider extends BaseLocationProvider<RemoteServiceLocationProvider.ServiceOption> {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(RemoteServiceLocationProvider.class);
+
 	private LocationGRPCGrpc.LocationGRPCBlockingStub stub;
+
+	public RemoteServiceLocationProvider() {
+		super(ServiceOption.class);
+	}
 
 	@Override
 	public ProviderType getProviderType() {
@@ -42,13 +50,18 @@ public class RemoteServiceLocationProvider extends BaseLocationProvider<RemoteSe
 	public ModelProto.Location doGet(ServiceOption option) {
 		buildGrpcStub(option);
 
-		LocationGRPCService.LocationResponse response = stub.getLocation(LocationGRPCService.LocationRequest.newBuilder().build());
+		try {
+			LocationGRPCService.LocationResponse response = stub.getLocation(LocationGRPCService.LocationRequest.newBuilder().build());
 
-		return ModelProto.Location.newBuilder()
-				.setRegion(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getRegion())).build())
-				.setZone(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getZone())).build())
-				.setCampus(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getCampus())).build())
-				.build();
+			return ModelProto.Location.newBuilder()
+					.setRegion(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getRegion())).build())
+					.setZone(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getZone())).build())
+					.setCampus(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getCampus())).build())
+					.build();
+		} catch (Exception e) {
+			LOGGER.error("[Location][Provider][RemoteService] get location from remote service fail", e);
+			return null;
+		}
 	}
 
 	public synchronized void buildGrpcStub(ServiceOption option) {
@@ -56,7 +69,7 @@ public class RemoteServiceLocationProvider extends BaseLocationProvider<RemoteSe
 			return;
 		}
 
-		ManagedChannel channel = ManagedChannelBuilder.forTarget(option.getTarget()).build();
+		ManagedChannel channel = ManagedChannelBuilder.forTarget(option.getTarget()).usePlaintext().build();
 		stub = LocationGRPCGrpc.newBlockingStub(channel);
 	}
 

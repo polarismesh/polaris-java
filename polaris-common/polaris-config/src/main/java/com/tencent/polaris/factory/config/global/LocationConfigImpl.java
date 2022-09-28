@@ -57,20 +57,11 @@ public class LocationConfigImpl implements LocationConfig {
 		return null;
 	}
 
-	public List<String> listProviders() {
-		List<String> ret = new ArrayList<>();
-		for (LocationProviderConfigImpl config : providers) {
-			ret.add(config.getType());
-		}
-
-		return ret;
-	}
-
 	@Override
 	public void setDefault(Object defaultObject) {
 		if (null != defaultObject) {
 			LocationConfig locationConfig = (LocationConfig) defaultObject;
-			if (CollectionUtils.isNotEmpty(locationConfig.getProviders())) {
+			if (CollectionUtils.isEmpty(providers)) {
 				setProviders((List<LocationProviderConfigImpl>) locationConfig.getProviders());
 			}
 		}

@@ -32,6 +32,10 @@ public class LocalLocationProvider extends BaseLocationProvider<BaseLocationProv
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LocalLocationProvider.class);
 
+	public LocalLocationProvider() {
+		super(GetOption.class);
+	}
+
 	@Override
 	public ProviderType getProviderType() {
 		return ProviderType.LOCAL;

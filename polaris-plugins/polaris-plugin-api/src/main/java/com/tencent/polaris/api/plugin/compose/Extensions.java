@@ -158,6 +158,11 @@ public class Extensions {
         return valueContext;
     }
 
+    /**
+     * get sdk current location from {@link List<LocationProvider>} providers
+     * have one {@link LocationProvider} get location, stop. if not, use next {@link LocationProvider} to get
+     * chain order: local -> remote http -> remote service
+     */
     private void initLocation(Configuration config, ValueContext valueContext) {
         LocationConfig locationConfig = config.getGlobal().getLocation();
         List<LocationProvider> providers = new ArrayList<>();
@@ -177,6 +182,7 @@ public class Extensions {
         for (LocationProvider provider : providers) {
             ModelProto.Location location = provider.getLocation();
             if (location == null) {
+                LOG.info("locationProvider plugin {} not found location", provider.getName());
                 continue;
             }
             valueContext.setValue(LocationLevel.region.name(), location.getRegion().getValue());

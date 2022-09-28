@@ -15,19 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.quickstart.example;
-
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.core.ProviderAPI;
-import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
-import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
-import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
+package com.tencent.polaris.location.example;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,11 +27,28 @@ import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.core.ProviderAPI;
+import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pb.LocationGRPCGrpc;
+import com.tencent.polaris.client.pb.LocationGRPCService;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.location.example.utils.ProviderExampleUtils;
+import io.grpc.Server;
+import io.grpc.ServerBuilder;
+import io.grpc.stub.StreamObserver;
+
 public class Provider {
 
     private static final String NAMESPACE_DEFAULT = "default";
 
-    private static final String ECHO_SERVICE_NAME = "EchoServerJava";
+    private static final String ECHO_SERVICE_NAME = "LocationServerJava";
 
     private static final int TTL = 5;
 
@@ -52,13 +57,15 @@ public class Provider {
     public static void main(String[] args) throws Exception {
         ProviderExampleUtils.InitResult initResult = ProviderExampleUtils.initProviderConfiguration(args);
 
+        runHttpLocationServer();
+        runGrpcLocationServer();
+
         String namespace = NAMESPACE_DEFAULT;
         String service = ECHO_SERVICE_NAME;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
         int localPort = server.getAddress().getPort();
         server.createContext("/echo", new EchoServerHandler(localPort));
-
         Configuration configuration = ProviderExampleUtils.createConfiguration(initResult.getConfig());
         String localHost = getLocalHost(configuration);
 
@@ -141,6 +148,81 @@ public class Provider {
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
             os.close();
+        }
+    }
+
+
+    private static void runHttpLocationServer() throws Exception {
+        new Thread(() -> {
+            try {
+                HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT + 100), 0);
+                server.createContext("/region", new HttpLocationServerHandler("region"));
+                server.createContext("/zone", new HttpLocationServerHandler("zone"));
+                server.createContext("/campus", new HttpLocationServerHandler("campus"));
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    server.stop(0);
+                }));
+                System.out.println("success run local http location server");
+                server.start();
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+            }
+        }).start();
+    }
+
+    private static class HttpLocationServerHandler implements HttpHandler {
+
+        private final String type;
+
+        public HttpLocationServerHandler(String type) {
+            this.type = type;
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String response = "";
+
+            switch (type) {
+            case "region":
+                response = "china";
+                break;
+            case "zone":
+                response = "ap-guangzhou";
+                break;
+            case "campus":
+                response = "ap-guangzhou-1";
+            }
+
+            exchange.sendResponseHeaders(200, 0);
+            OutputStream os = exchange.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+    }
+
+    private static void runGrpcLocationServer() throws Exception {
+        new Thread(() -> {
+            try {
+                Server server = ServerBuilder.forPort(LISTEN_PORT + 200).addService(new GrpcLocationServerHandler()).build();
+                System.out.println("success run local grpc location server");
+                server = server.start();
+                Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
+            } catch (Throwable ex) {
+                ex.printStackTrace();
+            }
+        }).start();
+    }
+
+    private static class GrpcLocationServerHandler extends LocationGRPCGrpc.LocationGRPCImplBase {
+
+        @Override
+        public void getLocation(LocationGRPCService.LocationRequest request, StreamObserver<LocationGRPCService.LocationResponse> responseObserver) {
+            responseObserver.onNext(LocationGRPCService.LocationResponse.newBuilder()
+                            .setRegion("china")
+                            .setZone("ap-guangzhou")
+                            .setCampus("ap-guangzhou-2")
+                    .build());
+            responseObserver.onCompleted();
         }
     }
 

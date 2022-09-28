@@ -87,9 +87,9 @@ global:
     providers:
       - type: local
         options:
-          region: ${REGION}
-          zone: ${ZONE}
-          campus: ${CAMPUS}
+          region: ${REGION:}
+          zone: ${ZONE:}
+          campus: ${CAMPUS:}
 #描述: 主调端配置
 consumer:
   # Switch of discovery.

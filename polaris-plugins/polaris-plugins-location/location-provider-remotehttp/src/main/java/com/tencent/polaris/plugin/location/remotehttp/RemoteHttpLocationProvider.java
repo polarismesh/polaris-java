@@ -39,6 +39,10 @@ public class RemoteHttpLocationProvider extends BaseLocationProvider<BaseLocatio
 
 	private OkHttpClient httpClient = new OkHttpClient();
 
+	public RemoteHttpLocationProvider() {
+		super(GetOption.class);
+	}
+
 	@Override
 	public ProviderType getProviderType() {
 		return ProviderType.REMOTE_HTTP;

@@ -42,6 +42,12 @@ public abstract class BaseLocationProvider<T> extends Destroyable implements Loc
 
 	protected ModelProto.Location cache;
 
+	private final Class<T> typeClass;
+
+	protected BaseLocationProvider(Class<T> typeClass) {
+		this.typeClass = typeClass;
+	}
+
 	@Override
 	public int getId() {
 		return id;
@@ -81,7 +87,7 @@ public abstract class BaseLocationProvider<T> extends Destroyable implements Loc
 			}
 
 			Gson gson = new Gson();
-			T option = gson.fromJson(gson.toJson(providerConfig.getOptions()), new TypeToken<T>(){}.getType());
+			T option = gson.fromJson(gson.toJson(providerConfig.getOptions()), typeClass);
 
 			cache = doGet(option);
 		}

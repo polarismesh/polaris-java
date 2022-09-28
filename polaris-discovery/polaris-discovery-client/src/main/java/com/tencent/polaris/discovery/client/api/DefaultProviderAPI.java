@@ -4,6 +4,7 @@ import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
+import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
@@ -13,6 +14,7 @@ import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.Utils;
@@ -75,6 +77,9 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     private InstanceRegisterResponse doRegister(InstanceRegisterRequest req, Map<String, String> customHeader) {
         checkAvailable("ProviderAPI");
         Validator.validateInstanceRegisterRequest(req);
+
+        enrichInstanceLocation(req);
+
         long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
         long timeout = getTimeout(req);
         while (timeout > 0) {
@@ -147,6 +152,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     public void heartbeat(InstanceHeartbeatRequest req) throws PolarisException {
         checkAvailable("ProviderAPI");
         Validator.validateHeartbeatRequest(req);
+
         long timeout = getTimeout(req);
         long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
         while (timeout > 0) {
@@ -175,6 +181,16 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
             }
         }
         throw new PolarisException(ErrorCode.API_TIMEOUT, "heartbeat request timeout.");
+    }
+
+    private void enrichInstanceLocation(InstanceRegisterRequest request) {
+        if (!StringUtils.isAllEmpty(request.getRegion(), request.getZone(), request.getCampus())) {
+            return;
+        }
+
+        request.setRegion(sdkContext.getValueContext().getValue(LocationLevel.region.name()));
+        request.setZone(sdkContext.getValueContext().getValue(LocationLevel.zone.name()));
+        request.setCampus(sdkContext.getValueContext().getValue(LocationLevel.campus.name()));
     }
 
 }

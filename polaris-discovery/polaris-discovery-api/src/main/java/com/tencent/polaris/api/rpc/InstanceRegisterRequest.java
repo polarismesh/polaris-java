@@ -68,6 +68,18 @@ public class InstanceRegisterRequest extends CommonProviderBaseEntity {
         request.setMetadata(metadata);
     }
 
+    public String getZone() {
+        return request.getZone();
+    }
+
+    public String getRegion() {
+        return request.getRegion();
+    }
+
+    public String getCampus() {
+        return request.getCampus();
+    }
+
     public void setZone(String zone) {
         request.setZone(zone);
     }
@@ -79,6 +91,7 @@ public class InstanceRegisterRequest extends CommonProviderBaseEntity {
     public void setCampus(String campus) {
         request.setCampus(campus);
     }
+
     /**
      * 心跳上报的TTL，单位秒
      *
