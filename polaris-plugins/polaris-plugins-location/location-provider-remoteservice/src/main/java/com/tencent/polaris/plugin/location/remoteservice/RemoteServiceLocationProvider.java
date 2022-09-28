@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.plugin.location.remoteservice;
 
+import java.net.Socket;
+
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.LocationGRPCGrpc;
@@ -51,15 +53,20 @@ public class RemoteServiceLocationProvider extends BaseLocationProvider<RemoteSe
 		buildGrpcStub(option);
 
 		try {
-			LocationGRPCService.LocationResponse response = stub.getLocation(LocationGRPCService.LocationRequest.newBuilder().build());
+			LocationGRPCService.LocationResponse response = stub.getLocation(LocationGRPCService.LocationRequest.newBuilder()
+					.setClientIp(getLocalHost(option.getTarget()))
+					.build());
 
 			return ModelProto.Location.newBuilder()
-					.setRegion(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getRegion())).build())
+					.setRegion(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getRegion()))
+							.build())
 					.setZone(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getZone())).build())
-					.setCampus(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getCampus())).build())
+					.setCampus(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getCampus()))
+							.build())
 					.build();
-		} catch (Exception e) {
-			LOGGER.error("[Location][Provider][RemoteService] get location from remote service fail", e);
+		}
+		catch (Exception e) {
+			LOGGER.error("[Location][Provider][RemoteService] get location from remote service fail, option : {}", option, e);
 			return null;
 		}
 	}
@@ -83,6 +90,19 @@ public class RemoteServiceLocationProvider extends BaseLocationProvider<RemoteSe
 
 		void setTarget(String target) {
 			this.target = target;
+		}
+	}
+
+	private String getLocalHost(String addresses) throws Exception {
+		if (addresses == null || addresses.length() == 0) {
+			return configuration.getGlobal().getAPI().getBindIP();
+		}
+
+		String[] addressList = addresses.split(",");
+
+		String[] tokens = addressList[0].split(":");
+		try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+			return socket.getLocalAddress().getHostAddress();
 		}
 	}
 }

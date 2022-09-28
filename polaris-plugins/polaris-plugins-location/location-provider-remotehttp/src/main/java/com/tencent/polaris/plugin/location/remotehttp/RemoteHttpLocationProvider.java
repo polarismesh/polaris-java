@@ -37,7 +37,7 @@ public class RemoteHttpLocationProvider extends BaseLocationProvider<BaseLocatio
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RemoteHttpLocationProvider.class);
 
-	private OkHttpClient httpClient = new OkHttpClient();
+	private final OkHttpClient httpClient = new OkHttpClient();
 
 	public RemoteHttpLocationProvider() {
 		super(GetOption.class);
@@ -57,6 +57,8 @@ public class RemoteHttpLocationProvider extends BaseLocationProvider<BaseLocatio
 		if (StringUtils.isAllEmpty(region, zone, campus)) {
 			return null;
 		}
+
+		LOGGER.info("[Location][Provider][RemoteHttp] get location from remote http : {}", option);
 
 		return ModelProto.Location.newBuilder()
 				.setRegion(StringValue.newBuilder().setValue(region).build())

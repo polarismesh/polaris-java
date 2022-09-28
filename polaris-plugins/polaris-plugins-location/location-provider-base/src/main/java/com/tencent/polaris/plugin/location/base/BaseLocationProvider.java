@@ -19,6 +19,7 @@ package com.tencent.polaris.plugin.location.base;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.IdAwarePlugin;
@@ -43,6 +44,8 @@ public abstract class BaseLocationProvider<T> extends Destroyable implements Loc
 	protected ModelProto.Location cache;
 
 	private final Class<T> typeClass;
+
+	protected Configuration configuration;
 
 	protected BaseLocationProvider(Class<T> typeClass) {
 		this.typeClass = typeClass;
@@ -70,6 +73,7 @@ public abstract class BaseLocationProvider<T> extends Destroyable implements Loc
 
 	@Override
 	public void init(InitContext ctx) throws PolarisException {
+		configuration = ctx.getConfig();
 		LocationConfigImpl config = (LocationConfigImpl) ctx.getConfig().getGlobal().getLocation();
 		providerConfig = config.getByType(getName());
 	}
