@@ -14,7 +14,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.concurrent.TimeUnit;
@@ -54,8 +53,6 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-
-        doNothing().when(configFilePersistHandler).asyncSaveConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
             new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
