@@ -33,14 +33,21 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.factory.util.FileUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
+import static com.tencent.polaris.api.config.verify.DefaultValues.PATTERN_CONFIG_FILE;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -54,35 +61,34 @@ public class ConfigFilePersistHandler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(ConfigFilePersistHandler.class);
 
-	private static final String PATTERN_SERVICE = "%s#%s#%s.yaml";
-
-	private final File persistDirFile;
 	private final String persistDirPath;
 	private final int maxWriteRetry;
 	private final int maxReadRetry;
 	private final long retryInterval;
+	private final boolean isAllowPersist;
+	private final String connectorType;
+	private static final ExecutorService persistExecutor = Executors
+			.newSingleThreadExecutor(new NamedThreadFactory("configFile-persist-handler"));
 
-	public ConfigFilePersistHandler(
-			String persistDirPath, int maxWriteRetry, int maxReadRetry, long retryInterval) {
-		this.maxReadRetry = maxReadRetry;
-		this.maxWriteRetry = maxWriteRetry;
-		this.retryInterval = retryInterval;
-		this.persistDirPath = Utils.translatePath(persistDirPath);
-		this.persistDirFile = new File(this.persistDirPath);
+	public ConfigFilePersistHandler(SDKContext sdkContext) throws IOException {
+		String persistDir = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistDir();
+		this.maxReadRetry = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistMaxReadRetry();
+		this.maxWriteRetry = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistMaxWriteRetry();
+		this.retryInterval = sdkContext.getConfig().getConfigFile().getServerConnector()
+				.getPersistRetryInterval();
+		this.isAllowPersist = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistEnable();
+		this.connectorType = sdkContext.getConfig().getConfigFile().getServerConnector().getConnectorType();
+		this.persistDirPath = Utils.translatePath(persistDir);
+		FileUtils.dirPathCheck(this.persistDirPath);
 	}
 
-	public void init() throws IOException {
-		try {
-			if (!persistDirFile.exists() && !persistDirFile.mkdirs()) {
-				throw new IOException(String.format("fail to create dir %s", persistDirPath));
-			}
-			//检查文件夹是否具备写权限
-			if (!Files.isWritable(FileSystems.getDefault().getPath(persistDirPath))) {
-				throw new IOException(String.format("fail to check permission for dir %s", persistDirPath));
-			}
-		}
-		catch (Throwable e) {
-			throw new IOException(String.format("fail to check permission for dir %s", persistDirPath), e);
+	private boolean isAllowPersistToFile() {
+		return isAllowPersist && !DefaultValues.LOCAL_FILE_CONNECTOR_TYPE.equals(connectorType);
+	}
+
+	public void asyncDeleteConfigFile(ConfigFile configFile) {
+		if (!persistExecutor.isShutdown() && isAllowPersistToFile()) {
+			persistExecutor.execute(new DeleteTask(configFile));
 		}
 	}
 
@@ -107,6 +113,12 @@ public class ConfigFilePersistHandler {
 		}
 		catch (IOException e) {
 			LOG.error("fail to delete cache lock file {}", persistFileLockPath);
+		}
+	}
+
+	public void asyncSaveConfigFile(ConfigFile configFile) {
+		if (!persistExecutor.isShutdown() && isAllowPersistToFile()) {
+			persistExecutor.execute(new SaveTask(configFile));
 		}
 	}
 
@@ -135,7 +147,7 @@ public class ConfigFilePersistHandler {
 			String encodedNamespace = URLEncoder.encode(configFile.getNamespace(), "UTF-8");
 			String encodedFileGroup = URLEncoder.encode(configFile.getFileGroup(), "UTF-8");
 			String encodeFileName = URLEncoder.encode(configFile.getFileName(), "UTF-8");
-			return String.format(PATTERN_SERVICE, encodedNamespace, encodedFileGroup, encodeFileName);
+			return String.format(PATTERN_CONFIG_FILE, encodedNamespace, encodedFileGroup, encodeFileName);
 		}
 		catch (UnsupportedEncodingException e) {
 			throw new AssertionError("UTF-8 is unknown");
@@ -265,6 +277,34 @@ public class ConfigFilePersistHandler {
 					LOG.warn("fail to close stream for :" + persistFile.getAbsoluteFile(), e);
 				}
 			}
+		}
+	}
+
+	private class DeleteTask implements Runnable {
+
+		private ConfigFile configFile;
+
+		public DeleteTask(ConfigFile configFile) {
+			this.configFile = configFile;
+		}
+
+		@Override
+		public void run() {
+			deleteFileConfig(configFile);
+		}
+	}
+
+	private class SaveTask implements Runnable {
+
+		private ConfigFile configFile;
+
+		public SaveTask(ConfigFile configFile) {
+			this.configFile = configFile;
+		}
+
+		@Override
+		public void run() {
+			saveConfigFile(configFile);
 		}
 	}
 

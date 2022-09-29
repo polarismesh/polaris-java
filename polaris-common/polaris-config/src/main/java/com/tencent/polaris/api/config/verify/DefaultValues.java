@@ -95,7 +95,7 @@ public interface DefaultValues {
 	/**
 	 * 默认缓存持久化目录
 	 */
-	String DEFAULT_CACHE_PERSIST_DIR = "polaris/backup";
+	String DEFAULT_CACHE_PERSIST_DIR = "./polaris/backup";
 
 	String CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR = DEFAULT_CACHE_PERSIST_DIR + "/config";
 
@@ -255,4 +255,7 @@ public interface DefaultValues {
 	boolean DEFAULT_PERSIST_ENABLE = true;
 
 	String LOCAL_FILE_CONNECTOR_TYPE = "localFile";
+
+	String PATTERN_CONFIG_FILE = "%s#%s#%s.yaml";
+
 }

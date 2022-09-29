@@ -14,12 +14,14 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,8 +38,10 @@ public class RemoteConfigFileRepoTest {
     private ConfigFileLongPollingService configFileLongPollingService;
     @Mock
     private SDKContext                   sdkContext;
+	@Mock
+    private ConfigFilePersistHandler configFilePersistHandler;
 
-    @Test
+	@Test
     public void testPullSuccess() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
@@ -51,8 +55,11 @@ public class RemoteConfigFileRepoTest {
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
+        doNothing().when(configFilePersistHandler).asyncSaveConfigFile(any());
+
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector, configFileMetadata);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+					configFileMetadata, configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
@@ -69,8 +76,11 @@ public class RemoteConfigFileRepoTest {
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
+		doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
+
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector, configFileMetadata);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+					configFileMetadata,configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
@@ -88,7 +98,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector, configFileMetadata);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+					configFileMetadata,configFilePersistHandler);
 
         //重试三次
         verify(configFileConnector, times(3)).getConfigFile(any());
@@ -105,7 +116,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector, configFileMetadata);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+					configFileMetadata,configFilePersistHandler);
 
         //重试三次
         verify(configFileConnector, times(3)).getConfigFile(any());
@@ -130,7 +142,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector, configFileMetadata);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+					configFileMetadata,configFilePersistHandler);
 
         AtomicInteger cbCnt = new AtomicInteger();
         //增加两个listener

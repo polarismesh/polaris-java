@@ -1,6 +1,5 @@
 package com.tencent.polaris.configuration.client.internal;
 
-import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
@@ -44,6 +43,14 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 			ConfigFileLongPollingService configFileLongPollingService,
 			ConfigFileConnector configFileConnector,
 			ConfigFileMetadata configFileMetadata) {
+		this(sdkContext, configFileLongPollingService, configFileConnector, configFileMetadata, null);
+	}
+
+	public RemoteConfigFileRepo(SDKContext sdkContext,
+			ConfigFileLongPollingService configFileLongPollingService,
+			ConfigFileConnector configFileConnector,
+			ConfigFileMetadata configFileMetadata,
+			ConfigFilePersistHandler configFilePersistHandler) {
 		super(sdkContext, configFileMetadata);
 
 		remoteConfigFile = new AtomicReference<>();
@@ -60,9 +67,17 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 			this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
 					.getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
 		}
-
-		initPersistHandle();
-
+		if (configFilePersistHandler != null) {
+			this.configFilePersistHandler = configFilePersistHandler;
+		}
+		else {
+			try {
+				this.configFilePersistHandler = new ConfigFilePersistHandler(sdkContext);
+			}
+			catch (IOException e) {
+				LOGGER.warn("config file persist handler init fail:" + e.getMessage(), e);
+			}
+		}
 		//同步从远程仓库拉取一次
 		pull();
 
@@ -70,29 +85,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		addToLongPollingPool(configFileLongPollingService, configFileMetadata);
 
 		startCheckVersionTask();
-	}
-
-	private void initPersistHandle() {
-		String persistDir = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistDir();
-
-		int maxReadRetry = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistMaxReadRetry();
-		int maxWriteRetry = sdkContext.getConfig().getConfigFile().getServerConnector().getPersistMaxWriteRetry();
-		long retryIntervalMs = sdkContext.getConfig().getConfigFile().getServerConnector()
-				.getPersistRetryInterval();
-		this.configFilePersistHandler = new ConfigFilePersistHandler(persistDir, maxWriteRetry,
-				maxReadRetry, retryIntervalMs);
-		try {
-			this.configFilePersistHandler.init();
-		}
-		catch (IOException e) {
-			LOGGER.warn("config file persist handler init fail:" + e.getMessage(), e);
-		}
-	}
-
-	private boolean isAllowPersistToFile() {
-		return sdkContext.getConfig().getConfigFile().getServerConnector().getPersistEnable() &&
-				!DefaultValues.LOCAL_FILE_CONNECTOR_TYPE.equals(sdkContext.getConfig()
-						.getConfigFile().getServerConnector().getConnectorType());
 	}
 
 	private void addToLongPollingPool(ConfigFileLongPollingService configFileLongPollingService,
@@ -150,7 +142,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 				if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
 					ConfigFile pulledConfigFile = response.getConfigFile();
 					// update local file cache
-					updateLocalCacheFile(pulledConfigFile);
+					this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
+
 					//本地配置文件落后，更新内存缓存
 					if (remoteConfigFile.get() == null ||
 							pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion()) {
@@ -168,7 +161,10 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 					LOGGER.warn("[Config] config file not found, please check whether config file released. {}",
 							configFileMetadata);
 					//delete local file cache
-					deleteLocalFile();
+					this.configFilePersistHandler
+							.asyncDeleteConfigFile(new ConfigFile(configFileMetadata.getNamespace(),
+									configFileMetadata.getFileGroup(), configFileMetadata.getFileName()));
+
 					//删除配置文件
 					if (remoteConfigFile.get() != null) {
 						remoteConfigFile.set(null);
@@ -186,9 +182,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 				retryTimes++;
 				retryPolicy.executeDelay();
-				if (isNeedFallback(retryTimes)) {
-					fallback(pullConfigFileReq);
-				}
+				fallbackIfNecessary(retryTimes, pullConfigFileReq);
 			}
 			catch (Throwable t) {
 				LOGGER.error("[Config] failed to pull config file. retry times = " + retryTimes, t);
@@ -196,28 +190,24 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 				retryTimes++;
 				retryPolicy.executeDelay();
-				if (isNeedFallback(retryTimes)) {
-					fallback(pullConfigFileReq);
-				}
+				fallbackIfNecessary(retryTimes, pullConfigFileReq);
 			}
 		}
 	}
 
-	private boolean isNeedFallback(final int retryTimes) {
-		return retryTimes >= PULL_CONFIG_RETRY_TIMES &&
-				sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
-	}
-
-	private void fallback(ConfigFile configFileReq) {
-		ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq);
-		if (configFileRes != null) {
-			LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache success.{}.", configFileRes);
-			remoteConfigFile.set(configFileRes);
-			//配置有更新，触发回调
-			fireChangeEvent(configFileRes.getContent());
-			return;
+	private void fallbackIfNecessary(final int retryTimes, ConfigFile configFileReq) {
+		if (retryTimes >= PULL_CONFIG_RETRY_TIMES &&
+				sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache()) {
+			ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq);
+			if (configFileRes != null) {
+				LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache success.{}.", configFileRes);
+				remoteConfigFile.set(configFileRes);
+				//配置有更新，触发回调
+				fireChangeEvent(configFileRes.getContent());
+				return;
+			}
+			LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache fail.{}.", configFileReq);
 		}
-		LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache fail.{}.", configFileReq);
 	}
 
 	public void onLongPollNotified(long newVersion) {
@@ -229,19 +219,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 		//版本落后，从服务端拉取最新的配置文件
 		pullExecutorService.submit((Runnable) this::pull);
-	}
-
-	private void deleteLocalFile() {
-		if (isAllowPersistToFile()) {
-			this.configFilePersistHandler.deleteFileConfig(new ConfigFile(configFileMetadata.getNamespace(),
-					configFileMetadata.getFileGroup(), configFileMetadata.getFileName()));
-		}
-	}
-
-	private void updateLocalCacheFile(ConfigFile configFile) {
-		if (isAllowPersistToFile()) {
-			this.configFilePersistHandler.saveConfigFile(configFile);
-		}
 	}
 
 	// 有可能出现收到通知时，重新拉取配置失败。此时 notifiedVersion 大于 remoteConfigFile.version，需要定时重试

@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package com.tencent.polaris.plugins.configuration.connector.localfile;
 
 import java.io.File;
@@ -36,11 +53,14 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.factory.util.FileUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import static com.tencent.polaris.api.config.verify.DefaultValues.LOCAL_FILE_CONNECTOR_TYPE;
+import static com.tencent.polaris.api.config.verify.DefaultValues.PATTERN_CONFIG_FILE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
@@ -55,6 +75,7 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 	private ExecutorService executorService;
 	private WatchService watcher;
 	private String persistDirPath;
+	private Path dir;
 	/**
 	 * config file changed queue
 	 */
@@ -62,15 +83,22 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 
 	@Override
 	public void init(InitContext ctx) throws PolarisException {
-		this.persistDirPath = ctx.getConfig().getConfigFile().getServerConnector().getPersistDir();
-		if (StringUtils.isBlank(this.persistDirPath)) {
-			this.persistDirPath = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
+		String dirPath = ctx.getConfig().getConfigFile().getServerConnector().getPersistDir();
+		if (StringUtils.isBlank(dirPath)) {
+			dirPath = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
 		}
-		Path dir = Paths.get(this.persistDirPath);
+		this.persistDirPath = Utils.translatePath(dirPath);
+		this.dir = Paths.get(this.persistDirPath);
+		try {
+			FileUtils.dirPathCheck(this.persistDirPath);
+		}
+		catch (IOException ex) {
+			throw new PolarisException(ErrorCode.INVALID_CONFIG, ex.getMessage(), ex);
+		}
 		this.executorService = Executors.newSingleThreadExecutor();
 		try {
 			this.watcher = FileSystems.getDefault().newWatchService();
-			dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+			this.dir.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
 			LOGGER.info("init local file config connector,watch dir:[{}].", persistDirPath);
 		}
 		catch (IOException e) {
@@ -93,11 +121,13 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 	@Override
 	public ConfigFileResponse watchConfigFiles(List<ConfigFile> configFiles) {
 		try {
-			ConfigFileChange configFileChange = blockingQueue.take();
-			Optional<ConfigFile> optional = configFiles.stream().filter(item -> configFileToFileName(item)
-					.equals(configFileChange.getFileName())).findFirst();
-			if (optional.isPresent()) {
-				return getConfigFile(optional.get());
+			while (true) {
+				ConfigFileChange configFileChange = blockingQueue.take();
+				Optional<ConfigFile> optional = configFiles.stream().filter(item -> configFileToFileName(item)
+						.equals(configFileChange.getFileName())).findFirst();
+				if (optional.isPresent()) {
+					return getConfigFile(optional.get());
+				}
 			}
 		}
 		catch (InterruptedException e) {
@@ -146,20 +176,19 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 				}
 				List<WatchEvent<?>> watchEvents = key.pollEvents();
 				for (WatchEvent<?> event : watchEvents) {
+					LOGGER.info("watched file event:{}:{}/{}.", event.kind(), this.dir.toAbsolutePath(),
+							event.context());
 					if (StandardWatchEventKinds.ENTRY_CREATE == event.kind()) {
-
 						blockingQueue.offer(new ConfigFileChange(ConfigFileChange.ChangeType.CREATE,
 								event.context().toString()));
-						//event.context();
-						//System.out.println("创建：[" + dir + "/" + event.context() + "]");
 					}
 					if (StandardWatchEventKinds.ENTRY_MODIFY == event.kind()) {
-						blockingQueue.offer(new ConfigFileChange(ConfigFileChange.ChangeType.UPDATE, null));
-						//System.out.println("修改：[" + dir + "/" + event.context() + "]");
+						blockingQueue.offer(new ConfigFileChange(ConfigFileChange.ChangeType.UPDATE,
+								event.context().toString()));
 					}
 					if (StandardWatchEventKinds.ENTRY_DELETE == event.kind()) {
-						blockingQueue.offer(new ConfigFileChange(ConfigFileChange.ChangeType.DELETE, null));
-						//System.out.println("删除：[" + dir + "/" + event.context() + "]");
+						blockingQueue.offer(new ConfigFileChange(ConfigFileChange.ChangeType.DELETE,
+								event.context().toString()));
 					}
 				}
 				key.reset();
@@ -177,8 +206,6 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 		return loadConfigFile(persistPath.toFile(), fileNameToConfigFile(fileName));
 	}
 
-	private static final String PATTERN_SERVICE = "%s#%s#%s.yaml";
-
 	private static final String CACHE_SUFFIX = ".yaml";
 
 	private static String configFileToFileName(ConfigFile configFile) {
@@ -186,7 +213,7 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 			String encodedNamespace = URLEncoder.encode(configFile.getNamespace(), "UTF-8");
 			String encodedFileGroup = URLEncoder.encode(configFile.getFileGroup(), "UTF-8");
 			String encodeFileName = URLEncoder.encode(configFile.getFileName(), "UTF-8");
-			return String.format(PATTERN_SERVICE, encodedNamespace, encodedFileGroup, encodeFileName);
+			return String.format(PATTERN_CONFIG_FILE, encodedNamespace, encodedFileGroup, encodeFileName);
 		}
 		catch (UnsupportedEncodingException e) {
 			throw new AssertionError("UTF-8 is unknown");
