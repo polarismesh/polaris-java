@@ -26,7 +26,7 @@ import java.util.Collections;
 
 public class TestUtils {
 
-    private static final String SERVER_ADDRESS_ENV = "POLARIS_SEVER_ADDRESS";
+    public static final String SERVER_ADDRESS_ENV = "POLARIS_SEVER_ADDRESS";
 
     private static String[] getServerAddressFromEnv() {
         String addressStr = System.getenv(SERVER_ADDRESS_ENV);
