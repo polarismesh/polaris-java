@@ -8,7 +8,7 @@
           "service": "*",
           "namespace": "*",
           "metadata": {
-            "req": {
+            "$header.req": {
               "type": "REGEX",
               "value": "polaris*mesh"
             }
