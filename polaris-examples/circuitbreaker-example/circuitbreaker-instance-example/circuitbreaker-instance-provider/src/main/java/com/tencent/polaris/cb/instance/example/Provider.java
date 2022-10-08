@@ -95,7 +95,7 @@ public class Provider {
         registerRequest.setService(service);
         registerRequest.setHost(host);
         registerRequest.setPort(port);
-        InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
     }

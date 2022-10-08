@@ -86,19 +86,6 @@ public class Provider {
                 host, port, service, namespace, registerResp.getInstanceId());
     }
 
-    // do the instance heartbeat
-    private static void heartbeat(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        // do heartbeat
-        InstanceHeartbeatRequest heartbeatRequest = new InstanceHeartbeatRequest();
-        heartbeatRequest.setNamespace(namespace);
-        heartbeatRequest.setService(service);
-        heartbeatRequest.setHost(host);
-        heartbeatRequest.setPort(port);
-        providerAPI.heartbeat(heartbeatRequest);
-        System.out.printf("heartbeat instance, address is %s:%d%n", host, port);
-    }
-
     // do the instance deregister
     private static void deregister(String namespace, String service, String host, int port,
             ProviderAPI providerAPI) {
