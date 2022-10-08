@@ -67,6 +67,6 @@ public class SourceService extends ServiceInfo {
     @Deprecated
     @Override
     public void setMetadata(Map<String, String> metadata) {
-        metadata.forEach((key, value) -> appendArguments(RouteArgument.fromLabel(key, value)));
+        metadata.forEach((key, value) -> appendArguments(RouteArgument.buildCustom(key, value)));
     }
 }

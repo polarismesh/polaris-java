@@ -25,10 +25,12 @@ import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.client.pb.RoutingProto.Routing;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
@@ -121,7 +123,7 @@ public class RuleBasedRouterTest {
                 new ServiceKey(ROUTE_TEST_NAMESPACE, ROUTE_TEST_SVC_NAME), instances);
         RuleBasedRouter ruleBasedRouter = new RuleBasedRouter();
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("owner", "programmer");
         v1ReqMeta.put("side", "consumer");
@@ -131,8 +133,8 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("interface", "cn.polarismesh.com.demo.HelloWorld");
         v1ReqMeta.put("version", "*");
         v1ReqMeta.put("application", "demo-consumer");
-        v1ReqMeta.put("req", "v1");
         v1ServiceInfo.setMetadata(v1ReqMeta);
+        v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "v1"));
         RouteInfo v1RouteInfo = new RouteInfo(
                 v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
@@ -152,7 +154,7 @@ public class RuleBasedRouterTest {
                 new ServiceKey(ROUTE_TEST_NAMESPACE, ROUTE_TEST_SVC_NAME), instances);
         RuleBasedRouter ruleBasedRouter = new RuleBasedRouter();
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("owner", "programmer");
         v1ReqMeta.put("side", "consumer");
@@ -162,8 +164,8 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("interface", "cn.polarismesh.com.demo.HelloWorld");
         v1ReqMeta.put("version", "*");
         v1ReqMeta.put("application", "demo-consumer");
-        v1ReqMeta.put("req", "v1_copy");
         v1ServiceInfo.setMetadata(v1ReqMeta);
+        v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "v1_copy"));
         RouteInfo v1RouteInfo = new RouteInfo(
                 v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
@@ -183,7 +185,7 @@ public class RuleBasedRouterTest {
                 new ServiceKey(ROUTE_TEST_NAMESPACE, ROUTE_TEST_SVC_NAME), instances);
         RuleBasedRouter ruleBasedRouter = new RuleBasedRouter();
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("owner", "programmer");
         v1ReqMeta.put("side", "consumer");
@@ -193,8 +195,8 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("interface", "cn.polarismesh.com.demo.HelloWorld");
         v1ReqMeta.put("version", "*");
         v1ReqMeta.put("application", "demo-consumer");
-        v1ReqMeta.put("req", "v1_copy");
         v1ServiceInfo.setMetadata(v1ReqMeta);
+        v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "v1_copy"));
         RouteInfo v1RouteInfo = new RouteInfo(
                 v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
@@ -214,7 +216,7 @@ public class RuleBasedRouterTest {
                 new ServiceKey(ROUTE_TEST_NAMESPACE, ROUTE_TEST_SVC_NAME), instances);
         RuleBasedRouter ruleBasedRouter = new RuleBasedRouter();
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("owner", "programmer");
         v1ReqMeta.put("side", "consumer");
@@ -224,8 +226,8 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("interface", "cn.polarismesh.com.demo.HelloWorld");
         v1ReqMeta.put("version", "*");
         v1ReqMeta.put("application", "demo-consumer");
-        v1ReqMeta.put("req", "polarissssssmesh");
         v1ServiceInfo.setMetadata(v1ReqMeta);
+        v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "polarissssssmesh"));
         RouteInfo v1RouteInfo = new RouteInfo(
                 v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
@@ -245,7 +247,7 @@ public class RuleBasedRouterTest {
                 new ServiceKey(ROUTE_TEST_NAMESPACE, ROUTE_TEST_SVC_NAME), instances);
         RuleBasedRouter ruleBasedRouter = new RuleBasedRouter();
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("owner", "programmer");
         v1ReqMeta.put("side", "consumer");
@@ -297,7 +299,7 @@ public class RuleBasedRouterTest {
         routerConfig.setFailoverType(RuleBasedRouterFailoverType.none);
         ruleBasedRouter.setRouterConfig(routerConfig);
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("req", "v1");
         v1ServiceInfo.setMetadata(v1ReqMeta);
@@ -311,7 +313,7 @@ public class RuleBasedRouterTest {
         }
 
         // first check req:v2, expect all to empty
-        ServiceInfo v2ServiceInfo = new ServiceInfo();
+        SourceService v2ServiceInfo = new SourceService();
         Map<String, String> v2ReqMeta = new HashMap<>();
         v2ReqMeta.put("req", "v2");
         v2ServiceInfo.setMetadata(v2ReqMeta);
@@ -357,7 +359,7 @@ public class RuleBasedRouterTest {
         routerConfig.setFailoverType(RuleBasedRouterFailoverType.all);
         ruleBasedRouter.setRouterConfig(routerConfig);
         // first check req:v1, expect all to version:v2
-        ServiceInfo v1ServiceInfo = new ServiceInfo();
+        SourceService v1ServiceInfo = new SourceService();
         Map<String, String> v1ReqMeta = new HashMap<>();
         v1ReqMeta.put("req", "v1");
         v1ServiceInfo.setMetadata(v1ReqMeta);
@@ -371,7 +373,7 @@ public class RuleBasedRouterTest {
         }
 
         // first check req:v2, expect all to empty
-        ServiceInfo v2ServiceInfo = new ServiceInfo();
+        SourceService v2ServiceInfo = new SourceService();
         Map<String, String> v2ReqMeta = new HashMap<>();
         v2ReqMeta.put("req", "v2");
         v2ServiceInfo.setMetadata(v2ReqMeta);
