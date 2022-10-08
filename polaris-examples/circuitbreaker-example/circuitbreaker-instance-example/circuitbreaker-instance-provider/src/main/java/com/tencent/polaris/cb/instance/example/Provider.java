@@ -88,18 +88,18 @@ public class Provider {
 		server.start();
 	}
 
-	// do the instance register
-	private static void register(String namespace, String service, String host, int port,
-			ProviderAPI providerAPI) {
-		InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
-		registerRequest.setNamespace(namespace);
-		registerRequest.setService(service);
-		registerRequest.setHost(host);
-		registerRequest.setPort(port);
-		InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
-		System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
-				host, port, service, namespace, registerResp.getInstanceId());
-	}
+    // do the instance register
+    private static void register(String namespace, String service, String host, int port,
+            ProviderAPI providerAPI) {
+        InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
+        registerRequest.setNamespace(namespace);
+        registerRequest.setService(service);
+        registerRequest.setHost(host);
+        registerRequest.setPort(port);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
+        System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
+                host, port, service, namespace, registerResp.getInstanceId());
+    }
 
 	// do the instance deregister
 	private static void deregister(String namespace, String service, String host, int port,

@@ -59,6 +59,11 @@ public class SourceService extends ServiceInfo {
         return labels;
     }
 
+    /**
+     * use {@link SourceService#setArguments(Set)} to replace {@link SourceService#setMetadata(Map)}
+     *
+     * @param metadata
+     */
     @Deprecated
     @Override
     public void setMetadata(Map<String, String> metadata) {

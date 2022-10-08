@@ -67,8 +67,6 @@ public class Provider {
 
     private static final int TTL = 5;
 
-    private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
-
     public static void main(String[] args) throws Exception {
 
         CommandLineParser parser = new DefaultParser();
@@ -96,12 +94,8 @@ public class Provider {
         int localPort = server.getAddress().getPort();
 
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
-        HEARTBEAT_EXECUTOR
-                .schedule(new RegisterTask(namespace, service, localHost, localPort, env, providerAPI),
-                        500,
-                        TimeUnit.MILLISECONDS);
+        register(namespace, service, localHost, localPort, env, providerAPI);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            HEARTBEAT_EXECUTOR.shutdown();
             server.stop(1);
             deregister(namespace, service, localHost, localPort, providerAPI);
             providerAPI.close();
@@ -121,22 +115,9 @@ public class Provider {
         metadata.put("env", env);
         registerRequest.setMetadata(metadata);
         registerRequest.setTtl(TTL);
-        InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
-    }
-
-    // do the instance heartbeat
-    private static void heartbeat(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        // do heartbeat
-        InstanceHeartbeatRequest heartbeatRequest = new InstanceHeartbeatRequest();
-        heartbeatRequest.setNamespace(namespace);
-        heartbeatRequest.setService(service);
-        heartbeatRequest.setHost(host);
-        heartbeatRequest.setPort(port);
-        providerAPI.heartbeat(heartbeatRequest);
-        System.out.printf("heartbeat instance, address is %s:%d%n", host, port);
     }
 
     // do the instance deregister
@@ -168,67 +149,6 @@ public class Provider {
         String[] tokens = serverAddress.split(":");
         try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
             return socket.getLocalAddress().getHostAddress();
-        }
-    }
-
-    private static class RegisterTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final String env;
-
-        private final ProviderAPI providerAPI;
-
-        public RegisterTask(String namespace, String service, String host, int port, String env,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.env = env;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            Provider.register(namespace, service, host, port, env, providerAPI);
-            // register successfully, then start to do heartbeat
-            Provider.HEARTBEAT_EXECUTOR
-                    .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL, TTL,
-                            TimeUnit.SECONDS);
-        }
-    }
-
-    private static class HeartbeatTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final ProviderAPI providerAPI;
-
-        public HeartbeatTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            Provider.heartbeat(namespace, service, host, port, providerAPI);
         }
     }
 

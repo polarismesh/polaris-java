@@ -40,9 +40,12 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 public class Consumer {
 
@@ -140,7 +143,16 @@ public class Consumer {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             Map<String, String> parameters = splitQuery(exchange.getRequestURI());
-            String response = invokeByNameResolution(namespace, service, null, parameters.get("value"), consumerAPI);
+            Set<RouteArgument> arguments = new HashSet<>();
+
+            exchange.getRequestHeaders().forEach((key, values) -> {
+                if (values.size() > 0) {
+                    arguments.add(RouteArgument.buildHeader(key.toLowerCase(), values.get(0)));
+                }
+            });
+            parameters.forEach((key, value) -> arguments.add(RouteArgument.buildQuery(key.toLowerCase(), value)));
+
+            String response = invokeByNameResolution(namespace, service, arguments, parameters.get("value"), consumerAPI);
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
