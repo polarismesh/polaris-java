@@ -38,7 +38,7 @@ public class RemoteConfigFileRepoTest {
     @Mock
     private SDKContext                   sdkContext;
 	@Mock
-    private ConfigFilePersistHandler configFilePersistHandler;
+    private ConfigFilePersistentHandler configFilePersistHandler;
 
 	@Test
     public void testPullSuccess() {

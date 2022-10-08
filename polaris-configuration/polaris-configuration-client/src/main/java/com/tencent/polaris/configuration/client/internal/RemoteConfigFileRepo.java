@@ -33,7 +33,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 	private final AtomicLong notifiedVersion;
 	private final ConfigFileConnector configFileConnector;
 	private final RetryPolicy retryPolicy;
-	private ConfigFilePersistHandler configFilePersistHandler;
+	private ConfigFilePersistentHandler configFilePersistHandler;
 
 	static {
 		pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
@@ -50,7 +50,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 			ConfigFileLongPollingService configFileLongPollingService,
 			ConfigFileConnector configFileConnector,
 			ConfigFileMetadata configFileMetadata,
-			ConfigFilePersistHandler configFilePersistHandler) {
+			ConfigFilePersistentHandler configFilePersistHandler) {
 		super(sdkContext, configFileMetadata);
 
 		remoteConfigFile = new AtomicReference<>();
@@ -72,7 +72,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		}
 		else {
 			try {
-				this.configFilePersistHandler = new ConfigFilePersistHandler(sdkContext);
+				this.configFilePersistHandler = new ConfigFilePersistentHandler(sdkContext);
 			}
 			catch (IOException e) {
 				LOGGER.warn("config file persist handler init fail:" + e.getMessage(), e);
