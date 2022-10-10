@@ -10,7 +10,11 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
 
+import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
+import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -39,6 +43,17 @@ public class RemoteConfigFileRepoTest {
     private SDKContext                   sdkContext;
 	@Mock
     private ConfigFilePersistentHandler configFilePersistHandler;
+
+	@Before
+	public void before() {
+		ConfigurationImpl configuration = new ConfigurationImpl();
+		ConfigFileConfigImpl configFileConfig = new ConfigFileConfigImpl();
+		ConnectorConfigImpl connectorConfig = new ConnectorConfigImpl();
+		connectorConfig.setFallbackToLocalCache(true);
+		configFileConfig.setServerConnector(connectorConfig);
+		configuration.setConfigFile(configFileConfig);
+		when(sdkContext.getConfig()).thenReturn(configuration);
+	}
 
 	@Test
     public void testPullSuccess() {
