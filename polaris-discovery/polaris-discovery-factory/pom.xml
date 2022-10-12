@@ -116,6 +116,28 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!--地理位置信息获取插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>location-provider-base</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>location-provider-local</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>location-provider-remotehttp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>location-provider-remoteservice</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!--测试依赖插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

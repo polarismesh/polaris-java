@@ -63,4 +63,11 @@ public interface GlobalConfig extends Verifier {
      * @return StatReporterConfig
      */
     StatReporterConfig getStatReporter();
+
+    /**
+     * 获取地理位置提供者配置信息
+     *
+     * @return location
+     */
+    LocationConfig getLocation();
 }
