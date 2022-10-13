@@ -26,6 +26,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -162,6 +163,9 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 				LOGGER.error("watcher close error.", e);
 			}
 		}
+		if (this.executorService != null) {
+			this.executorService.shutdown();
+		}
 	}
 
 	private void watchFileChange() {
@@ -173,6 +177,10 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 				}
 				catch (InterruptedException e) {
 					LOGGER.error("file watcher take interrupted.", e);
+				}
+				catch (ClosedWatchServiceException e) {
+					LOGGER.warn("file watcher closed.", e);
+					return;
 				}
 				List<WatchEvent<?>> watchEvents = key.pollEvents();
 				for (WatchEvent<?> event : watchEvents) {
