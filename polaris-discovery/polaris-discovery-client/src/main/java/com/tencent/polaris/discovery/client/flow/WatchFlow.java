@@ -36,8 +36,10 @@ import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +47,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
 /**
@@ -77,7 +80,18 @@ public class WatchFlow {
         InstancesResponse response = syncFlow.commonSyncGetAllInstances(request.getAllRequest());
         watchers.computeIfAbsent(request.getSvcEventKey().getServiceKey(),
                 key -> Collections.synchronizedSet(new HashSet<>()));
-        boolean result = watchers.get(serviceKey).addAll(request.getWatchServiceRequest().getListeners());
+        List<ServiceListener> addListeners = request.getWatchServiceRequest().getListeners();
+        Set<ServiceListener> existListeners = watchers.get(serviceKey);
+        List<ServiceListener> firstAddedListeners = addListeners.stream().filter(existListeners::add)
+                .collect(Collectors.toList());
+        boolean result = CollectionUtils.isNotEmpty(firstAddedListeners);
+        if (result) {
+            ServiceChangeEvent event = ServiceChangeEvent.builder().serviceKey(serviceKey)
+                    .addInstances(Arrays.asList(response.getInstances()))
+                    .allInstances(Arrays.asList(response.getInstances())).build();
+            firstAddedListeners.forEach(
+                    serviceListener -> executor.execute(event.getServiceKey(), () -> serviceListener.onEvent(event)));
+        }
         return new WatchServiceResponse(response, result);
     }
 
