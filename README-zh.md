@@ -24,7 +24,7 @@ mvn clean install
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-dependencies</artifactId>
-            <version>1.8.1-SNAPSHOT</version>
+            <version>1.9.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
