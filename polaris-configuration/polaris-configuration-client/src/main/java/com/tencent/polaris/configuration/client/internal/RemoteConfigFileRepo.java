@@ -141,8 +141,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 				if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
 					ConfigFile pulledConfigFile = response.getConfigFile();
-					// update local file cache
-					this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
 
 					//本地配置文件落后，更新内存缓存
 					if (remoteConfigFile.get() == null ||
@@ -152,6 +150,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 						//配置有更新，触发回调
 						fireChangeEvent(copiedConfigFile.getContent());
+						//异步更新本地缓存
+						this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
 					}
 					return;
 				}
@@ -160,7 +160,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 				if (response.getCode() == ServerCodes.NOT_FOUND_RESOURCE) {
 					LOGGER.warn("[Config] config file not found, please check whether config file released. {}",
 							configFileMetadata);
-					//delete local file cache
+					//删除本地缓存
 					this.configFilePersistHandler
 							.asyncDeleteConfigFile(new ConfigFile(configFileMetadata.getNamespace(),
 									configFileMetadata.getFileGroup(), configFileMetadata.getFileName()));
@@ -251,5 +251,4 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		configFile.setMd5(sourceConfigFile.getMd5());
 		return configFile;
 	}
-
 }
