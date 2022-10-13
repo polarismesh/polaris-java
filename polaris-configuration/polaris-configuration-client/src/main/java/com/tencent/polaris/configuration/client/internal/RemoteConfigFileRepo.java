@@ -34,6 +34,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 	private final ConfigFileConnector configFileConnector;
 	private final RetryPolicy retryPolicy;
 	private ConfigFilePersistentHandler configFilePersistHandler;
+	private final boolean fallbackToLocalCache;
 
 	static {
 		pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
@@ -67,6 +68,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 			this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
 					.getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
 		}
+
 		if (configFilePersistHandler != null) {
 			this.configFilePersistHandler = configFilePersistHandler;
 		}
@@ -78,6 +80,9 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 				LOGGER.warn("config file persist handler init fail:" + e.getMessage(), e);
 			}
 		}
+
+        this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
+
 		//同步从远程仓库拉取一次
 		pull();
 
@@ -141,8 +146,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 				if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
 					ConfigFile pulledConfigFile = response.getConfigFile();
-					// update local file cache
-					this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
 
 					//本地配置文件落后，更新内存缓存
 					if (remoteConfigFile.get() == null ||
@@ -152,6 +155,9 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 						//配置有更新，触发回调
 						fireChangeEvent(copiedConfigFile.getContent());
+
+                        // update local file cache
+                        this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
 					}
 					return;
 				}
@@ -196,8 +202,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 	}
 
 	private void fallbackIfNecessary(final int retryTimes, ConfigFile configFileReq) {
-		if (retryTimes >= PULL_CONFIG_RETRY_TIMES &&
-				sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache()) {
+		if (retryTimes >= PULL_CONFIG_RETRY_TIMES && fallbackToLocalCache) {
 			ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq);
 			if (configFileRes != null) {
 				LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache success.{}.", configFileRes);
