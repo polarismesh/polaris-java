@@ -136,7 +136,7 @@ public class WatchFlow {
         }
 
         public void execute(ServiceKey serviceKey, Runnable command) {
-            int code = serviceKey.hashCode();
+            int code = Math.abs(serviceKey.hashCode());
             Executor executor = executors[code % executors.length];
             executor.execute(command);
         }
