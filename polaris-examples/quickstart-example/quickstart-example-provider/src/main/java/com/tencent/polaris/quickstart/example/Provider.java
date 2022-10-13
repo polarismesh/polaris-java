@@ -23,12 +23,12 @@ import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -69,6 +69,7 @@ public class Provider {
             deregister(namespace, service, localHost, localPort, providerAPI);
             providerAPI.close();
         }));
+
         server.start();
     }
 
@@ -84,19 +85,6 @@ public class Provider {
         InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
-    }
-
-    // do the instance heartbeat
-    private static void heartbeat(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        // do heartbeat
-        InstanceHeartbeatRequest heartbeatRequest = new InstanceHeartbeatRequest();
-        heartbeatRequest.setNamespace(namespace);
-        heartbeatRequest.setService(service);
-        heartbeatRequest.setHost(host);
-        heartbeatRequest.setPort(port);
-        providerAPI.heartbeat(heartbeatRequest);
-        System.out.printf("heartbeat instance, address is %s:%d%n", host, port);
     }
 
     // do the instance deregister

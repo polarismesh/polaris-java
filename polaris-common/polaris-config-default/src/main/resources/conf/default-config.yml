@@ -83,6 +83,13 @@ global:
         #类型:string
         #默认值: /metric
         path: /metric
+  location:
+    providers:
+      - type: local
+        options:
+          region: ${REGION:}
+          zone: ${ZONE:}
+          campus: ${CAMPUS:}
 #描述: 主调端配置
 consumer:
   # Switch of discovery.
