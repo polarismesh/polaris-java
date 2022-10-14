@@ -82,16 +82,16 @@ public class WatchFlow {
                 key -> Collections.synchronizedSet(new HashSet<>()));
         List<ServiceListener> addListeners = request.getWatchServiceRequest().getListeners();
         Set<ServiceListener> existListeners = watchers.get(serviceKey);
-        List<ServiceListener> firstAddedListeners = addListeners.stream().filter(existListeners::add)
-                .collect(Collectors.toList());
-        boolean result = CollectionUtils.isNotEmpty(firstAddedListeners);
-        if (result) {
+        List<ServiceListener> firstAddedListeners = addListeners.stream()
+                .filter(serviceListener -> !existListeners.contains(serviceListener)).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(firstAddedListeners)) {
             ServiceChangeEvent event = ServiceChangeEvent.builder().serviceKey(serviceKey)
                     .addInstances(Arrays.asList(response.getInstances()))
                     .allInstances(Arrays.asList(response.getInstances())).build();
             firstAddedListeners.forEach(
                     serviceListener -> executor.execute(event.getServiceKey(), () -> serviceListener.onEvent(event)));
         }
+        boolean result = existListeners.addAll(addListeners);
         return new WatchServiceResponse(response, result);
     }
 
