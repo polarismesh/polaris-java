@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-all</artifactId>
-            <version>${project.version}</version>
+            <version>${project.version}</version>A
         </dependency>
         <dependency>
             <groupId>commons-cli</groupId>

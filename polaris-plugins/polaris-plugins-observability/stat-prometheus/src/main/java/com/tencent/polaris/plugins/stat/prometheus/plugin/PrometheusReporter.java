@@ -53,7 +53,7 @@ import org.slf4j.Logger;
 public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusReporter.class);
-    private StatInfoHandler statInfoHandler;
+    private PrometheusHandler statInfoHandler;
     private PrometheusHttpServer httpServer;
     private ScheduledExecutorService reportClientExecutor;
 
@@ -73,7 +73,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             String host =
                     StringUtils.isBlank(config.getHost()) ? extensions.getValueContext().getHost() : config.getHost();
             statInfoHandler = new PrometheusHandler(host);
-            httpServer = new PrometheusHttpServer(host, config.getPort());
+            httpServer = new PrometheusHttpServer(host, config.getPort(), statInfoHandler.getPromRegistry());
             reportClientExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(getName()));
             reportClient(extensions);
         }
