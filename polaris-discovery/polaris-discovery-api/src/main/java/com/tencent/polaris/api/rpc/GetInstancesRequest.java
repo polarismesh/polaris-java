@@ -17,9 +17,12 @@
 
 package com.tencent.polaris.api.rpc;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.SourceService;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * 批量服务实例查询请求
@@ -37,7 +40,7 @@ public class GetInstancesRequest extends RequestBaseEntity {
     /**
      * 主调方服务信息
      */
-    private SourceService serviceInfo;
+    private SourceService sourceService;
 
     /**
      * 是否返回熔断实例，默认否
@@ -88,12 +91,31 @@ public class GetInstancesRequest extends RequestBaseEntity {
     }
 
 
-    public SourceService getServiceInfo() {
+    @Deprecated
+    public ServiceInfo getServiceInfo() {
+        ServiceInfo serviceInfo = new ServiceInfo();
+        serviceInfo.setNamespace(sourceService.getNamespace());
+        serviceInfo.setService(sourceService.getService());
+        serviceInfo.setMetadata(sourceService.getMetadata());
         return serviceInfo;
     }
 
-    public void setServiceInfo(SourceService serviceInfo) {
-        this.serviceInfo = serviceInfo;
+    @Deprecated
+    public void setServiceInfo(ServiceInfo serviceInfo) {
+        SourceService sourceService = new SourceService();
+        sourceService.setNamespace(serviceInfo.getNamespace());
+        sourceService.setService(serviceInfo.getService());
+        serviceInfo.getMetadata().forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
+
+        this.sourceService = sourceService;
+    }
+
+    public SourceService getSourceService() {
+        return sourceService;
+    }
+
+    public void setSourceService(SourceService sourceService) {
+        this.sourceService = sourceService;
     }
 
     public String getCanary() {
@@ -125,7 +147,7 @@ public class GetInstancesRequest extends RequestBaseEntity {
     public String toString() {
         return "GetInstancesRequest{" +
                 "metadata=" + metadata +
-                ", serviceInfo=" + serviceInfo +
+                ", sourceService=" + sourceService +
                 ", includeCircuitBreak=" + includeCircuitBreak +
                 ", includeUnhealthy=" + includeUnhealthy +
                 ", canary='" + canary + '\'' +

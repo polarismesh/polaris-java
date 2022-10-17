@@ -98,7 +98,7 @@ public class ServiceDynamicRuleTest {
         Map<String, String> map = new HashMap<>();
         map.put("uid", "144115217417489762");
 
-        SourceService serviceInfo = new SourceService();
+        ServiceInfo serviceInfo = new SourceService();
         serviceInfo.setNamespace(NAMESPACE_PRODUCTION);
         serviceInfo.setService(RULE_ROUTER_SERVICE);
         serviceInfo.setMetadata(map);

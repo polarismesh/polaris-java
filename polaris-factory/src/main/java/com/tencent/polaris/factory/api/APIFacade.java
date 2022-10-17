@@ -203,7 +203,7 @@ public class APIFacade {
             srcLabels.forEach(
                     (labelKey, labelValue) -> serviceInfo.appendArguments(RouteArgument.fromLabel(labelKey, labelValue)));
 
-            getInstancesRequest.setServiceInfo(serviceInfo);
+            getInstancesRequest.setSourceService(serviceInfo);
         }
         if (MapUtils.isNotEmpty(dstLabels)) {
             getInstancesRequest.setMetadata(dstLabels);
