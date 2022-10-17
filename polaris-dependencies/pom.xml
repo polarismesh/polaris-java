@@ -173,6 +173,12 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>local-file-configuration-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-connector-common -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
@@ -309,6 +315,28 @@
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-canary</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- polaris-plugins-location-->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>location-provider-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>location-provider-local</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>location-provider-remotehttp</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>location-provider-remoteservice</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

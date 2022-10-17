@@ -20,9 +20,12 @@ package com.tencent.polaris.factory.config.global;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
+import com.tencent.polaris.api.config.global.LocationConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,11 @@ public class GlobalConfigImpl implements GlobalConfig {
     @JsonProperty
     private StatReporterConfigImpl statReporter;
 
+
+    @JsonProperty
+    private LocationConfigImpl location;
+
+
     @Override
     public SystemConfigImpl getSystem() {
         return system;
@@ -66,6 +74,12 @@ public class GlobalConfigImpl implements GlobalConfig {
     @Override
     public ServerConnectorConfigImpl getServerConnector() {
         return serverConnector;
+    }
+
+
+    @Override
+    public LocationConfig getLocation() {
+        return location;
     }
 
     public void setServerConnector(ServerConnectorConfigImpl serverConnector) {
@@ -139,6 +153,9 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (null == statReporter) {
             statReporter = new StatReporterConfigImpl();
         }
+        if (null == location) {
+            location = new LocationConfigImpl();
+        }
         if (null != defaultObject) {
             GlobalConfig globalConfig = (GlobalConfig) defaultObject;
             system.setDefault(globalConfig.getSystem());
@@ -158,6 +175,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 serverConnector.setDefault(globalConfig.getServerConnector());
             }
             statReporter.setDefault(globalConfig.getStatReporter());
+            location.setDefault(globalConfig.getLocation());
         }
     }
 

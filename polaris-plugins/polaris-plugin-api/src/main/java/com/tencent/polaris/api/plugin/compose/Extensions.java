@@ -20,6 +20,8 @@ package com.tencent.polaris.api.plugin.compose;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
+import com.tencent.polaris.api.config.global.LocationConfig;
+import com.tencent.polaris.api.config.global.LocationProviderConfig;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.Supplier;
@@ -29,14 +31,20 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
+import com.tencent.polaris.api.plugin.location.LocationProvider;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
+import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.ToIntFunction;
+
 import org.slf4j.Logger;
 
 /**
@@ -142,10 +150,47 @@ public class Extensions {
 
         serverConnector = (ServerConnector) plugins.getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
                 valueContext.getServerConnectorProtocol());
+
+        initLocation(config, valueContext);
     }
 
     public ValueContext getValueContext() {
         return valueContext;
+    }
+
+    /**
+     * get sdk current location from {@link List<LocationProvider>} providers
+     * have one {@link LocationProvider} get location, stop. if not, use next {@link LocationProvider} to get
+     * chain order: local -> remote http -> remote service
+     */
+    private void initLocation(Configuration config, ValueContext valueContext) {
+        LocationConfig locationConfig = config.getGlobal().getLocation();
+        List<LocationProvider> providers = new ArrayList<>();
+
+        for (LocationProviderConfig providerConfig : locationConfig.getProviders()) {
+            Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.LOCAL_PROVIDER.getBaseType(), providerConfig.getTye());
+            if (null == pluginValue) {
+                LOG.warn("locationProvider plugin {} not found", providerConfig.getTye());
+                continue;
+            }
+
+            providers.add((LocationProvider) pluginValue);
+        }
+
+        providers.sort(Comparator.comparingInt(o -> o.getProviderType().getPriority()));
+
+        for (LocationProvider provider : providers) {
+            ModelProto.Location location = provider.getLocation();
+            if (location == null) {
+                LOG.info("locationProvider plugin {} not found location", provider.getName());
+                continue;
+            }
+            valueContext.setValue(LocationLevel.region.name(), location.getRegion().getValue());
+            valueContext.setValue(LocationLevel.zone.name(), location.getZone().getValue());
+            valueContext.setValue(LocationLevel.campus.name(), location.getCampus().getValue());
+            valueContext.notifyAllForLocationReady();
+            break;
+        }
     }
 
     private void loadOutlierDetector(Configuration config, Supplier plugins) throws PolarisException {

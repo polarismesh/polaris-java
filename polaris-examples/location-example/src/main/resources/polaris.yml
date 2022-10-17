@@ -1,0 +1,20 @@
+global:
+  serverConnectors:
+    - protocol: grpc
+      addresses:
+        - 127.0.0.1:8091
+  statReporter:
+    enable: true
+    plugin:
+      prometheus:
+        port: 28082
+  location:
+    providers:
+      - type: remoteHttp
+        options:
+          region: http://127.0.0.1:15900/region
+          zone: http://127.0.0.1:15900/zone
+          campus: http://127.0.0.1:15900/campus
+      - type: remoteService
+        options:
+          target: 127.0.0.1:16000

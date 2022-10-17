@@ -22,5 +22,9 @@ consumer:
 config:
   serverConnector:
     connectorType: polaris
+    #connectorType: localFile
+    #persistEnable: true
+    #fallbackToLocalCache: true
+    #persistDir: test/custom/config
     addresses:
       - 127.0.0.1:8093

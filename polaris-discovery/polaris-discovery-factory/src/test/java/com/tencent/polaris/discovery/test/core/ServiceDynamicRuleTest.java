@@ -1,6 +1,7 @@
 package com.tencent.polaris.discovery.test.core;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_PRODUCTION;
+import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
@@ -42,7 +43,8 @@ public class ServiceDynamicRuleTest {
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(-1);
+            System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }

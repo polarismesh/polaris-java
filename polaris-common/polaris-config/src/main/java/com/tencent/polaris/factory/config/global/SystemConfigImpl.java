@@ -134,6 +134,7 @@ public class SystemConfigImpl implements SystemConfig {
     @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "SystemConfigImpl{" +
+                "flowCache=" + flowCache +
                 ", discoverCluster=" + discoverCluster +
                 ", configCluster=" + configCluster +
                 ", healthCheckCluster=" + healthCheckCluster +

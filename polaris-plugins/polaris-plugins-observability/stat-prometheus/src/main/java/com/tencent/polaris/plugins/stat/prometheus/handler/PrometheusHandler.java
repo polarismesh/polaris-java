@@ -358,7 +358,7 @@ public class PrometheusHandler implements StatInfoHandler {
         return host + ":" + port;
     }
 
-    protected CollectorRegistry getPromRegistry() {
+    public CollectorRegistry getPromRegistry() {
         return promRegistry;
     }
 }
