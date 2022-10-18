@@ -40,8 +40,8 @@ public class ManagedChannelUtilTest {
         ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress("127.0.0.1", 8091).usePlaintext();
         ManagedChannelUtil.setChannelTls(builder, buildTlsCertificates());
         assertThat(builder.getClass().getName()).isEqualTo("io.grpc.netty.NettyChannelBuilder");
-        assertThat(builder).isInstanceOf(NettyChannelBuilder.class).extracting("sslContext")
-                .asInstanceOf(InstanceOfAssertFactories.type(SslContext.class)).isNotNull();
+        assertThat(builder).isInstanceOf(NettyChannelBuilder.class).extracting("protocolNegotiatorFactory")
+                .extracting("sslContext").asInstanceOf(InstanceOfAssertFactories.type(SslContext.class)).isNotNull();
     }
 
     private ChannelTlsCertificates buildTlsCertificates() throws URISyntaxException {
