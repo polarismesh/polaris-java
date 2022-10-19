@@ -21,7 +21,10 @@ import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.SourceService;
+
+import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
@@ -105,8 +108,9 @@ public class GetInstancesRequest extends RequestBaseEntity {
         SourceService sourceService = new SourceService();
         sourceService.setNamespace(serviceInfo.getNamespace());
         sourceService.setService(serviceInfo.getService());
-        serviceInfo.getMetadata().forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
-
+        Optional.ofNullable(serviceInfo.getMetadata())
+                .orElse(Collections.emptyMap())
+                .forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
         this.sourceService = sourceService;
     }
 

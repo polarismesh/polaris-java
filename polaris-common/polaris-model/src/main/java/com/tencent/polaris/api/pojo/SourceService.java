@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -68,5 +69,13 @@ public class SourceService extends ServiceInfo {
     @Override
     public void setMetadata(Map<String, String> metadata) {
         metadata.forEach((key, value) -> appendArguments(RouteArgument.buildCustom(key, value)));
+    }
+
+    @Deprecated
+    @Override
+    public Map<String, String> getMetadata() {
+        Map<String, String> ret = new HashMap<>();
+        arguments.forEach(argument -> ret.put(argument.getKey(), argument.getValue()));
+        return ret;
     }
 }
