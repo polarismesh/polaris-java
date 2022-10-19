@@ -207,6 +207,10 @@ public class CircuitBreakUtils {
             }
             return level;
         }
+
+        public static RuleDestinationResult defaultValue() {
+            return new RuleDestinationResult(null, false, false);
+        }
     }
 
     /**

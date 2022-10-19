@@ -54,6 +54,9 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     @JsonProperty
     private Integer successCountAfterHalfOpen;
 
+    @JsonProperty
+    private Boolean enableRemotePull;
+
     @Override
     public boolean isEnable() {
         if (null == enable) {
@@ -118,6 +121,18 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     }
 
     @Override
+    public boolean isEnableRemotePull() {
+        if (enableRemotePull == null) {
+            return false;
+        }
+        return enableRemotePull;
+    }
+
+    public void setEnableRemotePull(boolean enableRemotePull) {
+        this.enableRemotePull = enableRemotePull;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(enable, "circuitBreaker.enable");
         if (!enable) {
@@ -130,6 +145,7 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
         ConfigUtils.validateInterval(sleepWindow, "circuitBreaker.sleepWindow");
         ConfigUtils.validatePositive(requestCountAfterHalfOpen, "circuitBreaker.requestCountAfterHalfOpen");
         ConfigUtils.validatePositive(successCountAfterHalfOpen, "circuitBreaker.successCountAfterHalfOpen");
+        ConfigUtils.validateNull(enableRemotePull, "circuitBreaker.enableRemotePull");
         verifyPluginConfig();
     }
 
@@ -155,6 +171,9 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
             if (null == successCountAfterHalfOpen) {
                 setSuccessCountAfterHalfOpen(circuitBreakerConfig.getSuccessCountAfterHalfOpen());
             }
+            if (null == enableRemotePull) {
+                setEnableRemotePull(circuitBreakerConfig.isEnableRemotePull());
+            }
             if (enable) {
                 setDefaultPluginConfig(circuitBreakerConfig);
             }
@@ -171,6 +190,7 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
                 ", sleepWindow=" + sleepWindow +
                 ", requestCountAfterHalfOpen=" + requestCountAfterHalfOpen +
                 ", successCountAfterHalfOpen=" + successCountAfterHalfOpen +
+                ", enableRemotePull=" + enableRemotePull +
                 "} " + super.toString();
     }
 }

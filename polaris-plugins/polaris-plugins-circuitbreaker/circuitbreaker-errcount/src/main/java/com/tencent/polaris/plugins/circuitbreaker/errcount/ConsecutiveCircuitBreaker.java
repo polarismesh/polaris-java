@@ -89,6 +89,8 @@ public class ConsecutiveCircuitBreaker extends Destroyable implements CircuitBre
 
     private ConfigGroup<Config> configGroup;
 
+    private CircuitBreakerConfig circuitBreakerConfig;
+
     @Override
     public CircuitBreakResult checkInstance(Collection<Instance> instances) {
         if (CollectionUtils.isEmpty(instances)) {
@@ -159,7 +161,7 @@ public class ConsecutiveCircuitBreaker extends Destroyable implements CircuitBre
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        CircuitBreakerConfig circuitBreakerConfig = ctx.getConfig().getConsumer().getCircuitBreaker();
+        circuitBreakerConfig = ctx.getConfig().getConsumer().getCircuitBreaker();
         OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
         HalfOpenConfig halfOpenConfig = new HalfOpenConfig(circuitBreakerConfig, outlierDetection);
         Config cfg = circuitBreakerConfig.getPluginConfig(getName(), Config.class);
@@ -194,8 +196,9 @@ public class ConsecutiveCircuitBreaker extends Destroyable implements CircuitBre
         return configGroup.getServiceConfig(ruleIdentifier, new Function<RuleIdentifier, ConfigSet<Config>>() {
             @Override
             public ConfigSet<Config> apply(RuleIdentifier ruleIdentifier) {
-                RuleDestinationResult ruleDestResultConsecutive = CircuitBreakUtils
-                        .getRuleDestinationSet(ruleIdentifier, extensions, flowControlParam);
+                RuleDestinationResult ruleDestResultConsecutive = circuitBreakerConfig.isEnableRemotePull() ?
+                        CircuitBreakUtils.getRuleDestinationSet(ruleIdentifier, extensions, flowControlParam) :
+                        RuleDestinationResult.defaultValue();
                 DestinationSet ruleDestinationSetConsecutive = ruleDestResultConsecutive.getDestinationSet();
                 if (null == ruleDestinationSetConsecutive) {
                     return new ConfigSet<>(StatusDimension.Level.SERVICE, true, null, null);
