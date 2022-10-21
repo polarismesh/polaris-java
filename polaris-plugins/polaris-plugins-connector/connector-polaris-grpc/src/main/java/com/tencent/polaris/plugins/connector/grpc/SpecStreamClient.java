@@ -324,6 +324,9 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         if (isEndStream()) {
             return false;
         }
+        if (!Connection.isAvailableConnection(connection)) {
+            return false;
+        }
         synchronized (clientLock) {
             if (isEndStream()) {
                 return false;
