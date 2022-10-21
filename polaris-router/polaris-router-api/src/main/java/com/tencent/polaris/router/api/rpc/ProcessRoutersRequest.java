@@ -17,144 +17,207 @@
 
 package com.tencent.polaris.router.api.rpc;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * 路由处理请求
  */
 public class ProcessRoutersRequest extends RequestBaseEntity {
 
-    private ServiceInfo sourceService;
+	private ServiceInfo sourceService;
 
-    private RouterNamesGroup routers;
+	private RouterNamesGroup routers;
 
-    private ServiceInstances dstInstances;
+	private ServiceInstances dstInstances;
 
-    private String method;
+	private String method;
 
-    //各个路由插件依赖的 metadata 参数
-    private Map<String, Map<String, String>> routerMetadata;
-    //元数据路由降级策略
-    private MetadataFailoverType metadataFailoverType;
+	//各个路由插件依赖的 metadata 参数
+	private Map<String, Set<RouteArgument>> routerArgument;
+	//元数据路由降级策略
+	private MetadataFailoverType metadataFailoverType;
 
-    public ServiceInfo getSourceService() {
-        return sourceService;
-    }
+	public ServiceInfo getSourceService() {
+		return sourceService;
+	}
 
-    public void setSourceService(ServiceInfo sourceService) {
-        this.sourceService = sourceService;
-    }
+	public void setSourceService(ServiceInfo sourceService) {
+		this.sourceService = sourceService;
+	}
 
-    public String getMethod() {
-        return method;
-    }
+	public String getMethod() {
+		return method;
+	}
 
-    public void setMethod(String method) {
-        this.method = method;
-    }
+	public void setMethod(String method) {
+		this.method = method;
+	}
 
-    public RouterNamesGroup getRouters() {
-        return routers;
-    }
+	public RouterNamesGroup getRouters() {
+		return routers;
+	}
 
-    public void setRouters(RouterNamesGroup routers) {
-        this.routers = routers;
-    }
+	public void setRouters(RouterNamesGroup routers) {
+		this.routers = routers;
+	}
 
-    public ServiceInstances getDstInstances() {
-        return dstInstances;
-    }
+	public ServiceInstances getDstInstances() {
+		return dstInstances;
+	}
 
-    public void setDstInstances(ServiceInstances dstInstances) {
-        this.dstInstances = dstInstances;
-    }
+	public void setDstInstances(ServiceInstances dstInstances) {
+		this.dstInstances = dstInstances;
+	}
 
-    public void putRouterMetadata(String routerType, Map<String, String> metadata) {
-        if (MapUtils.isEmpty(metadata)) {
-            return;
-        }
-        if (routerMetadata == null) {
-            routerMetadata = new HashMap<>();
-        }
-        routerMetadata.put(routerType, metadata);
-    }
+	public void putRouterArgument(String routerType, Set<RouteArgument> arguments) {
+		if (CollectionUtils.isEmpty(arguments)) {
+			return;
+		}
+		if (routerArgument == null) {
+			routerArgument = new HashMap<>();
+		}
 
-    public void addRouterMetadata(String routerType, Map<String, String> metadata) {
-        if (MapUtils.isEmpty(metadata)) {
-            return;
-        }
+		routerArgument.put(routerType, arguments);
+	}
 
-        if (routerMetadata == null) {
-            routerMetadata = new HashMap<>();
-        }
+	public void addRouterMetadata(String routerType, Set<RouteArgument> arguments) {
+		if (CollectionUtils.isEmpty(arguments)) {
+			return;
+		}
 
-        Map<String, String> subRouterMetadata = routerMetadata.computeIfAbsent(routerType, k -> new HashMap<>());
+		if (routerArgument == null) {
+			routerArgument = new HashMap<>();
+		}
 
-        subRouterMetadata.putAll(metadata);
-    }
+		Set<RouteArgument> subArguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
+		subArguments.addAll(arguments);
+	}
 
-    public Map<String, String> getRouterMetadata(String routerType) {
-        if (routerMetadata == null) {
-            return Collections.emptyMap();
-        }
-        Map<String, String> metadata = routerMetadata.get(routerType);
-        if (metadata == null || metadata.size() == 0) {
-            return Collections.emptyMap();
-        }
-        return Collections.unmodifiableMap(metadata);
-    }
+	public Set<RouteArgument> getRouterArguments(String routerType) {
+		if (routerArgument == null) {
+			return Collections.emptySet();
+		}
+		Set<RouteArgument> arguments = routerArgument.get(routerType);
+		if (arguments == null || arguments.size() == 0) {
+			return Collections.emptySet();
+		}
+		return Collections.unmodifiableSet(arguments);
+	}
 
-    public Map<String, Map<String, String>> getRouterMetadata() {
-        return routerMetadata;
-    }
+	public Map<String, Set<RouteArgument>> getRouterArguments() {
+		return Collections.unmodifiableMap(routerArgument);
+	}
 
-    public MetadataFailoverType getMetadataFailoverType() {
-        return metadataFailoverType;
-    }
+	public MetadataFailoverType getMetadataFailoverType() {
+		return metadataFailoverType;
+	}
 
-    public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
-        this.metadataFailoverType = metadataFailoverType;
-    }
+	public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
+		this.metadataFailoverType = metadataFailoverType;
+	}
 
-    public static class RouterNamesGroup {
+	@Deprecated
+	public void putRouterMetadata(String routerType, Map<String, String> metadata) {
+		if (MapUtils.isEmpty(metadata)) {
+			return;
+		}
+		if (routerArgument == null) {
+			routerArgument = new HashMap<>();
+		}
 
-        private List<String> beforeRouters;
+		Set<RouteArgument> arguments = new HashSet<>();
+		metadata.forEach((key, value) -> arguments.add(RouteArgument.fromLabel(key, value)));
 
-        private List<String> coreRouters;
+		routerArgument.put(routerType, arguments);
+	}
 
-        private List<String> afterRouters;
+	@Deprecated
+	public void addRouterMetadata(String routerType, Map<String, String> metadata) {
+		if (MapUtils.isEmpty(metadata)) {
+			return;
+		}
 
-        public List<String> getBeforeRouters() {
-            return beforeRouters;
-        }
+		if (routerArgument == null) {
+			routerArgument = new HashMap<>();
+		}
 
-        public void setBeforeRouters(List<String> beforeRouters) {
-            this.beforeRouters = beforeRouters;
-        }
+		Set<RouteArgument> arguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
+		metadata.forEach((key, value) -> arguments.add(RouteArgument.fromLabel(key, value)));
+	}
 
-        public List<String> getCoreRouters() {
-            return coreRouters;
-        }
+	@Deprecated
+	public Map<String, String> getRouterMetadata(String routerType) {
+		if (routerArgument == null) {
+			return Collections.emptyMap();
+		}
+		Set<RouteArgument> arguments = routerArgument.get(routerType);
+		if (CollectionUtils.isEmpty(arguments)) {
+			return Collections.emptyMap();
+		}
 
-        public void setCoreRouters(List<String> coreRouters) {
-            this.coreRouters = coreRouters;
-        }
+        Map<String, String> metadata = new HashMap<>();
+        arguments.forEach(argument -> argument.toLabel(metadata));
 
-        public List<String> getAfterRouters() {
-            return afterRouters;
-        }
+		return Collections.unmodifiableMap(metadata);
+	}
 
-        public void setAfterRouters(List<String> afterRouters) {
-            this.afterRouters = afterRouters;
-        }
-    }
+    @Deprecated
+	public Map<String, Map<String, String>> getRouterMetadata() {
+        Map<String, Map<String, String>> ret = new HashMap<>();
+
+        routerArgument.forEach((routerType, arguments) -> {
+            Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
+            arguments.forEach(argument -> argument.toLabel(entry));
+        });
+
+		return ret;
+	}
+
+	public static class RouterNamesGroup {
+
+		private List<String> beforeRouters;
+
+		private List<String> coreRouters;
+
+		private List<String> afterRouters;
+
+		public List<String> getBeforeRouters() {
+			return beforeRouters;
+		}
+
+		public void setBeforeRouters(List<String> beforeRouters) {
+			this.beforeRouters = beforeRouters;
+		}
+
+		public List<String> getCoreRouters() {
+			return coreRouters;
+		}
+
+		public void setCoreRouters(List<String> coreRouters) {
+			this.coreRouters = coreRouters;
+		}
+
+		public List<String> getAfterRouters() {
+			return afterRouters;
+		}
+
+		public void setAfterRouters(List<String> afterRouters) {
+			this.afterRouters = afterRouters;
+		}
+	}
 }

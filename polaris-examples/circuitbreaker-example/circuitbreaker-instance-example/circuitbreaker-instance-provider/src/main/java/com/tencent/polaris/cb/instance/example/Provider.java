@@ -37,9 +37,6 @@ import java.net.URI;
 import java.net.URLDecoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class Provider {
 
@@ -48,8 +45,6 @@ public class Provider {
 	private static final String ECHO_SERVICE_NAME = "CircuitBreakerServiceJava";
 
 	private static final int LISTEN_PORT = 0;
-
-	private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
 
 	public static void main(String[] args) throws Exception {
 
@@ -64,23 +59,9 @@ public class Provider {
 		Configuration configuration = ConfigAPIFactory.defaultConfig();
 		String localHost = getLocalHost(configuration);
 
-//        List<ServerConnectorConfigImpl> connectorConfigList = configuration.getGlobal().getServerConnectors();
-//        for (ServerConnectorConfigImpl serverConnectorConfig : connectorConfigList) {
-//            if (DefaultPlugins.SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
-//                Map<String, String> metadata = serverConnectorConfig.getMetadata();
-//                metadata.put(MetadataMapKey.INSTANCE_ID_KEY, "EJ-111");
-//                metadata.put(MetadataMapKey.IP_ADDRESS_KEY, "localhost");
-//                metadata.put(MetadataMapKey.PREFER_IP_ADDRESS_KEY, "true");
-//            }
-//        }
-
 		ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
-		HEARTBEAT_EXECUTOR
-				.schedule(new RegisterTask(namespace, service, localHost, localPort, providerAPI),
-						500,
-						TimeUnit.MILLISECONDS);
+		register(namespace, service, localHost, localPort, providerAPI);
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			HEARTBEAT_EXECUTOR.shutdown();
 			server.stop(1);
 			deregister(namespace, service, localHost, localPort, providerAPI);
 			providerAPI.close();
@@ -88,18 +69,18 @@ public class Provider {
 		server.start();
 	}
 
-	// do the instance register
-	private static void register(String namespace, String service, String host, int port,
-			ProviderAPI providerAPI) {
-		InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
-		registerRequest.setNamespace(namespace);
-		registerRequest.setService(service);
-		registerRequest.setHost(host);
-		registerRequest.setPort(port);
-		InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
-		System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
-				host, port, service, namespace, registerResp.getInstanceId());
-	}
+    // do the instance register
+    private static void register(String namespace, String service, String host, int port,
+            ProviderAPI providerAPI) {
+        InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
+        registerRequest.setNamespace(namespace);
+        registerRequest.setService(service);
+        registerRequest.setHost(host);
+        registerRequest.setPort(port);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
+        System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
+                host, port, service, namespace, registerResp.getInstanceId());
+    }
 
 	// do the instance deregister
 	private static void deregister(String namespace, String service, String host, int port,
@@ -130,33 +111,6 @@ public class Provider {
 		String[] tokens = serverAddress.split(":");
 		try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
 			return socket.getLocalAddress().getHostAddress();
-		}
-	}
-
-	private static class RegisterTask implements Runnable {
-
-		private final String namespace;
-
-		private final String service;
-
-		private final String host;
-
-		private final int port;
-
-		private final ProviderAPI providerAPI;
-
-		public RegisterTask(String namespace, String service, String host, int port,
-				ProviderAPI providerAPI) {
-			this.namespace = namespace;
-			this.service = service;
-			this.host = host;
-			this.port = port;
-			this.providerAPI = providerAPI;
-		}
-
-		@Override
-		public void run() {
-			Provider.register(namespace, service, host, port, providerAPI);
 		}
 	}
 

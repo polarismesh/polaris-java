@@ -23,6 +23,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+
+import io.prometheus.client.CollectorRegistry;
 import org.junit.After;
 import org.junit.Test;
 
@@ -37,7 +39,7 @@ public class PrometheusHttpServerTest {
 
     @Test
     public void testHttpServerWithPort() throws IOException {
-        httpServer = new PrometheusHttpServer("127.0.0.1", 18080);
+        httpServer = new PrometheusHttpServer("127.0.0.1", 18080, CollectorRegistry.defaultRegistry);
         URL metricsUrl = new URL("http://127.0.0.1:18080/metrics");
         HttpURLConnection metricsConn = (HttpURLConnection) metricsUrl.openConnection();
         metricsConn.setRequestMethod("GET");
@@ -48,7 +50,7 @@ public class PrometheusHttpServerTest {
 
     @Test
     public void testHttpServerRandomPort() throws IOException {
-        httpServer = new PrometheusHttpServer("127.0.0.1", 0);
+        httpServer = new PrometheusHttpServer("127.0.0.1", 0, CollectorRegistry.defaultRegistry);
         int port = httpServer.getPort();
         assertThat(port).isGreaterThan(20000).isLessThan(65535);
         URL metricsUrl = new URL("http://127.0.0.1:" + port + "/metrics");
@@ -61,7 +63,7 @@ public class PrometheusHttpServerTest {
 
     @Test
     public void testHttpServerWithPath() throws IOException {
-        httpServer = new PrometheusHttpServer("127.0.0.1", 18081, "/customMetrics");
+        httpServer = new PrometheusHttpServer("127.0.0.1", 18081, "/customMetrics", CollectorRegistry.defaultRegistry);
         URL metricsUrl = new URL("http://127.0.0.1:18081/customMetrics");
         HttpURLConnection metricsConn = (HttpURLConnection) metricsUrl.openConnection();
         metricsConn.setRequestMethod("GET");

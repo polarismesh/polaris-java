@@ -27,6 +27,7 @@ import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
@@ -124,7 +125,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         svcEventKeys.add(dstInstanceEventKey);
         dstRuleEventKey = new ServiceEventKey(dstSvcKey, EventType.ROUTING);
         svcEventKeys.add(dstRuleEventKey);
-        ServiceMetadata srcServiceInfo = request.getServiceInfo();
+        SourceService srcServiceInfo = request.getServiceInfo();
         if (null != srcServiceInfo && !StringUtils.isBlank(srcServiceInfo.getNamespace()) && !StringUtils
                 .isBlank(srcServiceInfo.getService())) {
             ServiceKey srcService = new ServiceKey(srcServiceInfo.getNamespace(), srcServiceInfo.getService());
@@ -156,7 +157,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         svcEventKeys.add(dstInstanceEventKey);
         dstRuleEventKey = new ServiceEventKey(dstSvcKey, EventType.ROUTING);
         svcEventKeys.add(dstRuleEventKey);
-        ServiceMetadata srcServiceInfo = request.getServiceInfo();
+        SourceService srcServiceInfo = request.getSourceService();
         if (null != srcServiceInfo && StringUtils.isNotBlank(srcServiceInfo.getNamespace()) && StringUtils
                 .isNotBlank(srcServiceInfo.getService())) {
             ServiceKey srcService = new ServiceKey(srcServiceInfo.getNamespace(), srcServiceInfo.getService());
