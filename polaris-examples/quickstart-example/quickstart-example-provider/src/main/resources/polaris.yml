@@ -1,10 +1,16 @@
 global:
   serverConnectors:
-    - protocol: grpc
+    - id: polaris
+      protocol: grpc
       addresses:
         - 127.0.0.1:8091
+#    - id: nacos
+#      protocol: nacos
+#      addresses:
+#        - nacos:nacos@127.0.0.1:8848
   statReporter:
     enable: true
     plugin:
       prometheus:
+        pushgatewayAddress: 127.0.0.1:9091
         port: 28082

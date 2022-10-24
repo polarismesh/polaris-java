@@ -17,12 +17,13 @@
 
 package com.tencent.polaris.plugins.connector.composite;
 
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
-
 import com.google.common.collect.Lists;
 import com.tencent.polaris.api.utils.StringUtils;
 import java.util.List;
+
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
 
 /**
  * Revision handler for multi-discovery server.
@@ -31,7 +32,7 @@ import java.util.List;
  */
 public class CompositeRevision {
 
-    private static final List<String> ORDER_LIST = Lists.newArrayList(SERVER_CONNECTOR_GRPC, SERVER_CONNECTOR_CONSUL);
+    private static final List<String> ORDER_LIST = Lists.newArrayList(SERVER_CONNECTOR_GRPC, SERVER_CONNECTOR_CONSUL, SERVER_CONNECTOR_NACOS);
 
     private static final String BIG_SEPARATOR = ";";
 

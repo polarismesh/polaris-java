@@ -207,6 +207,13 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- nacos-connector -->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>connector-nacos</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-plugins-healthchecker-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
