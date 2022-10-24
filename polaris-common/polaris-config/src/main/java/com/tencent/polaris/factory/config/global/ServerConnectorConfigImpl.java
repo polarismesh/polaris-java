@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
  */
 public class ServerConnectorConfigImpl extends PluginConfigImpl implements ServerConnectorConfig {
 
-    private static final Pattern addressPattern = Pattern.compile("([a-zA-Z\\d]+(:)[a-zA-Z\\d~!@&%#_]+@)?(.*)(:)\\d+(/[a-zA-Z\\d-]*)?$");
+    private static final Pattern addressPattern = Pattern.compile("([a-zA-Z\\d]+(:)[a-zA-Z\\d~!@&%#_]+@)?(.*)(:)\\d+$");
     private final Map<String, String> metadata = new ConcurrentHashMap<>();
     @JsonProperty
     private List<String> addresses;

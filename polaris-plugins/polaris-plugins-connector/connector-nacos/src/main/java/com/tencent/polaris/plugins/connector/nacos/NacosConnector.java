@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.nacos;
 
+import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.google.common.collect.Lists;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
@@ -53,6 +53,7 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import java.lang.Exception;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,13 +61,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_CLUSTER_NAME;
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
-import static com.tencent.polaris.api.exception.ErrorCode.PLUGIN_ERROR;
+import static com.alibaba.nacos.api.common.Constants.*;
 
 /**
  * An implement of {@link ServerConnector} to connect to Nacos Server.
@@ -106,19 +106,21 @@ public class NacosConnector extends DestroyableServerConnector {
     private boolean isDiscoveryEnable = true;
 
     /**
-     * Marking service is already registered or not .
+     * Nacos Config Properties .
      */
-    private boolean isRegistered = false;
+    private Properties nacosProperties = new Properties();
 
     /**
-     * Nacos Naming Service Instance .
+     * Nacos namespace & NamingService mappings .
      */
-    private NamingService namingService;
+    private final Map<String, NamingService> namingServices = new ConcurrentHashMap<>();
 
     /**
-     * Nacos Service Merger .
+     * Nacos namespace & NacosServiceMerger mappings .
      */
-    private NacosServiceMerger merger;
+    private final Map<String, NacosServiceMerger> mergers = new ConcurrentHashMap<>();
+
+    private final Object lock = new Object();
 
     private static final int NACOS_SERVICE_PAGESIZE = 10;
 
@@ -155,20 +157,12 @@ public class NacosConnector extends DestroyableServerConnector {
             isDiscoveryEnable = ctx.getConfig().getConsumer().getDiscoveryConfigMap().get(id).isEnable();
         }
 
-        Properties properties = this.decodeNacosConfigProperties(connectorConfig);
-
-        try {
-            namingService = new NacosNamingService(properties);
-            merger = new NacosServiceMerger(namingService);
-
-        } catch (NacosException e) {
-            throw new PolarisException(PLUGIN_ERROR, "Connector plugin nacos initialized failed , msg : " + e.getErrMsg());
-        }
+        nacosProperties = this.decodeNacosConfigProperties(connectorConfig);
     }
 
     private Properties decodeNacosConfigProperties(ServerConnectorConfig config) {
         Properties properties = new Properties();
-        // Nacos Address URI: nacos:nacos@127.0.0.1:8848/namespace
+        // Nacos Address URI: nacos:nacos@127.0.0.1:8848
         String address = config.getAddresses().get(0);
         if (address.indexOf("@") > 0) {
             String[] parts = address.split("@");
@@ -177,22 +171,40 @@ public class NacosConnector extends DestroyableServerConnector {
                 properties.put(PropertyKeyConst.USERNAME, auths[0]);
                 properties.put(PropertyKeyConst.PASSWORD, auths[1]);
             }
-            if (parts[1].indexOf("/") > 0) {
-                String[] subparts = parts[1].split("/");
-                if (subparts.length == 1) {
-                    properties.put(PropertyKeyConst.SERVER_ADDR, subparts[0]);
-                } else if (subparts.length > 1) {
-                    properties.put(PropertyKeyConst.SERVER_ADDR, subparts[0]);
-                    properties.put(PropertyKeyConst.NAMESPACE, subparts[1]);
-                }
-            } else {
-                properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
-            }
+
+            properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
         } else {
             properties.put(PropertyKeyConst.USERNAME, "nacos");
             properties.put(PropertyKeyConst.PASSWORD, "nacos");
         }
         return properties;
+    }
+
+    private NamingService getOrCreateNamingService(String namespace) {
+        NamingService namingService = namingServices.get(namespace);
+        if (namingService != null) {
+            return namingService;
+        }
+
+        synchronized (lock) {
+            Properties properties = new Properties(nacosProperties);
+            properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
+            try {
+                namingService = NacosFactory.createNamingService(properties);
+            } catch (NacosException e) {
+                LOG.error("[Nacos] fail to create naming service to {}, namespace {}", properties.get(PropertyKeyConst.SERVER_ADDR), namespace, e);
+                return null;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            namingServices.put(namespace, namingService);
+            mergers.put(namespace, new NacosServiceMerger(namingService));
+            return namingService;
+        }
     }
 
     @Override
@@ -213,7 +225,15 @@ public class NacosConnector extends DestroyableServerConnector {
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req, Map<String, String> customHeader) throws PolarisException {
         CommonProviderResponse response = new CommonProviderResponse();
-        if (isRegisterEnable() && !isRegistered) {
+
+        if (isRegisterEnable()) {
+            NamingService namingService = getOrCreateNamingService(req.getNamespace());
+
+            if (namingService == null) {
+                LOG.error("[Nacos] fail to lookup namingService for service {}", req.getService());
+                return null;
+            }
+
             try {
                 String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), req.getService(), req.getHost(), req.getPort());
                 Instance instance = new Instance();
@@ -228,7 +248,6 @@ public class NacosConnector extends DestroyableServerConnector {
                 instance.setMetadata(req.getMetadata());
                 // register with nacos naming service
                 namingService.registerInstance(req.getService(), DEFAULT_GROUP, instance);
-                isRegistered = true;
                 response.setInstanceID(instanceId);
             } catch (NacosException e) {
                 throw new RetriableException(ErrorCode.NETWORK_ERROR,
@@ -241,27 +260,32 @@ public class NacosConnector extends DestroyableServerConnector {
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
-        if (isRegistered) {
-            try {
-                String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), req.getService(), req.getHost(), req.getPort());
-                Instance instance = new Instance();
-                instance.setInstanceId(instanceId);
-                instance.setClusterName(DEFAULT_CLUSTER_NAME);
-                instance.setEnabled(true);
-                instance.setEphemeral(true);
-                instance.setPort(req.getPort());
-                instance.setIp(req.getHost());
-                instance.setHealthy(true);
-                instance.setServiceName(req.getService());
-                instance.setMetadata(req.getMetadata());
-                // register with nacos naming service
-                namingService.deregisterInstance(req.getService(), DEFAULT_GROUP, instance);
-                isRegistered = false;
-            } catch (NacosException e) {
-                throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format("fail to deregister host %s:%d service %s", req.getHost(), req.getPort(),
-                        req.getService()), e);
+
+        try {
+            NamingService service = getOrCreateNamingService(req.getNamespace());
+
+            if (service == null) {
+                LOG.error("[Nacos] fail to lookup namingService for service {}", req.getService());
+                return;
             }
+
+            String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), req.getService(), req.getHost(), req.getPort());
+            Instance instance = new Instance();
+            instance.setInstanceId(instanceId);
+            instance.setClusterName(DEFAULT_CLUSTER_NAME);
+            instance.setEnabled(true);
+            instance.setEphemeral(true);
+            instance.setPort(req.getPort());
+            instance.setIp(req.getHost());
+            instance.setHealthy(true);
+            instance.setServiceName(req.getService());
+            instance.setMetadata(req.getMetadata());
+            // register with nacos naming service
+            service.deregisterInstance(req.getService(), DEFAULT_GROUP, instance);
+        } catch (NacosException e) {
+            throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                String.format("fail to deregister host %s:%d service %s", req.getHost(), req.getPort(),
+                    req.getService()), e);
         }
     }
 
@@ -284,8 +308,18 @@ public class NacosConnector extends DestroyableServerConnector {
     public ServiceInstancesResponse syncGetServiceInstances(ServiceUpdateTask serviceUpdateTask) {
         List<DefaultInstance> instanceList = new ArrayList<>();
         try {
+
+            String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
+            NamingService namingService = getOrCreateNamingService(namespace);
+            NacosServiceMerger merger = mergers.get(namespace);
+
+            if (namingService == null || merger == null) {
+                LOG.error("[Nacos] fail to lookup namingService for service {}", namespace);
+                return null;
+            }
+
             List<Instance> serviceList =
-                this.namingService.getAllInstances(serviceUpdateTask.getServiceEventKey().getService(),
+                namingService.getAllInstances(serviceUpdateTask.getServiceEventKey().getService(),
                     DEFAULT_GROUP, Lists.newArrayList(DEFAULT_CLUSTER_NAME));
 
             // subscribe service instance change .
@@ -323,7 +357,16 @@ public class NacosConnector extends DestroyableServerConnector {
     public Services syncGetServices(ServiceUpdateTask serviceUpdateTask) {
         Services services = new ServicesByProto(new ArrayList<>());
         try {
-            ListView<String> serviceList = this.namingService.getServicesOfServer(1, NACOS_SERVICE_PAGESIZE, DEFAULT_GROUP);
+
+            String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
+            NamingService namingService = getOrCreateNamingService(namespace);
+
+            if (namingService == null) {
+                LOG.error("[Nacos] fail to lookup namingService for service {}", namespace);
+                return null;
+            }
+
+            ListView<String> serviceList = namingService.getServicesOfServer(1, NACOS_SERVICE_PAGESIZE, DEFAULT_GROUP);
 
             for (String instance : serviceList.getData()) {
                 ServiceInfo serviceInfo = new ServiceInfo();
@@ -377,16 +420,23 @@ public class NacosConnector extends DestroyableServerConnector {
     protected void doDestroy() {
         if (initialized.compareAndSet(true, false)) {
             // unsubscribe service listener
-            if (merger != null) {
-                merger.shutdown();
+            if (!mergers.isEmpty()) {
+                mergers.forEach((s, nacosServiceMerger) -> {
+                    try {
+                        nacosServiceMerger.shutdown();
+                    } catch (Exception ignore) {
+                    }
+                });
             }
 
             // shutdown naming service
-            if (namingService != null) {
-                try {
-                    this.namingService.shutDown();
-                } catch (NacosException ignore) {
-                }
+            if (!namingServices.isEmpty()) {
+                namingServices.forEach((s, namingService) -> {
+                    try {
+                        namingService.shutDown();
+                    } catch (NacosException ignore) {
+                    }
+                });
             }
         }
     }
@@ -461,9 +511,9 @@ public class NacosConnector extends DestroyableServerConnector {
         }
 
         private static class ServiceKey {
-            private String serviceName;
-            private String group;
-            private String clusters;
+            private final String serviceName;
+            private final String group;
+            private final String clusters;
             ServiceKey(String serviceName, String group, String clusters) {
                 this.serviceName = serviceName;
                 this.group = group;
