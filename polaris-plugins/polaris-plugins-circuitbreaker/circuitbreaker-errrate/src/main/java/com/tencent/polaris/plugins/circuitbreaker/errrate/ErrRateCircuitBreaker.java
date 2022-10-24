@@ -87,9 +87,11 @@ public class ErrRateCircuitBreaker extends Destroyable implements CircuitBreaker
 
     private final String metricWindowName = String.format("%s_%s", getName(), "metric");
 
+    private CircuitBreakerConfig circuitBreakerConfig;
+
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        CircuitBreakerConfig circuitBreakerConfig = ctx.getConfig().getConsumer().getCircuitBreaker();
+        circuitBreakerConfig = ctx.getConfig().getConsumer().getCircuitBreaker();
         OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
         metricWindowMs = circuitBreakerConfig.getCheckPeriod();
         HalfOpenConfig halfOpenConfig = new HalfOpenConfig(circuitBreakerConfig, outlierDetection);
@@ -203,8 +205,9 @@ public class ErrRateCircuitBreaker extends Destroyable implements CircuitBreaker
                 new Function<RuleIdentifier, ConfigSet<Config>>() {
                     @Override
                     public ConfigSet<Config> apply(RuleIdentifier ruleIdentifier) {
-                        RuleDestinationResult ruleDestResultErrRate = CircuitBreakUtils
-                                .getRuleDestinationSet(ruleIdentifier, extensions, flowControlParam);
+                        RuleDestinationResult ruleDestResultErrRate = circuitBreakerConfig.isEnableRemotePull() ?
+                                CircuitBreakUtils.getRuleDestinationSet(ruleIdentifier, extensions, flowControlParam) :
+                                RuleDestinationResult.defaultValue();
                         DestinationSet ruleDestinationSetErrRate = ruleDestResultErrRate.getDestinationSet();
                         if (null == ruleDestinationSetErrRate) {
                             return new ConfigSet<>(StatusDimension.Level.SERVICE, true, null, null);
