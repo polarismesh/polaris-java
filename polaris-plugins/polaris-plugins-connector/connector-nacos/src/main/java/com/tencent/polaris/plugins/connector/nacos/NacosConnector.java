@@ -35,6 +35,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -60,6 +61,7 @@ import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -310,33 +312,43 @@ public class NacosConnector extends DestroyableServerConnector {
 				return null;
 			}
 
-			List<Instance> serviceList =
-					namingService.getAllInstances(serviceUpdateTask.getServiceEventKey().getService(),
-							DEFAULT_GROUP, Lists.newArrayList(DEFAULT_CLUSTER_NAME));
+			NacosServiceMerger.NacosService serviceValue = merger.createIfAbsent(serviceUpdateTask.getServiceEventKey()
+					.getServiceKey());
 
-			// subscribe service instance change .
-			merger.addListener(serviceUpdateTask.getServiceEventKey()
-					.getService(), DEFAULT_GROUP, DEFAULT_CLUSTER_NAME, serviceList);
-
-			if (serviceList == null || serviceList.isEmpty()) {
-				return null;
-			}
-
-			NacosServiceMerger.ServiceKey serviceKey = new NacosServiceMerger.ServiceKey(serviceUpdateTask.getServiceEventKey()
-					.getService(),
-					DEFAULT_GROUP, DEFAULT_CLUSTER_NAME);
-
-			NacosServiceMerger.ServiceValue serviceValue = merger.findServiceInstances(serviceKey);
-
-			for (Instance service : serviceList) {
+			for (Instance service : serviceValue.getInstances()) {
 				DefaultInstance instance = new DefaultInstance();
 				instance.setId(service.getInstanceId());
 				instance.setService(service.getServiceName());
 				instance.setHost(service.getIp());
 				instance.setPort(service.getPort());
 				instance.setHealthy(service.isHealthy());
-				instance.setMetadata(service.getMetadata());
+				instance.setMetadata(Optional.ofNullable(service.getMetadata()).orElse(new HashMap<>()));
 				instance.setIsolated(service.isEnabled());
+				instance.setWeight((int) (100 * service.getWeight()));
+
+				String protocol = instance.getMetadata().getOrDefault("protocol", "");
+				String version = instance.getMetadata().getOrDefault("version", "");
+				if (StringUtils.isNotEmpty(protocol)) {
+					instance.setProtocol(protocol);
+				}
+				if (StringUtils.isNotEmpty(version)) {
+					instance.setVersion(version);
+				}
+
+				String region = instance.getMetadata().getOrDefault("region", "");
+				String zone = instance.getMetadata().getOrDefault("zone", "");
+				String campus = instance.getMetadata().getOrDefault("campus", "");
+
+				if (StringUtils.isNotEmpty(region)) {
+					instance.setRegion(region);
+				}
+				if (StringUtils.isNotEmpty(zone)) {
+					instance.setRegion(zone);
+				}
+				if (StringUtils.isNotEmpty(campus)) {
+					instance.setRegion(campus);
+				}
+
 				instanceList.add(instance);
 			}
 			return new ServiceInstancesResponse(serviceValue.getRevision(), instanceList);
@@ -431,10 +443,10 @@ public class NacosConnector extends DestroyableServerConnector {
 	protected void doDestroy() {
 		if (initialized.compareAndSet(true, false)) {
 			// unsubscribe service listener
-			if (!mergers.isEmpty()) {
-				mergers.forEach((s, nacosServiceMerger) -> {
+			if (CollectionUtils.isNotEmpty(mergers)) {
+				mergers.forEach((s, serviceMerger) -> {
 					try {
-						nacosServiceMerger.shutdown();
+						serviceMerger.shutdown();
 					}
 					catch (Exception ignore) {
 					}
@@ -442,7 +454,7 @@ public class NacosConnector extends DestroyableServerConnector {
 			}
 
 			// shutdown naming service
-			if (!namingServices.isEmpty()) {
+			if (CollectionUtils.isNotEmpty(namingServices)) {
 				namingServices.forEach((s, namingService) -> {
 					try {
 						namingService.shutDown();
@@ -502,120 +514,72 @@ public class NacosConnector extends DestroyableServerConnector {
 			this.namingService = service;
 		}
 
-		private static final Map<ServiceKey, ServiceValue> SERVICE_INSTANCES = new HashMap<>(8);
-
-		private static final Map<ServiceKey, EventListener> SERVICE_INSTANCES_LISTENERS = new HashMap<>(8);
-
-		/**
-		 * Add Service Watcher Listener.
-		 *
-		 * @param serviceName service name
-		 * @param group       service group
-		 * @param clusters    service cluster name
-		 */
-		public void addListener(String serviceName, String group, String clusters, List<Instance> instances) throws Exception {
-			ServiceKey serviceKey = new ServiceKey(serviceName, group, clusters);
-			if (!SERVICE_INSTANCES.containsKey(serviceKey)) {
-				// build cache
-				SERVICE_INSTANCES.put(serviceKey, new ServiceValue(instances));
-				// subscribe
-				try {
-
-					// listener defined.
-					EventListener listener = event -> {
-						if (event instanceof NamingEvent) {
-							NamingEvent namingEvent = (NamingEvent) event;
-							// service key
-							ServiceKey tempKey = new ServiceKey(namingEvent.getServiceName(), namingEvent.getGroupName(), namingEvent.getClusters());
-							List<Instance> tempInstances = namingEvent.getInstances();
-
-							// rebuild instance cache
-							try {
-								SERVICE_INSTANCES.get(tempKey).rebuild(tempInstances);
-							}
-							catch (Exception e) {
-								LOG.warn("[Connector][Nacos] service revision build failed, service name: {}, group: {}", serviceName, group, e);
-							}
-						}
-					};
-
-					namingService.subscribe(serviceName, group, Lists.newArrayList(clusters), listener);
-
-					SERVICE_INSTANCES_LISTENERS.put(serviceKey, listener);
-
-				}
-				catch (NacosException e) {
-					LOG.warn("[Connector][Nacos] service subscribe failed, service name: {}, group: {}", serviceName, group, e);
-				}
-			}
-		}
+		private final Map<ServiceKey, NacosService> services = new ConcurrentHashMap<>(8);
 
 		public void shutdown() {
 			try {
-				SERVICE_INSTANCES_LISTENERS.keySet().parallelStream().forEach(key -> {
+				services.values().forEach(entry -> {
 					try {
-						namingService.unsubscribe(key.serviceName, key.group, Lists.newArrayList(key.clusters), SERVICE_INSTANCES_LISTENERS.get(key));
+						namingService.unsubscribe(entry.serviceName, entry.group, Lists.newArrayList(entry.clusters), entry);
 					}
 					catch (NacosException ignore) {
 					}
 				});
+
+				services.clear();
 			}
 			catch (Exception ignore) {
 			}
 		}
 
-		public ServiceValue findServiceInstances(ServiceKey key) {
-			return SERVICE_INSTANCES.get(key);
+		public synchronized NacosService createIfAbsent(ServiceKey key) throws Exception {
+			if (!services.containsKey(key)) {
+				NacosService service = new NacosService(namingService, key.getService());
+
+				service.init();
+
+				services.put(key, service);
+			}
+
+			return services.get(key);
 		}
 
-		private static class ServiceKey {
+		private static class NacosService implements EventListener {
+
 			private final String serviceName;
+
 			private final String group;
+
 			private final String clusters;
 
-			ServiceKey(String serviceName, String group, String clusters) {
+			private String revision;
+
+			private List<Instance> instances;
+
+			private final NamingService namingService;
+
+			NacosService(NamingService namingService, String serviceName) {
+				this(namingService, serviceName, DEFAULT_GROUP, DEFAULT_CLUSTER_NAME);
+			}
+
+			NacosService(NamingService namingService, String serviceName, String group, String clusters) {
+				this.namingService = namingService;
 				this.serviceName = serviceName;
 				this.group = group;
 				this.clusters = clusters;
 			}
 
-			public String getServiceName() {
-				return serviceName;
-			}
+			private void init() throws Exception {
+				instances = namingService.getAllInstances(serviceName,
+						DEFAULT_GROUP, Lists.newArrayList(DEFAULT_CLUSTER_NAME));
 
-			public String getGroup() {
-				return group;
-			}
-
-			public String getClusters() {
-				return clusters;
-			}
-
-			@Override
-			public boolean equals(Object o) {
-				if (this == o) {
-					return true;
+				// subscribe service instance change .
+				try {
+					namingService.subscribe(serviceName, group, Lists.newArrayList(clusters), this);
 				}
-				if (o == null || getClass() != o.getClass()) {
-					return false;
+				catch (NacosException e) {
+					LOG.warn("[Connector][Nacos] service subscribe failed, service name: {}, group: {}", serviceName, group, e);
 				}
-				ServiceKey that = (ServiceKey) o;
-				return Objects.equals(serviceName, that.serviceName) && Objects.equals(group, that.group) && Objects.equals(clusters, that.clusters);
-			}
-
-			@Override
-			public int hashCode() {
-				return Objects.hash(serviceName, group, clusters);
-			}
-		}
-
-		private static class ServiceValue {
-			private String revision;
-			private List<Instance> instances;
-
-			public ServiceValue(List<Instance> instances) throws Exception {
-				this.instances = instances;
-				this.revision = buildRevision(instances);
 			}
 
 			private String buildRevision(List<Instance> instances) throws Exception {
@@ -631,13 +595,47 @@ public class NacosConnector extends DestroyableServerConnector {
 				this.revision = buildRevision(instances);
 			}
 
-			public String getRevision() {
-				return revision;
+
+			@Override
+			public boolean equals(Object o) {
+				if (this == o) {
+					return true;
+				}
+				if (o == null || getClass() != o.getClass()) {
+					return false;
+				}
+				NacosService that = (NacosService) o;
+				return Objects.equals(serviceName, that.serviceName) && Objects.equals(group, that.group) &&
+						Objects.equals(clusters, that.clusters);
 			}
 
-			public List<Instance> getInstances() {
+			@Override
+			public int hashCode() {
+				return Objects.hash(serviceName, group, clusters);
+			}
+
+			@Override
+			public void onEvent(Event event) {
+				if (event instanceof NamingEvent) {
+					NamingEvent namingEvent = (NamingEvent) event;
+					// rebuild instance cache
+					try {
+						rebuild(namingEvent.getInstances());
+					}
+					catch (Exception e) {
+						LOG.warn("[Connector][Nacos] service revision build failed, service name: {}, group: {}", serviceName, group, e);
+					}
+				}
+			}
+
+			List<Instance> getInstances() {
 				return instances;
 			}
+
+			String getRevision() {
+				return revision;
+			}
 		}
+
 	}
 }
