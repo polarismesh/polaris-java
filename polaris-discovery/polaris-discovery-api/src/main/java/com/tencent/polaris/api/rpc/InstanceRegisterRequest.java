@@ -28,6 +28,10 @@ import java.util.Map;
  */
 public class InstanceRegisterRequest extends CommonProviderBaseEntity {
 
+    public InstanceRegisterRequest() {
+        setWeight(100);
+    }
+
     public String getVersion() {
         return request.getVersion();
     }
