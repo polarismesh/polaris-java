@@ -81,6 +81,11 @@ public class Provider {
         registerRequest.setService(service);
         registerRequest.setHost(host);
         registerRequest.setPort(port);
+        registerRequest.setProtocol("http");
+        registerRequest.setVersion("1.0.0");
+        registerRequest.setRegion("region");
+        registerRequest.setZone("zone");
+        registerRequest.setCampus("campus");
         registerRequest.setTtl(TTL);
         InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
