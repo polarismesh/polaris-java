@@ -31,7 +31,6 @@ import java.io.OutputStreamWriter;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
@@ -48,8 +47,8 @@ public class HttpMetricHandler implements HttpHandler {
     private final CollectorRegistry collectorRegistry;
     private final LocalByteArray response = new LocalByteArray();
 
-    public HttpMetricHandler() {
-        this.collectorRegistry = CollectorRegistry.defaultRegistry;
+    public HttpMetricHandler(CollectorRegistry registry) {
+        this.collectorRegistry = registry;
     }
 
     @Override
@@ -89,17 +88,17 @@ public class HttpMetricHandler implements HttpHandler {
     }
 
     private boolean shouldUseCompression(HttpExchange exchange) {
-        List<String> encodingHeaders = exchange.getRequestHeaders().get("Accept-Encoding");
-        if (encodingHeaders != null) {
-            for (String encodingHeader : encodingHeaders) {
-                String[] encodings = encodingHeader.split(",");
-                for (String encoding : encodings) {
-                    if ("gzip".equalsIgnoreCase(encoding.trim())) {
-                        return true;
-                    }
-                }
-            }
-        }
+//        List<String> encodingHeaders = exchange.getRequestHeaders().get("Accept-Encoding");
+//        if (encodingHeaders != null) {
+//            for (String encodingHeader : encodingHeaders) {
+//                String[] encodings = encodingHeader.split(",");
+//                for (String encoding : encodings) {
+//                    if ("gzip".equalsIgnoreCase(encoding.trim())) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
         return false;
     }
 

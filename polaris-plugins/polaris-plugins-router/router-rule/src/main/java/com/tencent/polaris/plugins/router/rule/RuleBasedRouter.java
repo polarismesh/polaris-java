@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
@@ -107,7 +108,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     // 匹配source规则
-    private boolean matchSource(List<RoutingProto.Source> sources, ServiceMetadata sourceService,
+    private boolean matchSource(List<RoutingProto.Source> sources, SourceService sourceService,
                                 RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
@@ -155,7 +156,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             }
 
             matched = matchMetadata(
-                    source.getMetadataMap(), sourceService.getMetadata(), true, multiEnvRouterParamMap);
+                    source.getMetadataMap(), sourceService.getLabels(), true, multiEnvRouterParamMap);
             if (matched) {
                 break;
             }

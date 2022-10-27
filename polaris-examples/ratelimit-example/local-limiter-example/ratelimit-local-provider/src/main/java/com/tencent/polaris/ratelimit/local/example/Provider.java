@@ -99,22 +99,9 @@ public class Provider {
         registerRequest.setHost(host);
         registerRequest.setPort(port);
         registerRequest.setTtl(TTL);
-        InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
-    }
-
-    // do the instance heartbeat
-    private static void heartbeat(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        // do heartbeat
-        InstanceHeartbeatRequest heartbeatRequest = new InstanceHeartbeatRequest();
-        heartbeatRequest.setNamespace(namespace);
-        heartbeatRequest.setService(service);
-        heartbeatRequest.setHost(host);
-        heartbeatRequest.setPort(port);
-        providerAPI.heartbeat(heartbeatRequest);
-        System.out.printf("heartbeat instance, address is %s:%d%n", host, port);
     }
 
     // do the instance deregister
@@ -173,37 +160,6 @@ public class Provider {
         @Override
         public void run() {
             Provider.register(namespace, service, host, port, providerAPI);
-            // register successfully, then start to do heartbeat
-            Provider.HEARTBEAT_EXECUTOR
-                    .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL, TTL,
-                            TimeUnit.SECONDS);
-        }
-    }
-
-    private static class HeartbeatTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final ProviderAPI providerAPI;
-
-        public HeartbeatTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            Provider.heartbeat(namespace, service, host, port, providerAPI);
         }
     }
 

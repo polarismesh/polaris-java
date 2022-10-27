@@ -29,6 +29,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadLocalRandom;
+
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.HTTPServer;
 import org.slf4j.Logger;
 
 /**
@@ -55,18 +58,18 @@ public class PrometheusHttpServer {
     private int port;
     private String path;
 
-    public PrometheusHttpServer(String host, int port) {
-        this(host, port, DEFAULT_PATH);
+    public PrometheusHttpServer(String host, int port, CollectorRegistry registry) {
+        this(host, port, DEFAULT_PATH, registry);
     }
 
-    public PrometheusHttpServer(String host, int port, String path) {
+    public PrometheusHttpServer(String host, int port, String path, CollectorRegistry registry) {
         try {
             this.host = host;
             this.path = path;
             setServerPort(port);
             threadFactory = new DaemonNamedThreadFactory("prometheus-http");
             httpServer = HttpServer.create(new InetSocketAddress(this.host, this.port), 3);
-            HttpMetricHandler metricHandler = new HttpMetricHandler();
+            HttpMetricHandler metricHandler = new HttpMetricHandler(registry);
             httpServer.createContext("/", metricHandler);
             httpServer.createContext(path, metricHandler);
             httpServer.createContext("/-/healthy", metricHandler);
@@ -118,7 +121,7 @@ public class PrometheusHttpServer {
             return;
         }
 
-        Thread httpServerThread = threadFactory.newThread(() -> httpServer.start());
+        Thread httpServerThread = threadFactory.newThread(httpServer::start);
         httpServerThread.start();
         try {
             httpServerThread.join();

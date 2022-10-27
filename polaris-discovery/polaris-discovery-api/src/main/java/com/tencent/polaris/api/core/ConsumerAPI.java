@@ -60,16 +60,6 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
     InstancesResponse getHealthyInstances(GetHealthyInstancesRequest req) throws PolarisException;
 
     /**
-     * 同步获取健康的服务实例，如果全部实例都不健康，那将会返回全部实例
-     *
-     * @param req
-     * @return
-     * @throws PolarisException
-     */
-    @Deprecated
-    InstancesResponse getHealthyInstancesInstance(GetHealthyInstancesRequest req) throws PolarisException;
-
-    /**
      * 同步获取服务下单个服务实例
      *
      * @param req 请求

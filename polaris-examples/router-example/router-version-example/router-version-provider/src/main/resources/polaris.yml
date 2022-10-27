@@ -7,4 +7,4 @@ global:
     enable: true
     plugin:
       prometheus:
-        port: 28082
+        port: 0

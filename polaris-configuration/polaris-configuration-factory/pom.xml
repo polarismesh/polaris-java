@@ -31,6 +31,13 @@
             <artifactId>polaris-configuration-connector</artifactId>
             <version>${revision}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>local-file-configuration-connector</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!--依赖connector插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

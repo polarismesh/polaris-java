@@ -1,13 +1,16 @@
 package com.tencent.polaris.discovery.test.core;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_PRODUCTION;
+import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
@@ -41,7 +44,8 @@ public class ServiceDynamicRuleTest {
     @Before
     public void before() {
         try {
-            namingServer = NamingServer.startNamingServer(10081);
+            namingServer = NamingServer.startNamingServer(-1);
+            System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
@@ -101,6 +105,25 @@ public class ServiceDynamicRuleTest {
         serviceInfo.setMetadata(map);
         // 设置主调方服务信息 即 Metadata等规则信息
         getInstancesRequest.setServiceInfo(serviceInfo);
+        Configuration configuration = TestUtils.configWithEnvAddress();
+        try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            InstancesResponse oneInstance = consumerAPI.getInstances(getInstancesRequest);
+            Assert.assertEquals(MATCH_META_COUNT, oneInstance.getInstances().length);
+        }
+    }
+
+    @Test
+    public void testServiceDynamicRuleByRouterArgument() {
+        GetInstancesRequest getInstancesRequest = new GetInstancesRequest();
+        getInstancesRequest.setNamespace(NAMESPACE_PRODUCTION);
+        getInstancesRequest.setService(RULE_ROUTER_SERVICE);
+
+        SourceService serviceInfo = new SourceService();
+        serviceInfo.setNamespace(NAMESPACE_PRODUCTION);
+        serviceInfo.setService(RULE_ROUTER_SERVICE);
+        serviceInfo.appendArguments(RouteArgument.buildCustom("uid", "144115217417489762"));
+        // 设置主调方服务信息 即 Metadata等规则信息
+        getInstancesRequest.setSourceService(serviceInfo);
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             InstancesResponse oneInstance = consumerAPI.getInstances(getInstancesRequest);

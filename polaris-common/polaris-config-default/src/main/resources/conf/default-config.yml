@@ -83,6 +83,13 @@ global:
         #类型:string
         #默认值: /metric
         path: /metric
+  location:
+    providers:
+      - type: local
+        options:
+          region: ${REGION:}
+          zone: ${ZONE:}
+          campus: ${CAMPUS:}
 #描述: 主调端配置
 consumer:
   # Switch of discovery.
@@ -271,3 +278,15 @@ config:
     serverSwitchInterval: 10m
     #描述：重连间隔时间
     reconnectInterval: 500ms
+    #描述: 配置文件持久化到本地开关
+    persistEnable: true
+    #描述: 配置文件持久化目录，SDK在配置文件变更后，把相关的配置持久化到本地磁盘
+    persistDir: ./polaris/backup/config
+    #描述: 配置文件写盘失败的最大重试次数
+    persistMaxWriteRetry: 1
+    #描述: 配置文件从磁盘读取失败的最大重试次数
+    persistMaxReadRetry: 0
+    #描述: 缓存读写磁盘的重试间隔
+    persistRetryInterval: 500ms
+    #描述: polaris server获取配置文件失败是否允许回退到本地配置文件开关
+    fallbackToLocalCache: true

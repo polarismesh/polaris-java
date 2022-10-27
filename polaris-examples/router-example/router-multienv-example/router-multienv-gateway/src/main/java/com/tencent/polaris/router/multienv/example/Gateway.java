@@ -24,7 +24,9 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
@@ -47,9 +49,11 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -66,8 +70,6 @@ public class Gateway {
 
     private static final int TTL = 5;
 
-    private static final ScheduledExecutorService HEARTBEAT_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
-
     public static void main(String[] args) throws Exception {
 
         String namespace = NAMESPACE_DEFAULT;
@@ -80,12 +82,8 @@ public class Gateway {
         int localPort = server.getAddress().getPort();
 
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
-        HEARTBEAT_EXECUTOR
-                .schedule(new RegisterTask(namespace, SERVICE_DEFAULT, localHost, localPort, providerAPI),
-                        500,
-                        TimeUnit.MILLISECONDS);
+        register(namespace, SERVICE_DEFAULT, localHost, localPort, providerAPI);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            HEARTBEAT_EXECUTOR.shutdown();
             server.stop(1);
             deregister(namespace, SERVICE_DEFAULT, localHost, localPort, providerAPI);
             providerAPI.close();
@@ -102,22 +100,9 @@ public class Gateway {
         registerRequest.setHost(host);
         registerRequest.setPort(port);
         registerRequest.setTtl(TTL);
-        InstanceRegisterResponse registerResp = providerAPI.register(registerRequest);
+        InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
-    }
-
-    // do the instance heartbeat
-    private static void heartbeat(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
-        // do heartbeat
-        InstanceHeartbeatRequest heartbeatRequest = new InstanceHeartbeatRequest();
-        heartbeatRequest.setNamespace(namespace);
-        heartbeatRequest.setService(service);
-        heartbeatRequest.setHost(host);
-        heartbeatRequest.setPort(port);
-        providerAPI.heartbeat(heartbeatRequest);
-        System.out.printf("heartbeat instance, address is %s:%d%n", host, port);
     }
 
     // do the instance deregister
@@ -152,64 +137,6 @@ public class Gateway {
         }
     }
 
-    private static class RegisterTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final ProviderAPI providerAPI;
-
-        public RegisterTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            Gateway.register(namespace, service, host, port, providerAPI);
-            // register successfully, then start to do heartbeat
-            Gateway.HEARTBEAT_EXECUTOR
-                    .scheduleWithFixedDelay(new HeartbeatTask(namespace, service, host, port, providerAPI), TTL, TTL,
-                            TimeUnit.SECONDS);
-        }
-    }
-
-    private static class HeartbeatTask implements Runnable {
-
-        private final String namespace;
-
-        private final String service;
-
-        private final String host;
-
-        private final int port;
-
-        private final ProviderAPI providerAPI;
-
-        public HeartbeatTask(String namespace, String service, String host, int port,
-                ProviderAPI providerAPI) {
-            this.namespace = namespace;
-            this.service = service;
-            this.host = host;
-            this.port = port;
-            this.providerAPI = providerAPI;
-        }
-
-        @Override
-        public void run() {
-            Gateway.heartbeat(namespace, service, host, port, providerAPI);
-        }
-    }
-
     private static class EchoServerHandler implements HttpHandler {
 
         private final ConsumerAPI consumerAPI;
@@ -224,14 +151,24 @@ public class Gateway {
             String echoValue = parameters.get("value");
             String respValue;
             Map<String, String> metadata = new HashMap<>(parameters);
+
+            Set<RouteArgument> arguments = new HashSet<>();
+
+            exchange.getRequestHeaders().forEach((key, values) -> {
+                if (values.size() > 0) {
+                    arguments.add(RouteArgument.buildHeader(key.toLowerCase(), values.get(0)));
+                }
+            });
+            parameters.forEach((key, value) -> arguments.add(RouteArgument.buildQuery(key.toLowerCase(), value)));
+
             // 1. we need to do naming resolution to get a load balanced host and port
             GetOneInstanceRequest getOneInstanceRequest = new GetOneInstanceRequest();
             getOneInstanceRequest.setNamespace(NAMESPACE_DEFAULT);
             getOneInstanceRequest.setService(DEFAULT_NEXT_SERVICE);
-            ServiceInfo serviceInfo = new ServiceInfo();
+            SourceService serviceInfo = new SourceService();
             serviceInfo.setNamespace(NAMESPACE_DEFAULT);
             serviceInfo.setService(SERVICE_DEFAULT);
-            serviceInfo.setMetadata(metadata);
+            serviceInfo.setArguments(arguments);
             getOneInstanceRequest.setServiceInfo(serviceInfo);
             InstancesResponse oneInstance = consumerAPI.getOneInstance(getOneInstanceRequest);
             Instance[] instances = oneInstance.getInstances();

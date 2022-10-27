@@ -22,8 +22,10 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
@@ -31,6 +33,7 @@ import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
@@ -46,7 +49,9 @@ import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import org.slf4j.Logger;
 
 public class APIFacade {
@@ -194,9 +199,11 @@ public class APIFacade {
         getInstancesRequest.setNamespace(namespace);
         getInstancesRequest.setService(service);
         if (MapUtils.isNotEmpty(srcLabels)) {
-            ServiceInfo serviceInfo = new ServiceInfo();
-            serviceInfo.setMetadata(srcLabels);
-            getInstancesRequest.setServiceInfo(serviceInfo);
+            SourceService serviceInfo = new SourceService();
+            srcLabels.forEach(
+                    (labelKey, labelValue) -> serviceInfo.appendArguments(RouteArgument.fromLabel(labelKey, labelValue)));
+
+            getInstancesRequest.setSourceService(serviceInfo);
         }
         if (MapUtils.isNotEmpty(dstLabels)) {
             getInstancesRequest.setMetadata(dstLabels);

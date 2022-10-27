@@ -30,7 +30,6 @@ import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
  * @date 2019/8/20
  */
 public class APIConfigImpl implements APIConfig {
-
     @JsonProperty
     private Integer maxRetryTimes;
 
