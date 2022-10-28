@@ -4,13 +4,13 @@ package v1;
 
 import "google/protobuf/wrappers.proto";
 
-option java_outer_classname="ModelProto";
-option java_package="com.tencent.polaris.client.pb";
+option java_outer_classname = "ModelProto";
+option java_package = "com.tencent.polaris.client.pb";
 
 message Location {
-	google.protobuf.StringValue region = 1;
-	google.protobuf.StringValue zone   = 2;
-	google.protobuf.StringValue campus = 3;
+  google.protobuf.StringValue region = 1;
+  google.protobuf.StringValue zone = 2;
+  google.protobuf.StringValue campus = 3;
 }
 
 message MatchString {
@@ -36,4 +36,29 @@ message MatchString {
   MatchStringType type = 1;
   google.protobuf.StringValue value = 2;
   ValueType value_type = 3;
+}
+
+message MatchArgument {
+  // label type for gateway request
+  enum Type {
+    // custom arguments
+    CUSTOM = 0;
+    // method, match the http post/get/put/delete or grpc method
+    METHOD = 1;
+    // header, match the http header, dubbo attachment, grpc header
+    HEADER = 2;
+    // query, match the http query, dubbo argument
+    QUERY = 3;
+    // caller service
+    CALLER_SERVICE = 4;
+    // caller host ip
+    CALLER_IP = 5;
+    // HTTP URL Path
+    PATH = 6;
+  }
+  Type type = 1;
+  // header key or query key
+  string key = 2;
+  // header value or query value
+  MatchString value = 3;
 }
