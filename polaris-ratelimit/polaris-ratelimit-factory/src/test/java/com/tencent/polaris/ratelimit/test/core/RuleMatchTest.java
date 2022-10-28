@@ -24,7 +24,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import com.tencent.polaris.client.pb.RateLimitProto.Amount;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit.Builder;
@@ -80,7 +80,7 @@ public class RuleMatchTest {
         ruleBuilder1.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
-        ruleBuilder1.setMethod(MatchString.newBuilder().setType(MatchStringType.REGEX).setValue(
+        ruleBuilder1.setMethod(MatchString.newBuilder().setType(Operation.REGEX).setValue(
                 StringValue.newBuilder().setValue("^ca.+$").build()).build());
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("11111").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());
@@ -98,7 +98,7 @@ public class RuleMatchTest {
         ruleBuilder1.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
-        ruleBuilder1.setMethod(MatchString.newBuilder().setType(MatchStringType.NOT_EQUALS).setValue(
+        ruleBuilder1.setMethod(MatchString.newBuilder().setType(Operation.NOT_EQUALS).setValue(
                 StringValue.newBuilder().setValue("cash").build()).build());
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("22222").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());
@@ -118,7 +118,7 @@ public class RuleMatchTest {
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder1.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.HEADER).setKey(Consts.HEADER_KEY)
-                        .setValue(MatchString.newBuilder().setType(MatchStringType.IN).setValue(
+                        .setValue(MatchString.newBuilder().setType(Operation.IN).setValue(
                                 StringValue.newBuilder().setValue("pay,pay1").build()).build()));
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("33333").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());
@@ -138,7 +138,7 @@ public class RuleMatchTest {
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder1.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.HEADER).setKey(Consts.HEADER_KEY)
-                        .setValue(MatchString.newBuilder().setType(MatchStringType.NOT_IN).setValue(
+                        .setValue(MatchString.newBuilder().setType(Operation.NOT_IN).setValue(
                                 StringValue.newBuilder().setValue("pay,pay1").build()).build()));
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("44444").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());

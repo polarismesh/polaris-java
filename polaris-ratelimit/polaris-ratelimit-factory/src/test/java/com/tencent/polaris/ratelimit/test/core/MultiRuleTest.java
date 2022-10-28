@@ -24,7 +24,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import com.tencent.polaris.client.pb.RateLimitProto.Amount;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit.Builder;
@@ -80,7 +80,7 @@ public class MultiRuleTest {
         ruleBuilder2.setPriority(UInt32Value.newBuilder().setValue(0).build());
         ruleBuilder2.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder2.setAmountMode(AmountMode.GLOBAL_TOTAL);
-        ruleBuilder2.setMethod(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+        ruleBuilder2.setMethod(MatchString.newBuilder().setType(Operation.EXACT).setValue(
                 StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build());
         ruleBuilder2.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(15).build()).setValidDuration(
@@ -93,7 +93,7 @@ public class MultiRuleTest {
         ruleBuilder3.setPriority(UInt32Value.newBuilder().setValue(0).build());
         ruleBuilder3.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder3.setAmountMode(AmountMode.GLOBAL_TOTAL);
-        ruleBuilder3.setMethod(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+        ruleBuilder3.setMethod(MatchString.newBuilder().setType(Operation.EXACT).setValue(
                 StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build());
         ruleBuilder3.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(15).build()).setValidDuration(
@@ -106,12 +106,12 @@ public class MultiRuleTest {
         ruleBuilder4.setPriority(UInt32Value.newBuilder().setValue(0).build());
         ruleBuilder4.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder4.setAmountMode(AmountMode.GLOBAL_TOTAL);
-        ruleBuilder4.setMethod(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+        ruleBuilder4.setMethod(MatchString.newBuilder().setType(Operation.EXACT).setValue(
                 StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build());
         ruleBuilder4.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.HEADER).setKey(Consts.HEADER_KEY).setValue(
                         MatchString.newBuilder().setValue(StringValue.newBuilder().setValue(Consts.HEADER_VALUE))
-                                .setType(MatchStringType.EXACT).build()).build());
+                                .setType(Operation.EXACT).build()).build());
         ruleBuilder4.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(30).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));

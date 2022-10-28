@@ -19,7 +19,7 @@
 package com.tencent.polaris.plugins.router.rule;
 
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import com.tencent.polaris.client.util.Utils;
 
 /**
@@ -30,14 +30,14 @@ public final class MatchFunctions {
     private static final String SPLIT_TOKEN = ",";
 
     /**
-     * 根据 {@link MatchString.MatchStringType} 执行不同的规则计算任务
+     * 根据 {@link Operation} 执行不同的规则计算任务
      *
      * @param matchType match 规则类型
      * @param destMetaValue 实际准备参与计算的数据
      * @param ruleValue 规则数据
      * @return {@link boolean} 匹配是否成功
      */
-    public static boolean match(MatchString.MatchStringType matchType, String destMetaValue, String ruleValue) {
+    public static boolean match(Operation matchType, String destMetaValue, String ruleValue) {
         switch (matchType) {
             case EXACT: {
                 return StringUtils.equals(destMetaValue, ruleValue);

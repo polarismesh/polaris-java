@@ -38,20 +38,15 @@ import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.client.pb.RoutingProto;
-import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 
 /**
@@ -109,7 +104,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
 
     // 匹配source规则
     private boolean matchSource(List<RoutingProto.Source> sources, SourceService sourceService,
-                                RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
+            RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
@@ -168,7 +163,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
 
     // 匹配metadata
     private boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
-                                  boolean isMatchSource, Map<String, String> multiEnvRouterParamMap) {
+            boolean isMatchSource, Map<String, String> multiEnvRouterParamMap) {
         // 如果规则metadata为空, 返回成功
         if (MapUtils.isEmpty(ruleMeta)) {
             return true;
@@ -220,7 +215,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     private boolean isAllMetaMatched(boolean isMatchSource, boolean allMetaMatched, String ruleMetaKey,
-                                     MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
+            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
@@ -232,7 +227,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     private boolean matchValueByValueType(boolean isMatchSource, String ruleMetaKey,
-                                          MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
+            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
         boolean allMetaMatched = true;
 
         switch (ruleMetaValue.getValueType()) {
@@ -272,14 +267,15 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 }
                 break;
             default:
-                allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleMetaValue.getValue().getValue());
+                allMetaMatched = MatchFunctions
+                        .match(ruleMetaValue.getType(), destMetaValue, ruleMetaValue.getValue().getValue());
         }
 
         return allMetaMatched;
     }
 
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
-                                                    RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
+            RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
         // 获取路由规则
         List<RoutingProto.Route> routes = getRoutesFromRule(routeInfo, ruleMatchType);
         if (CollectionUtils.isEmpty(routes)) {
@@ -354,8 +350,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     /**
      * populateSubsetsFromDest 根据destination中的规则填充分组列表
      *
-     * @param instances  实例信息
-     * @param dest       目标规则
+     * @param instances 实例信息
+     * @param dest 目标规则
      * @param subsetsMap 实例分组
      * @return 是否成功加入subset列表
      */
@@ -471,7 +467,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 if (failoverType == RuleBasedRouterFailoverType.none) {
                     return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
                 }
-                
+
                 return new RouteResult(instances.getInstances(), RouteResult.State.Next);
         }
     }

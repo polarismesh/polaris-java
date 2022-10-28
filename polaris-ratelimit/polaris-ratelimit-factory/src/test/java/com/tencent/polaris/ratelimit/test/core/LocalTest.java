@@ -25,7 +25,7 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import com.tencent.polaris.client.pb.RateLimitProto.Amount;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit.Builder;
@@ -74,7 +74,7 @@ public class LocalTest {
         ruleBuilder2.setAmountMode(AmountMode.GLOBAL_TOTAL);
         ruleBuilder2.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.CUSTOM).setKey(Consts.LABEL_METHOD)
-                        .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+                        .setValue(MatchString.newBuilder().setType(Operation.EXACT).setValue(
                                 StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build()));
         ruleBuilder2.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(19).build()).setValidDuration(
@@ -89,7 +89,7 @@ public class LocalTest {
         ruleBuilder3.setAmountMode(AmountMode.GLOBAL_TOTAL);
         ruleBuilder3.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.CUSTOM).setKey(Consts.LABEL_METHOD)
-                        .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
+                        .setValue(MatchString.newBuilder().setType(Operation.EXACT).setValue(
                                 StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build()));
         ruleBuilder3.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(9).build()).setValidDuration(

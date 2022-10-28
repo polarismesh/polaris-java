@@ -39,7 +39,7 @@ import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -156,11 +156,11 @@ public class QuotaFlow extends Destroyable {
         boolean regexCombine = rule.getRegexCombine().getValue();
         String methodValue = "";
         if (null != method && !RuleUtils.isMatchAllValue(method)) {
-            if (regexCombine && method.getType() != MatchStringType.EXACT) {
+            if (regexCombine && method.getType() != Operation.EXACT) {
                 methodValue = method.getValue().getValue();
             } else {
                 methodValue = request.getMethod();
-                if (method.getType() != MatchStringType.EXACT) {
+                if (method.getType() != Operation.EXACT) {
                     //正则表达式扩散
                     initCriteria.setRegexSpread(true);
                 }
@@ -172,12 +172,12 @@ public class QuotaFlow extends Destroyable {
         for (ModelProto.MatchArgument matchArgument : argumentsList) {
             String labelValue;
             MatchString matcher = matchArgument.getValue();
-            if (regexCombine && matcher.getType() != MatchStringType.EXACT) {
+            if (regexCombine && matcher.getType() != Operation.EXACT) {
                 labelValue = matcher.getValue().getValue();
             } else {
                 Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
                 labelValue = getLabelValue(matchArgument, stringStringMap);
-                if (matcher.getType() != MatchStringType.EXACT) {
+                if (matcher.getType() != Operation.EXACT) {
                     //正则表达式扩散
                     initCriteria.setRegexSpread(true);
                 }
@@ -283,7 +283,7 @@ public class QuotaFlow extends Destroyable {
     }
 
     private boolean matchStringValue(MatchString matchString, String value) {
-        MatchStringType matchType = matchString.getType();
+        Operation matchType = matchString.getType();
         FlowCache flowCache = rateLimitExtension.getExtensions().getFlowCache();
         String matchValue = matchString.getValue().getValue();
         if (RuleUtils.isMatchAllValue(matchValue)) {

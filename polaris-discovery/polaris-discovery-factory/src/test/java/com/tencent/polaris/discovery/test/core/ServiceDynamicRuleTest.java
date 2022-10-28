@@ -14,7 +14,7 @@ import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import com.tencent.polaris.client.pb.RoutingProto.Destination;
 import com.tencent.polaris.client.pb.RoutingProto.Route;
 import com.tencent.polaris.client.pb.RoutingProto.Routing;
@@ -62,13 +62,13 @@ public class ServiceDynamicRuleTest {
         namingServer.getNamingService().batchAddInstances(serviceKey, 10010, 8, parameter);
         Map<String, MatchString> data = new HashMap<>();
         data.put("env", MatchString.newBuilder()
-                .setType(MatchStringType.EXACT)
+                .setType(Operation.EXACT)
                 .setValue(StringValue.newBuilder()
                         .setValue("base").build())
                 .build());
         Map<String, MatchString> srcData = new HashMap<>();
         srcData.put("uid", MatchString.newBuilder()
-                .setType(MatchStringType.EXACT)
+                .setType(Operation.EXACT)
                 .setValue(StringValue.newBuilder()
                         .setValue("144115217417489762").build())
                 .build());
