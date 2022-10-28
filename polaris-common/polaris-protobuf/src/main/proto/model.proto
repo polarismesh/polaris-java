@@ -14,26 +14,13 @@ message Location {
 }
 
 message MatchString {
-  enum MatchStringType {
-    // Equivalent match
-    EXACT = 0;
-    // Regular match
-    REGEX = 1;
-    // Not equals match
-    NOT_EQUALS = 2;
-    // Include match
-    IN = 3;
-    // Not include match
-    NOT_IN = 4;
-  }
 
   enum ValueType {
     TEXT = 0;
     PARAMETER = 1;
     VARIABLE = 2;
   }
-
-  MatchStringType type = 1;
+  Operation type = 1;
   google.protobuf.StringValue value = 2;
   ValueType value_type = 3;
 }
@@ -59,6 +46,25 @@ message MatchArgument {
   Type type = 1;
   // header key or query key
   string key = 2;
-  // header value or query value
+  // @Deprecated: header value or query value, only for compatible
+  // use operation and values instead
   MatchString value = 3;
+  // compare operation
+  Operation operation = 4;
+  // compare values
+  repeated string values = 5;
+
+}
+
+enum Operation {
+  // Equivalent match
+  EXACT = 0;
+  // Regular match
+  REGEX = 1;
+  // Not equals match
+  NOT_EQUALS = 2;
+  // Include match
+  IN = 3;
+  // Not include match
+  NOT_IN = 4;
 }

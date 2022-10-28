@@ -42,7 +42,7 @@ import com.tencent.polaris.client.pb.CircuitBreakerProto.CbRule;
 import com.tencent.polaris.client.pb.CircuitBreakerProto.DestinationSet;
 import com.tencent.polaris.client.pb.CircuitBreakerProto.SourceMatcher;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.client.pb.ModelProto.Operation;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -165,7 +165,7 @@ public class CircuitBreakUtils {
                 return new MatchDestResult(destinationSet, true);
             }
             String method = ruleIdentifier.getMethod();
-            if (methodMatcher.getType() == MatchStringType.EXACT) {
+            if (methodMatcher.getType() == Operation.EXACT) {
                 if (StringUtils.equals(methodMatcherValue, method)) {
                     return new MatchDestResult(destinationSet, false);
                 }

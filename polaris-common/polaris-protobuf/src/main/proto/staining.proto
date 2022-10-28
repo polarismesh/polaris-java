@@ -18,7 +18,7 @@ message FlowStaining {
 
 message StainRule {
   // Traffic matching rules
-  repeated MatchArgument arguments = 1;
+  repeated MatchArgument conditions = 1;
   // Staining label
   repeated StainLabel labels = 2;
   // Stain Label
