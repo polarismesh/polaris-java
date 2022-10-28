@@ -37,9 +37,9 @@ import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
+import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.client.pb.ModelProto.MatchString;
 import com.tencent.polaris.client.pb.ModelProto.MatchString.MatchStringType;
-import com.tencent.polaris.client.pb.RateLimitProto;
 import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
 import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -166,10 +166,10 @@ public class QuotaFlow extends Destroyable {
                 }
             }
         }
-        List<RateLimitProto.MatchArgument> argumentsList = rule.getArgumentsList();
+        List<ModelProto.MatchArgument> argumentsList = rule.getArgumentsList();
         List<String> tmpList = new ArrayList<>();
         Map<Integer, Map<String, String>> arguments = request.getArguments();
-        for (RateLimitProto.MatchArgument matchArgument : argumentsList) {
+        for (ModelProto.MatchArgument matchArgument : argumentsList) {
             String labelValue;
             MatchString matcher = matchArgument.getValue();
             if (regexCombine && matcher.getType() != MatchStringType.EXACT) {
@@ -192,7 +192,7 @@ public class QuotaFlow extends Destroyable {
                 .join(RateLimitConstants.DEFAULT_ENTRY_SEPARATOR, tmpList);
     }
 
-    private static String getLabelEntry(RateLimitProto.MatchArgument matchArgument, String labelValue) {
+    private static String getLabelEntry(ModelProto.MatchArgument matchArgument, String labelValue) {
         switch (matchArgument.getType()) {
             case CUSTOM:
             case HEADER:
@@ -210,7 +210,7 @@ public class QuotaFlow extends Destroyable {
         }
     }
 
-    private static String getLabelValue(RateLimitProto.MatchArgument matchArgument,
+    private static String getLabelValue(ModelProto.MatchArgument matchArgument,
             Map<String, String> stringStringMap) {
         switch (matchArgument.getType()) {
             case CUSTOM:
@@ -255,10 +255,10 @@ public class QuotaFlow extends Destroyable {
                     continue;
                 }
             }
-            List<RateLimitProto.MatchArgument> argumentsList = rule.getArgumentsList();
+            List<ModelProto.MatchArgument> argumentsList = rule.getArgumentsList();
             boolean matched = true;
             if (CollectionUtils.isNotEmpty(argumentsList)) {
-                for (RateLimitProto.MatchArgument matchArgument : argumentsList) {
+                for (ModelProto.MatchArgument matchArgument : argumentsList) {
                     Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
                     if (CollectionUtils.isEmpty(stringStringMap)) {
                         matched = false;

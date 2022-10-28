@@ -95,29 +95,6 @@ message Rule {
   google.protobuf.UInt32Value max_queue_delay = 26 [json_name = "max_queue_delay"];
 }
 
-message MatchArgument {
-  // label type for gateway request
-  enum Type {
-    // custom arguments
-    CUSTOM = 0;
-    // method, match the http post/get/put/delete or grpc method
-    METHOD = 1;
-    // header, match the http header, dubbo attachment, grpc header
-    HEADER = 2;
-    // query, match the http query, dubbo argument
-    QUERY = 3;
-    // caller service
-    CALLER_SERVICE = 4;
-    // caller host ip
-    CALLER_IP =5;
-  }
-  Type type = 1;
-  // header key or query key
-  string key = 2;
-  // header value or query value
-  MatchString value = 3;
-}
-
 // 分布式限流服务集群
 message RateLimitCluster {
   google.protobuf.StringValue service = 1;
