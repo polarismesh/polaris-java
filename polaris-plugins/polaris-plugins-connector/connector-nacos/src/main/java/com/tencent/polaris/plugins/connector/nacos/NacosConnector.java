@@ -129,6 +129,8 @@ public class NacosConnector extends DestroyableServerConnector {
 
 	private final Object lock = new Object();
 
+	private NacosContext nacosContext = new NacosContext();
+
 	private static final int NACOS_SERVICE_PAGESIZE = 10;
 
 	@Override
@@ -169,22 +171,10 @@ public class NacosConnector extends DestroyableServerConnector {
 
 	private Properties decodeNacosConfigProperties(ServerConnectorConfig config) {
 		Properties properties = new Properties();
-		// Nacos Address URI: nacos:nacos@127.0.0.1:8848
-		String address = config.getAddresses().get(0);
-		if (address.indexOf("@") > 0) {
-			String[] parts = address.split("@");
-			String[] auths = parts[0].split(":");
-			if (auths.length == 2) {
-				properties.put(PropertyKeyConst.USERNAME, auths[0]);
-				properties.put(PropertyKeyConst.PASSWORD, auths[1]);
-			}
-
-			properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
-		}
-		else {
-			properties.put(PropertyKeyConst.USERNAME, "nacos");
-			properties.put(PropertyKeyConst.PASSWORD, "nacos");
-		}
+		properties.put(PropertyKeyConst.USERNAME, config.getMetadata().get(PropertyKeyConst.USERNAME));
+		properties.put(PropertyKeyConst.PASSWORD, config.getMetadata().get(PropertyKeyConst.PASSWORD));
+		properties.put(PropertyKeyConst.CONTEXT_PATH, config.getMetadata().get(PropertyKeyConst.CONTEXT_PATH));
+		properties.put(PropertyKeyConst.SERVER_ADDR, String.join(",", config.getAddresses()));
 		return properties;
 	}
 
