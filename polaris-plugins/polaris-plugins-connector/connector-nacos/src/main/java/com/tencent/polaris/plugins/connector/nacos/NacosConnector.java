@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.connector.nacos;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -532,20 +533,20 @@ public class NacosConnector extends DestroyableServerConnector {
 		return instance;
 	}
 
-	private static String analyzeNacosService(String service) {
+	protected static String analyzeNacosService(String service) {
 		String[] detail = service.split("__");
 		if (detail.length == 1) {
 			return service;
 		}
-		return detail[1];
+
+		return service.replaceFirst(detail[0] + "__", "");
 	}
 
-	private static String analyzeNacosGroup(String service) {
+	protected static String analyzeNacosGroup(String service) {
 		String[] detail = service.split("__");
-		if (detail.length == 1) {
+		if (detail.length == 1 || Objects.equals(detail[0], "")) {
 			return DEFAULT_GROUP;
 		}
-
 		return detail[0];
 	}
 
