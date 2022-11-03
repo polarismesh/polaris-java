@@ -19,7 +19,6 @@ package com.tencent.polaris.plugins.connector.nacos;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -164,27 +163,22 @@ public class NacosConnector extends DestroyableServerConnector {
 			isDiscoveryEnable = ctx.getConfig().getConsumer().getDiscoveryConfigMap().get(id).isEnable();
 		}
 
-		nacosProperties = this.decodeNacosConfigProperties(connectorConfig);
+		this.nacosProperties = this.decodeNacosConfigProperties(connectorConfig);
 	}
 
 	private Properties decodeNacosConfigProperties(ServerConnectorConfig config) {
 		Properties properties = new Properties();
-		// Nacos Address URI: nacos:nacos@127.0.0.1:8848
-		String address = config.getAddresses().get(0);
-		if (address.indexOf("@") > 0) {
-			String[] parts = address.split("@");
-			String[] auths = parts[0].split(":");
-			if (auths.length == 2) {
-				properties.put(PropertyKeyConst.USERNAME, auths[0]);
-				properties.put(PropertyKeyConst.PASSWORD, auths[1]);
-			}
-
-			properties.put(PropertyKeyConst.SERVER_ADDR, parts[1]);
+		Map<String, String> metadata = Optional.ofNullable(config.getMetadata()).orElse(new HashMap<>());
+		if (Objects.nonNull(metadata.get(PropertyKeyConst.USERNAME))) {
+			properties.put(PropertyKeyConst.USERNAME, metadata.get(PropertyKeyConst.USERNAME));
 		}
-		else {
-			properties.put(PropertyKeyConst.USERNAME, "nacos");
-			properties.put(PropertyKeyConst.PASSWORD, "nacos");
+		if (Objects.nonNull(metadata.get(PropertyKeyConst.PASSWORD))) {
+			properties.put(PropertyKeyConst.PASSWORD, metadata.get(PropertyKeyConst.PASSWORD));
 		}
+		if (Objects.nonNull(metadata.get(PropertyKeyConst.CONTEXT_PATH))) {
+			properties.put(PropertyKeyConst.CONTEXT_PATH, metadata.get(PropertyKeyConst.CONTEXT_PATH));
+		}
+		properties.put(PropertyKeyConst.SERVER_ADDR, String.join(",", config.getAddresses()));
 		return properties;
 	}
 
@@ -196,7 +190,10 @@ public class NacosConnector extends DestroyableServerConnector {
 
 		synchronized (lock) {
 			Properties properties = new Properties(nacosProperties);
-			properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
+			if (!Objects.equals(namespace, "default")) {
+				properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
+			}
+
 			try {
 				namingService = NacosFactory.createNamingService(properties);
 			}
@@ -479,11 +476,11 @@ public class NacosConnector extends DestroyableServerConnector {
 		if (Objects.nonNull(req.getWeight())) {
 			instance.setWeight(req.getWeight());
 		}
-		instance.setServiceName(req.getService());
+		instance.setServiceName(analyzeNacosService(req.getService()));
 
 		if (CollectionUtils.isNotEmpty(req.getMetadata())) {
-			if (req.getMetadata().containsKey("internal-nacos-cluster")) {
-				instance.setClusterName(req.getMetadata().get("internal-nacos-cluster"));
+			if (req.getMetadata().containsKey("nacos.cluster")) {
+				instance.setClusterName(req.getMetadata().get("nacos.cluster"));
 			}
 		}
 
@@ -525,8 +522,8 @@ public class NacosConnector extends DestroyableServerConnector {
 		instance.setHealthy(true);
 
 		if (CollectionUtils.isNotEmpty(req.getMetadata())) {
-			if (req.getMetadata().containsKey("internal-nacos-cluster")) {
-				instance.setClusterName(req.getMetadata().get("internal-nacos-cluster"));
+			if (req.getMetadata().containsKey("nacos.cluster")) {
+				instance.setClusterName(req.getMetadata().get("nacos.cluster"));
 			}
 		}
 
