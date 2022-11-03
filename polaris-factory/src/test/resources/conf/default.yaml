@@ -52,7 +52,6 @@ global:
     plugin: { }
 consumer:
   localCache:
-    pushEmptyProtection: true
     serviceExpireTime: 24h
     serviceRefreshInterval: 2s
     persistDir: $HOME/polaris/backup

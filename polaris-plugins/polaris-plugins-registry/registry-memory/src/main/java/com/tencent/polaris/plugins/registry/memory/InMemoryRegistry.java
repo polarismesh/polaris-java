@@ -160,11 +160,6 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     private long serviceExpireTimeMs;
 
     /**
-     * 服务保护推空开关
-     */
-    private boolean pushEmptyProtection;
-
-    /**
      * 是否有独立的服务发现集群
      */
     private boolean hasDiscoverCluster = false;
@@ -396,10 +391,6 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         return resourceEventListeners;
     }
 
-    public boolean isPushEmptyProtection() {
-        return pushEmptyProtection;
-    }
-
     @Override
     public String getName() {
         return DefaultPlugins.LOCAL_REGISTRY_IN_MEMORY;
@@ -437,7 +428,6 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         long retryIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getPersistRetryInterval();
         this.serviceRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceRefreshInterval();
         this.serviceListRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceListRefreshInterval();
-        this.pushEmptyProtection = ctx.getConfig().getConsumer().getLocalCache().isServicePushEmptyProtect();
         boolean configPersistEnable = ctx.getConfig().getConsumer().getLocalCache().isPersistEnable();
         persistEnable = configPersistEnable && StringUtils.isNotBlank(persistDir);
         //启动本地缓存
