@@ -106,6 +106,7 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
         SourceService sourceService = new SourceService();
         sourceService.setService(request.getSourceService().getService());
         sourceService.setNamespace(request.getSourceService().getNamespace());
+        sourceService.setMetadata(request.getSourceService().getMetadata());
         RouteInfo routeInfo = new RouteInfo(sourceService, dstInstances, request.getMethod());
         routeInfo.setRouterArguments(request.getRouterArguments());
         if (request.getMetadataFailoverType() != null) {
