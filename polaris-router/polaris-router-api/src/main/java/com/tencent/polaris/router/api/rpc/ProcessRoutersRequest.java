@@ -22,13 +22,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -39,7 +39,7 @@ import com.tencent.polaris.api.utils.MapUtils;
  */
 public class ProcessRoutersRequest extends RequestBaseEntity {
 
-	private ServiceInfo sourceService;
+	private SourceService sourceService;
 
 	private RouterNamesGroup routers;
 
@@ -53,11 +53,21 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 	private MetadataFailoverType metadataFailoverType;
 
 	public ServiceInfo getSourceService() {
+		ServiceInfo serviceInfo = new ServiceInfo();
+		serviceInfo.setMetadata(sourceService.getMetadata());
+		serviceInfo.setService(sourceService.getService());
+		serviceInfo.setNamespace(sourceService.getNamespace());
+
 		return sourceService;
 	}
 
-	public void setSourceService(ServiceInfo sourceService) {
-		this.sourceService = sourceService;
+	public void setSourceService(ServiceInfo serviceInfo) {
+		this.sourceService = new SourceService();
+		this.sourceService.setService(serviceInfo.getService());
+		this.sourceService.setNamespace(serviceInfo.getNamespace());
+
+		Optional.ofNullable(serviceInfo.getMetadata()).orElse(new HashMap<>())
+				.forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
 	}
 
 	public String getMethod() {
@@ -120,6 +130,9 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 	}
 
 	public Map<String, Set<RouteArgument>> getRouterArguments() {
+		Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
+		Set<RouteArgument> arguments = routerArgument.getOrDefault("ruleRouter", new HashSet<>());
+		arguments.addAll(sourceService.getArguments());
 		return Collections.unmodifiableMap(routerArgument);
 	}
 
