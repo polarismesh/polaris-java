@@ -52,7 +52,7 @@ import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 public class RuleMatchTest {
 
-    private static final int PORT = 10093;
+    private static int PORT;
 
     private static final String MATCH_REGEX_SERVICE = "match_regex_service";
 
@@ -69,6 +69,7 @@ public class RuleMatchTest {
         try {
             namingServer = NamingServer.startNamingServer(-1);
             System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
+            PORT = namingServer.getPort();
         } catch (IOException e) {
             Assert.fail(e.getMessage());
         }
