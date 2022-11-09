@@ -29,9 +29,9 @@ import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.Service;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
-import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
@@ -103,7 +103,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     // 匹配source规则
-    private boolean matchSource(List<RoutingProto.Source> sources, SourceService sourceService,
+    private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService, Map<String, String> trafficLabels,
             RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
@@ -151,7 +151,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             }
 
             matched = matchMetadata(
-                    source.getMetadataMap(), sourceService.getLabels(), true, multiEnvRouterParamMap);
+                    source.getMetadataMap(), trafficLabels, true, multiEnvRouterParamMap);
             if (matched) {
                 break;
             }
@@ -291,8 +291,9 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 LOG.debug("getRuleFilteredInstances, route:{}", route);
             }
 
+            Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ROUTER_TYPE_RULE_BASED);
             // 匹配source规则
-            boolean sourceMatched = matchSource(route.getSourcesList(), routeInfo.getSourceService(), ruleMatchType,
+            boolean sourceMatched = matchSource(route.getSourcesList(), routeInfo.getSourceService(), trafficLabels, ruleMatchType,
                     multiEnvRouterParamMap);
             if (!sourceMatched) {
                 continue;

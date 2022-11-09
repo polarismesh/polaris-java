@@ -31,7 +31,6 @@ import java.util.function.Consumer;
  */
 public class SourceService extends ServiceInfo {
 
-
     private Set<RouteArgument> arguments = new HashSet<>();
 
     public Set<RouteArgument> getArguments() {
@@ -68,14 +67,12 @@ public class SourceService extends ServiceInfo {
     @Deprecated
     @Override
     public void setMetadata(Map<String, String> metadata) {
-        metadata.forEach((key, value) -> appendArguments(RouteArgument.buildCustom(key, value)));
+        metadata.forEach((key, value) -> appendArguments(RouteArgument.fromLabel(key, value)));
     }
 
     @Deprecated
     @Override
     public Map<String, String> getMetadata() {
-        Map<String, String> ret = new HashMap<>();
-        arguments.forEach(argument -> ret.put(argument.getKey(), argument.getValue()));
-        return ret;
+        return getLabels();
     }
 }
