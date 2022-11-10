@@ -123,7 +123,7 @@ public class ServiceDynamicRuleTest {
         serviceInfo.setService(RULE_ROUTER_SERVICE);
         serviceInfo.appendArguments(RouteArgument.buildCustom("uid", "144115217417489762"));
         // 设置主调方服务信息 即 Metadata等规则信息
-        getInstancesRequest.setSourceService(serviceInfo);
+        getInstancesRequest.setServiceInfo(serviceInfo);
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             InstancesResponse oneInstance = consumerAPI.getInstances(getInstancesRequest);

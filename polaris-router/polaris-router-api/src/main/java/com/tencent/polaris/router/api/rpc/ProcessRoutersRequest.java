@@ -57,7 +57,6 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 		serviceInfo.setMetadata(sourceService.getMetadata());
 		serviceInfo.setService(sourceService.getService());
 		serviceInfo.setNamespace(sourceService.getNamespace());
-
 		return sourceService;
 	}
 
@@ -105,19 +104,6 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 		routerArgument.put(routerType, arguments);
 	}
 
-	public void addRouterMetadata(String routerType, Set<RouteArgument> arguments) {
-		if (CollectionUtils.isEmpty(arguments)) {
-			return;
-		}
-
-		if (routerArgument == null) {
-			routerArgument = new HashMap<>();
-		}
-
-		Set<RouteArgument> subArguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
-		subArguments.addAll(arguments);
-	}
-
 	public Set<RouteArgument> getRouterArguments(String routerType) {
 		if (routerArgument == null) {
 			return Collections.emptySet();
@@ -131,7 +117,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
 	public Map<String, Set<RouteArgument>> getRouterArguments() {
 		Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
-		Set<RouteArgument> arguments = routerArgument.getOrDefault("ruleRouter", new HashSet<>());
+		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
 		arguments.addAll(sourceService.getArguments());
 		return Collections.unmodifiableMap(routerArgument);
 	}
