@@ -176,6 +176,8 @@ consumer:
     requestCountAfterHalfOpen: 3
     #描述: 熔断器半开到关闭所必须的最少成功请求数
     successCountAfterHalfOpen: 3
+    #描述: 熔断规则远程拉取开关
+    enableRemotePull: true
     #描述:熔断策略，SDK会根据策略名称加载对应的熔断器插件（已注册的熔断器插件名）
     chain:
       - errorCount
