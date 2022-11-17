@@ -46,6 +46,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -238,8 +239,9 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             // If composite server connector does not exist.
             serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
         }
-        String[] tokens = serverAddress.split(":");
-        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+
+        URL url = new URL(serverAddress);
+        try (Socket socket = new Socket(url.getHost(), url.getPort())) {
             return socket.getLocalAddress().getHostAddress();
         }
     }

@@ -157,7 +157,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         svcEventKeys.add(dstInstanceEventKey);
         dstRuleEventKey = new ServiceEventKey(dstSvcKey, EventType.ROUTING);
         svcEventKeys.add(dstRuleEventKey);
-        SourceService srcServiceInfo = request.getSourceService();
+        SourceService srcServiceInfo = request.getServiceInfo();
         if (null != srcServiceInfo && StringUtils.isNotBlank(srcServiceInfo.getNamespace()) && StringUtils
                 .isNotBlank(srcServiceInfo.getService())) {
             ServiceKey srcService = new ServiceKey(srcServiceInfo.getNamespace(), srcServiceInfo.getService());

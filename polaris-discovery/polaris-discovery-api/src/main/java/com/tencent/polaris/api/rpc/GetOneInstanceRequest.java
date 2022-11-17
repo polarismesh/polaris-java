@@ -17,9 +17,17 @@
 
 package com.tencent.polaris.api.rpc;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.SourceService;
+
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
 /**
  * 单个服务实例查询请求
@@ -95,8 +103,19 @@ public class GetOneInstanceRequest extends RequestBaseEntity {
         return serviceInfo;
     }
 
-    public void setServiceInfo(SourceService serviceInfo) {
-        this.serviceInfo = serviceInfo;
+    public void setServiceInfo(ServiceInfo serviceInfo) {
+        if (serviceInfo instanceof SourceService) {
+            this.serviceInfo = (SourceService) serviceInfo;
+        } else {
+            SourceService sourceService = new SourceService();
+            sourceService.setNamespace(serviceInfo.getNamespace());
+            sourceService.setService(serviceInfo.getService());
+            Set<RouteArgument> argumentSet = new HashSet<>();
+            Optional.ofNullable(serviceInfo.getMetadata()).orElse(Collections.emptyMap())
+                    .forEach((key, value) -> argumentSet.add(RouteArgument.fromLabel(key, value)));
+            sourceService.setArguments(argumentSet);
+            this.serviceInfo = sourceService;
+        }
     }
 
     public MetadataFailoverType getMetadataFailoverType() {

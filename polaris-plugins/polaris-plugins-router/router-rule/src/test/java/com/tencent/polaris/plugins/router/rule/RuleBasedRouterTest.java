@@ -27,22 +27,23 @@ import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.client.pb.RoutingProto.Routing;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.plugins.router.rule.RuleBasedRouter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -134,9 +135,12 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("version", "*");
         v1ReqMeta.put("application", "demo-consumer");
         v1ServiceInfo.setMetadata(v1ReqMeta);
-        v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "v1"));
         RouteInfo v1RouteInfo = new RouteInfo(
                 v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+        Map<String, Set<RouteArgument>> argumentsMap = new HashMap<>();
+        argumentsMap.put("ruleRouter", new HashSet<>());
+        argumentsMap.get("ruleRouter").add(RouteArgument.buildHeader("req", "v1"));
+        v1RouteInfo.setRouterArguments(argumentsMap);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         RouteResult result = ruleBasedRouter.router(v1RouteInfo, defaultServiceInstances);

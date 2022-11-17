@@ -22,13 +22,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -39,7 +40,7 @@ import com.tencent.polaris.api.utils.MapUtils;
  */
 public class ProcessRoutersRequest extends RequestBaseEntity {
 
-	private ServiceInfo sourceService;
+	private SourceService sourceService;
 
 	private RouterNamesGroup routers;
 
@@ -56,8 +57,19 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 		return sourceService;
 	}
 
-	public void setSourceService(ServiceInfo sourceService) {
-		this.sourceService = sourceService;
+	public void setSourceService(ServiceInfo serviceInfo) {
+		this.sourceService = new SourceService();
+		this.sourceService.setService(serviceInfo.getService());
+		this.sourceService.setNamespace(serviceInfo.getNamespace());
+
+		Optional.ofNullable(serviceInfo.getMetadata()).orElse(new HashMap<>())
+				.forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
+
+		if (Objects.isNull(routerArgument)) {
+			this.routerArgument = new HashMap<>();
+		}
+		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
+		arguments.addAll(sourceService.getArguments());
 	}
 
 	public String getMethod() {
@@ -95,31 +107,23 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 		routerArgument.put(routerType, arguments);
 	}
 
-	public void addRouterMetadata(String routerType, Set<RouteArgument> arguments) {
-		if (CollectionUtils.isEmpty(arguments)) {
-			return;
-		}
-
-		if (routerArgument == null) {
-			routerArgument = new HashMap<>();
-		}
-
-		Set<RouteArgument> subArguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
-		subArguments.addAll(arguments);
-	}
-
 	public Set<RouteArgument> getRouterArguments(String routerType) {
 		if (routerArgument == null) {
 			return Collections.emptySet();
 		}
 		Set<RouteArgument> arguments = routerArgument.get(routerType);
-		if (arguments == null || arguments.size() == 0) {
+		if (CollectionUtils.isEmpty(arguments)) {
 			return Collections.emptySet();
 		}
+
 		return Collections.unmodifiableSet(arguments);
 	}
 
 	public Map<String, Set<RouteArgument>> getRouterArguments() {
+		if (routerArgument == null) {
+			return Collections.emptyMap();
+		}
+		Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
 		return Collections.unmodifiableMap(routerArgument);
 	}
 
@@ -170,20 +174,24 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 			return Collections.emptyMap();
 		}
 
-        Map<String, String> metadata = new HashMap<>();
-        arguments.forEach(argument -> argument.toLabel(metadata));
+		Map<String, String> metadata = new HashMap<>();
+		arguments.forEach(argument -> argument.toLabel(metadata));
 
 		return Collections.unmodifiableMap(metadata);
 	}
 
-    @Deprecated
+	@Deprecated
 	public Map<String, Map<String, String>> getRouterMetadata() {
-        Map<String, Map<String, String>> ret = new HashMap<>();
+		if (Objects.isNull(routerArgument)) {
+			return Collections.emptyMap();
+		}
 
-        routerArgument.forEach((routerType, arguments) -> {
-            Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
-            arguments.forEach(argument -> argument.toLabel(entry));
-        });
+		Map<String, Map<String, String>> ret = new HashMap<>();
+
+		routerArgument.forEach((routerType, arguments) -> {
+			Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
+			arguments.forEach(argument -> argument.toLabel(entry));
+		});
 
 		return ret;
 	}

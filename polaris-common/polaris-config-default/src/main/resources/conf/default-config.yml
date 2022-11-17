@@ -118,8 +118,6 @@ consumer:
     persistMaxReadRetry: 0
     #描述: 缓存读写磁盘的重试间隔
     persistRetryInterval: 500ms
-    #描述：服务保护推空开关
-    pushEmptyProtection: true
   #描述: 服务路由相关配置
   serviceRouter:
     #描述: 前置路由链
@@ -178,6 +176,8 @@ consumer:
     requestCountAfterHalfOpen: 3
     #描述: 熔断器半开到关闭所必须的最少成功请求数
     successCountAfterHalfOpen: 3
+    #描述: 熔断规则远程拉取开关
+    enableRemotePull: true
     #描述:熔断策略，SDK会根据策略名称加载对应的熔断器插件（已注册的熔断器插件名）
     chain:
       - errorCount
