@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -53,10 +54,6 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 	private MetadataFailoverType metadataFailoverType;
 
 	public ServiceInfo getSourceService() {
-		ServiceInfo serviceInfo = new ServiceInfo();
-		serviceInfo.setMetadata(sourceService.getMetadata());
-		serviceInfo.setService(sourceService.getService());
-		serviceInfo.setNamespace(sourceService.getNamespace());
 		return sourceService;
 	}
 
@@ -67,6 +64,12 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
 		Optional.ofNullable(serviceInfo.getMetadata()).orElse(new HashMap<>())
 				.forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
+
+		if (Objects.isNull(routerArgument)) {
+			this.routerArgument = new HashMap<>();
+		}
+		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
+		arguments.addAll(sourceService.getArguments());
 	}
 
 	public String getMethod() {
@@ -109,16 +112,18 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 			return Collections.emptySet();
 		}
 		Set<RouteArgument> arguments = routerArgument.get(routerType);
-		if (arguments == null || arguments.size() == 0) {
+		if (CollectionUtils.isEmpty(arguments)) {
 			return Collections.emptySet();
 		}
+
 		return Collections.unmodifiableSet(arguments);
 	}
 
 	public Map<String, Set<RouteArgument>> getRouterArguments() {
+		if (routerArgument == null) {
+			return Collections.emptyMap();
+		}
 		Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
-		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
-		arguments.addAll(sourceService.getArguments());
 		return Collections.unmodifiableMap(routerArgument);
 	}
 
@@ -169,20 +174,24 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 			return Collections.emptyMap();
 		}
 
-        Map<String, String> metadata = new HashMap<>();
-        arguments.forEach(argument -> argument.toLabel(metadata));
+		Map<String, String> metadata = new HashMap<>();
+		arguments.forEach(argument -> argument.toLabel(metadata));
 
 		return Collections.unmodifiableMap(metadata);
 	}
 
-    @Deprecated
+	@Deprecated
 	public Map<String, Map<String, String>> getRouterMetadata() {
-        Map<String, Map<String, String>> ret = new HashMap<>();
+		if (Objects.isNull(routerArgument)) {
+			return Collections.emptyMap();
+		}
 
-        routerArgument.forEach((routerType, arguments) -> {
-            Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
-            arguments.forEach(argument -> argument.toLabel(entry));
-        });
+		Map<String, Map<String, String>> ret = new HashMap<>();
+
+		routerArgument.forEach((routerType, arguments) -> {
+			Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
+			arguments.forEach(argument -> argument.toLabel(entry));
+		});
 
 		return ret;
 	}
