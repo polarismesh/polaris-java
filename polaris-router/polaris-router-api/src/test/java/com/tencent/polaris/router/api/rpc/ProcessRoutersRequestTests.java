@@ -17,9 +17,12 @@
 
 package com.tencent.polaris.router.api.rpc;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.SourceService;
 import org.junit.Assert;
@@ -31,8 +34,9 @@ public class ProcessRoutersRequestTests {
 	public void testGetRouterArguments() {
 		ProcessRoutersRequest request = new ProcessRoutersRequest();
 		request.getRouterArguments();
-
 		request.getRouterArguments("ruleRouter");
+		request.getRouterMetadata();
+		request.getRouterMetadata("ruleRouter");
 	}
 
 	@Test
@@ -49,5 +53,49 @@ public class ProcessRoutersRequestTests {
 		SourceService sourceService = (SourceService) request.getSourceService();
 		Assert.assertEquals(2, sourceService.getArguments().size());
 		Assert.assertEquals(2, request.getRouterArguments("ruleRouter").size());
+		Assert.assertEquals(1, request.getRouterMetadata().size());
+		Assert.assertEquals(2, request.getRouterMetadata("ruleRouter").size());
+	}
+
+	@Test
+	public void testSetSourceService2() {
+		ProcessRoutersRequest request = new ProcessRoutersRequest();
+		SourceService serviceInfo = new SourceService();
+		serviceInfo.appendArguments(RouteArgument.fromLabel("$header.uid", "123"));
+		serviceInfo.setArguments(new HashSet<>(Arrays.asList(
+				RouteArgument.fromLabel("uid", "123")
+		)));
+
+		request.setSourceService(serviceInfo);
+
+		SourceService sourceService = (SourceService) request.getSourceService();
+		Assert.assertEquals(2, sourceService.getArguments().size());
+		Assert.assertEquals(2, request.getRouterArguments("ruleRouter").size());
+		Assert.assertEquals(1, request.getRouterMetadata().size());
+		Assert.assertEquals(2, request.getRouterMetadata("ruleRouter").size());
+	}
+
+	@Test
+	public void testSetSourceService3() {
+		ProcessRoutersRequest request = new ProcessRoutersRequest();
+		SourceService serviceInfo = new SourceService();
+		serviceInfo.appendArguments(RouteArgument.fromLabel("$header.uid", "123"));
+		serviceInfo.setArguments(new HashSet<>(Arrays.asList(
+				RouteArgument.fromLabel("uid", "123")
+		)));
+
+		request.setSourceService(serviceInfo);
+
+		SourceService sourceService = (SourceService) request.getSourceService();
+		Assert.assertEquals(2, sourceService.getArguments().size());
+		Assert.assertEquals(2, request.getRouterArguments("ruleRouter").size());
+		Assert.assertEquals(1, request.getRouterMetadata().size());
+		Assert.assertEquals(2, request.getRouterMetadata("ruleRouter").size());
+
+		((SourceService) request.getSourceService()).appendArguments(RouteArgument.fromLabel("$header.env", "prod"));
+		Assert.assertEquals(3, sourceService.getArguments().size());
+		Assert.assertEquals(3, request.getRouterArguments("ruleRouter").size());
+		Assert.assertEquals(1, request.getRouterMetadata().size());
+		Assert.assertEquals(3, request.getRouterMetadata("ruleRouter").size());
 	}
 }
