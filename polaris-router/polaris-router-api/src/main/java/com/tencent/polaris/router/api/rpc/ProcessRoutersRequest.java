@@ -65,11 +65,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 		Optional.ofNullable(serviceInfo.getMetadata()).orElse(new HashMap<>())
 				.forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
 
-		if (Objects.isNull(routerArgument)) {
-			this.routerArgument = new HashMap<>();
-		}
-		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
-		arguments.addAll(sourceService.getArguments());
+		buildRouterArgumentsBySourceService();
 	}
 
 	public String getMethod() {
@@ -108,9 +104,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 	}
 
 	public Set<RouteArgument> getRouterArguments(String routerType) {
-		if (routerArgument == null) {
-			return Collections.emptySet();
-		}
+		buildRouterArgumentsBySourceService();
 		Set<RouteArgument> arguments = routerArgument.get(routerType);
 		if (CollectionUtils.isEmpty(arguments)) {
 			return Collections.emptySet();
@@ -120,9 +114,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 	}
 
 	public Map<String, Set<RouteArgument>> getRouterArguments() {
-		if (routerArgument == null) {
-			return Collections.emptyMap();
-		}
+		buildRouterArgumentsBySourceService();
 		Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
 		return Collections.unmodifiableMap(routerArgument);
 	}
@@ -133,6 +125,17 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
 	public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
 		this.metadataFailoverType = metadataFailoverType;
+	}
+
+	private void buildRouterArgumentsBySourceService() {
+		if (CollectionUtils.isEmpty(routerArgument)) {
+			routerArgument = new HashMap<>();
+		}
+		if (Objects.isNull(sourceService)) {
+			return;
+		}
+		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
+		arguments.addAll(sourceService.getArguments());
 	}
 
 	@Deprecated
@@ -166,9 +169,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
 	@Deprecated
 	public Map<String, String> getRouterMetadata(String routerType) {
-		if (routerArgument == null) {
-			return Collections.emptyMap();
-		}
+		buildRouterArgumentsBySourceService();
 		Set<RouteArgument> arguments = routerArgument.get(routerType);
 		if (CollectionUtils.isEmpty(arguments)) {
 			return Collections.emptyMap();
@@ -182,9 +183,7 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
 	@Deprecated
 	public Map<String, Map<String, String>> getRouterMetadata() {
-		if (Objects.isNull(routerArgument)) {
-			return Collections.emptyMap();
-		}
+		buildRouterArgumentsBySourceService();
 
 		Map<String, Map<String, String>> ret = new HashMap<>();
 

@@ -42,11 +42,8 @@ public class SourceService extends ServiceInfo {
 	}
 
 	public void setArguments(Set<RouteArgument> arguments) {
-		if (CollectionUtils.isEmpty(arguments)) {
-			this.arguments = Collections.emptySet();
-		}
-		else {
-			this.arguments = arguments;
+		if (!CollectionUtils.isEmpty(arguments)) {
+			this.arguments.addAll(arguments);
 		}
 	}
 
