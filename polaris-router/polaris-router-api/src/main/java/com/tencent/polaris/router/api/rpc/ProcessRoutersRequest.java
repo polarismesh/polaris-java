@@ -182,6 +182,10 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
 	@Deprecated
 	public Map<String, Map<String, String>> getRouterMetadata() {
+		if (Objects.isNull(routerArgument)) {
+			return Collections.emptyMap();
+		}
+
 		Map<String, Map<String, String>> ret = new HashMap<>();
 
 		routerArgument.forEach((routerType, arguments) -> {
