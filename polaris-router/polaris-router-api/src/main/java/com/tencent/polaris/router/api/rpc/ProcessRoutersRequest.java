@@ -111,8 +111,8 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 		if (routerArgument == null) {
 			return Collections.emptySet();
 		}
-		Set<RouteArgument> arguments = routerArgument.getOrDefault(routerType, new HashSet<>());
-		if (arguments == null || arguments.size() == 0) {
+		Set<RouteArgument> arguments = routerArgument.get(routerType);
+		if (CollectionUtils.isEmpty(arguments)) {
 			return Collections.emptySet();
 		}
 
