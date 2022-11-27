@@ -239,7 +239,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 加载资源
      *
      * @param svcEventKey 服务资源名
-     * @param notifier    通知器
+     * @param notifier 通知器
      * @throws PolarisException 异常
      */
     private void loadRemoteValue(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
@@ -319,7 +319,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private void reportCircuitStat(Entry<StatusDimension, CircuitBreakerStatus> dimensionEntry,
-                                   Instance instance) {
+            Instance instance) {
         if (null != statPlugins) {
             try {
                 for (Plugin statPlugin : statPlugins) {
@@ -336,7 +336,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private CircuitBreakGauge convertToCircuitBreakGauge(Entry<StatusDimension, CircuitBreakerStatus> dimensionEntry,
-                                                         Instance instance) {
+            Instance instance) {
         DefaultCircuitBreakResult result = new DefaultCircuitBreakResult();
         result.setMethod(dimensionEntry.getKey().getMethod());
         result.setCallerService(dimensionEntry.getKey().getCallerService());
@@ -355,12 +355,13 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         if (CollectionUtils.isEmpty(instanceProperties)) {
             return;
         }
-        RegistryCacheValue cacheValue = getResource(new ServiceEventKey(request.getServiceKey(), EventType.INSTANCE),
-                true, true);
+        ServiceEventKey svcEventKey = new ServiceEventKey(request.getServiceKey(), EventType.INSTANCE);
+        RegistryCacheValue cacheValue = getResource(svcEventKey, true, true);
         if (null == cacheValue) {
             //服务不存在，忽略
             return;
         }
+        boolean changed = false;
         for (InstanceProperty instanceProperty : instanceProperties) {
             InstanceByProto instance = (InstanceByProto) instanceProperty.getInstance();
             InstanceLocalValue instanceLocalValue = instance.getInstanceLocalValue();
@@ -371,12 +372,22 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
                 switch (entry.getKey()) {
                     case InstanceProperty.PROPERTY_CIRCUIT_BREAKER_STATUS:
                         onCircuitBreakStatus(entry.getValue(), instanceLocalValue, instance);
+                        changed = true;
                         break;
                     case InstanceProperty.PROPERTY_DETECT_RESULT:
                         instanceLocalValue.setDetectResult((DetectResult) entry.getValue());
                         break;
                     default:
                         break;
+                }
+            }
+        }
+        if (changed) {
+            // notify changed
+            Collection<ResourceEventListener> resourceEventListeners = getResourceEventListeners();
+            if (!CollectionUtils.isEmpty(resourceEventListeners)) {
+                for (ResourceEventListener listener : resourceEventListeners) {
+                    listener.onResourceUpdated(svcEventKey, cacheValue, cacheValue);
                 }
             }
         }
@@ -427,7 +438,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         int maxWriteRetry = ctx.getConfig().getConsumer().getLocalCache().getPersistMaxWriteRetry();
         long retryIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getPersistRetryInterval();
         this.serviceRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceRefreshInterval();
-        this.serviceListRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceListRefreshInterval();
+        this.serviceListRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache()
+                .getServiceListRefreshInterval();
         boolean configPersistEnable = ctx.getConfig().getConsumer().getLocalCache().isPersistEnable();
         persistEnable = configPersistEnable && StringUtils.isNotBlank(persistDir);
         //启动本地缓存
@@ -466,7 +478,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 持久化消息
      *
      * @param svcEventKey 资源KEY
-     * @param message     原始消息
+     * @param message 原始消息
      */
     public void saveMessageToFile(ServiceEventKey svcEventKey, Message message) {
         if (!persistEnable) {
