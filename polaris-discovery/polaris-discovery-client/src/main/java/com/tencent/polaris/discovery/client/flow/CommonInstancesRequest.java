@@ -26,9 +26,12 @@ import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.SourceService;
-import com.tencent.polaris.api.rpc.*;
+import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
+import com.tencent.polaris.api.rpc.GetInstancesRequest;
+import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
@@ -100,6 +103,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
 
         routeInfo = new RouteInfo(null, dstServiceInfo, null);
         routeInfo.setIncludeUnhealthyInstances(false);
+        routeInfo.setIncludeCircuitBreakInstances(true);
         criteria = null;
 
         // 关闭非必要的 Router，只保留 isolatedRouter，recoverRouter 两个最基本的 Router。
@@ -113,12 +117,12 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
 
-        /**
-         * 构造函数
-         *
-         * @param request 请求
-         * @param configuration 配置
-         */
+    /**
+     * 构造函数
+     *
+     * @param request 请求
+     * @param configuration 配置
+     */
     public CommonInstancesRequest(GetOneInstanceRequest request, Configuration configuration) {
         ServiceKey dstSvcKey = new ServiceKey(request.getNamespace(), request.getService());
         dstInstanceEventKey = new ServiceEventKey(dstSvcKey, EventType.INSTANCE);
