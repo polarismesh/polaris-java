@@ -5,4 +5,16 @@ package com.tencent.polaris.api.rpc;
  */
 public class GetHealthyInstancesRequest extends GetAllInstancesRequest {
 
+    /**
+     * 是否返回熔断实例，默认不返回
+     */
+    private Boolean IncludeCircuitBreakInstances;
+
+    public Boolean getIncludeCircuitBreakInstances() {
+        return IncludeCircuitBreakInstances;
+    }
+
+    public void setIncludeCircuitBreakInstances(Boolean includeCircuitBreakInstances) {
+        this.IncludeCircuitBreakInstances = includeCircuitBreakInstances;
+    }
 }
