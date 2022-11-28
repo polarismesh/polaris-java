@@ -46,7 +46,7 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
             throws PolarisException {
         //过滤不健康的节点，只有心跳而且没有被熔断的才是健康的
         List<Instance> healthyInstance;
-        if (recoverRouterConfig.isExcludeCircuitBreakInstances()) {
+        if (isExcludeCircuitBreakInstances(routeInfo)) {
             //不包含被熔断的实例，需要过滤被熔断的实例
             healthyInstance = instances.getInstances().stream().filter(
                     instance -> Utils.isHealthyInstance(instance, routeInfo.getStatusDimensions()))
@@ -64,6 +64,13 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
         }
 
         return new RouteResult(healthyInstance, RouteResult.State.Next);
+    }
+
+    private boolean isExcludeCircuitBreakInstances(RouteInfo routeInfo) {
+        if (routeInfo.isIncludeCircuitBreakInstances()) {
+            return false;
+        }
+        return recoverRouterConfig.isExcludeCircuitBreakInstances();
     }
 
     @Override
