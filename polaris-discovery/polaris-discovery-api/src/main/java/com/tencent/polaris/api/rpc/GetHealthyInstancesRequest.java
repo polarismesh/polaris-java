@@ -8,13 +8,13 @@ public class GetHealthyInstancesRequest extends GetAllInstancesRequest {
     /**
      * 是否返回熔断实例，默认不返回
      */
-    private Boolean includeCircuitBreak;
+    private Boolean IncludeCircuitBreakInstances;
 
-    public Boolean getIncludeCircuitBreak() {
-        return includeCircuitBreak;
+    public Boolean getIncludeCircuitBreakInstances() {
+        return IncludeCircuitBreakInstances;
     }
 
-    public void setIncludeCircuitBreak(Boolean includeCircuitBreak) {
-        this.includeCircuitBreak = includeCircuitBreak;
+    public void setIncludeCircuitBreakInstances(Boolean includeCircuitBreakInstances) {
+        this.IncludeCircuitBreakInstances = includeCircuitBreakInstances;
     }
 }

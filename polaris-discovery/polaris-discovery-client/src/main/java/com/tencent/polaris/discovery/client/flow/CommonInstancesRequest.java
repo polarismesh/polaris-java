@@ -103,7 +103,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
 
         routeInfo = new RouteInfo(null, dstServiceInfo, null);
         routeInfo.setIncludeUnhealthyInstances(false);
-        Boolean includeCircuitBreak = request.getIncludeCircuitBreak();
+        Boolean includeCircuitBreak = request.getIncludeCircuitBreakInstances();
         if (null != includeCircuitBreak) {
             routeInfo.setIncludeCircuitBreakInstances(includeCircuitBreak);
         } else {
