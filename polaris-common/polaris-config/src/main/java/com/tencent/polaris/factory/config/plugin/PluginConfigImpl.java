@@ -26,6 +26,7 @@ import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import java.util.HashMap;
@@ -42,6 +43,8 @@ public class PluginConfigImpl implements PluginConfig {
 
     @JsonProperty
     private final Map<String, Map<?, ?>> plugin = new HashMap<>();
+
+    private final Map<String, Verifier> pluginConfigs = new HashMap<>();
 
     private final Object lock = new Object();
 
@@ -65,8 +68,13 @@ public class PluginConfigImpl implements PluginConfig {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends Verifier> T getPluginConfig(String pluginName, Class<T> clazz) throws PolarisException {
         synchronized (lock) {
+            T existConfig = (T) pluginConfigs.get(pluginName);
+            if (existConfig != null) {
+                return existConfig;
+            }
             Map<?, ?> properties = plugin.get(pluginName);
             if (null == properties) {
                 Verifier config = getConfigByName(clazz);
@@ -75,6 +83,7 @@ public class PluginConfigImpl implements PluginConfig {
             T result;
             try {
                 result = mapper.convertValue(properties, clazz);
+                pluginConfigs.put(pluginName, result);
             } catch (IllegalArgumentException e) {
                 throw new PolarisException(ErrorCode.INVALID_CONFIG,
                         String.format("fail to deserialize properties %s to clazz %s for plugin %s", properties,
@@ -119,6 +128,9 @@ public class PluginConfigImpl implements PluginConfig {
             if (plugin.size() == 0) {
                 return values;
             }
+            if (CollectionUtils.isNotEmpty(pluginConfigs)) {
+                return pluginConfigs;
+            }
             for (Map.Entry<String, Map<?, ?>> entry : plugin.entrySet()) {
                 Map<?, ?> properties = entry.getValue();
                 if (MapUtils.isEmpty(properties)) {
@@ -140,6 +152,7 @@ public class PluginConfigImpl implements PluginConfig {
                                     clazz.getCanonicalName(), pluginName), e);
                 }
             }
+            pluginConfigs.putAll(values);
             return values;
         }
     }

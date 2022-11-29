@@ -28,12 +28,13 @@ import java.util.Map;
  */
 public class ConfigUtils {
 
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
     public static Map<?, ?> objectToMap(Object obj) {
         if (obj == null) {
             return null;
         }
-        ObjectMapper mapper = new ObjectMapper();
-        return mapper.convertValue(obj, Map.class);
+        return MAPPER.convertValue(obj, Map.class);
     }
 
     public static void validateInterval(Long interval, String name) {
