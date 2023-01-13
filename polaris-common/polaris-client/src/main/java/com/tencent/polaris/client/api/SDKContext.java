@@ -240,8 +240,8 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             serverAddress = configuration.getGlobal().getServerConnector().getAddresses().get(0);
         }
 
-        URL url = new URL(serverAddress);
-        try (Socket socket = new Socket(url.getHost(), url.getPort())) {
+        String[] tokens = serverAddress.split(":");
+        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
             return socket.getLocalAddress().getHostAddress();
         }
     }

@@ -43,14 +43,18 @@ public class LocalLocationProvider extends BaseLocationProvider<BaseLocationProv
 
 	@Override
 	public Location doGet(GetOption option) {
-		if (StringUtils.isAllEmpty(option.getRegion(), option.getZone(), option.getCampus())) {
+		String region = StringUtils.defaultString(option.getRegion());
+		String zone = StringUtils.defaultString(option.getZone());
+		String campus = StringUtils.defaultString(option.getCampus());
+
+		if (StringUtils.isAllEmpty(region, zone, campus)) {
 			return null;
 		}
 
 		return Location.newBuilder()
-				.setRegion(StringValue.newBuilder().setValue(option.getRegion()).build())
-				.setZone(StringValue.newBuilder().setValue(option.getZone()).build())
-				.setCampus(StringValue.newBuilder().setValue(option.getCampus()).build())
+				.setRegion(StringValue.newBuilder().setValue(region).build())
+				.setZone(StringValue.newBuilder().setValue(zone).build())
+				.setCampus(StringValue.newBuilder().setValue(campus).build())
 				.build();
 	}
 

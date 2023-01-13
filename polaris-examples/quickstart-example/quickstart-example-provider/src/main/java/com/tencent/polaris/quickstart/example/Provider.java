@@ -22,10 +22,12 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ProviderAPI;
+import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
 
@@ -36,6 +38,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -47,7 +50,7 @@ public class Provider {
 
     private static final int TTL = 5;
 
-    private static final int LISTEN_PORT = 15800;
+    private static final int LISTEN_PORT = 0;
 
     public static void main(String[] args) throws Exception {
         ProviderExampleUtils.InitResult initResult = ProviderExampleUtils.initProviderConfiguration(args);
@@ -55,14 +58,17 @@ public class Provider {
         String namespace = NAMESPACE_DEFAULT;
         String service = ECHO_SERVICE_NAME;
 
-        HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
-        int localPort = server.getAddress().getPort();
-        server.createContext("/echo", new EchoServerHandler(localPort));
-
         Configuration configuration = ProviderExampleUtils.createConfiguration(initResult.getConfig());
         String localHost = getLocalHost(configuration);
 
-        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByConfig(configuration);
+        SDKContext context = SDKContext.initContextByConfig(configuration);
+
+        ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
+
+        HttpServer server = HttpServer.create(new InetSocketAddress(LISTEN_PORT), 0);
+        int localPort = server.getAddress().getPort();
+        server.createContext("/echo", new EchoServerHandler(context, localPort));
+
         register(namespace, service, localHost, localPort, providerAPI);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(1);
@@ -83,9 +89,6 @@ public class Provider {
         registerRequest.setPort(port);
         registerRequest.setProtocol("http");
         registerRequest.setVersion("1.0.0");
-        registerRequest.setRegion("region");
-        registerRequest.setZone("zone");
-        registerRequest.setCampus("campus");
         registerRequest.setTtl(TTL);
         InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
@@ -131,17 +134,26 @@ public class Provider {
 
     private static class EchoServerHandler implements HttpHandler {
 
+        private final SDKContext context;
+
         private final int localPort;
 
-        public EchoServerHandler(int localPort) {
+        public EchoServerHandler(SDKContext context, int localPort) {
+            this.context = context;
             this.localPort = localPort;
         }
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+
+            Map<String, String> location = new HashMap<>();
+            location.put(LocationLevel.region.name(), context.getValueContext().getValue(LocationLevel.region.name()));
+            location.put(LocationLevel.zone.name(), context.getValueContext().getValue(LocationLevel.zone.name()));
+            location.put(LocationLevel.campus.name(), context.getValueContext().getValue(LocationLevel.campus.name()));
+
             Map<String, String> parameters = splitQuery(exchange.getRequestURI());
             String echoValue = parameters.get("value");
-            String response = "echo: " + echoValue + ", from: " + localPort;
+            String response = "echo: " + echoValue + ", from: " + localPort + ", location: " + location;
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(response.getBytes());
