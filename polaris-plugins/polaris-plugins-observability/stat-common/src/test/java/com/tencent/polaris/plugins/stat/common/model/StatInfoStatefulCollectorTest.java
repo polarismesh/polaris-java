@@ -1,27 +1,26 @@
 package com.tencent.polaris.plugins.stat.common.model;
 
-import com.google.common.util.concurrent.AtomicDouble;
-import org.junit.Assert;
-import org.junit.Test;
+import static com.tencent.polaris.plugins.stat.common.TestUtil.getRandomLabels;
 
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.tencent.polaris.plugins.stat.common.TestUtil.getRandomLabels;
+import java.util.concurrent.atomic.AtomicLong;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class StatInfoStatefulCollectorTest {
 
     @Test
     public void testCollectStatInfo() throws InterruptedException {
         Random random = new Random();
-        StatInfoStatefulCollector<AtomicDouble> collector = new StatInfoStatefulCollector<AtomicDouble>();
+        StatInfoStatefulCollector<AtomicLong> collector = new StatInfoStatefulCollector<AtomicLong>();
         Map<String, String> labels = getRandomLabels();
         double threshold = 0.5;
-        MetricValueAggregationStrategy<AtomicDouble> maxIncStrategy = new MaxThresholdIncStrategy(threshold);
-        MetricValueAggregationStrategy<AtomicDouble> minIncStrategy = new MinThresholdIncStrategy(threshold);
-        MetricValueAggregationStrategy<AtomicDouble>[] strategies= new MetricValueAggregationStrategy[]{
+        MetricValueAggregationStrategy<AtomicLong> maxIncStrategy = new MaxThresholdIncStrategy(threshold);
+        MetricValueAggregationStrategy<AtomicLong> minIncStrategy = new MinThresholdIncStrategy(threshold);
+        MetricValueAggregationStrategy<AtomicLong>[] strategies = new MetricValueAggregationStrategy[]{
                 maxIncStrategy, minIncStrategy
         };
 
@@ -32,13 +31,13 @@ public class StatInfoStatefulCollectorTest {
         CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             new Thread(() -> {
-                double n = random.nextDouble();
+                long n = random.nextLong();
                 if (n > threshold) {
                     maxIncExpected.incrementAndGet();
                 } else {
                     minIncExpected.incrementAndGet();
                 }
-                collector.collectStatInfo(new AtomicDouble(n), labels, strategies);
+                collector.collectStatInfo(new AtomicLong(n), labels, strategies);
                 latch.countDown();
             }).start();
         }
@@ -54,7 +53,7 @@ public class StatInfoStatefulCollectorTest {
         Assert.assertEquals(minIncMetric.getValue() + maxIncMetric.getValue(), count, 0);
     }
 
-    private static class MaxThresholdIncStrategy implements MetricValueAggregationStrategy<AtomicDouble> {
+    private static class MaxThresholdIncStrategy implements MetricValueAggregationStrategy<AtomicLong> {
 
         private final double threshold;
 
@@ -73,19 +72,19 @@ public class StatInfoStatefulCollectorTest {
         }
 
         @Override
-        public void updateMetricValue(StatMetric targetValue, AtomicDouble dataSource) {
+        public void updateMetricValue(StatMetric targetValue, AtomicLong dataSource) {
             if (dataSource.get() > threshold) {
                 targetValue.incValue();
             }
         }
 
         @Override
-        public double initMetricValue(AtomicDouble dataSource) {
+        public double initMetricValue(AtomicLong dataSource) {
             return dataSource.get() > threshold ? 1.0 : 0.0;
         }
     }
 
-    private static class MinThresholdIncStrategy implements MetricValueAggregationStrategy<AtomicDouble> {
+    private static class MinThresholdIncStrategy implements MetricValueAggregationStrategy<AtomicLong> {
 
         private final double threshold;
 
@@ -104,14 +103,14 @@ public class StatInfoStatefulCollectorTest {
         }
 
         @Override
-        public void updateMetricValue(StatMetric targetValue, AtomicDouble dataSource) {
+        public void updateMetricValue(StatMetric targetValue, AtomicLong dataSource) {
             if (dataSource.get() <= threshold) {
                 targetValue.incValue();
             }
         }
 
         @Override
-        public double initMetricValue(AtomicDouble dataSource) {
+        public double initMetricValue(AtomicLong dataSource) {
             return dataSource.get() <= threshold ? 1.0 : 0.0;
         }
     }

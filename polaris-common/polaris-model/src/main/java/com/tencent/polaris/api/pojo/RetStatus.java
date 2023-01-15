@@ -24,18 +24,34 @@ package com.tencent.polaris.api.pojo;
  * @date 2019/8/21
  */
 public enum RetStatus {
+
     /**
-     * 服务调用成功
+     * unknown status
+     */
+    RetUnknown,
+
+    /**
+     * invoke success
      */
     RetSuccess,
 
     /**
-     * 服务调用失败
+     * invoke fail
      */
     RetFail,
 
     /**
-     * 服务调用超时
+     * invoke timeout
      */
     RetTimeout,
+
+    /**
+     * reject request by circuitbreaking
+     */
+    RetReject,
+
+    /**
+     * request cancel by flow control
+     */
+    RetFlowControl,
 }

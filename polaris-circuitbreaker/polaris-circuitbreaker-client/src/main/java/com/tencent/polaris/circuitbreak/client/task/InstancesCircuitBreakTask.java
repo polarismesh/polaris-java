@@ -21,7 +21,7 @@ import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_
 
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreakResult;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreakResult.ResultKey;
-import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.registry.InstanceProperty;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
@@ -113,7 +113,7 @@ public class InstancesCircuitBreakTask implements Runnable, Comparable<Instances
         if (CollectionUtils.isEmpty(targetInstances)) {
             return;
         }
-        for (CircuitBreaker circuitBreaker : extensions.getCircuitBreakers()) {
+        for (InstanceCircuitBreaker circuitBreaker : extensions.getInstanceCircuitBreakers()) {
             if (StringUtils.isNotBlank(cbName) && !cbName.equals(circuitBreaker.getName())) {
                 continue;
             }

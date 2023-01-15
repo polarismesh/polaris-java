@@ -20,8 +20,8 @@ package com.tencent.polaris.plugins.circuitbreaker.errrate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CbPolicy.ErrRateConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CbPolicy.ErrRateConfig;
 
 /**
  * 错误率熔断插件的特定配置

@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @param <T> 收集的指标类型
  */
 public class StatInfoRevisionCollector<T> extends AbstractSignatureStatInfoCollector<T, StatRevisionMetric> {
+
     private final Object mutex = new Object();
     private final AtomicLong currentRevision;
 
@@ -45,8 +46,8 @@ public class StatInfoRevisionCollector<T> extends AbstractSignatureStatInfoColle
 
     @Override
     public void collectStatInfo(T info,
-                                Map<String, String> metricLabels,
-                                MetricValueAggregationStrategy<T>[] strategies) {
+            Map<String, String> metricLabels,
+            MetricValueAggregationStrategy<T>[] strategies) {
         if (null != strategies) {
             String metricName;
             for (MetricValueAggregationStrategy<T> strategy : strategies) {
@@ -64,7 +65,7 @@ public class StatInfoRevisionCollector<T> extends AbstractSignatureStatInfoColle
                                     labels,
                                     signature,
                                     currentRevision.get());
-                            stateMetric.setValue(strategy.initMetricValue(info));
+                            stateMetric.setValue((long) strategy.initMetricValue(info));
                             metricContainer.put(signature, stateMetric);
                             continue;
                         }
@@ -76,7 +77,7 @@ public class StatInfoRevisionCollector<T> extends AbstractSignatureStatInfoColle
                         if (currentRevision.get() != metrics.getRevision()) {
                             // 如果revision不一致，说明该指标记录过期，
                             // 则reversion设置为当前的reversion，且value重置为初始值。
-                            metrics.setValue(strategy.initMetricValue(info));
+                            metrics.setValue((long) strategy.initMetricValue(info));
                             metrics.setRevision(currentRevision.get());
                             continue;
                         }

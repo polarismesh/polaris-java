@@ -22,16 +22,23 @@ import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
+import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -49,11 +56,20 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
         if (isExcludeCircuitBreakInstances(routeInfo)) {
             //不包含被熔断的实例，需要过滤被熔断的实例
             healthyInstance = instances.getInstances().stream().filter(
-                    instance -> Utils.isHealthyInstance(instance, routeInfo.getStatusDimensions()))
+                    new Predicate<Instance>() {
+                        @Override
+                        public boolean test(Instance instance) {
+                            if (!Utils.isHealthyInstance(instance)) {
+                                return false;
+                            }
+                            return checkCircuitBreakerPassing(instance);
+                        }
+                    }
+            )
                     .collect(Collectors.toList());
         } else {
             //只过滤不健康的实例
-            healthyInstance = instances.getInstances().stream().filter(Instance::isHealthy)
+            healthyInstance = instances.getInstances().stream().filter(Utils::isHealthyInstance)
                     .collect(Collectors.toList());
         }
 
@@ -102,5 +118,16 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
     @Override
     public boolean enable(RouteInfo routeInfo, ServiceMetadata dstSvcInfo) {
         return true;
+    }
+
+    private boolean checkCircuitBreakerPassing(Instance instance) {
+        CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
+        if (null != circuitBreakerStatus) {
+            return circuitBreakerStatus.getStatus() == CircuitBreakerStatus.Status.OPEN;
+        }
+        Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
+                instance.getHost(), instance.getPort());
+        CheckResult check = DefaultCircuitBreakAPI.check(resource, extensions);
+        return check.isPass();
     }
 }

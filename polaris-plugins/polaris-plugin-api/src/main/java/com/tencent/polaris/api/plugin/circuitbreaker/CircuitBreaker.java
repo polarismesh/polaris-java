@@ -17,41 +17,29 @@
 
 package com.tencent.polaris.api.plugin.circuitbreaker;
 
-import com.tencent.polaris.api.plugin.IdAwarePlugin;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.InstanceGauge;
-import com.tencent.polaris.api.pojo.Subset;
-import java.util.Collection;
+import com.tencent.polaris.api.plugin.Plugin;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 
 /**
- * 【扩展点接口】节点熔断器
+ * 【extension point】resource CircuitBreaker
  *
  * @author andrewshan
- * @date 2019/8/21
  */
-public interface CircuitBreaker extends IdAwarePlugin {
+public interface CircuitBreaker extends Plugin {
 
     /**
-     * 定期进行实例熔断计算，返回需要进行状态转换的实例ID.
-     *
-     * @param instances 服务实例列表
-     * @return 熔断结果
+     * get the resource circuitbreaker status
+     * @param resource resource object
+     * @return status
      */
-    CircuitBreakResult checkInstance(Collection<Instance> instances);
+    CircuitBreakerStatus checkResource(Resource resource);
 
     /**
-     * 定期进行实例分组熔断计算
-     *
-     * @param subsets 实例分组
-     * @return 熔断结果
+     * report resource invoke result stat
+     * @param resourceStat result stat
      */
-    CircuitBreakResult checkSubset(Collection<Subset> subsets);
+    void report(ResourceStat resourceStat);
 
-    /**
-     * 实时上报健康状态并进行连续失败熔断判断，返回当前实例是否需要进行立即熔断.
-     *
-     * @param metric 服务调用结果信息
-     * @return 是否需要进行实时熔断
-     */
-    boolean stat(InstanceGauge metric);
+
 }

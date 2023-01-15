@@ -17,11 +17,8 @@
 
 package com.tencent.polaris.client.util;
 
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
-import com.tencent.polaris.api.pojo.StatusDimension;
-import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -90,15 +87,9 @@ public class Utils {
     }
 
 
-    public static boolean isHealthyInstance(Instance instance, Map<Level, StatusDimension> dimensions) {
+    public static boolean isHealthyInstance(Instance instance) {
         if (!instance.isHealthy()) {
             return false;
-        }
-        for (StatusDimension statusDimension : dimensions.values()) {
-            CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus(statusDimension);
-            if (null != circuitBreakerStatus && circuitBreakerStatus.getStatus() == CircuitBreakerStatus.Status.OPEN) {
-                return false;
-            }
         }
         return true;
     }

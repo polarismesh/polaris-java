@@ -17,16 +17,6 @@
 
 package com.tencent.polaris.location.example;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URLDecoder;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -43,6 +33,15 @@ import com.tencent.polaris.location.example.utils.ProviderExampleUtils;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URLDecoder;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Provider {
 
@@ -183,14 +182,14 @@ public class Provider {
             String response = "";
 
             switch (type) {
-            case "region":
-                response = "china";
-                break;
-            case "zone":
-                response = "ap-guangzhou";
-                break;
-            case "campus":
-                response = "ap-guangzhou-1";
+                case "region":
+                    response = "china";
+                    break;
+                case "zone":
+                    response = "ap-guangzhou";
+                    break;
+                case "campus":
+                    response = "ap-guangzhou-1";
             }
 
             exchange.sendResponseHeaders(200, 0);
@@ -203,7 +202,8 @@ public class Provider {
     private static void runGrpcLocationServer() throws Exception {
         new Thread(() -> {
             try {
-                Server server = ServerBuilder.forPort(LISTEN_PORT + 200).addService(new GrpcLocationServerHandler()).build();
+                Server server = ServerBuilder.forPort(LISTEN_PORT + 200).addService(new GrpcLocationServerHandler())
+                        .build();
                 System.out.println("success run local grpc location server");
                 server = server.start();
                 Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
@@ -216,11 +216,12 @@ public class Provider {
     private static class GrpcLocationServerHandler extends LocationGRPCGrpc.LocationGRPCImplBase {
 
         @Override
-        public void getLocation(LocationGRPCService.LocationRequest request, StreamObserver<LocationGRPCService.LocationResponse> responseObserver) {
+        public void getLocation(LocationGRPCService.LocationRequest request,
+                StreamObserver<LocationGRPCService.LocationResponse> responseObserver) {
             responseObserver.onNext(LocationGRPCService.LocationResponse.newBuilder()
-                            .setRegion("china")
-                            .setZone("ap-guangzhou")
-                            .setCampus("ap-guangzhou-2")
+                    .setRegion("china")
+                    .setZone("ap-guangzhou")
+                    .setCampus("ap-guangzhou-2")
                     .build());
             responseObserver.onCompleted();
         }

@@ -23,6 +23,8 @@ import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.SubsetResource;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
@@ -31,16 +33,20 @@ import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.Service;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.RoutingProto;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
+import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Destination;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -103,7 +109,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     // 匹配source规则
-    private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService, Map<String, String> trafficLabels,
+    private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService,
+            Map<String, String> trafficLabels,
             RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
@@ -274,6 +281,36 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         return allMetaMatched;
     }
 
+    private List<RoutingProto.Destination> filterAvailableDestinations(RouteInfo routeInfo,
+            List<RoutingProto.Destination> destinations) {
+        List<RoutingProto.Destination> availableSubsets = new ArrayList<>();
+        List<RoutingProto.Destination> cbSubsets = new ArrayList<>();
+        for (RoutingProto.Destination dest : destinations) {
+            if (dest == null) {
+                continue;
+            }
+            if (dest.getIsolate().getValue()) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(dest.getName().getValue())) {
+                //TODO: object creation on initialize
+                ServiceMetadata destService = routeInfo.getDestService();
+                ServiceKey serviceKey = new ServiceKey(destService.getNamespace(), destService.getService());
+                Resource resource = new SubsetResource(serviceKey, dest.getName().getValue());
+                CheckResult check = DefaultCircuitBreakAPI.check(resource, extensions);
+                if (!check.isPass()) {
+                    cbSubsets.add(dest);
+                    continue;
+                }
+            }
+            availableSubsets.add(dest);
+        }
+        if (availableSubsets.isEmpty()) {
+            return cbSubsets;
+        }
+        return availableSubsets;
+    }
+
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
             RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
         // 获取路由规则
@@ -293,7 +330,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
 
             Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ROUTER_TYPE_RULE_BASED);
             // 匹配source规则
-            boolean sourceMatched = matchSource(route.getSourcesList(), routeInfo.getSourceService(), trafficLabels, ruleMatchType,
+            boolean sourceMatched = matchSource(route.getSourcesList(), routeInfo.getSourceService(), trafficLabels,
+                    ruleMatchType,
                     multiEnvRouterParamMap);
             if (!sourceMatched) {
                 continue;
@@ -303,13 +341,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             // 然后将结果写进map(key: 权重, value: 带权重的实例分组)
             Map<Integer, PrioritySubsets> subsetsMap = new HashMap<>();
             int smallestPriority = -1;
-            for (RoutingProto.Destination dest : route.getDestinationsList()) {
-                if (dest == null) {
-                    continue;
-                }
-                if (dest.getIsolate().getValue()) {
-                    continue;
-                }
+            List<Destination> destinations = filterAvailableDestinations(routeInfo, route.getDestinationsList());
+            for (RoutingProto.Destination dest : destinations) {
                 // 对于outbound规则, 需要匹配DestService服务
                 if (ruleMatchType == RuleMatchType.sourceRouteRuleMatch) {
                     if (!RuleUtils.MATCH_ALL.equals(dest.getNamespace().getValue()) && !dest.getNamespace().getValue()
@@ -381,7 +414,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         if (weightedSubsets == null) {
             PrioritySubsets prioritySubsets = new PrioritySubsets();
 
-            WeightedSubset weightedSubset = new WeightedSubset();
+            WeightedSubset weightedSubset = new WeightedSubset(dest.getName().getValue());
             weightedSubset.setInstances(filteredInstances);
             weightedSubset.setWeight(weight);
 
@@ -391,7 +424,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             subsetsMap.put(priority, prioritySubsets);
 
         } else {
-            WeightedSubset weightedSubset = new WeightedSubset();
+            WeightedSubset weightedSubset = new WeightedSubset(dest.getName().getValue());
             weightedSubset.setInstances(filteredInstances);
             weightedSubset.setWeight(weight);
 
@@ -404,7 +437,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     //selectInstances 从subset中选取实例
     private List<Instance> selectInstances(RouteInfo routeInfo, PrioritySubsets weightedSubsets) {
         if (weightedSubsets.getSubsets().size() == 1) {
-            return weightedSubsets.getSubsets().get(0).instances;
+            return weightedSubsets.getSubsets().get(0).getInstances();
         }
         Random random = new Random();
 
@@ -415,6 +448,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         for (WeightedSubset weightedSubset : weightedSubsets.getSubsets()) {
             weight -= weightedSubset.getWeight();
             if (weight < 0) {
+                routeInfo.setSubset(weightedSubset.getName());
                 return weightedSubset.getInstances();
             }
         }

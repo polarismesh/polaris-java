@@ -30,4 +30,6 @@ public interface LoggingConsts {
 
     String LOGGING_UPDATE_EVENT = "polaris-update-event";
     String LOGGING_UPDATE_EVENT_ASYNC = "polaris-update-event-async";
+
+    String LOGGING_CIRCUITBREAKER_EVENT = "polaris-circuitbreaker-event";
 }

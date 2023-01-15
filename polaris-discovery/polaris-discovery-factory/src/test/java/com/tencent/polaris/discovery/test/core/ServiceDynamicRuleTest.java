@@ -13,13 +13,13 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.Operation;
-import com.tencent.polaris.client.pb.RoutingProto.Destination;
-import com.tencent.polaris.client.pb.RoutingProto.Route;
-import com.tencent.polaris.client.pb.RoutingProto.Routing;
-import com.tencent.polaris.client.pb.RoutingProto.Source;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Destination;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Route;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Routing;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Source;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
@@ -62,13 +62,13 @@ public class ServiceDynamicRuleTest {
         namingServer.getNamingService().batchAddInstances(serviceKey, 10010, 8, parameter);
         Map<String, MatchString> data = new HashMap<>();
         data.put("env", MatchString.newBuilder()
-                .setType(Operation.EXACT)
+                .setType(MatchStringType.EXACT)
                 .setValue(StringValue.newBuilder()
                         .setValue("base").build())
                 .build());
         Map<String, MatchString> srcData = new HashMap<>();
         srcData.put("uid", MatchString.newBuilder()
-                .setType(Operation.EXACT)
+                .setType(MatchStringType.EXACT)
                 .setValue(StringValue.newBuilder()
                         .setValue("144115217417489762").build())
                 .build());

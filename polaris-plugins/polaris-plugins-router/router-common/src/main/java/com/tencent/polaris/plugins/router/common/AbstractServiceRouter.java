@@ -35,6 +35,8 @@ public abstract class AbstractServiceRouter extends Destroyable implements Servi
 
     private int id;
 
+    protected Extensions extensions;
+
     private void validateParams(RouteInfo routeInfo, ServiceInstances instances)
             throws PolarisException {
 
@@ -71,7 +73,7 @@ public abstract class AbstractServiceRouter extends Destroyable implements Servi
 
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-
+        this.extensions = extensions;
     }
 
     @Override

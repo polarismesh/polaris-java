@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.api.pojo;
 
+import java.util.Map;
+
 /**
  * 实例熔断状态及数据
  *
@@ -40,10 +42,20 @@ public class CircuitBreakerStatus {
      */
     private final long startTimeMs;
 
+    /**
+     * fallback configuration
+     */
+    private final FallbackInfo fallbackInfo;
+
     public CircuitBreakerStatus(String circuitBreaker, Status status, long startTimeMs) {
+        this(circuitBreaker, status, startTimeMs, null);
+    }
+
+    public CircuitBreakerStatus(String circuitBreaker, Status status, long startTimeMs, FallbackInfo fallbackInfo) {
         this.circuitBreaker = circuitBreaker;
         this.status = status;
         this.startTimeMs = startTimeMs;
+        this.fallbackInfo = fallbackInfo;
     }
 
     public String getCircuitBreaker() {
@@ -56,6 +68,10 @@ public class CircuitBreakerStatus {
 
     public long getStartTimeMs() {
         return startTimeMs;
+    }
+
+    public FallbackInfo getFallbackInfo() {
+        return fallbackInfo;
     }
 
     /**
@@ -105,5 +121,33 @@ public class CircuitBreakerStatus {
          * 熔断器打开状态，实例不提供服务
          */
         OPEN
+    }
+
+
+    public static class FallbackInfo {
+
+        private final int code;
+
+        private final Map<String, String> headers;
+
+        private final String body;
+
+        public FallbackInfo(int code, Map<String, String> headers, String body) {
+            this.code = code;
+            this.headers = headers;
+            this.body = body;
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+
+        public String getBody() {
+            return body;
+        }
     }
 }

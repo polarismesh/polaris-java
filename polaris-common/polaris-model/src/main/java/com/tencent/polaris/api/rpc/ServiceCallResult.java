@@ -63,7 +63,7 @@ public class ServiceCallResult implements InstanceGauge {
     /**
      * 请求是否成功以retStatus为准，retCode不生效
      */
-    private RetStatus retStatus;
+    private RetStatus retStatus = RetStatus.RetUnknown;
 
     /**
      * 返回码

@@ -44,7 +44,7 @@ public class PolarisException extends RuntimeException {
 
     @Override
     public String getMessage() {
-        StringBuilder builder = new StringBuilder(String.format("ERR-%d(%s), ", code.getCode(), code.name()));
+        StringBuilder builder = new StringBuilder(String.format("ERR-%d(%s): ", code.getCode(), code.name()));
         builder.append(super.getMessage());
         Throwable cause = getCause();
         if (null != cause) {

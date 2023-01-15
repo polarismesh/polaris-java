@@ -31,8 +31,8 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
-import com.tencent.polaris.client.pb.RoutingProto.Routing;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Routing;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -43,7 +43,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -95,7 +94,7 @@ public class RuleBasedRouterTest {
 
     private static final String ROUTE_TEST_NAMESPACE = "Test";
 
-    private  List<Instance> mockInstances() {
+    private List<Instance> mockInstances() {
         List<Instance> instances = new ArrayList<>();
         DefaultInstance v1Instance = new DefaultInstance();
         v1Instance.setNamespace(ROUTE_TEST_NAMESPACE);

@@ -126,6 +126,11 @@ public enum ErrorCode {
     METADATA_MISMATCH(1019),
 
     /**
+     * client resource has been circuitbreakered
+     */
+    CLIENT_CIRCUIT_BREAKING(1020),
+
+    /**
      * 内部错误：连续错误
      */
     CONNECT_ERROR(2001),

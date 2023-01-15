@@ -17,16 +17,24 @@
 
 package com.tencent.polaris.circuitbreak.factory;
 
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.client.api.SDKContext;
-import org.slf4j.Logger;
+import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.logging.LoggerFactory;
+import java.util.Arrays;
+import org.slf4j.Logger;
 
 public class CircuitBreakAPIFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(CircuitBreakAPIFactory.class);
+
+    public static CircuitBreakAPI createCircuitBreakAPI() throws PolarisException {
+        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        return createCircuitBreakAPIByConfig(configuration);
+    }
 
     /**
      * 创建服务熔断的API对象
@@ -35,9 +43,24 @@ public class CircuitBreakAPIFactory {
      * @return 熔断API
      * @throws PolarisException 校验失败
      */
-    public static CircuitBreakAPI createLimitAPIByContext(SDKContext sdkContext) throws PolarisException {
+    public static CircuitBreakAPI createCircuitBreakAPIByContext(SDKContext sdkContext) throws PolarisException {
         DefaultCircuitBreakAPI defaultCircuitBreakAPI = new DefaultCircuitBreakAPI(sdkContext);
         defaultCircuitBreakAPI.init();
         return defaultCircuitBreakAPI;
+    }
+
+    public static CircuitBreakAPI createCircuitBreakAPIByConfig(Configuration config) throws PolarisException {
+        SDKContext context = SDKContext.initContextByConfig(config);
+        return createCircuitBreakAPIByContext(context);
+    }
+
+    /**
+     * 通过注册地址创建CircuitBreakAPI
+     *
+     * @param addresses 地址
+     * @return CircuitBreakAPI对象
+     */
+    public static CircuitBreakAPI createCircuitBreakAPIByAddress(String... addresses) {
+        return createCircuitBreakAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(Arrays.asList(addresses)));
     }
 }

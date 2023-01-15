@@ -21,9 +21,8 @@ import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugin.location.base.BaseLocationProvider;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import org.slf4j.Logger;
-
-import static com.tencent.polaris.client.pb.ModelProto.Location;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -42,12 +41,12 @@ public class LocalLocationProvider extends BaseLocationProvider<BaseLocationProv
 	}
 
 	@Override
-	public Location doGet(GetOption option) {
+	public ModelProto.Location doGet(GetOption option) {
 		if (StringUtils.isAllEmpty(option.getRegion(), option.getZone(), option.getCampus())) {
 			return null;
 		}
 
-		return Location.newBuilder()
+		return ModelProto.Location.newBuilder()
 				.setRegion(StringValue.newBuilder().setValue(option.getRegion()).build())
 				.setZone(StringValue.newBuilder().setValue(option.getZone()).build())
 				.setCampus(StringValue.newBuilder().setValue(option.getCampus()).build())

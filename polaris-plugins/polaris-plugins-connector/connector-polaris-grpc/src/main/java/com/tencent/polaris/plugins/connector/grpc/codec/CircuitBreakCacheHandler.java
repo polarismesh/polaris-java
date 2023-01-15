@@ -20,9 +20,9 @@ package com.tencent.polaris.plugins.connector.grpc.codec;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CircuitBreaker;
-import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
 
 public class CircuitBreakCacheHandler extends AbstractCacheHandler {
 
