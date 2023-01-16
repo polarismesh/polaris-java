@@ -123,7 +123,7 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
     private boolean checkCircuitBreakerPassing(Instance instance) {
         CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
         if (null != circuitBreakerStatus) {
-            return circuitBreakerStatus.getStatus() == CircuitBreakerStatus.Status.OPEN;
+            return circuitBreakerStatus.getStatus() != CircuitBreakerStatus.Status.OPEN;
         }
         Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
                 instance.getHost(), instance.getPort());

@@ -61,7 +61,7 @@ public class NamingServer {
             server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(namingService, interceptors))
                     .build();
         } else {
-            server = ServerBuilder.forPort(port).build();
+            server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(namingService)).build();
         }
     }
 
