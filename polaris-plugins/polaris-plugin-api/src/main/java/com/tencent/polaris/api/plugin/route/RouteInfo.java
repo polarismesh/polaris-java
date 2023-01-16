@@ -16,12 +16,6 @@
 
 package com.tencent.polaris.api.plugin.route;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.ServiceRule;
@@ -31,6 +25,11 @@ import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.StringUtils;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * 服务路由信息
@@ -40,205 +39,215 @@ import com.tencent.polaris.api.utils.StringUtils;
  */
 public class RouteInfo {
 
-	//源服务信息
-	private final SourceService sourceService;
-	//目的服务信息
-	private final ServiceMetadata destService;
+    //源服务信息
+    private final SourceService sourceService;
+    //目的服务信息
+    private final ServiceMetadata destService;
 
-	//源路由规则
-	private ServiceRule sourceRouteRule;
-	//目的路由规则
-	private ServiceRule destRouteRule;
+    //源路由规则
+    private ServiceRule sourceRouteRule;
+    //目的路由规则
+    private ServiceRule destRouteRule;
 
-	private String canary;
+    private String canary;
 
-	private final Map<Level, StatusDimension> statusDimensions;
+    private final Map<Level, StatusDimension> statusDimensions;
 
-	//开启哪些路由
-	private final Map<String, Boolean> chainEnable = new HashMap<>();
-	// 是否包含不健康的服务实例，默认false
-	private boolean includeUnhealthyInstances;
-	// 是否包含被熔断的服务实例，默认false
-	private boolean includeCircuitBreakInstances;
-	//元数据路由降级类型
-	private MetadataFailoverType metadataFailoverType;
-	//规则路由降级类型
-	private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
-	//各个路由插件依赖的 metadata 参数
-	private Map<String, Map<String, String>> routerMetadata = new HashMap<>();
+    //开启哪些路由
+    private final Map<String, Boolean> chainEnable = new HashMap<>();
+    // 是否包含不健康的服务实例，默认false
+    private boolean includeUnhealthyInstances;
+    // 是否包含被熔断的服务实例，默认false
+    private boolean includeCircuitBreakInstances;
+    //元数据路由降级类型
+    private MetadataFailoverType metadataFailoverType;
+    //规则路由降级类型
+    private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
+    //各个路由插件依赖的 metadata 参数
+    private Map<String, Map<String, String>> routerMetadata = new HashMap<>();
 
-	/**
-	 * 下一步的路由信息
-	 */
-	private RouteResult.NextRouterInfo nextRouterInfo;
+    /**
+     * 下一步的路由信息
+     */
+    private RouteResult.NextRouterInfo nextRouterInfo;
 
-	/**
-	 * 构造器
-	 *
-	 * @param sourceService   源服务
-	 * @param sourceRouteRule 源规则
-	 * @param destService     目标服务
-	 * @param destRouteRule   目标规则
-	 * @param method          接口名
-	 */
-	public RouteInfo(SourceService sourceService, ServiceRule sourceRouteRule,
-			ServiceMetadata destService, ServiceRule destRouteRule, String method) {
-		this.sourceService = sourceService;
-		if (Objects.nonNull(sourceService)) {
-			this.routerMetadata.computeIfAbsent("ruleRouter", k -> new HashMap<>());
-			this.routerMetadata.get("ruleRouter").putAll(sourceService.getLabels());
-		}
+    private String subset;
 
-		this.sourceRouteRule = sourceRouteRule;
-		this.destService = destService;
-		this.destRouteRule = destRouteRule;
-		Map<Level, StatusDimension> dimensionMap = new HashMap<>();
-		dimensionMap.put(Level.SERVICE, StatusDimension.EMPTY_DIMENSION);
-		if (StringUtils.isNotBlank(method)) {
-			dimensionMap.put(Level.ALL_CALLER, new StatusDimension(method, null));
-		}
-		if (Objects.nonNull(sourceService)) {
-			dimensionMap.put(Level.ALL_METHOD, new StatusDimension("", sourceService));
-		}
-		if (StringUtils.isNotBlank(method) && null != sourceService) {
-			dimensionMap.put(Level.CALLER_METHOD, new StatusDimension(method, sourceService));
-		}
-		this.statusDimensions = Collections.unmodifiableMap(dimensionMap);
-	}
+    /**
+     * 构造器
+     *
+     * @param sourceService 源服务
+     * @param sourceRouteRule 源规则
+     * @param destService 目标服务
+     * @param destRouteRule 目标规则
+     * @param method 接口名
+     */
+    public RouteInfo(SourceService sourceService, ServiceRule sourceRouteRule,
+            ServiceMetadata destService, ServiceRule destRouteRule, String method) {
+        this.sourceService = sourceService;
+        if (Objects.nonNull(sourceService)) {
+            this.routerMetadata.computeIfAbsent("ruleRouter", k -> new HashMap<>());
+            this.routerMetadata.get("ruleRouter").putAll(sourceService.getLabels());
+        }
 
-	/**
-	 * 构造器
-	 *
-	 * @param sourceService 源服务
-	 * @param destService   目标服务
-	 * @param method        接口名
-	 */
-	public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method) {
-		this(sourceService, null, destService, null, method);
-	}
+        this.sourceRouteRule = sourceRouteRule;
+        this.destService = destService;
+        this.destRouteRule = destRouteRule;
+        Map<Level, StatusDimension> dimensionMap = new HashMap<>();
+        dimensionMap.put(Level.SERVICE, StatusDimension.EMPTY_DIMENSION);
+        if (StringUtils.isNotBlank(method)) {
+            dimensionMap.put(Level.ALL_CALLER, new StatusDimension(method, null));
+        }
+        if (Objects.nonNull(sourceService)) {
+            dimensionMap.put(Level.ALL_METHOD, new StatusDimension("", sourceService));
+        }
+        if (StringUtils.isNotBlank(method) && null != sourceService) {
+            dimensionMap.put(Level.CALLER_METHOD, new StatusDimension(method, sourceService));
+        }
+        this.statusDimensions = Collections.unmodifiableMap(dimensionMap);
+    }
 
-	public MetadataFailoverType getMetadataFailoverType() {
-		return metadataFailoverType;
-	}
+    /**
+     * 构造器
+     *
+     * @param sourceService 源服务
+     * @param destService 目标服务
+     * @param method 接口名
+     */
+    public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method) {
+        this(sourceService, null, destService, null, method);
+    }
 
-	public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
-		this.metadataFailoverType = metadataFailoverType;
-	}
+    public MetadataFailoverType getMetadataFailoverType() {
+        return metadataFailoverType;
+    }
 
-	public RuleBasedRouterFailoverType getRuleBasedRouterFailoverType() {
-		return ruleBasedRouterFailoverType;
-	}
+    public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
+        this.metadataFailoverType = metadataFailoverType;
+    }
 
-	public void setRuleBasedRouterFailoverType(RuleBasedRouterFailoverType ruleBasedRouterFailoverType) {
-		this.ruleBasedRouterFailoverType = ruleBasedRouterFailoverType;
-	}
+    public RuleBasedRouterFailoverType getRuleBasedRouterFailoverType() {
+        return ruleBasedRouterFailoverType;
+    }
 
-	public Map<Level, StatusDimension> getStatusDimensions() {
-		return statusDimensions;
-	}
+    public void setRuleBasedRouterFailoverType(RuleBasedRouterFailoverType ruleBasedRouterFailoverType) {
+        this.ruleBasedRouterFailoverType = ruleBasedRouterFailoverType;
+    }
 
-	public void setSourceRouteRule(ServiceRule sourceRouteRule) {
-		this.sourceRouteRule = sourceRouteRule;
-	}
+    public Map<Level, StatusDimension> getStatusDimensions() {
+        return statusDimensions;
+    }
 
-	public void setDestRouteRule(ServiceRule destRouteRule) {
-		this.destRouteRule = destRouteRule;
-	}
+    public void setSourceRouteRule(ServiceRule sourceRouteRule) {
+        this.sourceRouteRule = sourceRouteRule;
+    }
 
-	public RouteResult.NextRouterInfo getNextRouterInfo() {
-		return nextRouterInfo;
-	}
+    public void setDestRouteRule(ServiceRule destRouteRule) {
+        this.destRouteRule = destRouteRule;
+    }
 
-	public void setNextRouterInfo(RouteResult.NextRouterInfo nextRouterInfo) {
-		this.nextRouterInfo = nextRouterInfo;
-	}
+    public RouteResult.NextRouterInfo getNextRouterInfo() {
+        return nextRouterInfo;
+    }
 
-	public String getCanary() {
-		return canary;
-	}
+    public void setNextRouterInfo(RouteResult.NextRouterInfo nextRouterInfo) {
+        this.nextRouterInfo = nextRouterInfo;
+    }
 
-	public void setCanary(String canary) {
-		this.canary = canary;
-	}
+    public String getCanary() {
+        return canary;
+    }
 
-	/**
-	 * 判断某个路由是否开启
-	 *
-	 * @param routerType 路由类型
-	 * @return 是否开启
-	 */
-	public Boolean routerIsEnabled(String routerType) {
-		return chainEnable.get(routerType);
-	}
+    public void setCanary(String canary) {
+        this.canary = canary;
+    }
 
-	/**
-	 * 开启某个路由
-	 *
-	 * @param routerType 路由类型
-	 */
-	public void enableRouter(String routerType) {
-		chainEnable.put(routerType, true);
-	}
+    /**
+     * 判断某个路由是否开启
+     *
+     * @param routerType 路由类型
+     * @return 是否开启
+     */
+    public Boolean routerIsEnabled(String routerType) {
+        return chainEnable.get(routerType);
+    }
 
-	/**
-	 * 关闭某个路由
-	 *
-	 * @param routerType routerType
-	 */
-	public void disableRouter(String routerType) {
-		chainEnable.put(routerType, false);
-	}
+    /**
+     * 开启某个路由
+     *
+     * @param routerType 路由类型
+     */
+    public void enableRouter(String routerType) {
+        chainEnable.put(routerType, true);
+    }
 
-	public SourceService getSourceService() {
-		return sourceService;
-	}
+    /**
+     * 关闭某个路由
+     *
+     * @param routerType routerType
+     */
+    public void disableRouter(String routerType) {
+        chainEnable.put(routerType, false);
+    }
 
-	public ServiceRule getSourceRouteRule() {
-		return sourceRouteRule;
-	}
+    public SourceService getSourceService() {
+        return sourceService;
+    }
 
-	public ServiceMetadata getDestService() {
-		return destService;
-	}
+    public ServiceRule getSourceRouteRule() {
+        return sourceRouteRule;
+    }
 
-	public ServiceRule getDestRouteRule() {
-		return destRouteRule;
-	}
+    public ServiceMetadata getDestService() {
+        return destService;
+    }
 
-	public boolean isIncludeUnhealthyInstances() {
-		return includeUnhealthyInstances;
-	}
+    public ServiceRule getDestRouteRule() {
+        return destRouteRule;
+    }
 
-	public void setIncludeUnhealthyInstances(boolean includeUnhealthyInstances) {
-		this.includeUnhealthyInstances = includeUnhealthyInstances;
-	}
+    public boolean isIncludeUnhealthyInstances() {
+        return includeUnhealthyInstances;
+    }
 
-	public boolean isIncludeCircuitBreakInstances() {
-		return includeCircuitBreakInstances;
-	}
+    public void setIncludeUnhealthyInstances(boolean includeUnhealthyInstances) {
+        this.includeUnhealthyInstances = includeUnhealthyInstances;
+    }
 
-	public void setIncludeCircuitBreakInstances(boolean includeCircuitBreakInstances) {
-		this.includeCircuitBreakInstances = includeCircuitBreakInstances;
-	}
+    public boolean isIncludeCircuitBreakInstances() {
+        return includeCircuitBreakInstances;
+    }
 
-	public Map<String, String> getRouterMetadata(String routerType) {
-		if (routerMetadata == null) {
-			return Collections.emptyMap();
-		}
-		Map<String, String> metadata = routerMetadata.get(routerType);
-		if (metadata == null || metadata.size() == 0) {
-			return Collections.emptyMap();
-		}
-		return Collections.unmodifiableMap(metadata);
-	}
+    public void setIncludeCircuitBreakInstances(boolean includeCircuitBreakInstances) {
+        this.includeCircuitBreakInstances = includeCircuitBreakInstances;
+    }
 
-	public void setRouterArguments(Map<String, Set<RouteArgument>> routerArguments) {
-		Map<String, Map<String, String>> routerMetadata = this.routerMetadata;
+    public Map<String, String> getRouterMetadata(String routerType) {
+        if (routerMetadata == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> metadata = routerMetadata.get(routerType);
+        if (metadata == null || metadata.size() == 0) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(metadata);
+    }
 
-		routerArguments.forEach((s, arguments) -> {
-			routerMetadata.computeIfAbsent(s, key -> new HashMap<>());
-			Map<String, String> labels = routerMetadata.get(s);
-			arguments.forEach(routeArgument -> routeArgument.toLabel(labels));
-		});
-	}
+    public void setRouterArguments(Map<String, Set<RouteArgument>> routerArguments) {
+        Map<String, Map<String, String>> routerMetadata = this.routerMetadata;
+
+        routerArguments.forEach((s, arguments) -> {
+            routerMetadata.computeIfAbsent(s, key -> new HashMap<>());
+            Map<String, String> labels = routerMetadata.get(s);
+            arguments.forEach(routeArgument -> routeArgument.toLabel(labels));
+        });
+    }
+
+    public String getSubset() {
+        return subset;
+    }
+
+    public void setSubset(String subset) {
+        this.subset = subset;
+    }
 }

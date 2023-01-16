@@ -22,11 +22,12 @@ import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreakResult;
-import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -38,17 +39,11 @@ import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.Subset;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.FlowControlParam;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CbPolicy;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CbPolicy.ErrRateConfig;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.DestinationSet;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.RecoverConfig;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.plugins.circuitbreaker.common.ChangeStateUtils;
 import com.tencent.polaris.plugins.circuitbreaker.common.CircuitBreakUtils;
-import com.tencent.polaris.plugins.circuitbreaker.common.CircuitBreakUtils.RuleDestinationResult;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigGroup;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSet;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSetLocator;
@@ -66,7 +61,7 @@ import java.util.function.Function;
  * @author andrewshan
  * @date 2019/8/26
  */
-public class ErrRateCircuitBreaker extends Destroyable implements CircuitBreaker, PluginConfigProvider,
+public class ErrRateCircuitBreaker extends Destroyable implements InstanceCircuitBreaker, PluginConfigProvider,
         ConfigSetLocator<Config> {
 
     private int id;
@@ -186,7 +181,7 @@ public class ErrRateCircuitBreaker extends Destroyable implements CircuitBreaker
 
     @Override
     public PluginType getType() {
-        return PluginTypes.CIRCUIT_BREAKER.getBaseType();
+        return PluginTypes.INSTANCE_CIRCUIT_BREAKER.getBaseType();
     }
 
     @Override
@@ -205,29 +200,7 @@ public class ErrRateCircuitBreaker extends Destroyable implements CircuitBreaker
                 new Function<RuleIdentifier, ConfigSet<Config>>() {
                     @Override
                     public ConfigSet<Config> apply(RuleIdentifier ruleIdentifier) {
-                        RuleDestinationResult ruleDestResultErrRate = circuitBreakerConfig.isEnableRemotePull() ?
-                                CircuitBreakUtils.getRuleDestinationSet(ruleIdentifier, extensions, flowControlParam) :
-                                RuleDestinationResult.defaultValue();
-                        DestinationSet ruleDestinationSetErrRate = ruleDestResultErrRate.getDestinationSet();
-                        if (null == ruleDestinationSetErrRate) {
-                            return new ConfigSet<>(StatusDimension.Level.SERVICE, true, null, null);
-                        }
-                        CbPolicy policy = ruleDestinationSetErrRate.getPolicy();
-                        HalfOpenConfig halfOpenConfigErrRate = configGroup.getLocalConfig().getHalfOpenConfig();
-                        RecoverConfig recoverConfigErrRate = ruleDestinationSetErrRate.getRecover();
-                        if (null != recoverConfigErrRate) {
-                            halfOpenConfigErrRate = new HalfOpenConfig(halfOpenConfigErrRate, recoverConfigErrRate);
-                        }
-                        Config targetPlugConfig = configGroup.getLocalConfig().getPlugConfig();
-                        if (null != policy) {
-                            ErrRateConfig errorRateConfig = policy.getErrorRate();
-                            if (null != errorRateConfig && errorRateConfig.hasEnable() && errorRateConfig.getEnable()
-                                    .getValue()) {
-                                targetPlugConfig = new Config(targetPlugConfig, errorRateConfig);
-                            }
-                        }
-                        return new ConfigSet<>(ruleDestResultErrRate.getMatchLevel(), false, halfOpenConfigErrRate,
-                                targetPlugConfig);
+                        return new ConfigSet<>(StatusDimension.Level.SERVICE, true, null, null);
                     }
                 });
     }

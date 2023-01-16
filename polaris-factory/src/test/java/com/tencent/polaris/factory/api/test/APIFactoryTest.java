@@ -48,7 +48,8 @@ public class APIFactoryTest {
             sdkContext = APIFactory.initContextByFile(resourceAsStream);
             Supplier plugins = sdkContext.getPlugins();
             Plugin plugin = plugins
-                    .getPlugin(PluginTypes.CIRCUIT_BREAKER.getBaseType(), DefaultPlugins.CIRCUIT_BREAKER_ERROR_COUNT);
+                    .getPlugin(PluginTypes.INSTANCE_CIRCUIT_BREAKER.getBaseType(),
+                            DefaultPlugins.CIRCUIT_BREAKER_ERROR_COUNT);
             Assert.assertNotNull(plugin);
         } catch (Exception e) {
             Assert.fail(e.getMessage());

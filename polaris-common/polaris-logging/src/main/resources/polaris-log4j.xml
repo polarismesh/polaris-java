@@ -27,6 +27,17 @@
         <param name="Blocking" value="false"/>
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
     </appender>
+    <appender name="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"
+            class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${polaris.log.home}/polaris-circuitbreaker-event.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                    value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
+        </layout>
+    </appender>
 
     <logger name="com.tencent.polaris" additivity="false">
         <level value="INFO"/>
@@ -39,5 +50,9 @@
     <logger name="polaris-update-event-async" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"/>
+    </logger>
+    <logger name="polaris-circuitbreaker-event" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
     </logger>
 </log4j:configuration>

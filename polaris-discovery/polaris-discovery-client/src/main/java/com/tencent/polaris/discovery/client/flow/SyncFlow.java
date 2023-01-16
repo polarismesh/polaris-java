@@ -18,9 +18,9 @@
 package com.tencent.polaris.discovery.client.flow;
 
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
+import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.InstancesResponse;
@@ -29,8 +29,8 @@ import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
-import org.slf4j.Logger;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 public class SyncFlow {
 
@@ -52,7 +52,7 @@ public class SyncFlow {
     public InstancesResponse commonSyncGetAllInstances(CommonInstancesRequest request) throws PolarisException {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
-        return new InstancesResponse(dstInstances);
+        return new InstancesResponse(dstInstances, "");
     }
 
     /**
@@ -66,12 +66,13 @@ public class SyncFlow {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
         if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
-            return new InstancesResponse(dstInstances);
+            return new InstancesResponse(dstInstances, "");
         }
+        RouteInfo routeInfo = request.getRouteInfo();
         ServiceInstances routerInstances =
-                BaseFlow.processServiceRouters(request.getRouteInfo(), request.getDstInstances(),
+                BaseFlow.processServiceRouters(routeInfo, request.getDstInstances(),
                         extensions.getConfigRouterChainGroup());
-        return new InstancesResponse(routerInstances);
+        return new InstancesResponse(routerInstances, routeInfo.getSubset());
     }
 
     /**
@@ -85,14 +86,15 @@ public class SyncFlow {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
         if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
-            return new InstancesResponse(dstInstances);
+            return new InstancesResponse(dstInstances, "");
         }
+        RouteInfo routeInfo = request.getRouteInfo();
         ServiceInstances routerInstances =
-                BaseFlow.processServiceRouters(request.getRouteInfo(), request.getDstInstances(),
+                BaseFlow.processServiceRouters(routeInfo, request.getDstInstances(),
                         extensions.getConfigRouterChainGroup());
         LoadBalancer loadBalancer = extensions.getLoadBalancer();
         Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), routerInstances);
-        return new InstancesResponse(dstInstances, instance);
+        return new InstancesResponse(dstInstances, instance, routeInfo.getSubset());
     }
 
     /**

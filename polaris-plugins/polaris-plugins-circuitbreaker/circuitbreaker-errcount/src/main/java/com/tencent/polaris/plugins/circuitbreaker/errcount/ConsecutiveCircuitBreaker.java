@@ -22,11 +22,12 @@ import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreakResult;
-import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -38,10 +39,12 @@ import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.pojo.Subset;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.flow.DefaultFlowControlParam;
+import com.tencent.polaris.client.flow.FlowControlParam;
+import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.ChangeStateUtils;
 import com.tencent.polaris.plugins.circuitbreaker.common.CircuitBreakUtils;
-import com.tencent.polaris.plugins.circuitbreaker.common.CircuitBreakUtils.RuleDestinationResult;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigGroup;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSet;
 import com.tencent.polaris.plugins.circuitbreaker.common.ConfigSetLocator;
@@ -49,14 +52,6 @@ import com.tencent.polaris.plugins.circuitbreaker.common.HalfOpenConfig;
 import com.tencent.polaris.plugins.circuitbreaker.common.HalfOpenCounter;
 import com.tencent.polaris.plugins.circuitbreaker.common.RuleIdentifier;
 import com.tencent.polaris.plugins.circuitbreaker.common.StateMachine;
-import com.tencent.polaris.api.control.Destroyable;
-import com.tencent.polaris.client.flow.DefaultFlowControlParam;
-import com.tencent.polaris.client.flow.FlowControlParam;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CbPolicy;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CbPolicy.ConsecutiveErrConfig;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.DestinationSet;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.RecoverConfig;
-import com.tencent.polaris.client.pojo.InstanceByProto;
 import java.util.Collection;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -67,7 +62,7 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/8/26
  */
-public class ConsecutiveCircuitBreaker extends Destroyable implements CircuitBreaker, PluginConfigProvider,
+public class ConsecutiveCircuitBreaker extends Destroyable implements InstanceCircuitBreaker, PluginConfigProvider,
         ConfigSetLocator<Config> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConsecutiveCircuitBreaker.class);
@@ -156,7 +151,7 @@ public class ConsecutiveCircuitBreaker extends Destroyable implements CircuitBre
 
     @Override
     public PluginType getType() {
-        return PluginTypes.CIRCUIT_BREAKER.getBaseType();
+        return PluginTypes.INSTANCE_CIRCUIT_BREAKER.getBaseType();
     }
 
     @Override
@@ -196,30 +191,7 @@ public class ConsecutiveCircuitBreaker extends Destroyable implements CircuitBre
         return configGroup.getServiceConfig(ruleIdentifier, new Function<RuleIdentifier, ConfigSet<Config>>() {
             @Override
             public ConfigSet<Config> apply(RuleIdentifier ruleIdentifier) {
-                RuleDestinationResult ruleDestResultConsecutive = circuitBreakerConfig.isEnableRemotePull() ?
-                        CircuitBreakUtils.getRuleDestinationSet(ruleIdentifier, extensions, flowControlParam) :
-                        RuleDestinationResult.defaultValue();
-                DestinationSet ruleDestinationSetConsecutive = ruleDestResultConsecutive.getDestinationSet();
-                if (null == ruleDestinationSetConsecutive) {
-                    return new ConfigSet<>(StatusDimension.Level.SERVICE, true, null, null);
-                }
-                HalfOpenConfig halfOpenConfigConsecutive = configGroup.getLocalConfig().getHalfOpenConfig();
-                RecoverConfig recoverConfigConsecutive = ruleDestinationSetConsecutive.getRecover();
-                if (null != recoverConfigConsecutive) {
-                    halfOpenConfigConsecutive = new HalfOpenConfig(halfOpenConfigConsecutive, recoverConfigConsecutive);
-                }
-                Config targetPlugConfig = configGroup.getLocalConfig().getPlugConfig();
-                CbPolicy policy = ruleDestinationSetConsecutive.getPolicy();
-                if (null != policy) {
-                    ConsecutiveErrConfig consecutive = policy.getConsecutive();
-                    if (null != consecutive && consecutive.hasEnable() && consecutive.getEnable().getValue()) {
-                        targetPlugConfig = new Config();
-                        targetPlugConfig
-                                .setContinuousErrorThreshold(consecutive.getConsecutiveErrorToOpen().getValue());
-                    }
-                }
-                return new ConfigSet<>(ruleDestResultConsecutive.getMatchLevel(), false, halfOpenConfigConsecutive,
-                        targetPlugConfig);
+                return new ConfigSet<>(StatusDimension.Level.SERVICE, true, null, null);
             }
         });
     }

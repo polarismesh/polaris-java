@@ -17,7 +17,11 @@
 
 package com.tencent.polaris.api.utils;
 
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
+
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class RuleUtils {
 
@@ -42,4 +46,46 @@ public class RuleUtils {
     public static boolean isMatchAllValue(String value) {
         return StringUtils.isEmpty(value) || StringUtils.equals(value, MATCH_ALL);
     }
+
+    public static boolean matchStringValue(MatchString matchString, String value,
+            Function<String, Pattern> regexToPattern) {
+        MatchStringType matchType = matchString.getType();
+        String matchValue = matchString.getValue().getValue();
+        if (RuleUtils.isMatchAllValue(matchValue)) {
+            return true;
+        }
+        switch (matchType) {
+            case EXACT: {
+                return StringUtils.equals(value, matchValue);
+            }
+            case REGEX: {
+                //正则表达式匹配
+                Pattern pattern = regexToPattern.apply(matchValue);
+                return pattern.matcher(value).find();
+            }
+            case NOT_EQUALS: {
+                return !StringUtils.equals(value, matchValue);
+            }
+            case IN: {
+                String[] tokens = matchValue.split(",");
+                for (String token : tokens) {
+                    if (StringUtils.equals(token, value)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            case NOT_IN: {
+                String[] tokens = matchValue.split(",");
+                for (String token : tokens) {
+                    if (StringUtils.equals(token, value)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

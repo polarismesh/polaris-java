@@ -18,8 +18,8 @@
 package com.tencent.polaris.plugins.ratelimiter.unirate;
 
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 

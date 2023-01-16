@@ -23,12 +23,18 @@ import java.util.List;
 /**
  * 带权重的实例subset
  */
-class WeightedSubset {
+public class WeightedSubset {
+
+    private final String name;
 
     // 实例subset
-    List<Instance> instances;
+    private List<Instance> instances;
     // subset列表
-    long weight;
+    private long weight;
+
+    public WeightedSubset(String name) {
+        this.name = name;
+    }
 
     public List<Instance> getInstances() {
         return instances;
@@ -44,6 +50,10 @@ class WeightedSubset {
 
     public void setWeight(long weight) {
         this.weight = weight;
+    }
+
+    public String getName() {
+        return name;
     }
 }
 

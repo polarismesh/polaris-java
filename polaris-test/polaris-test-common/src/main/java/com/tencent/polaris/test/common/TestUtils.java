@@ -59,6 +59,7 @@ public class TestUtils {
             ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
             configurationImpl.setDefault();
             configurationImpl.getGlobal().getServerConnector().setAddresses(Arrays.asList(addresses.clone()));
+            configurationImpl.getGlobal().getAPI().setTimeout(5000);
         }
         return configuration;
     }

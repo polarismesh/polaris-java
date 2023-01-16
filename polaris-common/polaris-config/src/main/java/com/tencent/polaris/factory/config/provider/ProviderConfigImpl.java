@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * 被调端配置对象
  *
  * @author andrewshan
- * @date 2019/8/20
  */
 public class ProviderConfigImpl implements ProviderConfig {
 
@@ -39,15 +38,18 @@ public class ProviderConfigImpl implements ProviderConfig {
      * 默认最小注册重试间隔, 30秒, 单位: 毫秒
      */
     private final static long DEFAULT_MIN_REGISTER_INTERVAL = 30 * 1000;
-    
+
     @JsonProperty
     private RateLimitConfigImpl rateLimit;
 
     @JsonProperty
     private List<RegisterConfigImpl> registers;
 
+    @JsonProperty
+    private ServiceConfigImpl service;
+
     @JsonIgnore
-    private Map<String, RegisterConfigImpl> registerConfigMap = new ConcurrentHashMap<>();
+    private final Map<String, RegisterConfigImpl> registerConfigMap = new ConcurrentHashMap<>();
 
     @JsonProperty
     private long minRegisterInterval;
@@ -106,6 +108,9 @@ public class ProviderConfigImpl implements ProviderConfig {
         if (null == rateLimit) {
             rateLimit = new RateLimitConfigImpl();
         }
+        if (null == service) {
+            service = new ServiceConfigImpl();
+        }
         if (minRegisterInterval == 0) {
             minRegisterInterval = DEFAULT_MIN_REGISTER_INTERVAL;
         }
@@ -119,7 +124,17 @@ public class ProviderConfigImpl implements ProviderConfig {
             } else {
                 registers = new ArrayList<>();
             }
+            service.setDefault(providerConfig.getService());
         }
 
+    }
+
+    @Override
+    public ServiceConfigImpl getService() {
+        return service;
+    }
+
+    public void setService(ServiceConfigImpl service) {
+        this.service = service;
     }
 }

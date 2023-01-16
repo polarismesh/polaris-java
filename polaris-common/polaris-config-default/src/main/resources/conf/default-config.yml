@@ -180,8 +180,7 @@ consumer:
     enableRemotePull: true
     #描述:熔断策略，SDK会根据策略名称加载对应的熔断器插件（已注册的熔断器插件名）
     chain:
-      - errorCount
-      - errorRate
+      - composite
     #描述: 熔断插件配置
     plugin:
       #描述:基于周期连续错误数熔断策略配置

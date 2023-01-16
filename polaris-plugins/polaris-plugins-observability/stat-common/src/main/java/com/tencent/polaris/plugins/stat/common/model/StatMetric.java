@@ -17,16 +17,16 @@
 
 package com.tencent.polaris.plugins.stat.common.model;
 
-import com.google.common.util.concurrent.AtomicDouble;
 import com.tencent.polaris.plugins.stat.common.util.SignatureUtil;
-
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class StatMetric {
+
     private final String metricName;
     private final Map<String, String> labels;
     private final Long signature;
-    private final AtomicDouble value;
+    private final AtomicLong value;
 
     public StatMetric(String metricName, Map<String, String> labels) {
         this(metricName, labels, SignatureUtil.labelsToSignature(labels));
@@ -36,7 +36,7 @@ public class StatMetric {
         this.metricName = metricName;
         this.labels = labels;
         this.signature = signature;
-        this.value = new AtomicDouble();
+        this.value = new AtomicLong();
     }
 
     public String getMetricName() {
@@ -51,19 +51,19 @@ public class StatMetric {
         return value.doubleValue();
     }
 
-    public void setValue(double value) {
+    public void setValue(long value) {
         this.value.set(value);
     }
 
-    public double addValue(double value) {
+    public long addValue(long value) {
         return this.value.addAndGet(value);
     }
 
-    public double incValue() {
-        return addValue(1.0);
+    public long incValue() {
+        return addValue(1);
     }
 
-    public boolean compareAndSet(double expect, double update) {
+    public boolean compareAndSet(long expect, long update) {
         return value.compareAndSet(expect, update);
     }
 

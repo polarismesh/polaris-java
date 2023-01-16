@@ -2,10 +2,6 @@ syntax = "proto3";
 
 package v1;
 
-import "client.proto";
-import "request.proto";
-import "response.proto";
-
 option java_package = "com.tencent.polaris.client.pb";
 option java_outer_classname = "LocationGRPCService";
 

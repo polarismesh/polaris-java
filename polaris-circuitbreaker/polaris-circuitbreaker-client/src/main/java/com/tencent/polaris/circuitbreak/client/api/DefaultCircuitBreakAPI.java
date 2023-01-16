@@ -18,10 +18,21 @@
 package com.tencent.polaris.circuitbreak.client.api;
 
 import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
+import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
+import com.tencent.polaris.api.pojo.HalfOpenStatus;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
+import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
+import com.tencent.polaris.client.util.CommonValidator;
 import java.util.List;
 
 public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAPI {
@@ -54,5 +65,59 @@ public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAP
             checker.destroy();
         }
         super.doDestroy();
+    }
+
+    @Override
+    public CheckResult check(Resource resource) {
+        return check(resource, sdkContext.getExtensions());
+    }
+
+    public static CheckResult check(Resource resource, Extensions extensions) {
+        CircuitBreaker circuitBreaker = extensions.getResourceBreaker();
+        if (null == circuitBreaker) {
+            return new CheckResult(true, "", null);
+        }
+        CircuitBreakerStatus circuitBreakerStatus = circuitBreaker.checkResource(resource);
+        if (null != circuitBreakerStatus) {
+            return circuitBreakerStatusToResult(circuitBreakerStatus);
+        }
+        return new CheckResult(true, "", null);
+    }
+
+    private static CheckResult circuitBreakerStatusToResult(CircuitBreakerStatus circuitBreakerStatus) {
+        Status status = circuitBreakerStatus.getStatus();
+        if (status == Status.CLOSE) {
+            return new CheckResult(true, circuitBreakerStatus.getCircuitBreaker(),
+                    circuitBreakerStatus.getFallbackInfo());
+        }
+        if (status == Status.OPEN) {
+            return new CheckResult(false, circuitBreakerStatus.getCircuitBreaker(),
+                    circuitBreakerStatus.getFallbackInfo());
+        }
+        HalfOpenStatus halfOpenStatus = (HalfOpenStatus) circuitBreakerStatus;
+        boolean allocated = halfOpenStatus.allocate();
+        return new CheckResult(allocated, circuitBreakerStatus.getCircuitBreaker(),
+                circuitBreakerStatus.getFallbackInfo());
+    }
+
+    @Override
+    public void report(ResourceStat reportStat) {
+        report(reportStat, sdkContext.getExtensions());
+    }
+
+    public static void report(ResourceStat reportStat, Extensions extensions) {
+        CircuitBreaker circuitBreaker = extensions.getResourceBreaker();
+        if (null == circuitBreaker) {
+            return;
+        }
+        circuitBreaker.report(reportStat);
+    }
+
+    @Override
+    public FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest makeDecoratorRequest) {
+        CommonValidator.validateService(makeDecoratorRequest.getService());
+        CommonValidator.validateNamespaceService(makeDecoratorRequest.getService().getNamespace(),
+                makeDecoratorRequest.getService().getService());
+        return new DefaultFunctionalDecorator(makeDecoratorRequest, this);
     }
 }

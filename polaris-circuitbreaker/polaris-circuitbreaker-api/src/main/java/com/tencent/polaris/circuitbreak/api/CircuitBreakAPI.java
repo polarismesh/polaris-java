@@ -17,19 +17,35 @@
 
 package com.tencent.polaris.circuitbreak.api;
 
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
+import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
+
 public interface CircuitBreakAPI {
 
-//    /**
-//     * 检查服务的熔断器状态
-//     *
-//     * @return 假如一个服务下所有的实例或者实例分组都被熔断，则状态为OPEN；存在半开的实例或者分组，状态为HALF_OPEN，否则状态为CLOSE
-//     */
-//    Status checkServiceStatus();
-//
-//    /**
-//     * 检查服务接口的熔断器状态
-//     *
-//     * @return 假如一个接口下所有的实例或者实例分组都被熔断，则状态为OPEN；存在半开的实例或者分组，状态为HALF_OPEN，否则状态为CLOSE
-//     */
-//    Status checkMethodStatus();
+    /**
+     * check and acquire circuitbreaker
+     *
+     * @param resource
+     * @return pass or not, and fallback config if needed
+     */
+    CheckResult check(Resource resource);
+
+    /**
+     * report the resource invoke result
+     *
+     * @param reportStat
+     */
+    void report(ResourceStat reportStat);
+
+
+    /**
+     * make the function decorator
+     *
+     * @param functionalDecoratorRequest
+     * @return decorator
+     */
+    FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest functionalDecoratorRequest);
+
 }

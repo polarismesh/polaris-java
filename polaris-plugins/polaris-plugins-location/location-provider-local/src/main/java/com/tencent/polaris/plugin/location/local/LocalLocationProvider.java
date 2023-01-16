@@ -21,41 +21,40 @@ import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugin.location.base.BaseLocationProvider;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
 import org.slf4j.Logger;
-
-import static com.tencent.polaris.client.pb.ModelProto.Location;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class LocalLocationProvider extends BaseLocationProvider<BaseLocationProvider.GetOption> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(LocalLocationProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LocalLocationProvider.class);
 
-	public LocalLocationProvider() {
-		super(GetOption.class);
-	}
+    public LocalLocationProvider() {
+        super(GetOption.class);
+    }
 
-	@Override
-	public ProviderType getProviderType() {
-		return ProviderType.LOCAL;
-	}
+    @Override
+    public ProviderType getProviderType() {
+        return ProviderType.LOCAL;
+    }
 
-	@Override
-	public Location doGet(GetOption option) {
-		String region = StringUtils.defaultString(option.getRegion());
-		String zone = StringUtils.defaultString(option.getZone());
-		String campus = StringUtils.defaultString(option.getCampus());
+    @Override
+    public Location doGet(GetOption option) {
+        String region = StringUtils.defaultString(option.getRegion());
+        String zone = StringUtils.defaultString(option.getZone());
+        String campus = StringUtils.defaultString(option.getCampus());
 
-		if (StringUtils.isAllEmpty(region, zone, campus)) {
-			return null;
-		}
+        if (StringUtils.isAllEmpty(region, zone, campus)) {
+            return null;
+        }
 
-		return Location.newBuilder()
-				.setRegion(StringValue.newBuilder().setValue(region).build())
-				.setZone(StringValue.newBuilder().setValue(zone).build())
-				.setCampus(StringValue.newBuilder().setValue(campus).build())
-				.build();
-	}
+        return Location.newBuilder()
+                .setRegion(StringValue.newBuilder().setValue(region).build())
+                .setZone(StringValue.newBuilder().setValue(zone).build())
+                .setCampus(StringValue.newBuilder().setValue(campus).build())
+                .build();
+    }
 
 }

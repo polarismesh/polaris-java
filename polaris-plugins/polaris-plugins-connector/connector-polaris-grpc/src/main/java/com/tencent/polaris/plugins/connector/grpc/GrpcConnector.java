@@ -42,14 +42,6 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
-import com.tencent.polaris.client.pb.ClientProto;
-import com.tencent.polaris.client.pb.ClientProto.Client;
-import com.tencent.polaris.client.pb.ClientProto.Client.Builder;
-import com.tencent.polaris.client.pb.ClientProto.StatInfo;
-import com.tencent.polaris.client.pb.ModelProto;
-import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
-import com.tencent.polaris.client.pb.ResponseProto;
-import com.tencent.polaris.client.pb.ServiceProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
@@ -57,6 +49,13 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ClientProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.Client;
+import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.StatInfo;
+import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -325,7 +324,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     }
 
     private ClientProto.Client buildReportRequest(ReportClientRequest req) {
-        Builder builder = Client.newBuilder().setHost(StringValue.newBuilder().setValue(req.getClientHost()))
+        Client.Builder builder = Client.newBuilder().setHost(StringValue.newBuilder().setValue(req.getClientHost()))
                 .setVersion(StringValue.newBuilder().setValue(req.getVersion()));
         Optional.ofNullable(req.getReporterMetaInfos()).ifPresent(reporterMetaInfos -> reporterMetaInfos.forEach(
                 reporterMetaInfo -> builder.addStat(StatInfo.newBuilder()

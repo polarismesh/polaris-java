@@ -17,12 +17,13 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.client.pb.ConfigFileProto;
-import com.tencent.polaris.client.pb.PolarisConfigGRPCGrpc;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
 
+import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
+import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileResponseProto;
+import com.tencent.polaris.specification.api.v1.config.manage.PolarisConfigGRPCGrpc;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
             //附加通用 header
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             //执行调用
-            ConfigFileProto.ConfigFileResponse response = stub.getConfigFile(transfer2DTO(configFile));
+            ConfigFileResponseProto.ConfigClientResponse response = stub.getConfigFile(transfer2DTO(configFile));
 
             return handleResponse(response);
         } catch (Throwable t) {
@@ -91,14 +92,14 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
             //附加通用 header
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             //执行调用
-            List<ConfigFileProto.ConfigFileDTO> dtos = Lists.newLinkedList();
+            List<ConfigFileProto.ClientConfigFileInfo> dtos = Lists.newLinkedList();
             for (ConfigFile configFile : configFiles) {
                 dtos.add(transfer2DTO(configFile));
             }
-            ConfigFileProto.WatchConfigFileRequest request =
-                ConfigFileProto.WatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
+            ConfigFileProto.ClientWatchConfigFileRequest request =
+                ConfigFileProto.ClientWatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
 
-            ConfigFileProto.ConfigFileResponse response = stub.watchConfigFiles(request);
+            ConfigFileResponseProto.ConfigClientResponse response = stub.watchConfigFiles(request);
 
             return handleResponse(response);
         } catch (Throwable t) {
@@ -137,8 +138,8 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         }
     }
 
-    private ConfigFileProto.ConfigFileDTO transfer2DTO(ConfigFile configFile) {
-        ConfigFileProto.ConfigFileDTO.Builder builder = ConfigFileProto.ConfigFileDTO.newBuilder();
+    private ConfigFileProto.ClientConfigFileInfo transfer2DTO(ConfigFile configFile) {
+        ConfigFileProto.ClientConfigFileInfo.Builder builder = ConfigFileProto.ClientConfigFileInfo.newBuilder();
 
         builder.setNamespace(StringValue.newBuilder().setValue(configFile.getNamespace()).build());
         builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
@@ -148,7 +149,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         return builder.build();
     }
 
-    private ConfigFile transferFromDTO(ConfigFileProto.ConfigFileDTO configFileDTO) {
+    private ConfigFile transferFromDTO(ConfigFileProto.ClientConfigFileInfo configFileDTO) {
         if (configFileDTO == null) {
             return null;
         }
@@ -163,7 +164,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         return configFile;
     }
 
-    private ConfigFileResponse handleResponse(ConfigFileProto.ConfigFileResponse response) {
+    private ConfigFileResponse handleResponse(ConfigFileResponseProto.ConfigClientResponse response) {
         int code = response.getCode().getValue();
         //预期code，正常响应
         if (code == ServerCodes.EXECUTE_SUCCESS ||
