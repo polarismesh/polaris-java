@@ -20,6 +20,7 @@ package com.tencent.polaris.plugins.connector.grpc;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -50,6 +51,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 
 /**
@@ -74,6 +76,7 @@ public class ConnectionManager extends Destroyable {
     private final String clientId;
     private Extensions extensions;
     private final ChannelTlsCertificates tlsCertificates;
+    private Consumer<ConnID> callbackOnSwitched;
 
     /**
      * 构造器
@@ -157,6 +160,15 @@ public class ConnectionManager extends Destroyable {
             return false;
         }
         return serverAddressList.ready.get();
+    }
+
+    public Consumer<ConnID> getCallbackOnSwitched() {
+        return callbackOnSwitched;
+    }
+
+    public void setCallbackOnSwitched(
+            Consumer<ConnID> callbackOnSwitched) {
+        this.callbackOnSwitched = callbackOnSwitched;
     }
 
     /**
@@ -257,9 +269,6 @@ public class ConnectionManager extends Destroyable {
         public void run() {
             for (Map.Entry<ClusterType, ServerAddressList> entry : serverAddresses.entrySet()) {
                 ClusterType clusterType = entry.getKey();
-                if (clusterType == ClusterType.BUILTIN_CLUSTER) {
-                    continue;
-                }
                 try {
                     ServerAddressList serverAddressList = entry.getValue();
                     serverAddressList.switchClient();
@@ -399,21 +408,35 @@ public class ConnectionManager extends Destroyable {
                     //已经完成切换，不处理
                     return;
                 }
-                Node servAddress = getServerAddress();
-                if (null == servAddress) {
-                    return;
-                }
-                if (null != curConnection) {
-                    if (servAddress.getHost().equals(curConnection.getConnID().getHost())
-                            && servAddress.getPort() == curConnection.getConnID().getPort()) {
-                        return;
-                    }
-                    curConnection.lazyClose();
-                }
-                ConnID connID = new ConnID(serverServiceInfo.getServiceKey(), clusterType, servAddress.getHost(),
-                        servAddress.getPort(), protocol);
-                Connection connection = connectTarget(connID);
-                curConnectionValue.set(connection);
+                doSwitchClient(curConnection);
+            }
+        }
+
+        private void doSwitchClient(Connection curConnection) throws PolarisException {
+            Node servAddress = getServerAddress();
+            if (null == servAddress) {
+                return;
+            }
+            String preAddress = null;
+            if (null != curConnection) {
+                curConnection.lazyClose();
+                preAddress = String.format(
+                        "%s:%d", curConnection.getConnID().getHost(), curConnection.getConnID().getPort());
+            }
+            String namespace = DefaultValues.DEFAULT_SYSTEM_NAMESPACE;
+            String serviceName = DefaultValues.DEFAULT_BUILTIN_DISCOVER;
+            if (null != serverServiceInfo) {
+                namespace = serverServiceInfo.getServiceKey().getNamespace();
+                serviceName = serverServiceInfo.getServiceKey().getService();
+            }
+            ConnID connID = new ConnID(new ServiceKey(namespace, serviceName), clusterType, servAddress.getHost(),
+                    servAddress.getPort(), protocol);
+            Connection connection = connectTarget(connID);
+            curConnectionValue.set(connection);
+            LOG.info("server {} connection switched from {} to {}:{}",
+                    serviceName, preAddress, servAddress.getHost(), servAddress.getPort());
+            if (null != callbackOnSwitched) {
+                callbackOnSwitched.accept(connection.getConnID());
             }
         }
 
@@ -423,25 +446,12 @@ public class ConnectionManager extends Destroyable {
             if (!Connection.isAvailableConnection(curConnection)) {
                 return;
             }
-            LOG.info("start switch for {}", serverServiceInfo.getServiceKey());
             synchronized (lock) {
                 curConnection = curConnectionValue.get();
                 if (!Connection.isAvailableConnection(curConnection)) {
                     return;
                 }
-                Node servAddress = getServerAddress();
-                if (null == servAddress) {
-                    return;
-                }
-                if (servAddress.getHost().equals(curConnection.getConnID().getHost())
-                        && servAddress.getPort() == curConnection.getConnID().getPort()) {
-                    return;
-                }
-                ConnID connID = new ConnID(serverServiceInfo.getServiceKey(), clusterType, servAddress.getHost(),
-                        servAddress.getPort(), protocol);
-                Connection connection = connectTarget(connID);
-                curConnection.lazyClose();
-                curConnectionValue.set(connection);
+                doSwitchClient(curConnection);
             }
         }
 
