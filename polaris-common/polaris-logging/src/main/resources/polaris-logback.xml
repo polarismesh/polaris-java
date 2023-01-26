@@ -27,11 +27,30 @@
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
             <fileNamePattern>${polaris.log.home}/polaris-update-event.log.%i</fileNamePattern>
-            <maxIndex>${polaris-update-event.log.retain.count:-7}</maxIndex>
+            <maxIndex>${polaris.update.event.log.retain.count:-7}</maxIndex>
         </rollingPolicy>
 
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>${polaris-update-event.log.file.size:-10MB}</maxFileSize>
+            <maxFileSize>${polaris.update.event.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"
+            class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/polaris-circuitbreaker-event.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/polaris-circuitbreaker-event.log.%i
+            </fileNamePattern>
+            <maxIndex>${polaris.circuitbreaker.event.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${polaris.circuitbreaker.event.log.file.size:-10MB}</maxFileSize>
         </triggeringPolicy>
 
         <encoder>
@@ -51,13 +70,19 @@
         <appender-ref ref="POLARIS_LOG_FILE"/>
     </logger>
 
-    <logger name="polaris-update-event" level="${polaris-update-event.log.level:-info}"
+    <logger name="polaris-update-event" level="${polaris.update.event.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
     </logger>
 
-    <logger name="polaris-update-event-async" level="${polaris-update-event.log.level:-info}"
+    <logger name="polaris-update-event-async" level="${polaris.update.event.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"/>
+    </logger>
+
+    <logger name="polaris-circuitbreaker-event"
+            level="${polaris.circuitbreaker.event.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
     </logger>
 </configuration>

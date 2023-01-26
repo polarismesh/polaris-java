@@ -37,16 +37,16 @@ import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
-import com.tencent.polaris.client.pb.ModelProto;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.Operation;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -156,28 +156,28 @@ public class QuotaFlow extends Destroyable {
         boolean regexCombine = rule.getRegexCombine().getValue();
         String methodValue = "";
         if (null != method && !RuleUtils.isMatchAllValue(method)) {
-            if (regexCombine && method.getType() != Operation.EXACT) {
+            if (regexCombine && method.getType() != MatchStringType.EXACT) {
                 methodValue = method.getValue().getValue();
             } else {
                 methodValue = request.getMethod();
-                if (method.getType() != Operation.EXACT) {
+                if (method.getType() != MatchStringType.EXACT) {
                     //正则表达式扩散
                     initCriteria.setRegexSpread(true);
                 }
             }
         }
-        List<ModelProto.MatchArgument> argumentsList = rule.getArgumentsList();
+        List<MatchArgument> argumentsList = rule.getArgumentsList();
         List<String> tmpList = new ArrayList<>();
         Map<Integer, Map<String, String>> arguments = request.getArguments();
-        for (ModelProto.MatchArgument matchArgument : argumentsList) {
+        for (MatchArgument matchArgument : argumentsList) {
             String labelValue;
             MatchString matcher = matchArgument.getValue();
-            if (regexCombine && matcher.getType() != Operation.EXACT) {
+            if (regexCombine && matcher.getType() != MatchStringType.EXACT) {
                 labelValue = matcher.getValue().getValue();
             } else {
                 Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
                 labelValue = getLabelValue(matchArgument, stringStringMap);
-                if (matcher.getType() != Operation.EXACT) {
+                if (matcher.getType() != MatchStringType.EXACT) {
                     //正则表达式扩散
                     initCriteria.setRegexSpread(true);
                 }
@@ -192,7 +192,7 @@ public class QuotaFlow extends Destroyable {
                 .join(RateLimitConstants.DEFAULT_ENTRY_SEPARATOR, tmpList);
     }
 
-    private static String getLabelEntry(ModelProto.MatchArgument matchArgument, String labelValue) {
+    private static String getLabelEntry(MatchArgument matchArgument, String labelValue) {
         switch (matchArgument.getType()) {
             case CUSTOM:
             case HEADER:
@@ -210,7 +210,7 @@ public class QuotaFlow extends Destroyable {
         }
     }
 
-    private static String getLabelValue(ModelProto.MatchArgument matchArgument,
+    private static String getLabelValue(MatchArgument matchArgument,
             Map<String, String> stringStringMap) {
         switch (matchArgument.getType()) {
             case CUSTOM:
@@ -238,6 +238,10 @@ public class QuotaFlow extends Destroyable {
         if (CollectionUtils.isEmpty(rulesList)) {
             return null;
         }
+        Function<String, Pattern> function = regex -> {
+            FlowCache flowCache = rateLimitExtension.getExtensions().getFlowCache();
+            return flowCache.loadOrStoreCompiledRegex(regex);
+        };
         List<Rule> matchRules = new ArrayList<>();
         for (Rule rule : rulesList) {
             if (null != rule.getDisable() && rule.getDisable().getValue()) {
@@ -250,15 +254,15 @@ public class QuotaFlow extends Destroyable {
             //match method
             MatchString methodMatcher = rule.getMethod();
             if (null != methodMatcher) {
-                boolean matchMethod = matchStringValue(methodMatcher, method);
+                boolean matchMethod = RuleUtils.matchStringValue(methodMatcher, method, function);
                 if (!matchMethod) {
                     continue;
                 }
             }
-            List<ModelProto.MatchArgument> argumentsList = rule.getArgumentsList();
+            List<MatchArgument> argumentsList = rule.getArgumentsList();
             boolean matched = true;
             if (CollectionUtils.isNotEmpty(argumentsList)) {
-                for (ModelProto.MatchArgument matchArgument : argumentsList) {
+                for (MatchArgument matchArgument : argumentsList) {
                     Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
                     if (CollectionUtils.isEmpty(stringStringMap)) {
                         matched = false;
@@ -268,7 +272,7 @@ public class QuotaFlow extends Destroyable {
                     if (null == labelValue) {
                         matched = false;
                     } else {
-                        matched = matchStringValue(matchArgument.getValue(), labelValue);
+                        matched = RuleUtils.matchStringValue(matchArgument.getValue(), labelValue, function);
                     }
                     if (!matched) {
                         break;
@@ -280,47 +284,6 @@ public class QuotaFlow extends Destroyable {
             }
         }
         return matchRules;
-    }
-
-    private boolean matchStringValue(MatchString matchString, String value) {
-        Operation matchType = matchString.getType();
-        FlowCache flowCache = rateLimitExtension.getExtensions().getFlowCache();
-        String matchValue = matchString.getValue().getValue();
-        if (RuleUtils.isMatchAllValue(matchValue)) {
-            return true;
-        }
-        switch (matchType) {
-            case EXACT: {
-                return StringUtils.equals(value, matchValue);
-            }
-            case REGEX: {
-                //正则表达式匹配
-                Pattern pattern = flowCache.loadOrStoreCompiledRegex(matchValue);
-                return pattern.matcher(value).find();
-            }
-            case NOT_EQUALS: {
-                return !StringUtils.equals(value, matchValue);
-            }
-            case IN: {
-                String[] tokens = matchValue.split(",");
-                for (String token : tokens) {
-                    if (StringUtils.equals(token, value)) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-            case NOT_IN: {
-                String[] tokens = matchValue.split(",");
-                for (String token : tokens) {
-                    if (StringUtils.equals(token, value)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        return false;
     }
 
     private static Map<String, Rule> parseRules(RegistryCacheValue oldValue) {

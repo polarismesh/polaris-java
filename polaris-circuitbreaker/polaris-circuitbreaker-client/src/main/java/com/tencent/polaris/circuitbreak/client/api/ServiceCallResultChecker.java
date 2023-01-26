@@ -20,7 +20,7 @@ package com.tencent.polaris.circuitbreak.client.api;
 import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
-import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.pojo.InstanceGauge;
@@ -88,11 +88,11 @@ public class ServiceCallResultChecker implements ServiceCallResultListener {
         if (null == priorityTaskScheduler) {
             return;
         }
-        if (CollectionUtils.isEmpty(extensions.getCircuitBreakers())) {
+        if (CollectionUtils.isEmpty(extensions.getInstanceCircuitBreakers())) {
             return;
         }
         InstancesCircuitBreakTask rtTask = null;
-        for (CircuitBreaker circuitBreaker : extensions.getCircuitBreakers()) {
+        for (InstanceCircuitBreaker circuitBreaker : extensions.getInstanceCircuitBreakers()) {
             String cbName = circuitBreaker.getName();
             boolean rtLimit = circuitBreaker.stat(result);
             String instId = result.getInstanceId();

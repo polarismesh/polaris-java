@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.common;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
@@ -72,6 +73,11 @@ public enum PluginTypes {
 
     /**
      * 节点熔断扩展点
+     */
+    INSTANCE_CIRCUIT_BREAKER(new PluginType(InstanceCircuitBreaker.class, 2)),
+
+    /**
+     * 资源熔断扩展点
      */
     CIRCUIT_BREAKER(new PluginType(CircuitBreaker.class, 2)),
 

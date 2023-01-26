@@ -49,7 +49,7 @@ public class StatInfoStatefulCollector<T> extends AbstractSignatureStatInfoColle
                         metric = metricContainer.get(signature);
                         if (null == metric) {
                             StatStatefulMetric statMetric = new StatStatefulMetric(metricName, labels, signature);
-                            statMetric.setValue(strategy.initMetricValue(info));
+                            statMetric.setValue((long) strategy.initMetricValue(info));
                             LOG.debug("{} with signature {} init value is {}", strategy.getStrategyName(),
                                     signature,
                                     statMetric.getValue());

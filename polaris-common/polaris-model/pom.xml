@@ -17,6 +17,11 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-specification</artifactId>
+            <version>${specification.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-protobuf</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -30,6 +35,11 @@
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
         </dependency>
     </dependencies>
 

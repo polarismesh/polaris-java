@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugin.location.remotehttp;
 
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import java.io.IOException;
 
 import com.google.protobuf.StringValue;
@@ -25,7 +26,6 @@ import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
 import com.squareup.okhttp.Response;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugin.location.base.BaseLocationProvider;
 import org.slf4j.Logger;

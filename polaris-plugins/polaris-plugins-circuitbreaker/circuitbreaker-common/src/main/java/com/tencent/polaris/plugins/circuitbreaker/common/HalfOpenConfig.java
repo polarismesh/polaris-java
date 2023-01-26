@@ -20,7 +20,7 @@ package com.tencent.polaris.plugins.circuitbreaker.common;
 import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.RecoverConfig;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RecoverConfig;
 
 public class HalfOpenConfig {
 

@@ -23,11 +23,11 @@ package com.tencent.polaris.api.pojo;
 public interface Subset {
 
     /**
-     * 实例分组的ID
+     * 平铺的标签
      *
-     * @return ID
+     * @return labels
      */
-    String getId();
+    String getName();
 
     /**
      * 命名空间
@@ -42,13 +42,6 @@ public interface Subset {
      * @return service
      */
     String getService();
-
-    /**
-     * 平铺的标签
-     *
-     * @return labels
-     */
-    String getFlatLabels();
 
     /**
      * 熔断状态

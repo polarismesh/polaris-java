@@ -32,9 +32,6 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse;
-import com.tencent.polaris.client.pb.ServiceProto.Instance;
-import com.tencent.polaris.client.pb.ServiceProto.Service;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
@@ -42,6 +39,9 @@ import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.grpc.GrpcServiceUpdateTask;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Instance;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -97,7 +97,8 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     serverEvent.setPolarisRevision(discoverResponse.getService().getRevision().getValue());
                     if (discoverResponse.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
                         // 将 NO_CHANGE 响应转为 SUCCESS 响应，用于多个发现结果的合并
-                        newDiscoverResponseBuilder.setCode(UInt32Value.newBuilder().setValue(ServerCodes.EXECUTE_SUCCESS).build());
+                        newDiscoverResponseBuilder
+                                .setCode(UInt32Value.newBuilder().setValue(ServerCodes.EXECUTE_SUCCESS).build());
                         Object value = getEventHandler().getValue();
                         if (value != null) {
                             // Add local cache in NO_CHANGE

@@ -12,13 +12,13 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
-import com.tencent.polaris.client.pb.RequestProto;
-import com.tencent.polaris.client.pb.ResponseProto;
-import com.tencent.polaris.client.pb.ServiceProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
+import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
+import com.tencent.polaris.specification.api.v1.service.manage.RequestProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -138,7 +138,8 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         ServiceProto.Service.Builder builder = ServiceProto.Service.newBuilder();
         builder.setName(StringValue.newBuilder().setValue(serviceEventKey.getServiceKey().getService()).build());
         builder.setNamespace(StringValue.newBuilder().setValue(serviceEventKey.getServiceKey().getNamespace()).build());
-        builder.setRevision(StringValue.newBuilder().setValue(serviceUpdateTask.getEventHandler().getRevision()).build());
+        builder.setRevision(
+                StringValue.newBuilder().setValue(serviceUpdateTask.getEventHandler().getRevision()).build());
 
         RequestProto.DiscoverRequest.Builder req = RequestProto.DiscoverRequest.newBuilder();
         req.setType(GrpcUtil.buildDiscoverRequestType(serviceEventKey.getEventType())); // switch

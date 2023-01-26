@@ -22,6 +22,7 @@ import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
 import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
@@ -32,11 +33,13 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import java.io.IOException;
+import java.util.Collections;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -112,6 +115,8 @@ public class CircuitBreakerTest {
     @Test
     public void testCircuitBreakByErrorCount() {
         Configuration configuration = TestUtils.configWithEnvAddress();
+        ((ConfigurationImpl) configuration).getConsumer().getCircuitBreaker().setChain(
+                Collections.singletonList(DefaultPlugins.CIRCUIT_BREAKER_ERROR_COUNT));
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             Utils.sleepUninterrupted(10000);
             Assert.assertNotNull(consumerAPI);
@@ -132,7 +137,7 @@ public class CircuitBreakerTest {
                     Utils.sleepUninterrupted(1);
                 }
             }
-            Utils.sleepUninterrupted(1000);
+            Utils.sleepUninterrupted(3000);
             instances = consumerAPI.getInstances(getInstancesRequest);
             Assert.assertEquals(MAX_COUNT - 1, instances.getInstances().length);
             Instance[] instanceArray = instances.getInstances();
@@ -175,6 +180,8 @@ public class CircuitBreakerTest {
     @Test
     public void testCircuitBreakByErrorRate() {
         Configuration configuration = TestUtils.configWithEnvAddress();
+        ((ConfigurationImpl) configuration).getConsumer().getCircuitBreaker().setChain(
+                Collections.singletonList(DefaultPlugins.CIRCUIT_BREAKER_ERROR_RATE));
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             GetInstancesRequest getInstancesRequest = new GetInstancesRequest();
             getInstancesRequest.setNamespace(NAMESPACE_TEST);

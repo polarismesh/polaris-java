@@ -23,6 +23,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
+import io.grpc.ServerInterceptor;
 import io.grpc.ServerInterceptors;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -42,6 +43,7 @@ public class NamingServer {
      * The maximum random port
      */
     private static final int MAX_RANDOM_PORT = 65535;
+
     private final Server server;
 
     private final int port;
@@ -49,10 +51,18 @@ public class NamingServer {
     private final NamingService namingService;
 
     public NamingServer(int port) {
-        namingService = new NamingService();
-        server = ServerBuilder.forPort(port).addService(
-                ServerInterceptors.intercept(namingService, new HeaderInterceptor())).build();
+        this(port, null);
+    }
+
+    public NamingServer(int port, ServerInterceptor[] interceptors) {
         this.port = port;
+        namingService = new NamingService();
+        if (null != interceptors && interceptors.length > 0) {
+            server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(namingService, interceptors))
+                    .build();
+        } else {
+            server = ServerBuilder.forPort(port).addService(ServerInterceptors.intercept(namingService)).build();
+        }
     }
 
     public static NamingServer startNamingServer(int port) throws IOException {

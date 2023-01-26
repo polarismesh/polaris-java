@@ -17,15 +17,14 @@
 
 package com.tencent.polaris.plugin.location.remoteservice;
 
-import java.net.Socket;
-
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.LocationGRPCGrpc;
+import com.tencent.polaris.client.pb.LocationGRPCGrpc.LocationGRPCBlockingStub;
 import com.tencent.polaris.client.pb.LocationGRPCService;
-import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugin.location.base.BaseLocationProvider;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import org.slf4j.Logger;
@@ -35,74 +34,75 @@ import org.slf4j.Logger;
  */
 public class RemoteServiceLocationProvider extends BaseLocationProvider<RemoteServiceLocationProvider.ServiceOption> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RemoteServiceLocationProvider.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(RemoteServiceLocationProvider.class);
 
-	private LocationGRPCGrpc.LocationGRPCBlockingStub stub;
+    private LocationGRPCBlockingStub stub;
 
-	public RemoteServiceLocationProvider() {
-		super(ServiceOption.class);
-	}
+    public RemoteServiceLocationProvider() {
+        super(ServiceOption.class);
+    }
 
-	@Override
-	public ProviderType getProviderType() {
-		return ProviderType.REMOTE_SERVICE;
-	}
+    @Override
+    public ProviderType getProviderType() {
+        return ProviderType.REMOTE_SERVICE;
+    }
 
-	@Override
-	public ModelProto.Location doGet(ServiceOption option) {
-		buildGrpcStub(option);
+    @Override
+    public ModelProto.Location doGet(ServiceOption option) {
+        buildGrpcStub(option);
 
-		try {
-			LocationGRPCService.LocationResponse response = stub.getLocation(LocationGRPCService.LocationRequest.newBuilder()
-					.setClientIp(getLocalHost(option.getTarget()))
-					.build());
+        try {
+            LocationGRPCService.LocationResponse response = stub
+                    .getLocation(LocationGRPCService.LocationRequest.newBuilder()
+                            .setClientIp(getLocalHost(option.getTarget()))
+                            .build());
 
-			return ModelProto.Location.newBuilder()
-					.setRegion(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getRegion()))
-							.build())
-					.setZone(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getZone())).build())
-					.setCampus(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getCampus()))
-							.build())
-					.build();
-		}
-		catch (Exception e) {
-			LOGGER.error("[Location][Provider][RemoteService] get location from remote service fail, option : {}", option, e);
-			return null;
-		}
-	}
+            return ModelProto.Location.newBuilder()
+                    .setRegion(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getRegion()))
+                            .build())
+                    .setZone(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getZone())).build())
+                    .setCampus(StringValue.newBuilder().setValue(StringUtils.defaultString(response.getCampus()))
+                            .build())
+                    .build();
+        } catch (Exception e) {
+            LOGGER.error("[Location][Provider][RemoteService] get location from remote service fail, option : {}",
+                    option, e);
+            return null;
+        }
+    }
 
-	public synchronized void buildGrpcStub(ServiceOption option) {
-		if (stub != null) {
-			return;
-		}
+    public synchronized void buildGrpcStub(ServiceOption option) {
+        if (stub != null) {
+            return;
+        }
 
-		ManagedChannel channel = ManagedChannelBuilder.forTarget(option.getTarget()).usePlaintext().build();
-		stub = LocationGRPCGrpc.newBlockingStub(channel);
-	}
+        ManagedChannel channel = ManagedChannelBuilder.forTarget(option.getTarget()).usePlaintext().build();
+        stub = LocationGRPCGrpc.newBlockingStub(channel);
+    }
 
-	public static class ServiceOption {
+    public static class ServiceOption {
 
-		private String target;
+        private String target;
 
-		String getTarget() {
-			return target;
-		}
+        String getTarget() {
+            return target;
+        }
 
-		void setTarget(String target) {
-			this.target = target;
-		}
-	}
+        void setTarget(String target) {
+            this.target = target;
+        }
+    }
 
-	private String getLocalHost(String addresses) throws Exception {
-		if (addresses == null || addresses.length() == 0) {
-			return configuration.getGlobal().getAPI().getBindIP();
-		}
+    private String getLocalHost(String addresses) throws Exception {
+        if (addresses == null || addresses.length() == 0) {
+            return configuration.getGlobal().getAPI().getBindIP();
+        }
 
-		String[] addressList = addresses.split(",");
+        String[] addressList = addresses.split(",");
 
-		String[] tokens = addressList[0].split(":");
-		try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
-			return socket.getLocalAddress().getHostAddress();
-		}
-	}
+        String[] tokens = addressList[0].split(":");
+        try (Socket socket = new Socket(tokens[0], Integer.parseInt(tokens[1]))) {
+            return socket.getLocalAddress().getHostAddress();
+        }
+    }
 }
