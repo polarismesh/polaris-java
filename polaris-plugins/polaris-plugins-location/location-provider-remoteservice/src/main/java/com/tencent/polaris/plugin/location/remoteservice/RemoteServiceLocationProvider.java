@@ -27,6 +27,7 @@ import com.tencent.polaris.plugin.location.base.BaseLocationProvider;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import java.net.Socket;
 import org.slf4j.Logger;
 
 /**
