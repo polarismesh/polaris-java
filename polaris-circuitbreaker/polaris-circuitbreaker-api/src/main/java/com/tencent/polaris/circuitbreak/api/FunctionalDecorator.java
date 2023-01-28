@@ -19,6 +19,7 @@ package com.tencent.polaris.circuitbreak.api;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public interface FunctionalDecorator {
@@ -28,4 +29,6 @@ public interface FunctionalDecorator {
     <T> Consumer<T> decorateConsumer(Consumer<T> consumer);
 
     <T, R> Function<T, R> decorateFunction(Function<T, R> function);
+
+    <T> Predicate<T> decoratePredicate(Predicate<T> predicate);
 }

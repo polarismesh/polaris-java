@@ -31,6 +31,7 @@ import com.tencent.polaris.circuitbreak.api.pojo.ResultToErrorCode;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class DefaultFunctionalDecorator implements FunctionalDecorator {
@@ -168,6 +169,45 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     R result = function.apply(t);
+                    long endTimeMilli = System.currentTimeMillis();
+                    int code = 0;
+                    if (null != resultToErrorCode) {
+                        code = resultToErrorCode.onSuccess(result);
+                    }
+                    long delay = endTimeMilli - startTimeMilli;
+                    commonReport(code, delay, RetStatus.RetSuccess);
+                    return result;
+                } catch (Throwable e) {
+                    long endTimeMilli = System.currentTimeMillis();
+                    int code = -1;
+                    if (null != resultToErrorCode) {
+                        code = resultToErrorCode.onError(e);
+                    }
+                    RetStatus retStatus = RetStatus.RetFail;
+                    if (e instanceof CallAbortedException) {
+                        retStatus = RetStatus.RetReject;
+                    }
+                    long delay = endTimeMilli - startTimeMilli;
+                    commonReport(code, delay, retStatus);
+                    throw e;
+                }
+            }
+        };
+    }
+
+    @Override
+    public <T> Predicate<T> decoratePredicate(Predicate<T> predicate) {
+        return new Predicate<T>() {
+            @Override
+            public boolean test(T t) {
+                CheckResult check = commonCheckFunction();
+                if (null != check) {
+                    throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
+                }
+                ResultToErrorCode resultToErrorCode = makeDecoratorRequest.getResultToErrorCode();
+                long startTimeMilli = System.currentTimeMillis();
+                try {
+                    boolean result = predicate.test(t);
                     long endTimeMilli = System.currentTimeMillis();
                     int code = 0;
                     if (null != resultToErrorCode) {
