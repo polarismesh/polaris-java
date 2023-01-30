@@ -14,7 +14,7 @@ public interface ConfigFileService {
      *
      * @param namespace namespace of config file
      * @param fileGroup file group of config file
-     * @param fileName  file name
+     * @param fileName file name
      * @return config properties file
      */
     ConfigKVFile getConfigPropertiesFile(String namespace, String fileGroup, String fileName);
@@ -32,7 +32,7 @@ public interface ConfigFileService {
      *
      * @param namespace namespace of config file
      * @param fileGroup file group of config file
-     * @param fileName  file name
+     * @param fileName file name
      * @return config yaml file
      */
     ConfigKVFile getConfigYamlFile(String namespace, String fileGroup, String fileName);
@@ -50,7 +50,7 @@ public interface ConfigFileService {
      *
      * @param namespace namespace of config file
      * @param fileGroup file group of config file
-     * @param fileName  file name
+     * @param fileName file name
      * @return config file
      */
     ConfigFile getConfigFile(String namespace, String fileGroup, String fileName);
@@ -62,4 +62,6 @@ public interface ConfigFileService {
      * @return config file
      */
     ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata);
+    
+
 }

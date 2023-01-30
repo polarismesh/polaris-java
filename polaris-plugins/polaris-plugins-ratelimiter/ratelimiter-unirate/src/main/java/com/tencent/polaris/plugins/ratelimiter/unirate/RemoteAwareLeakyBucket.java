@@ -26,9 +26,9 @@ import com.tencent.polaris.api.plugin.ratelimiter.LocalQuotaInfo;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
-import com.tencent.polaris.client.pb.RateLimitProto.Amount;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import java.util.Map;
 import org.slf4j.Logger;
 

@@ -24,22 +24,22 @@ import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pb.CircuitBreakerProto;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CircuitBreaker;
-import com.tencent.polaris.client.pb.ModelProto;
-import com.tencent.polaris.client.pb.ModelProto.Location;
-import com.tencent.polaris.client.pb.PolarisGRPCGrpc;
-import com.tencent.polaris.client.pb.RateLimitProto;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
-import com.tencent.polaris.client.pb.RequestProto.DiscoverRequest;
-import com.tencent.polaris.client.pb.RequestProto.DiscoverRequest.DiscoverRequestType;
-import com.tencent.polaris.client.pb.ResponseProto;
-import com.tencent.polaris.client.pb.ResponseProto.DiscoverResponse.DiscoverResponseType;
-import com.tencent.polaris.client.pb.RoutingProto;
-import com.tencent.polaris.client.pb.ServiceProto;
-import com.tencent.polaris.client.pb.ServiceProto.Instance;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
+import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
+import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest;
+import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest.DiscoverRequestType;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse.DiscoverResponseType;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Instance;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import io.grpc.stub.StreamObserver;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -252,11 +252,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
             StreamObserver<ResponseProto.Response> responseObserver) {
         ServiceKey serviceKey = new ServiceKey(request.getNamespace().getValue(), request.getService().getValue());
         if (!services.containsKey(serviceKey)) {
-            responseObserver.onNext(
-                    buildResponse(ServerCodes.NOT_FOUND_RESOURCE, String.format("service %s not found", serviceKey),
-                            request));
-            responseObserver.onCompleted();
-            return;
+            services.put(serviceKey, new ArrayList<ServiceProto.Instance>());
         }
         List<ServiceProto.Instance> instances = services.get(serviceKey);
         if (CollectionUtils.isNotEmpty(instances)) {

@@ -30,14 +30,13 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.FlowControlParam;
-import com.tencent.polaris.client.pb.RateLimitProto.Amount;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimitCluster;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimitCluster;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -171,7 +170,7 @@ public class RateLimitWindow {
 
     private void buildRemoteConfigMode() {
         //解析限流集群配置
-        if (Type.LOCAL.equals(rule.getType())) {
+        if (Rule.Type.LOCAL.equals(rule.getType())) {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
             return;
         }

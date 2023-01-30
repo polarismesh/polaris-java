@@ -27,6 +27,7 @@ import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
@@ -37,14 +38,12 @@ import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.ToIntFunction;
-
 import org.slf4j.Logger;
 
 /**
@@ -55,12 +54,13 @@ import org.slf4j.Logger;
 public class Extensions {
 
     private static final Logger LOG = LoggerFactory.getLogger(Extensions.class);
-    private final List<CircuitBreaker> circuitBreakers = new ArrayList<>();
+    private final List<InstanceCircuitBreaker> instanceCircuitBreakers = new ArrayList<>();
     private final List<HealthChecker> healthCheckers = new ArrayList<>();
     private LocalRegistry localRegistry;
     private ServerConnector serverConnector;
     private LoadBalancer loadBalancer;
     private Configuration configuration;
+    private CircuitBreaker resourceBreaker;
 
     private Supplier plugins;
 
@@ -134,14 +134,20 @@ public class Extensions {
         //加载熔断器
         boolean enable = config.getConsumer().getCircuitBreaker().isEnable();
         List<String> cbChain = config.getConsumer().getCircuitBreaker().getChain();
+
         if (enable && CollectionUtils.isNotEmpty(cbChain)) {
             for (String cbName : cbChain) {
-                Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.CIRCUIT_BREAKER.getBaseType(), cbName);
-                if (null == pluginValue) {
-                    LOG.warn("circuitBreaker plugin {} not found", cbName);
+                Plugin pluginValue = plugins
+                        .getOptionalPlugin(PluginTypes.INSTANCE_CIRCUIT_BREAKER.getBaseType(), cbName);
+                if (null != pluginValue) {
+                    instanceCircuitBreakers.add((InstanceCircuitBreaker) pluginValue);
                     continue;
                 }
-                circuitBreakers.add((CircuitBreaker) pluginValue);
+                pluginValue = plugins
+                        .getOptionalPlugin(PluginTypes.CIRCUIT_BREAKER.getBaseType(), cbName);
+                if (null != pluginValue) {
+                    resourceBreaker = (CircuitBreaker) pluginValue;
+                }
             }
         }
 
@@ -168,7 +174,8 @@ public class Extensions {
         List<LocationProvider> providers = new ArrayList<>();
 
         for (LocationProviderConfig providerConfig : locationConfig.getProviders()) {
-            Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.LOCAL_PROVIDER.getBaseType(), providerConfig.getTye());
+            Plugin pluginValue = plugins
+                    .getOptionalPlugin(PluginTypes.LOCAL_PROVIDER.getBaseType(), providerConfig.getTye());
             if (null == pluginValue) {
                 LOG.warn("locationProvider plugin {} not found", providerConfig.getTye());
                 continue;
@@ -220,8 +227,12 @@ public class Extensions {
         return loadBalancer;
     }
 
-    public List<CircuitBreaker> getCircuitBreakers() {
-        return circuitBreakers;
+    public CircuitBreaker getResourceBreaker() {
+        return resourceBreaker;
+    }
+
+    public List<InstanceCircuitBreaker> getInstanceCircuitBreakers() {
+        return instanceCircuitBreakers;
     }
 
     public List<HealthChecker> getHealthCheckers() {

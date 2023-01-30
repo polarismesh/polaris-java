@@ -17,7 +17,8 @@
 
 package com.tencent.polaris.api.plugin.ratelimiter;
 
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
+
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 
 public class InitCriteria {
 

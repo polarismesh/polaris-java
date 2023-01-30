@@ -18,38 +18,37 @@
 package com.tencent.polaris.api.plugin.location;
 
 import com.tencent.polaris.api.plugin.Plugin;
-
-import static com.tencent.polaris.client.pb.ModelProto.Location;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface LocationProvider extends Plugin {
 
-	enum ProviderType {
+    enum ProviderType {
 
-		LOCAL("local", 0), REMOTE_HTTP("remoteHttp", 1), REMOTE_SERVICE("remoteService", 2);
+        LOCAL("local", 0), REMOTE_HTTP("remoteHttp", 1), REMOTE_SERVICE("remoteService", 2);
 
-		final String name;
+        final String name;
 
-		final int priority;
+        final int priority;
 
-		ProviderType(String name, int priority) {
-			this.name = name;
-			this.priority = priority;
-		}
+        ProviderType(String name, int priority) {
+            this.name = name;
+            this.priority = priority;
+        }
 
-		public String getName() {
-			return name;
-		}
+        public String getName() {
+            return name;
+        }
 
-		public int getPriority() {
-			return priority;
-		}
-	}
+        public int getPriority() {
+            return priority;
+        }
+    }
 
-	Location getLocation();
+    ModelProto.Location getLocation();
 
-	ProviderType getProviderType();
+    ProviderType getProviderType();
 
 }

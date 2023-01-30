@@ -60,4 +60,9 @@ public interface DefaultPlugins {
     String CIRCUIT_BREAKER_ERROR_RATE = "errorRate";
 
 
+    /**
+     * 基于组合规则的熔断插件名
+     */
+    String CIRCUIT_BREAKER_COMPOSITE = "composite";
+
 }

@@ -47,9 +47,8 @@ public interface Instance extends Comparable<Instance> {
     CircuitBreakerStatus getCircuitBreakerStatus();
 
     /**
-     * 获取熔断的接口列表
-     *
      * @return 接口列表
+     * @deprecated 获取熔断的接口列表
      */
     Collection<StatusDimension> getStatusDimensions();
 

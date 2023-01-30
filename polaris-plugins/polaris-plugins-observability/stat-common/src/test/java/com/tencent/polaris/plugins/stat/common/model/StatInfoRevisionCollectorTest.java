@@ -1,24 +1,24 @@
 package com.tencent.polaris.plugins.stat.common.model;
 
-import com.google.common.util.concurrent.AtomicDouble;
+import static com.tencent.polaris.plugins.stat.common.TestUtil.getRandomLabels;
+
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
-import static com.tencent.polaris.plugins.stat.common.TestUtil.getRandomLabels;
-
 public class StatInfoRevisionCollectorTest {
-    private StatInfoRevisionCollector<AtomicDouble> collector;
+
+    private StatInfoRevisionCollector<AtomicLong> collector;
     private Map<String, String> labels;
-    private MetricValueAggregationStrategy<AtomicDouble> strategy;
-    private MetricValueAggregationStrategy<AtomicDouble>[] strategies;
+    private MetricValueAggregationStrategy<AtomicLong> strategy;
+    private MetricValueAggregationStrategy<AtomicLong>[] strategies;
 
     @Before
     public void setUp() {
-        collector = new StatInfoRevisionCollector<AtomicDouble>();
+        collector = new StatInfoRevisionCollector<AtomicLong>();
         labels = getRandomLabels();
         strategy = new TestIncStrategy();
         strategies = new MetricValueAggregationStrategy[]{strategy};
@@ -47,14 +47,14 @@ public class StatInfoRevisionCollectorTest {
         CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             new Thread(() -> {
-                collector.collectStatInfo(new AtomicDouble(1.0), labels, strategies);
+                collector.collectStatInfo(new AtomicLong(1), labels, strategies);
                 latch.countDown();
             }).start();
         }
         latch.await();
     }
 
-    private static class TestIncStrategy implements MetricValueAggregationStrategy<AtomicDouble> {
+    private static class TestIncStrategy implements MetricValueAggregationStrategy<AtomicLong> {
 
         @Override
         public String getStrategyDescription() {
@@ -67,12 +67,12 @@ public class StatInfoRevisionCollectorTest {
         }
 
         @Override
-        public void updateMetricValue(StatMetric targetValue, AtomicDouble dataSource) {
-            targetValue.addValue(dataSource.doubleValue());
+        public void updateMetricValue(StatMetric targetValue, AtomicLong dataSource) {
+            targetValue.addValue(dataSource.longValue());
         }
 
         @Override
-        public double initMetricValue(AtomicDouble dataSource) {
+        public double initMetricValue(AtomicLong dataSource) {
             return dataSource.get();
         }
     }

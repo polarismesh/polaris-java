@@ -21,7 +21,6 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
 import com.tencent.polaris.api.utils.StringUtils;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -40,9 +39,11 @@ public class InstancesResponse extends BaseEntity {
 
     private final int totalWeight;
 
+    private final String subset;
+
     private final Instance[] instances;
 
-    public InstancesResponse(ServiceInstances serviceInstances) {
+    public InstancesResponse(ServiceInstances serviceInstances, String subset) {
         this.serviceInstances = serviceInstances;
         this.metadata = serviceInstances.getMetadata();
         this.setService(serviceInstances.getService());
@@ -50,15 +51,17 @@ public class InstancesResponse extends BaseEntity {
         Collection<Instance> svcInstances = serviceInstances.getInstances();
         this.instances = svcInstances.toArray(new Instance[svcInstances.size()]);
         this.totalWeight = serviceInstances.getTotalWeight();
+        this.subset = subset;
     }
 
-    public InstancesResponse(ServiceInstances serviceInstances, Instance singleInstance) {
+    public InstancesResponse(ServiceInstances serviceInstances, Instance singleInstance, String subset) {
         this.serviceInstances = serviceInstances;
         this.metadata = serviceInstances.getMetadata();
         this.setService(serviceInstances.getService());
         this.setNamespace(serviceInstances.getNamespace());
         this.instances = new Instance[]{singleInstance};
         this.totalWeight = serviceInstances.getTotalWeight();
+        this.subset = subset;
     }
 
     public Map<String, String> getMetadata() {
@@ -85,12 +88,17 @@ public class InstancesResponse extends BaseEntity {
         return StringUtils.isNotBlank(this.serviceInstances.getRevision());
     }
 
+    public String getSubset() {
+        return subset;
+    }
+
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "InstancesResponse{" +
-                "metadata=" + metadata +
+                "serviceInstances=" + serviceInstances +
+                ", metadata=" + metadata +
                 ", totalWeight=" + totalWeight +
+                ", subset='" + subset + '\'' +
                 ", instances=" + Arrays.toString(instances) +
                 "} " + super.toString();
     }

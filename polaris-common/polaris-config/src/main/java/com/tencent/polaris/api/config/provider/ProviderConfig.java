@@ -50,6 +50,13 @@ public interface ProviderConfig extends Verifier {
     RateLimitConfig getRateLimit();
 
     /**
+     * get the current service config
+     *
+     * @return service
+     */
+    ServiceConfig getService();
+
+    /**
      * Get minimal register interval millisecond
      *
      * @return minimal register interval millisecond

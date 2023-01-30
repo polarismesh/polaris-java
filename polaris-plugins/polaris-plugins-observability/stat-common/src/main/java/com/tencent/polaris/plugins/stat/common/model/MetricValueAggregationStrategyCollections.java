@@ -17,15 +17,16 @@
 
 package com.tencent.polaris.plugins.stat.common.model;
 
+import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.HALF_OPEN;
+import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.OPEN;
+
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
 
-import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.OPEN;
-import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.HALF_OPEN;
-
 public class MetricValueAggregationStrategyCollections {
+
     public static MetricValueAggregationStrategy<InstanceGauge>[] SERVICE_CALL_STRATEGY;
     public static MetricValueAggregationStrategy<RateLimitGauge>[] RATE_LIMIT_STRATEGY;
     public static MetricValueAggregationStrategy<CircuitBreakGauge>[] CIRCUIT_BREAK_STRATEGY;
@@ -80,6 +81,7 @@ public class MetricValueAggregationStrategyCollections {
      * 服务调用总成功数
      */
     public static class UpstreamRequestSuccessStrategy implements MetricValueAggregationStrategy<InstanceGauge> {
+
         @Override
         public String getStrategyDescription() {
             return "total of success request per period";
@@ -140,6 +142,7 @@ public class MetricValueAggregationStrategyCollections {
      * 服务调用最大时延
      */
     public static class UpstreamRequestMaxTimeoutStrategy implements MetricValueAggregationStrategy<InstanceGauge> {
+
         @Override
         public String getStrategyDescription() {
             return "maximum request delay per period";
@@ -158,7 +161,7 @@ public class MetricValueAggregationStrategyCollections {
 
             while (true) {
                 if (dataSource.getDelay() > targetValue.getValue()) {
-                    if (targetValue.compareAndSet(targetValue.getValue(), dataSource.getDelay())) {
+                    if (targetValue.compareAndSet((long) targetValue.getValue(), dataSource.getDelay())) {
                         return;
                     }
                 } else {
@@ -181,6 +184,7 @@ public class MetricValueAggregationStrategyCollections {
      * 限流调用总请求数
      */
     public static class RateLimitRequestTotalStrategy implements MetricValueAggregationStrategy<RateLimitGauge> {
+
         @Override
         public String getStrategyDescription() {
             return "total of rate limit per period";
@@ -206,6 +210,7 @@ public class MetricValueAggregationStrategyCollections {
      * 限流调用总成功数
      */
     public static class RateLimitRequestPassStrategy implements MetricValueAggregationStrategy<RateLimitGauge> {
+
         @Override
         public String getStrategyDescription() {
             return "total of passed request per period";
@@ -233,6 +238,7 @@ public class MetricValueAggregationStrategyCollections {
      * 限流调用总限流数
      */
     public static class RateLimitRequestLimitStrategy implements MetricValueAggregationStrategy<RateLimitGauge> {
+
         @Override
         public String getStrategyDescription() {
             return "total of limited request per period";
@@ -298,6 +304,7 @@ public class MetricValueAggregationStrategyCollections {
      * 熔断半开数
      */
     public static class CircuitBreakerHalfOpenStrategy implements MetricValueAggregationStrategy<CircuitBreakGauge> {
+
         @Override
         public String getStrategyDescription() {
             return "total of half-open circuit breaker";
@@ -315,7 +322,7 @@ public class MetricValueAggregationStrategyCollections {
             }
 
             if (targetValue instanceof StatStatefulMetric) {
-                StatStatefulMetric markMetric = ((StatStatefulMetric)targetValue);
+                StatStatefulMetric markMetric = ((StatStatefulMetric) targetValue);
                 switch (dataSource.getCircuitBreakStatus().getStatus()) {
                     case OPEN:
                         if (markMetric.contain(dataSource.getCircuitBreakStatus().getCircuitBreaker())) {

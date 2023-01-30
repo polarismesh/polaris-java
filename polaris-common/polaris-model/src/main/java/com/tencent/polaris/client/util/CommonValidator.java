@@ -19,6 +19,7 @@ package com.tencent.polaris.client.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 
 public class CommonValidator {
@@ -36,6 +37,19 @@ public class CommonValidator {
         }
         if (StringUtils.isBlank(service)) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service can not be blank");
+        }
+    }
+
+    public static void validateService(ServiceKey service) {
+        if (null == service) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service can not be empty");
+        }
+    }
+
+    public static void validateText(String text, String fieldName) {
+        if (StringUtils.isBlank(text)) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                    String.format("field %s can not be empty", fieldName));
         }
     }
 }

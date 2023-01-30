@@ -37,12 +37,12 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
 import com.tencent.polaris.client.flow.ResourcesResponse;
-import com.tencent.polaris.client.pb.CircuitBreakerProto;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.CbRule;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.DestinationSet;
-import com.tencent.polaris.client.pb.CircuitBreakerProto.SourceMatcher;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.Operation;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CbRule;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.DestinationSet;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.SourceMatcher;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -165,7 +165,7 @@ public class CircuitBreakUtils {
                 return new MatchDestResult(destinationSet, true);
             }
             String method = ruleIdentifier.getMethod();
-            if (methodMatcher.getType() == Operation.EXACT) {
+            if (methodMatcher.getType() == MatchStringType.EXACT) {
                 if (StringUtils.equals(methodMatcherValue, method)) {
                     return new MatchDestResult(destinationSet, false);
                 }

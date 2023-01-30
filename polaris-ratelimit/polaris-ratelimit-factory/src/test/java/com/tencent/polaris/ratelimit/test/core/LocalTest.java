@@ -23,15 +23,6 @@ import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.client.pb.ModelProto.MatchArgument;
-import com.tencent.polaris.client.pb.ModelProto.MatchString;
-import com.tencent.polaris.client.pb.ModelProto.Operation;
-import com.tencent.polaris.client.pb.RateLimitProto.Amount;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimit;
-import com.tencent.polaris.client.pb.RateLimitProto.RateLimit.Builder;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule.AmountMode;
-import com.tencent.polaris.client.pb.RateLimitProto.Rule.Type;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.ratelimit.api.core.LimitAPI;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
@@ -39,6 +30,15 @@ import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.factory.LimitAPIFactory;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit.Builder;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.AmountMode;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.Type;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class LocalTest {
         ruleBuilder2.setAmountMode(AmountMode.GLOBAL_TOTAL);
         ruleBuilder2.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.CUSTOM).setKey(Consts.LABEL_METHOD)
-                        .setValue(MatchString.newBuilder().setType(Operation.EXACT).setValue(
+                        .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
                                 StringValue.newBuilder().setValue(Consts.METHOD_CASH).build()).build()));
         ruleBuilder2.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(19).build()).setValidDuration(
@@ -89,7 +89,7 @@ public class LocalTest {
         ruleBuilder3.setAmountMode(AmountMode.GLOBAL_TOTAL);
         ruleBuilder3.addArguments(
                 MatchArgument.newBuilder().setType(MatchArgument.Type.CUSTOM).setKey(Consts.LABEL_METHOD)
-                        .setValue(MatchString.newBuilder().setType(Operation.EXACT).setValue(
+                        .setValue(MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(
                                 StringValue.newBuilder().setValue(Consts.METHOD_PAY).build()).build()));
         ruleBuilder3.addAmounts(
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(9).build()).setValidDuration(
