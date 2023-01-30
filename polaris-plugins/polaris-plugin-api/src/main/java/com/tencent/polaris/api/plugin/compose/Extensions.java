@@ -41,9 +41,12 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 
 /**
@@ -56,6 +59,7 @@ public class Extensions {
     private static final Logger LOG = LoggerFactory.getLogger(Extensions.class);
     private final List<InstanceCircuitBreaker> instanceCircuitBreakers = new ArrayList<>();
     private final List<HealthChecker> healthCheckers = new ArrayList<>();
+    private final Map<String, HealthChecker> allHealthCheckers = new HashMap<>();
     private LocalRegistry localRegistry;
     private ServerConnector serverConnector;
     private LoadBalancer loadBalancer;
@@ -200,17 +204,29 @@ public class Extensions {
         }
     }
 
+    private void loadHealthCheckers(Supplier plugins) throws PolarisException {
+        Collection<Plugin> checkers = plugins.getPlugins(PluginTypes.HEALTH_CHECKER.getBaseType());
+        if (CollectionUtils.isNotEmpty(checkers)) {
+            for (Plugin checker : checkers) {
+                HealthChecker healthChecker = (HealthChecker) checker;
+                allHealthCheckers.put(healthChecker.getName(), healthChecker);
+            }
+        }
+
+    }
+
     private void loadOutlierDetector(Configuration config, Supplier plugins) throws PolarisException {
+        loadHealthCheckers(plugins);
         boolean enable = config.getConsumer().getOutlierDetection().getWhen() != When.never;
         List<String> detectionChain = config.getConsumer().getOutlierDetection().getChain();
         if (enable && CollectionUtils.isNotEmpty(detectionChain)) {
             for (String detectorName : detectionChain) {
-                Plugin pluginValue = plugins.getOptionalPlugin(PluginTypes.HEALTH_CHECKER.getBaseType(), detectorName);
+                HealthChecker pluginValue = allHealthCheckers.get(detectorName);
                 if (null == pluginValue) {
                     LOG.warn("outlierDetector plugin {} not found", detectorName);
                     continue;
                 }
-                healthCheckers.add((HealthChecker) pluginValue);
+                healthCheckers.add(pluginValue);
             }
         }
     }
@@ -237,6 +253,10 @@ public class Extensions {
 
     public List<HealthChecker> getHealthCheckers() {
         return healthCheckers;
+    }
+
+    public Map<String, HealthChecker> getAllHealthCheckers() {
+        return allHealthCheckers;
     }
 
     public Configuration getConfiguration() {

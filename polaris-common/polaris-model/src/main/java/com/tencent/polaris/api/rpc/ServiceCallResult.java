@@ -21,6 +21,8 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.Service;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import java.util.Map;
 
 /**
  * Instance invocation metrics.
@@ -79,6 +81,11 @@ public class ServiceCallResult implements InstanceGauge {
      * 实例分组
      */
     private String subset;
+
+    /**
+     * 实例分组过滤器
+     */
+    private Map<String, MatchString> subsetMetadata;
 
     /**
      * 方法，指HTTP Path，不是HTTP Method
@@ -184,10 +191,17 @@ public class ServiceCallResult implements InstanceGauge {
     }
 
     @Override
+    @Deprecated
     public String getLabels() {
         return labels;
     }
 
+    /**
+     * use set setSubsetMetadata instead
+     *
+     * @param labels labels
+     */
+    @Deprecated
     public void setLabels(String labels) {
         this.labels = labels;
     }
@@ -219,8 +233,16 @@ public class ServiceCallResult implements InstanceGauge {
         this.callerService = callerService;
     }
 
+    public Map<String, MatchString> getSubsetMetadata() {
+        return subsetMetadata;
+    }
+
+    public void setSubsetMetadata(
+            Map<String, MatchString> subsetMetadata) {
+        this.subsetMetadata = subsetMetadata;
+    }
+
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "ServiceCallResult{" +
                 "service='" + service + '\'' +
@@ -233,6 +255,7 @@ public class ServiceCallResult implements InstanceGauge {
                 ", retCode=" + retCode +
                 ", delay=" + delay +
                 ", subset='" + subset + '\'' +
+                ", subsetMetadata=" + subsetMetadata +
                 ", method='" + method + '\'' +
                 ", callerService=" + callerService +
                 '}';

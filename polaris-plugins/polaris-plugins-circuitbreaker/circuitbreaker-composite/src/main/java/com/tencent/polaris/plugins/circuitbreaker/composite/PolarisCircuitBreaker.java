@@ -27,12 +27,14 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.pojo.ServiceRuleProvider;
-import com.tencent.polaris.client.flow.DefaultServiceRuleProvider;
+import com.tencent.polaris.api.pojo.ServiceResourceProvider;
+import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,18 +46,25 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     private final Map<Level, Map<Resource, ResourceCounters>> countersCache = new HashMap<>();
 
+    private final Map<Resource, ResourceHealthChecker> healthCheckCache = new HashMap<>();
+
     private final ScheduledExecutorService stateChangeExecutors = new ScheduledThreadPoolExecutor(1,
-            new NamedThreadFactory("circuitbreaker-state"));
+            new NamedThreadFactory("circuitbreaker-state-worker"));
 
     private final ScheduledExecutorService pullRulesExecutors = new ScheduledThreadPoolExecutor(1,
-            new NamedThreadFactory("circuitbreaker-pull-rules"));
+            new NamedThreadFactory("circuitbreaker-pull-rules-worker"));
+
+    private final ScheduledExecutorService healthCheckExecutors = new ScheduledThreadPoolExecutor(4,
+            new NamedThreadFactory("circuitbreaker-health-check-worker"));
 
 
     private final Map<Resource, CircuitBreakerRuleContainer> containers = new ConcurrentHashMap<>();
 
     private Extensions extensions;
 
-    private ServiceRuleProvider serviceRuleProvider;
+    private ServiceResourceProvider serviceResourceProvider;
+
+    private Map<String, HealthChecker> healthCheckers = Collections.emptyMap();
 
     @Override
     public CircuitBreakerStatus checkResource(Resource resource) {
@@ -110,23 +119,29 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
         this.extensions = extensions;
-        serviceRuleProvider = new DefaultServiceRuleProvider(extensions);
+        serviceResourceProvider = new DefaultServiceResourceProvider(extensions);
         extensions.getLocalRegistry().registerResourceListener(new CircuitBreakerRuleListener(this));
+        healthCheckers = extensions.getAllHealthCheckers();
     }
 
     // for test
-    public void setServiceRuleProvider(ServiceRuleProvider serviceRuleProvider) {
-        this.serviceRuleProvider = serviceRuleProvider;
+    public void setServiceRuleProvider(ServiceResourceProvider serviceResourceProvider) {
+        this.serviceResourceProvider = serviceResourceProvider;
     }
 
     @Override
     protected void doDestroy() {
         stateChangeExecutors.shutdown();
         pullRulesExecutors.shutdown();
+        healthCheckExecutors.shutdown();
     }
 
     Map<Level, Map<Resource, ResourceCounters>> getCountersCache() {
         return countersCache;
+    }
+
+    Map<Resource, ResourceHealthChecker> getHealthCheckCache() {
+        return healthCheckCache;
     }
 
     Extensions getExtensions() {
@@ -141,16 +156,30 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         return stateChangeExecutors;
     }
 
+    ScheduledExecutorService getHealthCheckExecutors() {
+        return healthCheckExecutors;
+    }
+
     Map<Resource, CircuitBreakerRuleContainer> getContainers() {
         return containers;
     }
 
-    public ServiceRuleProvider getServiceRuleProvider() {
-        return serviceRuleProvider;
+    public ServiceResourceProvider getServiceRuleProvider() {
+        return serviceResourceProvider;
+    }
+
+    public Map<String, HealthChecker> getHealthCheckers() {
+        return healthCheckers;
+    }
+
+    public void setHealthCheckers(
+            Map<String, HealthChecker> healthCheckers) {
+        this.healthCheckers = healthCheckers;
     }
 
     @Override
     public String getName() {
         return DefaultPlugins.CIRCUIT_BREAKER_COMPOSITE;
     }
+
 }

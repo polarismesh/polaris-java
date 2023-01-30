@@ -138,7 +138,7 @@ public class InstancesDetectTask implements Runnable {
     private DetectResult detectInstance(Instance instance) throws PolarisException {
         DetectResult result = null;
         for (HealthChecker detector : extensions.getHealthCheckers()) {
-            result = detector.detectInstance(instance);
+            result = detector.detectInstance(instance, null);
             if (result == null) {
                 continue;
             }

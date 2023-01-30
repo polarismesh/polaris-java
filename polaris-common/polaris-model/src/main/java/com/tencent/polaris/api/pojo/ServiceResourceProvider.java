@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
-public interface ServiceRuleProvider {
+public interface ServiceResourceProvider {
 
     /**
      * get the service rule by service and rule type
@@ -26,4 +26,12 @@ public interface ServiceRuleProvider {
      * @return rule object
      */
     ServiceRule getServiceRule(ServiceEventKey serviceEventKey);
+
+    /**
+     * get the service instances by service
+     *
+     * @param serviceKey
+     * @return instances
+     */
+    ServiceInstances getServiceInstances(ServiceKey serviceKey);
 }

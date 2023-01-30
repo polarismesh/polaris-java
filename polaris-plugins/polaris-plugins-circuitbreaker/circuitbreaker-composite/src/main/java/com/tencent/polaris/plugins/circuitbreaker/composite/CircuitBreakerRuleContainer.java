@@ -32,6 +32,7 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RuleMatcher;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RuleMatcher.DestinationService;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RuleMatcher.SourceService;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,27 +48,29 @@ public class CircuitBreakerRuleContainer {
 
     private final PolarisCircuitBreaker polarisCircuitBreaker;
 
-    private final Runnable pullTask;
+    private final Runnable pullCbRuleTask;
+
+    private final Runnable pullFdRuleTask;
 
     public CircuitBreakerRuleContainer(Resource resource, PolarisCircuitBreaker polarisCircuitBreaker) {
         this.resource = resource;
         this.polarisCircuitBreaker = polarisCircuitBreaker;
-        pullTask = new Runnable() {
+        pullCbRuleTask = new Runnable() {
             @Override
             public void run() {
-                ServiceEventKey serviceEventKey = new ServiceEventKey(resource.getService(),
+                ServiceEventKey cbEventKey = new ServiceEventKey(resource.getService(),
                         EventType.CIRCUIT_BREAKING);
-                ServiceRule serviceRule;
+                ServiceRule circuitBreakRule;
                 try {
-                    serviceRule = polarisCircuitBreaker.getServiceRuleProvider().getServiceRule(serviceEventKey);
+                    circuitBreakRule = polarisCircuitBreaker.getServiceRuleProvider().getServiceRule(cbEventKey);
                 } catch (Throwable t) {
-                    LOG.warn("fail to get resource for {}", serviceEventKey, t);
-                    polarisCircuitBreaker.getPullRulesExecutors().schedule(pullTask, 5, TimeUnit.SECONDS);
+                    LOG.warn("fail to get resource for {}", cbEventKey, t);
+                    polarisCircuitBreaker.getPullRulesExecutors().schedule(pullCbRuleTask, 5, TimeUnit.SECONDS);
                     return;
                 }
                 Map<Resource, ResourceCounters> resourceResourceCounters = polarisCircuitBreaker.getCountersCache()
                         .get(resource.getLevel());
-                CircuitBreakerRule circuitBreakerRule = selectRule(serviceRule);
+                CircuitBreakerRule circuitBreakerRule = selectRule(circuitBreakRule);
                 if (null != circuitBreakerRule) {
                     ResourceCounters resourceCounters = resourceResourceCounters.get(resource);
                     if (null != resourceCounters) {
@@ -84,10 +87,58 @@ public class CircuitBreakerRuleContainer {
                 }
             }
         };
+        pullFdRuleTask = new Runnable() {
+            @Override
+            public void run() {
+                ServiceEventKey fdEventKey = new ServiceEventKey(resource.getService(),
+                        EventType.FAULT_DETECTING);
+                ServiceRule faultDetectRule;
+                try {
+                    faultDetectRule = polarisCircuitBreaker.getServiceRuleProvider().getServiceRule(fdEventKey);
+                } catch (Throwable t) {
+                    LOG.warn("fail to get resource for {}", fdEventKey, t);
+                    polarisCircuitBreaker.getPullRulesExecutors().schedule(pullFdRuleTask, 5, TimeUnit.SECONDS);
+                    return;
+                }
+                FaultDetector faultDetector = selectFaultDetector(faultDetectRule);
+                Map<Resource, ResourceHealthChecker> healthCheckCache = polarisCircuitBreaker.getHealthCheckCache();
+                if (null != faultDetector) {
+                    ResourceHealthChecker curChecker = healthCheckCache.get(resource);
+                    if (null != curChecker) {
+                        FaultDetector currentRule = curChecker.getFaultDetector();
+                        if (StringUtils.equals(currentRule.getRevision(), currentRule.getRevision())) {
+                            return;
+                        }
+                        curChecker.setStopped(true);
+                    }
+                    healthCheckCache
+                            .put(resource, new ResourceHealthChecker(resource, faultDetector, polarisCircuitBreaker));
+                } else {
+                    ResourceHealthChecker preChecker = healthCheckCache.remove(resource);
+                    if (null != preChecker) {
+                        preChecker.setStopped(true);
+                    }
+                }
+            }
+        };
         schedule();
     }
 
+    private FaultDetector selectFaultDetector(ServiceRule serviceRule) {
+        if (null == serviceRule) {
+            return null;
+        }
+        Object rule = serviceRule.getRule();
+        if (null == rule) {
+            return null;
+        }
+        return (FaultDetector) rule;
+    }
+
     private CircuitBreakerRule selectRule(ServiceRule serviceRule) {
+        if (null == serviceRule) {
+            return null;
+        }
         Object rule = serviceRule.getRule();
         if (null == rule) {
             return null;
@@ -144,6 +195,7 @@ public class CircuitBreakerRuleContainer {
     }
 
     public void schedule() {
-        polarisCircuitBreaker.getPullRulesExecutors().schedule(pullTask, 50, TimeUnit.MILLISECONDS);
+        polarisCircuitBreaker.getPullRulesExecutors().schedule(pullCbRuleTask, 50, TimeUnit.MILLISECONDS);
+        polarisCircuitBreaker.getPullRulesExecutors().schedule(pullFdRuleTask, 100, TimeUnit.MILLISECONDS);
     }
 }

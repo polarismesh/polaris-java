@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import java.util.Map;
+
 /**
  * 服务上报数据信息
  *
@@ -104,8 +107,17 @@ public interface InstanceGauge extends Service {
 
     /**
      * 获取请求标签
+     * 已废弃，请使用getSubsetMetadata
      *
      * @return labels
      */
+    @Deprecated
     String getLabels();
+
+    /**
+     * 获取服务实例分组的过滤标签
+     *
+     * @return metadata
+     */
+    Map<String, MatchString> getSubsetMetadata();
 }

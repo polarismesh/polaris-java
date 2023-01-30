@@ -17,12 +17,10 @@
 
 package com.tencent.polaris.plugins.outlier.detector.tcp;
 
-import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -32,12 +30,19 @@ import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.utils.ConversionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.TcpProtocolConfig;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.slf4j.Logger;
 
 /**
@@ -50,42 +55,70 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(TcpHealthChecker.class);
 
-    private Config config;
+    private TcpProtocolConfig config;
 
     @Override
-    public DetectResult detectInstance(Instance instance) throws PolarisException {
+    public DetectResult detectInstance(Instance instance, FaultDetectRule faultDetectRule) throws PolarisException {
         String host = instance.getHost();
         int port = instance.getPort();
+
+        TcpProtocolConfig curConfig = config;
+
+        int timeoutMs = DEFAULT_TIMEOUT_MILLI;
+        if (null != faultDetectRule && faultDetectRule.getProtocol() == Protocol.TCP) {
+            if (faultDetectRule.getTimeout() > 0) {
+                timeoutMs = faultDetectRule.getTimeout();
+            }
+            if (faultDetectRule.getPort() > 0) {
+                port = faultDetectRule.getPort();
+            }
+            curConfig = faultDetectRule.getTcpConfig();
+        }
+        byte[] sendBytes = null;
+        int maxLength = 0;
+        Set<String> expectRecvStrs = new HashSet<>();
+        if (null != curConfig) {
+            if (StringUtils.isNotBlank(curConfig.getSend())) {
+                sendBytes = ConversionUtils.anyStringToByte(curConfig.getSend());
+            }
+            for (String receiveStr : curConfig.getReceiveList()) {
+                byte[] receiveBytes = ConversionUtils.anyStringToByte(receiveStr);
+                if (null != receiveBytes) {
+                    String hexStr = ConversionUtils.byteArrayToHexString(receiveBytes);
+                    if (StringUtils.isNotBlank(hexStr)) {
+                        expectRecvStrs.add(hexStr);
+                        if (receiveBytes.length > maxLength) {
+                            maxLength = receiveBytes.length;
+                        }
+                    }
+                }
+            }
+        }
 
         Socket socket = null;
         try {
             socket = new Socket(host, port);
-            //TODO 从配置中读取
-            String sendStr = config.getSend();
-            String expectRecvStr = config.getReceive();
-
-            boolean needSendData = !(sendStr == null || "".equals(sendStr));
+            boolean needSendData = null != sendBytes && sendBytes.length > 0;
             if (!needSendData) {
                 //未配置发送包，则连接成功即可
                 return new DetectResult(RetStatus.RetSuccess);
             }
-
-            byte[] sendBytes = sendStr.getBytes("UTF8");
-            byte[] expectRecvBytes = expectRecvStr.getBytes("UTF8");
-
+            socket.setSoTimeout(timeoutMs);
             OutputStream os = socket.getOutputStream();
             //发包
             os.write(sendBytes);
 
-            byte[] recvBytes = recvFromSocket(socket, expectRecvBytes.length);
-
-            if (Arrays.equals(Arrays.copyOfRange(recvBytes, 0, expectRecvBytes.length), expectRecvBytes)) {
+            if (expectRecvStrs.isEmpty()) {
+                return new DetectResult(RetStatus.RetSuccess);
+            }
+            byte[] recvBytes = recvFromSocket(socket, maxLength);
+            byte[] recvBytesClone = Arrays.copyOfRange(recvBytes, 0, maxLength);
+            String recvHexStr = ConversionUtils.byteArrayToHexString(recvBytesClone);
+            if (expectRecvStrs.contains(recvHexStr)) {
                 //回包符合预期
                 return new DetectResult(RetStatus.RetSuccess);
             }
-
             return new DetectResult(RetStatus.RetFail);
-
         } catch (IOException e) {
             LOG.warn("tcp detect instance, create sock exception, host:{}, port:{}.", host, port);
             return new DetectResult(RetStatus.RetFail);
@@ -116,7 +149,7 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
                 // 当返回-1时代表已经读完，防止死循环
                 return recvBytes;
             }
-        } while ( recvLen >= maxLen);
+        } while (recvLen >= maxLen);
 
         return recvBytes;
     }
@@ -141,11 +174,14 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
     public void init(InitContext ctx) throws PolarisException {
         OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
         Config cfg = outlierDetection.getPluginConfig(getName(), Config.class);
-        if (cfg == null) {
-            throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                    String.format("plugin %s config is missing", getName()));
+        TcpProtocolConfig.Builder builder = TcpProtocolConfig.newBuilder();
+        if (null != cfg && StringUtils.isNotBlank(cfg.getSend())) {
+            builder.setSend(cfg.getSend());
         }
-        this.config = cfg;
+        if (null != cfg && StringUtils.isNotBlank(cfg.getReceive())) {
+            builder.addReceive(cfg.getReceive());
+        }
+        this.config = builder.build();
     }
 
     @Override

@@ -44,7 +44,6 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
-import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Destination;
 import java.util.ArrayList;
@@ -157,128 +156,14 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 continue;
             }
 
-            matched = matchMetadata(
-                    source.getMetadataMap(), trafficLabels, true, multiEnvRouterParamMap);
+            matched = RuleUtils.matchMetadata(
+                    source.getMetadataMap(), trafficLabels, true, multiEnvRouterParamMap, globalVariablesConfig);
             if (matched) {
                 break;
             }
         }
 
         return matched;
-    }
-
-
-    // 匹配metadata
-    private boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
-            boolean isMatchSource, Map<String, String> multiEnvRouterParamMap) {
-        // 如果规则metadata为空, 返回成功
-        if (MapUtils.isEmpty(ruleMeta)) {
-            return true;
-        }
-        if (ruleMeta.containsKey(RuleUtils.MATCH_ALL)) {
-            return true;
-        }
-        // 如果规则metadata不为空, 待匹配规则为空, 直接返回失败
-        if (MapUtils.isEmpty(destMeta)) {
-            return false;
-        }
-
-        // metadata是否全部匹配
-        boolean allMetaMatched = true;
-        // dest中找到的metadata个数, 用于辅助判断是否能匹配成功
-        int matchNum = 0;
-
-        for (Map.Entry<String, MatchString> entry : ruleMeta.entrySet()) {
-            String ruleMetaKey = entry.getKey();
-            MatchString ruleMetaValue = entry.getValue();
-            if (RuleUtils.isMatchAllValue(ruleMetaValue)) {
-                matchNum++;
-                continue;
-            }
-            if (destMeta.containsKey(ruleMetaKey)) {
-                matchNum++;
-                if (!ruleMetaValue.hasValue()
-                        && ruleMetaValue.getValueType() != MatchString.ValueType.PARAMETER) {
-                    continue;
-                }
-
-                String destMetaValue = destMeta.get(ruleMetaKey);
-
-                allMetaMatched = isAllMetaMatched(isMatchSource, true, ruleMetaKey, ruleMetaValue, destMetaValue,
-                        multiEnvRouterParamMap);
-            }
-
-            if (!allMetaMatched) {
-                break;
-            }
-        }
-
-        // 如果一个metadata未找到, 匹配失败
-        if (matchNum == 0) {
-            allMetaMatched = false;
-        }
-
-        return allMetaMatched;
-    }
-
-    private boolean isAllMetaMatched(boolean isMatchSource, boolean allMetaMatched, String ruleMetaKey,
-            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
-        if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
-            return true;
-        }
-
-        allMetaMatched = matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
-                multiEnvRouterParamMap);
-
-        return allMetaMatched;
-    }
-
-    private boolean matchValueByValueType(boolean isMatchSource, String ruleMetaKey,
-            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap) {
-        boolean allMetaMatched = true;
-
-        switch (ruleMetaValue.getValueType()) {
-            case PARAMETER:
-                // 通过参数传入
-                if (isMatchSource) {
-                    // 当匹配的是source，记录请求的 K V
-                    multiEnvRouterParamMap.put(ruleMetaKey, destMetaValue);
-                } else {
-                    // 当匹配的是dest， 判断value
-                    if (!multiEnvRouterParamMap.containsKey(ruleMetaKey)) {
-                        allMetaMatched = false;
-                    } else {
-                        String ruleValue = multiEnvRouterParamMap.get(ruleMetaKey);
-                        // contains key
-                        allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleValue);
-                    }
-                }
-                break;
-            case VARIABLE:
-                if (globalVariablesConfig.containsKey(ruleMetaKey)) {
-                    // 1.先从配置获取
-                    String ruleValue = globalVariablesConfig.get(ruleMetaKey);
-                    allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, ruleValue);
-                } else {
-                    // 2.从环境变量中获取  key从规则中获取
-                    String key = ruleMetaValue.getValue().getValue();
-                    if (!System.getenv().containsKey(key)) {
-                        allMetaMatched = false;
-                    } else {
-                        String value = System.getenv(key);
-                        allMetaMatched = MatchFunctions.match(ruleMetaValue.getType(), destMetaValue, value);
-                    }
-                    if (!System.getenv().containsKey(key) || !System.getenv(key).equals(destMetaValue)) {
-                        allMetaMatched = false;
-                    }
-                }
-                break;
-            default:
-                allMetaMatched = MatchFunctions
-                        .match(ruleMetaValue.getType(), destMetaValue, ruleMetaValue.getValue().getValue());
-        }
-
-        return allMetaMatched;
     }
 
     private List<RoutingProto.Destination> filterAvailableDestinations(RouteInfo routeInfo,
@@ -296,7 +181,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 //TODO: object creation on initialize
                 ServiceMetadata destService = routeInfo.getDestService();
                 ServiceKey serviceKey = new ServiceKey(destService.getNamespace(), destService.getService());
-                Resource resource = new SubsetResource(serviceKey, dest.getName().getValue());
+                Resource resource = new SubsetResource(serviceKey, dest.getName().getValue(), dest.getMetadataMap());
                 CheckResult check = DefaultCircuitBreakAPI.check(resource, extensions);
                 if (!check.isPass()) {
                     cbSubsets.add(dest);
@@ -396,7 +281,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         List<Instance> oriInstances = instances.getInstances();
         List<Instance> filteredInstances = new ArrayList<>();
         for (Instance ins : oriInstances) {
-            if (!matchMetadata(dest.getMetadataMap(), ins.getMetadata(), false, multiEnvRouterParamMap)) {
+            if (!RuleUtils.matchMetadata(dest.getMetadataMap(), ins.getMetadata(), false, multiEnvRouterParamMap,
+                    globalVariablesConfig)) {
                 continue;
             }
             filteredInstances.add(ins);
@@ -414,7 +300,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         if (weightedSubsets == null) {
             PrioritySubsets prioritySubsets = new PrioritySubsets();
 
-            WeightedSubset weightedSubset = new WeightedSubset(dest.getName().getValue());
+            WeightedSubset weightedSubset = new WeightedSubset(dest);
             weightedSubset.setInstances(filteredInstances);
             weightedSubset.setWeight(weight);
 
@@ -424,7 +310,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             subsetsMap.put(priority, prioritySubsets);
 
         } else {
-            WeightedSubset weightedSubset = new WeightedSubset(dest.getName().getValue());
+            WeightedSubset weightedSubset = new WeightedSubset(dest);
             weightedSubset.setInstances(filteredInstances);
             weightedSubset.setWeight(weight);
 
@@ -448,7 +334,9 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         for (WeightedSubset weightedSubset : weightedSubsets.getSubsets()) {
             weight -= weightedSubset.getWeight();
             if (weight < 0) {
-                routeInfo.setSubset(weightedSubset.getName());
+                Destination destination = weightedSubset.getDestination();
+                routeInfo.setSubsetName(destination.getName().getValue());
+                routeInfo.setSubsetMetadata(destination.getMetadataMap());
                 return weightedSubset.getInstances();
             }
         }

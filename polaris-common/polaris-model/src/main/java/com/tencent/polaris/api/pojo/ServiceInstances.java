@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.client.pojo.Node;
 import java.util.List;
 
 /**
@@ -61,5 +62,21 @@ public interface ServiceInstances extends ServiceMetadata {
      * @return revision
      */
     String getRevision();
+
+    /**
+     * get instance by host and port
+     *
+     * @param node host and port
+     * @return instance
+     */
+    Instance getInstance(Node node);
+
+    /**
+     * get instance by id
+     *
+     * @param id instanceId
+     * @return instance
+     */
+    Instance getInstance(String id);
 
 }

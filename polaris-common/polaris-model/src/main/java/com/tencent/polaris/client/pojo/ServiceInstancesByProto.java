@@ -51,7 +51,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     private final List<ServiceProto.Instance> originInstancesList;
 
-    private final Map<String, InstanceByProto> instanceIdMap;
+    private final Map<String, InstanceByProto> idMap;
 
     private final Map<Node, InstanceByProto> nodeMap;
 
@@ -107,7 +107,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         Collections.sort(tmpInstances);
         hashCode = Objects.hash(svcKey, tmpInstances);
         this.svcKey = svcKey;
-        this.instanceIdMap = Collections.unmodifiableMap(tmpInstanceMap);
+        this.idMap = Collections.unmodifiableMap(tmpInstanceMap);
         this.nodeMap = Collections.unmodifiableMap(tmpNodeMap);
         this.instances = Collections.unmodifiableList(tmpInstances);
         this.originInstancesList = Collections.unmodifiableList(tmpOriginInstances);
@@ -126,7 +126,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.initialized = false;
         this.instances = Collections.emptyList();
         this.originInstancesList = Collections.emptyList();
-        this.instanceIdMap = Collections.emptyMap();
+        this.idMap = Collections.emptyMap();
         this.nodeMap = Collections.emptyMap();
         this.metadata = Collections.emptyMap();
         this.loadedFromFile = false;
@@ -199,11 +199,13 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
      * @param instId 实例ID
      * @return InstanceLocalValue
      */
+    @Override
     public InstanceByProto getInstance(String instId) {
-        return instanceIdMap.get(instId);
+        return idMap.get(instId);
     }
 
-    public InstanceByProto getInstanceByNode(Node node) {
+    @Override
+    public InstanceByProto getInstance(Node node) {
         return nodeMap.get(node);
     }
 

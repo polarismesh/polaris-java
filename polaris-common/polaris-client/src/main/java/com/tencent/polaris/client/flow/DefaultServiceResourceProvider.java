@@ -20,14 +20,17 @@ package com.tencent.polaris.client.flow;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceResourceProvider;
 import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.ServiceRuleProvider;
 
-public class DefaultServiceRuleProvider implements ServiceRuleProvider {
+public class DefaultServiceResourceProvider implements ServiceResourceProvider {
 
     private final Extensions extensions;
 
-    public DefaultServiceRuleProvider(Extensions extensions) {
+    public DefaultServiceResourceProvider(Extensions extensions) {
         this.extensions = extensions;
     }
 
@@ -42,5 +45,19 @@ public class DefaultServiceRuleProvider implements ServiceRuleProvider {
                 .syncGetResources(extensions, true, getResourcesRequest,
                         flowControlParam);
         return resourcesResponse.getServiceRule(serviceEventKey);
+    }
+
+    @Override
+    public ServiceInstances getServiceInstances(ServiceKey serviceKey) {
+        ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
+        DefaultServiceEventKeysProvider getResourcesRequest = new DefaultServiceEventKeysProvider();
+        getResourcesRequest.setSvcEventKey(serviceEventKey);
+        getResourcesRequest.setUseCache(true);
+        DefaultFlowControlParam flowControlParam = new DefaultFlowControlParam(
+                extensions.getConfiguration().getGlobal().getAPI());
+        ResourcesResponse resourcesResponse = BaseFlow
+                .syncGetResources(extensions, true, getResourcesRequest,
+                        flowControlParam);
+        return resourcesResponse.getServiceInstances(serviceEventKey);
     }
 }

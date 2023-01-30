@@ -40,7 +40,7 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition.TriggerType;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
-import com.tencent.polaris.test.mock.discovery.MockServiceRuleProvider;
+import com.tencent.polaris.test.mock.discovery.MockServiceResourceProvider;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -84,7 +84,7 @@ public class PolarisCircuitBreakerTest {
 
     @Test
     public void testCheckResource() {
-        MockServiceRuleProvider mockServiceRuleProvider = new MockServiceRuleProvider();
+        MockServiceResourceProvider mockServiceRuleProvider = new MockServiceResourceProvider();
         PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
         polarisCircuitBreaker.init(null);
         polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);
@@ -111,7 +111,7 @@ public class PolarisCircuitBreakerTest {
 
     @Test
     public void testRuleChanged() {
-        MockServiceRuleProvider mockServiceRuleProvider = new MockServiceRuleProvider();
+        MockServiceResourceProvider mockServiceRuleProvider = new MockServiceResourceProvider();
         PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
         polarisCircuitBreaker.init(null);
         polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);

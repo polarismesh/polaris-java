@@ -20,6 +20,8 @@ package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import java.util.Map;
 import java.util.Objects;
 
 public class SubsetResource implements Resource {
@@ -28,12 +30,15 @@ public class SubsetResource implements Resource {
 
     private final String subset;
 
-    public SubsetResource(ServiceKey service, String subset) {
+    private final Map<String, MatchString> metadata;
+
+    public SubsetResource(ServiceKey service, String subset, Map<String, MatchString> metadata) {
         CommonValidator.validateService(service);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
         CommonValidator.validateText(subset, "subset");
         this.service = service;
         this.subset = subset;
+        this.metadata = metadata;
     }
 
     @Override
@@ -73,5 +78,9 @@ public class SubsetResource implements Resource {
 
     public String getSubset() {
         return subset;
+    }
+
+    public Map<String, MatchString> getMetadata() {
+        return metadata;
     }
 }

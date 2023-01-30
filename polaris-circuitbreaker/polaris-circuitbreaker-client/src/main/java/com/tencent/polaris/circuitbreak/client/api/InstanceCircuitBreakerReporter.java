@@ -46,7 +46,7 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
         resources.add(new InstanceResource(serviceKey, result.getHost(), result.getPort()));
         if (StringUtils.isNotBlank(result.getSubset())) {
-            resources.add(new SubsetResource(serviceKey, result.getSubset()));
+            resources.add(new SubsetResource(serviceKey, result.getSubset(), result.getSubsetMetadata()));
         }
         int retCode = 0;
         if (null != result.getRetCode()) {

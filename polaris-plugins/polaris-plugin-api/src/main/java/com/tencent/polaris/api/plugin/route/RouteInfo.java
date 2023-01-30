@@ -25,6 +25,7 @@ import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +72,9 @@ public class RouteInfo {
      */
     private RouteResult.NextRouterInfo nextRouterInfo;
 
-    private String subset;
+    private String subsetName;
+
+    private Map<String, MatchString> subsetMetadata;
 
     /**
      * 构造器
@@ -243,11 +246,20 @@ public class RouteInfo {
         });
     }
 
-    public String getSubset() {
-        return subset;
+    public String getSubsetName() {
+        return subsetName;
     }
 
-    public void setSubset(String subset) {
-        this.subset = subset;
+    public void setSubsetName(String subsetName) {
+        this.subsetName = subsetName;
+    }
+
+    public Map<String, MatchString> getSubsetMetadata() {
+        return subsetMetadata;
+    }
+
+    public void setSubsetMetadata(
+            Map<String, MatchString> subsetMetadata) {
+        this.subsetMetadata = subsetMetadata;
     }
 }
