@@ -57,7 +57,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     private List<DiscoveryConfigImpl> discoveries;
 
     @JsonIgnore
-    private Map<String, DiscoveryConfigImpl> discoveryConfigMap = new ConcurrentHashMap<>();
+    private final Map<String, DiscoveryConfigImpl> discoveryConfigMap = new ConcurrentHashMap<>();
 
     @Override
     public LocalCacheConfigImpl getLocalCache() {
@@ -96,7 +96,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         return discoveries;
     }
 
-    public void setDiscoveries(List<DiscoveryConfigImpl> discoveries) {
+    private void setDiscoveryConfigMap(List<DiscoveryConfigImpl> discoveries) {
         if (CollectionUtils.isNotEmpty(discoveries)) {
             for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                 if (discoveryConfigMap.containsKey(discoveryConfig.getServerConnectorId())) {
@@ -107,7 +107,6 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                 }
             }
         }
-        this.discoveries = discoveries;
     }
 
     @Override
@@ -134,6 +133,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                 discoveryConfig.verify();
             }
         }
+        setDiscoveryConfigMap(discoveries);
     }
 
     @Override
