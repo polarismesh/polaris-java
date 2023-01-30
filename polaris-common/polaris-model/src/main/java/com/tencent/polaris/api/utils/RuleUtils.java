@@ -56,38 +56,38 @@ public class RuleUtils {
         return StringUtils.isEmpty(value) || StringUtils.equals(value, MATCH_ALL);
     }
 
-    public static boolean matchStringValue(MatchString matchString, String value,
+    public static boolean matchStringValue(MatchString matchString, String actualValue,
             Function<String, Pattern> regexToPattern) {
         MatchStringType matchType = matchString.getType();
         String matchValue = matchString.getValue().getValue();
-        return matchStringValue(matchType, matchValue, value, regexToPattern);
+        return matchStringValue(matchType, actualValue, matchValue, regexToPattern);
     }
 
-    private static boolean matchStringValue(MatchStringType matchType, String matchValue, String value) {
-        return matchStringValue(matchType, matchValue, value, DEFAULT_REGEX_PATTERN);
+    private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue) {
+        return matchStringValue(matchType, actualValue, matchValue, DEFAULT_REGEX_PATTERN);
     }
 
-    private static boolean matchStringValue(MatchStringType matchType, String matchValue, String value,
+    private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
             Function<String, Pattern> regexToPattern) {
         if (RuleUtils.isMatchAllValue(matchValue)) {
             return true;
         }
         switch (matchType) {
             case EXACT: {
-                return StringUtils.equals(value, matchValue);
+                return StringUtils.equals(actualValue, matchValue);
             }
             case REGEX: {
                 //正则表达式匹配
                 Pattern pattern = regexToPattern.apply(matchValue);
-                return pattern.matcher(value).find();
+                return pattern.matcher(actualValue).find();
             }
             case NOT_EQUALS: {
-                return !StringUtils.equals(value, matchValue);
+                return !StringUtils.equals(actualValue, matchValue);
             }
             case IN: {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
-                    if (StringUtils.equals(token, value)) {
+                    if (StringUtils.equals(token, actualValue)) {
                         return true;
                     }
                 }
@@ -96,7 +96,7 @@ public class RuleUtils {
             case NOT_IN: {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
-                    if (StringUtils.equals(token, value)) {
+                    if (StringUtils.equals(token, actualValue)) {
                         return false;
                     }
                 }
