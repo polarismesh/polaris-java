@@ -17,12 +17,10 @@
 
 package com.tencent.polaris.plugins.outlier.detector.http;
 
-import com.google.protobuf.Message;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -51,7 +49,7 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/9/19
  */
-public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
+public class HttpHealthChecker implements HealthChecker, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpHealthChecker.class);
 
@@ -85,8 +83,8 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
         String body = curConfig.getBody();
         java.net.HttpURLConnection conn = null;
         OutputStream outputStream = null;
+        String path = String.format("http://%s:%d%s", instance.getHost(), curPort, pathStr);
         try {
-            String path = String.format("http://%s:%d%s", instance.getHost(), curPort, pathStr);
             java.net.URL url = new java.net.URL(path);
             conn = (java.net.HttpURLConnection) url.openConnection();
             conn.setRequestMethod(method);
@@ -106,9 +104,9 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
             int responseCode = conn.getResponseCode();
 
             if (responseCode >= 500) {
-                return new DetectResult(RetStatus.RetSuccess);
+                return new DetectResult(RetStatus.RetFail);
             }
-            return new DetectResult(RetStatus.RetFail);
+            return new DetectResult(RetStatus.RetSuccess);
         } catch (Exception e) {
             LOG.warn("http detect exception, service:{}, host:{}, port:{}.", instance.getService(),
                     instance.getHost(), instance.getPort());
@@ -118,7 +116,7 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
                 try {
                     outputStream.close();
                 } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                    LOG.error("fail to close output stream for url {}", path, ioException);
                 }
             }
             if (null != conn) {
@@ -126,6 +124,7 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
             }
         }
     }
+
     @Override
     public Class<? extends Verifier> getPluginConfigClazz() {
         return Config.class;
@@ -150,7 +149,7 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
             builder.setUrl(DEFAULT_PATH);
         }
         if (null != cfg && null != cfg.getTimeout() && cfg.getTimeout() > 0) {
-            timeoutMs = (int)cfg.getTimeout().longValue();
+            timeoutMs = (int) cfg.getTimeout().longValue();
         } else {
             timeoutMs = DEFAULT_TIMEOUT_MILLI;
         }
