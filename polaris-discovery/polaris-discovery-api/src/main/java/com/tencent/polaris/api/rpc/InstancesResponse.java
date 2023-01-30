@@ -19,8 +19,8 @@ package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -41,9 +41,12 @@ public class InstancesResponse extends BaseEntity {
 
     private final String subset;
 
+    private final Map<String, MatchString> subsetMetadata;
+
     private final Instance[] instances;
 
-    public InstancesResponse(ServiceInstances serviceInstances, String subset) {
+    public InstancesResponse(ServiceInstances serviceInstances, String subset,
+            Map<String, MatchString> subsetMetadata) {
         this.serviceInstances = serviceInstances;
         this.metadata = serviceInstances.getMetadata();
         this.setService(serviceInstances.getService());
@@ -52,9 +55,11 @@ public class InstancesResponse extends BaseEntity {
         this.instances = svcInstances.toArray(new Instance[svcInstances.size()]);
         this.totalWeight = serviceInstances.getTotalWeight();
         this.subset = subset;
+        this.subsetMetadata = subsetMetadata;
     }
 
-    public InstancesResponse(ServiceInstances serviceInstances, Instance singleInstance, String subset) {
+    public InstancesResponse(ServiceInstances serviceInstances, Instance singleInstance, String subset,
+            Map<String, MatchString> subsetMetadata) {
         this.serviceInstances = serviceInstances;
         this.metadata = serviceInstances.getMetadata();
         this.setService(serviceInstances.getService());
@@ -62,6 +67,7 @@ public class InstancesResponse extends BaseEntity {
         this.instances = new Instance[]{singleInstance};
         this.totalWeight = serviceInstances.getTotalWeight();
         this.subset = subset;
+        this.subsetMetadata = subsetMetadata;
     }
 
     public Map<String, String> getMetadata() {
@@ -74,10 +80,6 @@ public class InstancesResponse extends BaseEntity {
 
     public int getTotalWeight() {
         return totalWeight;
-    }
-
-    public ServiceInstances toServiceInstances() {
-        return new ServiceInstancesWrap(serviceInstances, Arrays.asList(getInstances()), totalWeight);
     }
 
     public ServiceInstances getServiceInstances() {

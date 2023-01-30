@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.router.rule;
 
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Destination;
 import java.util.List;
 
 /**
@@ -25,15 +26,15 @@ import java.util.List;
  */
 public class WeightedSubset {
 
-    private final String name;
+    private final Destination destination;
 
     // 实例subset
     private List<Instance> instances;
     // subset列表
     private long weight;
 
-    public WeightedSubset(String name) {
-        this.name = name;
+    public WeightedSubset(Destination destination) {
+        this.destination = destination;
     }
 
     public List<Instance> getInstances() {
@@ -52,8 +53,8 @@ public class WeightedSubset {
         this.weight = weight;
     }
 
-    public String getName() {
-        return name;
+    public Destination getDestination() {
+        return destination;
     }
 }
 

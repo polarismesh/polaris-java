@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.outlier.detector.http;
 
+import com.google.protobuf.Message;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
@@ -31,7 +32,16 @@ import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.HttpProtocolConfig;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.HttpProtocolConfig.MessageHeader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.slf4j.Logger;
 
 
@@ -45,24 +55,57 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpHealthChecker.class);
 
-    private static final int EXPECT_CODE = 200;
+    private static final String DEFAULT_METHOD = "GET";
 
-    private Config config;
+    private static final String DEFAULT_PATH = "/";
+
+    private int timeoutMs = 0;
+
+    private HttpProtocolConfig config;
 
     @Override
-    public DetectResult detectInstance(Instance instance) throws PolarisException {
+    public DetectResult detectInstance(Instance instance, FaultDetectRule faultDetectRule) throws PolarisException {
+        int curTimeout = timeoutMs;
+        HttpProtocolConfig curConfig = config;
+        int curPort = instance.getPort();
+        if (null != faultDetectRule && faultDetectRule.getProtocol() == Protocol.HTTP) {
+            if (faultDetectRule.getTimeout() > 0) {
+                curTimeout = faultDetectRule.getTimeout();
+            }
+            if (faultDetectRule.hasHttpConfig()) {
+                curConfig = faultDetectRule.getHttpConfig();
+            }
+            if (faultDetectRule.getPort() > 0) {
+                curPort = faultDetectRule.getPort();
+            }
+        }
+        String method = curConfig.getMethod();
+        String pathStr = curConfig.getUrl();
+        List<MessageHeader> headersList = curConfig.getHeadersList();
+        String body = curConfig.getBody();
+        java.net.HttpURLConnection conn = null;
+        OutputStream outputStream = null;
         try {
-            String pattern = config.getPath();
-
-            String path = String.format("http://%s:%d%s", instance.getHost(), instance.getPort(), pattern);
+            String path = String.format("http://%s:%d%s", instance.getHost(), curPort, pathStr);
             java.net.URL url = new java.net.URL(path);
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod(method);
+            if (headersList.size() > 0) {
+                for (MessageHeader messageHeader : headersList) {
+                    conn.addRequestProperty(messageHeader.getKey(), messageHeader.getValue());
+                }
+            }
+            conn.setConnectTimeout(curTimeout);// 连接超时
+            conn.setReadTimeout(curTimeout);// 读取超时
+            if (StringUtils.isNotBlank(body)) {
+                conn.setDoOutput(true);
+                outputStream = conn.getOutputStream();
+                byte[] input = body.getBytes(StandardCharsets.UTF_8);
+                outputStream.write(input, 0, input.length);
+            }
+            int responseCode = conn.getResponseCode();
 
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(config.getTimeout().intValue());// 连接超时
-            conn.setReadTimeout(config.getTimeout().intValue());// 读取超时
-
-            if (conn.getResponseCode() == EXPECT_CODE) {
+            if (responseCode >= 500) {
                 return new DetectResult(RetStatus.RetSuccess);
             }
             return new DetectResult(RetStatus.RetFail);
@@ -70,6 +113,17 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
             LOG.warn("http detect exception, service:{}, host:{}, port:{}.", instance.getService(),
                     instance.getHost(), instance.getPort());
             return new DetectResult(RetStatus.RetFail);
+        } finally {
+            if (null != outputStream) {
+                try {
+                    outputStream.close();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+            if (null != conn) {
+                conn.disconnect();
+            }
         }
     }
     @Override
@@ -91,11 +145,17 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider  {
     public void init(InitContext ctx) throws PolarisException {
         OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
         Config cfg = outlierDetection.getPluginConfig(getName(), Config.class);
-        if (cfg == null) {
-            throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                    String.format("plugin %s config is missing", getName()));
+        HttpProtocolConfig.Builder builder = HttpProtocolConfig.newBuilder();
+        if (null == cfg || StringUtils.isBlank(cfg.getPath())) {
+            builder.setUrl(DEFAULT_PATH);
         }
-        this.config = cfg;
+        if (null != cfg && null != cfg.getTimeout() && cfg.getTimeout() > 0) {
+            timeoutMs = (int)cfg.getTimeout().longValue();
+        } else {
+            timeoutMs = DEFAULT_TIMEOUT_MILLI;
+        }
+        builder.setMethod(DEFAULT_METHOD);
+        this.config = builder.build();
     }
 
     @Override

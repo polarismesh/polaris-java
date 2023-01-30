@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.Node;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,6 +88,16 @@ public class ServiceInstancesWrap implements ServiceInstances {
     @Override
     public String getRevision() {
         return serviceInstances.getRevision();
+    }
+
+    @Override
+    public Instance getInstance(Node node) {
+        throw new UnsupportedOperationException("getInstance not supported in ServiceInstancesWrap");
+    }
+
+    @Override
+    public Instance getInstance(String id) {
+        throw new UnsupportedOperationException("getInstance not supported in ServiceInstancesWrap");
     }
 
     @Override

@@ -27,6 +27,7 @@ public class ServiceEventKey implements Service {
         CIRCUIT_BREAKING,
         RATE_LIMITING,
         SERVICE,
+        FAULT_DETECTING,
     }
 
     private final ServiceKey serviceKey;
@@ -77,6 +78,7 @@ public class ServiceEventKey implements Service {
     }
 
     public static final class ServiceEventKeyBuilder {
+
         private ServiceKey serviceKey;
         private EventType eventType;
 

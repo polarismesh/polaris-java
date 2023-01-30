@@ -21,7 +21,6 @@ import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -31,11 +30,18 @@ import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.utils.ConversionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.UdpProtocolConfig;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.slf4j.Logger;
 
 /**
@@ -44,37 +50,77 @@ import org.slf4j.Logger;
  * @author andrewshan
  * @date 2019/9/19
  */
-public class UdpHealthChecker implements HealthChecker, PluginConfigProvider  {
+public class UdpHealthChecker implements HealthChecker, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(UdpHealthChecker.class);
 
-    private Config config;
+    private UdpProtocolConfig config;
 
     @Override
-    public DetectResult detectInstance(Instance instance) throws PolarisException {
+    public DetectResult detectInstance(Instance instance, FaultDetectRule faultDetectRule) throws PolarisException {
+        String host = instance.getHost();
+        int port = instance.getPort();
+
+        UdpProtocolConfig curConfig = config;
+
+        int timeoutMs = DEFAULT_TIMEOUT_MILLI;
+        if (null != faultDetectRule && faultDetectRule.getProtocol() == Protocol.TCP) {
+            if (faultDetectRule.getTimeout() > 0) {
+                timeoutMs = faultDetectRule.getTimeout();
+            }
+            if (faultDetectRule.getPort() > 0) {
+                port = faultDetectRule.getPort();
+            }
+            curConfig = faultDetectRule.getUdpConfig();
+        }
+        byte[] sendBytes = null;
+        int maxLength = 0;
+        Set<String> expectRecvStrs = new HashSet<>();
+        if (null != curConfig) {
+            if (StringUtils.isNotBlank(curConfig.getSend())) {
+                sendBytes = ConversionUtils.anyStringToByte(curConfig.getSend());
+            }
+            for (String receiveStr : curConfig.getReceiveList()) {
+                byte[] receiveBytes = ConversionUtils.anyStringToByte(receiveStr);
+                if (null != receiveBytes) {
+                    String hexStr = ConversionUtils.byteArrayToHexString(receiveBytes);
+                    if (StringUtils.isNotBlank(hexStr)) {
+                        expectRecvStrs.add(hexStr);
+                        if (receiveBytes.length > maxLength) {
+                            maxLength = receiveBytes.length;
+                        }
+                    }
+                }
+            }
+        }
+        boolean needSendData = null != sendBytes && sendBytes.length > 0;
+        if (!needSendData) {
+            //未配置发送包，则连接成功即可
+            return new DetectResult(RetStatus.RetSuccess);
+        }
+
         DatagramSocket socket = null;
         try {
-            String sendStr = config.getSend();
-            InetAddress inet = InetAddress.getByName(instance.getHost());
-            byte[] sendBytes = sendStr.getBytes("UTF8");
+            InetAddress inet = InetAddress.getByName(host);
 
             socket = new DatagramSocket();
             // 两秒接收不到数据认为超时，防止获取不到连接一直在receive阻塞
-            socket.setSoTimeout(config.getTimeout().intValue());
+            socket.setSoTimeout(timeoutMs);
             //发送数据
-            DatagramPacket sendPacket = new DatagramPacket(sendBytes, sendBytes.length, inet, instance.getPort());
+            DatagramPacket sendPacket = new DatagramPacket(sendBytes, sendBytes.length, inet, port);
             socket.send(sendPacket);
             byte[] recvBuf = new byte[1024];
             DatagramPacket recvPacket = new DatagramPacket(recvBuf, recvBuf.length);
             socket.receive(recvPacket);
 
             socket.close();
-            String expectRecvStr = config.getReceive();
-            byte[] expectRecvBytes = expectRecvStr.getBytes("UTF8");
-            if (!Arrays.equals(Arrays.copyOfRange(recvBuf, 0, expectRecvBytes.length), expectRecvBytes)) {
-                return new DetectResult(RetStatus.RetFail);
+            byte[] recvBytesClone = Arrays.copyOfRange(recvBuf, 0, maxLength);
+            String recvHexStr = ConversionUtils.byteArrayToHexString(recvBytesClone);
+            if (expectRecvStrs.contains(recvHexStr)) {
+                //回包符合预期
+                return new DetectResult(RetStatus.RetSuccess);
             }
-            return new DetectResult(RetStatus.RetSuccess);
+            return new DetectResult(RetStatus.RetFail);
 
         } catch (Exception e) {
             LOG.warn("udp detect instance exception, host:{}, port:{}.", instance.getHost(), instance.getPort());
@@ -90,6 +136,7 @@ public class UdpHealthChecker implements HealthChecker, PluginConfigProvider  {
     public Class<? extends Verifier> getPluginConfigClazz() {
         return Config.class;
     }
+
     @Override
     public String getName() {
         return DefaultValues.DEFAULT_HEALTH_CHECKER_UDP;
@@ -104,11 +151,14 @@ public class UdpHealthChecker implements HealthChecker, PluginConfigProvider  {
     public void init(InitContext ctx) throws PolarisException {
         OutlierDetectionConfig outlierDetection = ctx.getConfig().getConsumer().getOutlierDetection();
         Config cfg = outlierDetection.getPluginConfig(getName(), Config.class);
-        if (cfg == null) {
-            throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                    String.format("plugin %s config is missing", getName()));
+        UdpProtocolConfig.Builder builder = UdpProtocolConfig.newBuilder();
+        if (null != cfg && StringUtils.isNotBlank(cfg.getSend())) {
+            builder.setSend(cfg.getSend());
         }
-        this.config = cfg;
+        if (null != cfg && StringUtils.isNotBlank(cfg.getReceive())) {
+            builder.addReceive(cfg.getReceive());
+        }
+        this.config = builder.build();
     }
 
     @Override

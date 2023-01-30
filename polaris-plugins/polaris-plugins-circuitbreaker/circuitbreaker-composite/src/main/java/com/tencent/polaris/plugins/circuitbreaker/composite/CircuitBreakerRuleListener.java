@@ -35,7 +35,8 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
 
     @Override
     public void onResourceAdd(ServiceEventKey svcEventKey, RegistryCacheValue newValue) {
-        if (svcEventKey.getEventType() != EventType.CIRCUIT_BREAKING) {
+        if (svcEventKey.getEventType() != EventType.CIRCUIT_BREAKING
+                && svcEventKey.getEventType() != EventType.FAULT_DETECTING) {
             return;
         }
         for (Map.Entry<Resource, CircuitBreakerRuleContainer> entry : polarisCircuitBreaker.getContainers()
@@ -49,7 +50,8 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
     @Override
     public void onResourceUpdated(ServiceEventKey svcEventKey, RegistryCacheValue oldValue,
             RegistryCacheValue newValue) {
-        if (svcEventKey.getEventType() != EventType.CIRCUIT_BREAKING) {
+        if (svcEventKey.getEventType() != EventType.CIRCUIT_BREAKING
+                && svcEventKey.getEventType() != EventType.FAULT_DETECTING) {
             return;
         }
         for (Map.Entry<Resource, CircuitBreakerRuleContainer> entry : polarisCircuitBreaker.getContainers()
@@ -62,7 +64,8 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
 
     @Override
     public void onResourceDeleted(ServiceEventKey svcEventKey, RegistryCacheValue oldValue) {
-        if (svcEventKey.getEventType() != EventType.CIRCUIT_BREAKING) {
+        if (svcEventKey.getEventType() != EventType.CIRCUIT_BREAKING
+                && svcEventKey.getEventType() != EventType.FAULT_DETECTING) {
             return;
         }
         for (Map.Entry<Resource, CircuitBreakerRuleContainer> entry : polarisCircuitBreaker.getContainers()

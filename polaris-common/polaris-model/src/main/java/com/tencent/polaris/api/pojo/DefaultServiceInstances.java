@@ -18,7 +18,9 @@
 package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.Node;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +30,10 @@ public class DefaultServiceInstances implements ServiceInstances {
     private final ServiceKey serviceKey;
 
     private final List<Instance> instances;
+
+    private final Map<String, Instance> idMap;
+
+    private final Map<Node, Instance> nodeMap;
 
     private final int totalWeight;
 
@@ -41,6 +47,12 @@ public class DefaultServiceInstances implements ServiceInstances {
         this.totalWeight = getTotalWeight(instances);
         hashCode = Objects.hash(serviceKey, instances);
         revision = Integer.toHexString(hashCode);
+        idMap = new HashMap<>();
+        nodeMap = new HashMap<>();
+        for (Instance instance : instances) {
+            idMap.put(instance.getId(), instance);
+            nodeMap.put(new Node(instance.getHost(), instance.getPort()), instance);
+        }
     }
 
     private int getTotalWeight(List<Instance> instances) {
@@ -76,6 +88,16 @@ public class DefaultServiceInstances implements ServiceInstances {
     @Override
     public String getRevision() {
         return revision;
+    }
+
+    @Override
+    public Instance getInstance(Node node) {
+        return nodeMap.get(node);
+    }
+
+    @Override
+    public Instance getInstance(String id) {
+        return idMap.get(id);
     }
 
     @Override

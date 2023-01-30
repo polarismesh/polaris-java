@@ -18,21 +18,34 @@
 package com.tencent.polaris.test.mock.discovery;
 
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceResourceProvider;
 import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.ServiceRuleProvider;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockServiceRuleProvider implements ServiceRuleProvider {
+public class MockServiceResourceProvider implements ServiceResourceProvider {
 
     private final Map<ServiceEventKey, ServiceRule> values = new HashMap<>();
+
+    private final Map<ServiceKey, ServiceInstances> services = new HashMap<>();
 
     public void putServiceRule(ServiceEventKey svcEventKey, ServiceRule serviceRule) {
         values.put(svcEventKey, serviceRule);
     }
 
+    public void putServiceInstances(ServiceKey svcKey, ServiceInstances serviceInstances) {
+        services.put(svcKey, serviceInstances);
+    }
+
     @Override
     public ServiceRule getServiceRule(ServiceEventKey svcEventKey) {
         return values.get(svcEventKey);
+    }
+
+    @Override
+    public ServiceInstances getServiceInstances(ServiceKey serviceKey) {
+        return services.get(serviceKey);
     }
 }

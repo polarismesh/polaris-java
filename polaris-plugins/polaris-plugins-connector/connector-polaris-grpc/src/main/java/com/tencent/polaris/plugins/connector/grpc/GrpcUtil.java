@@ -177,6 +177,8 @@ public class GrpcUtil {
                 return DiscoverRequestType.CIRCUIT_BREAKER;
             case SERVICE:
                 return DiscoverRequestType.SERVICES;
+            case FAULT_DETECTING:
+                return DiscoverRequestType.FAULT_DETECTOR;
             default:
                 return DiscoverRequestType.UNKNOWN;
         }
@@ -194,6 +196,8 @@ public class GrpcUtil {
                 return EventType.CIRCUIT_BREAKING;
             case SERVICES:
                 return EventType.SERVICE;
+            case FAULT_DETECTOR:
+                return EventType.FAULT_DETECTING;
             default:
                 return EventType.UNKNOWN;
         }

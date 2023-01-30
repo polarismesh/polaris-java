@@ -125,7 +125,7 @@ public class ChangeStateUtils {
             instanceByProto = serviceInstancesByProto.getInstance(instanceId);
         } else {
             Node node = new Node(instanceGauge.getHost(), instanceGauge.getPort());
-            instanceByProto = serviceInstancesByProto.getInstanceByNode(node);
+            instanceByProto = serviceInstancesByProto.getInstance(node);
         }
         if (null != instanceByProto) {
             instanceGauge.setInstance(instanceByProto);

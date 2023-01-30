@@ -52,7 +52,7 @@ public class SyncFlow {
     public InstancesResponse commonSyncGetAllInstances(CommonInstancesRequest request) throws PolarisException {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
-        return new InstancesResponse(dstInstances, "");
+        return new InstancesResponse(dstInstances, "", null);
     }
 
     /**
@@ -66,13 +66,13 @@ public class SyncFlow {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
         if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
-            return new InstancesResponse(dstInstances, "");
+            return new InstancesResponse(dstInstances, "", null);
         }
         RouteInfo routeInfo = request.getRouteInfo();
         ServiceInstances routerInstances =
                 BaseFlow.processServiceRouters(routeInfo, request.getDstInstances(),
                         extensions.getConfigRouterChainGroup());
-        return new InstancesResponse(routerInstances, routeInfo.getSubset());
+        return new InstancesResponse(routerInstances, routeInfo.getSubsetName(), routeInfo.getSubsetMetadata());
     }
 
     /**
@@ -86,7 +86,7 @@ public class SyncFlow {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
         if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
-            return new InstancesResponse(dstInstances, "");
+            return new InstancesResponse(dstInstances, "", null);
         }
         RouteInfo routeInfo = request.getRouteInfo();
         ServiceInstances routerInstances =
@@ -94,7 +94,7 @@ public class SyncFlow {
                         extensions.getConfigRouterChainGroup());
         LoadBalancer loadBalancer = extensions.getLoadBalancer();
         Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), routerInstances);
-        return new InstancesResponse(dstInstances, instance, routeInfo.getSubset());
+        return new InstancesResponse(dstInstances, instance, routeInfo.getSubsetName(), routeInfo.getSubsetMetadata());
     }
 
     /**

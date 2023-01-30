@@ -24,9 +24,8 @@ import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils;
-
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -47,9 +46,9 @@ public class WatchServiceExample {
                     .build();
             request.setNamespace(namespace);
             WatchServiceResponse response = consumerAPI.watchService(request);
-            List<Instance> instances = response.getResponse().toServiceInstances().getInstances();
-            System.out.println("instance count is " + instances.size());
-            System.out.println("print all instance " + instances);
+            Instance[] instances = response.getResponse().getInstances();
+            System.out.println("instance count is " + instances.length);
+            System.out.println("print all instance " + Arrays.asList(instances));
 
             new CountDownLatch(1).await();
         }
