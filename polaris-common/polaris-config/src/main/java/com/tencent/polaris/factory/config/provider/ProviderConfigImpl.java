@@ -72,7 +72,7 @@ public class ProviderConfigImpl implements ProviderConfig {
         return registers;
     }
 
-    public void setRegisters(List<RegisterConfigImpl> registers) {
+    private void setRegisterConfigMap(List<RegisterConfigImpl> registers) {
         if (CollectionUtils.isNotEmpty(registers)) {
             for (RegisterConfigImpl registerConfig : registers) {
                 if (registerConfigMap.containsKey(registerConfig.getServerConnectorId())) {
@@ -83,7 +83,6 @@ public class ProviderConfigImpl implements ProviderConfig {
                 }
             }
         }
-        this.registers = registers;
     }
 
     @Override
@@ -101,6 +100,7 @@ public class ProviderConfigImpl implements ProviderConfig {
                 registerConfig.verify();
             }
         }
+        setRegisterConfigMap(registers);
     }
 
     @Override
