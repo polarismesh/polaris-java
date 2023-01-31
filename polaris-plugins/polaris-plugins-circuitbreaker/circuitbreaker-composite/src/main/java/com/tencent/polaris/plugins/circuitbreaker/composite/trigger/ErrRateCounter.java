@@ -90,6 +90,7 @@ public class ErrRateCounter extends TriggerCounter {
             long failCount = sliceWindow.calcMetricsBothIncluded(Dimension.keyFailCount.ordinal(), timeRange);
             double failRatio = ((double) failCount / (double) requestCount) * 100;
             if (failRatio >= errorPercent) {
+                suspend();
                 statusChangeHandler.closeToOpen(ruleName);
             }
             scheduled.set(false);

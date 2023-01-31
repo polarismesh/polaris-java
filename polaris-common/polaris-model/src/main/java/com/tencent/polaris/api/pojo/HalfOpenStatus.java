@@ -17,8 +17,8 @@
 
 package com.tencent.polaris.api.pojo;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 public class HalfOpenStatus extends CircuitBreakerStatus {
 
@@ -26,13 +26,11 @@ public class HalfOpenStatus extends CircuitBreakerStatus {
 
     private final int maxRequest;
 
-    private final Consumer<Void> callback;
+    private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
-    public HalfOpenStatus(String circuitBreaker, long startTimeMs, int maxRequest,
-            Consumer<Void> callback) {
+    public HalfOpenStatus(String circuitBreaker, long startTimeMs, int maxRequest) {
         super(circuitBreaker, Status.HALF_OPEN, startTimeMs);
         this.maxRequest = maxRequest;
-        this.callback = callback;
     }
 
     public int getMaxRequest() {
@@ -41,9 +39,10 @@ public class HalfOpenStatus extends CircuitBreakerStatus {
 
     public boolean allocate() {
         int result = allocated.incrementAndGet();
-        if (result == maxRequest) {
-            callback.accept(null);
-        }
         return result <= maxRequest;
+    }
+
+    public boolean schedule() {
+        return scheduled.compareAndSet(false, true);
     }
 }
