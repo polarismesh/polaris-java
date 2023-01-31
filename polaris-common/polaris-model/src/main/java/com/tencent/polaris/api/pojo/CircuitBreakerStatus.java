@@ -149,5 +149,14 @@ public class CircuitBreakerStatus {
         public String getBody() {
             return body;
         }
+
+        @Override
+        public String toString() {
+            return "FallbackInfo{" +
+                    "code=" + code +
+                    ", headers=" + headers +
+                    ", body='" + body + '\'' +
+                    '}';
+        }
     }
 }

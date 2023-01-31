@@ -22,6 +22,7 @@ import static com.tencent.polaris.logging.LoggingConsts.LOGGING_CIRCUITBREAKER_E
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus.FallbackInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
 import com.tencent.polaris.api.pojo.HalfOpenStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
@@ -34,15 +35,20 @@ import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.TriggerCount
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreakerRule;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.ErrorCondition;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.FallbackConfig;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.FallbackResponse;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.FallbackResponse.MessageHeader;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -63,6 +69,10 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private final AtomicInteger halfOpenSuccess = new AtomicInteger(0);
 
+    private final FallbackInfo fallbackInfo;
+
+    private final int consecutiveSuccessCount;
+
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
             ScheduledExecutorService stateChangeExecutors) {
         this.currentActiveRule = currentActiveRule;
@@ -70,6 +80,8 @@ public class ResourceCounters implements StatusChangeHandler {
         this.stateChangeExecutors = stateChangeExecutors;
         circuitBreakerStatusReference
                 .set(new CircuitBreakerStatus(currentActiveRule.getName(), Status.CLOSE, System.currentTimeMillis()));
+        fallbackInfo = buildFallbackInfo(currentActiveRule);
+        consecutiveSuccessCount = currentActiveRule.getRecoverCondition().getConsecutiveSuccess();
         init();
     }
 
@@ -94,6 +106,28 @@ public class ResourceCounters implements StatusChangeHandler {
         }
     }
 
+    private static FallbackInfo buildFallbackInfo(CircuitBreakerRule currentActiveRule) {
+        if (null == currentActiveRule) {
+            return null;
+        }
+        if (currentActiveRule.getLevel() != Level.METHOD && currentActiveRule.getLevel() != Level.SERVICE) {
+            return null;
+        }
+        FallbackConfig fallbackConfig = currentActiveRule.getFallbackConfig();
+        if (null == fallbackConfig || !fallbackConfig.getEnable()) {
+            return null;
+        }
+        FallbackResponse response = fallbackConfig.getResponse();
+        if (null == response) {
+            return null;
+        }
+        Map<String, String> headers = new HashMap<>();
+        for (MessageHeader messageHeader : response.getHeadersList()) {
+            headers.put(messageHeader.getKey(), messageHeader.getValue());
+        }
+        return new FallbackInfo(response.getCode(), headers, response.getBody());
+    }
+
     public CircuitBreakerRule getCurrentActiveRule() {
         return currentActiveRule;
     }
@@ -110,7 +144,7 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private void toOpen(CircuitBreakerStatus preStatus, String circuitBreaker) {
         CircuitBreakerStatus newStatus = new CircuitBreakerStatus(circuitBreaker, Status.OPEN,
-                System.currentTimeMillis());
+                System.currentTimeMillis(), fallbackInfo);
         circuitBreakerStatusReference.set(newStatus);
         CB_EVENT_LOG.info("previous status {}, current status {}, resource {}, rule {}", preStatus.getStatus(),
                 newStatus.getStatus(), resource, circuitBreaker);
@@ -134,18 +168,7 @@ public class ResourceCounters implements StatusChangeHandler {
             int consecutiveSuccess = currentActiveRule.getRecoverCondition().getConsecutiveSuccess();
             halfOpenSuccess.set(0);
             HalfOpenStatus halfOpenStatus = new HalfOpenStatus(
-                    circuitBreakerStatus.getCircuitBreaker(), System.currentTimeMillis(), consecutiveSuccess,
-                    new Consumer<Void>() {
-                        @Override
-                        public void accept(Void unused) {
-                            stateChangeExecutors.schedule(new Runnable() {
-                                @Override
-                                public void run() {
-                                    checkHalfOpenConversion();
-                                }
-                            }, 10, TimeUnit.SECONDS);
-                        }
-                    });
+                    circuitBreakerStatus.getCircuitBreaker(), System.currentTimeMillis(), consecutiveSuccess);
             CB_EVENT_LOG.info("previous status {}, current status {}, resource {}, rule {}",
                     circuitBreakerStatus.getStatus(),
                     halfOpenStatus.getStatus(), resource, circuitBreakerStatus.getCircuitBreaker());
@@ -155,7 +178,6 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private void checkHalfOpenConversion() {
         int halfOpenSuccessCount = halfOpenSuccess.get();
-        int consecutiveSuccessCount = currentActiveRule.getRecoverCondition().getConsecutiveSuccess();
         if (halfOpenSuccessCount >= consecutiveSuccessCount) {
             System.out.println("halfOpenSuccessCount " + halfOpenSuccessCount + ", consecutiveSuccessCount "
                     + consecutiveSuccessCount + ", do halfOpenToClose");
@@ -223,7 +245,7 @@ public class ResourceCounters implements StatusChangeHandler {
                     case DELAY:
                         String value = condition.getValue().getValue();
                         int delayValue = Integer.parseInt(value);
-                        if (resourceStat.getDelay() > delayValue) {
+                        if (resourceStat.getDelay() >= delayValue) {
                             success = false;
                         }
                         break;
@@ -234,10 +256,15 @@ public class ResourceCounters implements StatusChangeHandler {
         }
         CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
         if (null != circuitBreakerStatus && circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
+            HalfOpenStatus halfOpenStatus = (HalfOpenStatus) circuitBreakerStatus;
             if (success) {
-                halfOpenSuccess.incrementAndGet();
+                int count = halfOpenSuccess.incrementAndGet();
+                if (count >= consecutiveSuccessCount) {
+                    scheduleHalfOpenConversion(halfOpenStatus);
+                }
             } else {
                 halfOpenSuccess.set(0);
+                scheduleHalfOpenConversion(halfOpenStatus);
             }
         } else {
             for (TriggerCounter counter : counters) {
@@ -245,6 +272,18 @@ public class ResourceCounters implements StatusChangeHandler {
             }
         }
     }
+
+    private void scheduleHalfOpenConversion(HalfOpenStatus halfOpenStatus) {
+        if (halfOpenStatus.schedule()) {
+            stateChangeExecutors.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    checkHalfOpenConversion();
+                }
+            }, 1, TimeUnit.SECONDS);
+        }
+    }
+
 
     public CircuitBreakerStatus getCircuitBreakerStatus() {
         return circuitBreakerStatusReference.get();

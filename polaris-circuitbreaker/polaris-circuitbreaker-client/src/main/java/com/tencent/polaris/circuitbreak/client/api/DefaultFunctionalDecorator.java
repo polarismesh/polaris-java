@@ -98,7 +98,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                         code = resultToErrorCode.onSuccess(result);
                     }
                     long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetSuccess);
+                    commonReport(code, delay, RetStatus.RetUnknown);
                     return result;
                 } catch (Throwable e) {
                     long endTimeMilli = System.currentTimeMillis();
@@ -106,7 +106,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                     if (null != resultToErrorCode) {
                         code = resultToErrorCode.onError(e);
                     }
-                    RetStatus retStatus = RetStatus.RetFail;
+                    RetStatus retStatus = RetStatus.RetUnknown;
                     if (e instanceof CallAbortedException) {
                         retStatus = RetStatus.RetReject;
                     }
@@ -137,14 +137,14 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                         code = resultToErrorCode.onSuccess(null);
                     }
                     long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetSuccess);
+                    commonReport(code, delay, RetStatus.RetUnknown);
                 } catch (Throwable e) {
                     long endTimeMilli = System.currentTimeMillis();
                     int code = -1;
                     if (null != resultToErrorCode) {
                         code = resultToErrorCode.onError(e);
                     }
-                    RetStatus retStatus = RetStatus.RetFail;
+                    RetStatus retStatus = RetStatus.RetUnknown;
                     if (e instanceof CallAbortedException) {
                         retStatus = RetStatus.RetReject;
                     }
@@ -175,7 +175,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                         code = resultToErrorCode.onSuccess(result);
                     }
                     long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetSuccess);
+                    commonReport(code, delay, RetStatus.RetUnknown);
                     return result;
                 } catch (Throwable e) {
                     long endTimeMilli = System.currentTimeMillis();
@@ -183,7 +183,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                     if (null != resultToErrorCode) {
                         code = resultToErrorCode.onError(e);
                     }
-                    RetStatus retStatus = RetStatus.RetFail;
+                    RetStatus retStatus = RetStatus.RetUnknown;
                     if (e instanceof CallAbortedException) {
                         retStatus = RetStatus.RetReject;
                     }
@@ -214,7 +214,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                         code = resultToErrorCode.onSuccess(result);
                     }
                     long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetSuccess);
+                    commonReport(code, delay, RetStatus.RetUnknown);
                     return result;
                 } catch (Throwable e) {
                     long endTimeMilli = System.currentTimeMillis();
@@ -222,7 +222,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
                     if (null != resultToErrorCode) {
                         code = resultToErrorCode.onError(e);
                     }
-                    RetStatus retStatus = RetStatus.RetFail;
+                    RetStatus retStatus = RetStatus.RetUnknown;
                     if (e instanceof CallAbortedException) {
                         retStatus = RetStatus.RetReject;
                     }
