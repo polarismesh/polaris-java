@@ -20,7 +20,7 @@ package com.tencent.polaris.logging.logback;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.util.ContextInitializer;
 import com.tencent.polaris.logging.AbstractPolarisLogging;
-import org.slf4j.impl.StaticLoggerBinder;
+import org.slf4j.LoggerFactory;
 
 public class LogbackPolarisLogging extends AbstractPolarisLogging {
 
@@ -34,7 +34,7 @@ public class LogbackPolarisLogging extends AbstractPolarisLogging {
         }
 
         try {
-            LoggerContext loggerContext = (LoggerContext) StaticLoggerBinder.getSingleton().getLoggerFactory();
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
             new ContextInitializer(loggerContext).configureByResource(getResourceUrl(location));
         } catch (Exception e) {
             throw new IllegalStateException("could not initialize logback logging from " + location, e);
