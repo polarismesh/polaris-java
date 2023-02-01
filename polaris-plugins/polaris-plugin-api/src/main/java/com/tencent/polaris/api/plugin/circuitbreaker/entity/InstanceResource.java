@@ -22,19 +22,21 @@ import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
 import java.util.Objects;
 
-public class InstanceResource implements Resource {
-
-    private final ServiceKey service;
+public class InstanceResource extends AbstractResource {
 
     private final String host;
 
     private final int port;
 
     public InstanceResource(ServiceKey service, String host, int port) {
+        this(service, host, port, null);
+    }
+
+    public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService) {
+        super(service, callerService);
         CommonValidator.validateService(service);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
         CommonValidator.validateText(host, "host");
-        this.service = service;
         this.host = host;
         this.port = port;
     }
@@ -57,15 +59,6 @@ public class InstanceResource implements Resource {
     }
 
     @Override
-    public String toString() {
-        return "InstanceResource{" +
-                "service=" + service +
-                ", host='" + host + '\'' +
-                ", port=" + port +
-                '}';
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -73,14 +66,24 @@ public class InstanceResource implements Resource {
         if (!(o instanceof InstanceResource)) {
             return false;
         }
+        if (!super.equals(o)) {
+            return false;
+        }
         InstanceResource that = (InstanceResource) o;
         return port == that.port &&
-                Objects.equals(service, that.service) &&
                 Objects.equals(host, that.host);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(service, host, port);
+        return Objects.hash(super.hashCode(), host, port);
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceResource{" +
+                "host='" + host + '\'' +
+                ", port=" + port +
+                "} " + super.toString();
     }
 }

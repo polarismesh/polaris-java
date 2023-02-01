@@ -35,4 +35,11 @@ public interface Resource {
      * @return serviceKey
      */
     ServiceKey getService();
+
+    /**
+     * get the caller service name, for rule filtering
+     *
+     * @return serviceKey
+     */
+    ServiceKey getCallerService();
 }

@@ -18,37 +18,27 @@
 package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.client.util.CommonValidator;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
 import java.util.Objects;
 
-public class MethodResource extends AbstractResource {
+public abstract class AbstractResource implements Resource {
 
-    private final String method;
+    protected final ServiceKey service;
 
-    public MethodResource(ServiceKey service, String methodName) {
-        this(service, methodName, null);
-    }
+    protected final ServiceKey callerService;
 
-    public MethodResource(ServiceKey service, String methodName, ServiceKey callerService) {
-        super(service, callerService);
-        CommonValidator.validateService(service);
-        CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
-        CommonValidator.validateText(methodName, "method");
-        this.method = methodName;
+    public AbstractResource(ServiceKey service, ServiceKey callerService) {
+        this.service = service;
+        this.callerService = callerService;
     }
 
     @Override
-    public Level getLevel() {
-        return Level.METHOD;
+    public ServiceKey getCallerService() {
+        return callerService;
     }
 
+    @Override
     public ServiceKey getService() {
         return service;
-    }
-
-    public String getMethod() {
-        return method;
     }
 
     @Override
@@ -56,25 +46,24 @@ public class MethodResource extends AbstractResource {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MethodResource)) {
+        if (!(o instanceof AbstractResource)) {
             return false;
         }
-        if (!super.equals(o)) {
-            return false;
-        }
-        MethodResource that = (MethodResource) o;
-        return Objects.equals(method, that.method);
+        AbstractResource that = (AbstractResource) o;
+        return Objects.equals(service, that.service) &&
+                Objects.equals(callerService, that.callerService);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), method);
+        return Objects.hash(service, callerService);
     }
 
     @Override
     public String toString() {
-        return "MethodResource{" +
-                "method='" + method + '\'' +
-                "} " + super.toString();
+        return "AbstractResource{" +
+                "service=" + service +
+                ", callerService=" + callerService +
+                '}';
     }
 }
