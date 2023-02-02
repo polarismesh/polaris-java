@@ -20,20 +20,16 @@ package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
-import java.util.Objects;
 
-public class ServiceResource implements Resource {
-
-    private final ServiceKey service;
-
-    public ServiceResource(String namespace, String serviceName) {
-        CommonValidator.validateNamespaceService(namespace, serviceName);
-        this.service = new ServiceKey(namespace, serviceName);
-    }
+public class ServiceResource extends AbstractResource {
 
     public ServiceResource(ServiceKey service) {
+        this(service, null);
+    }
+
+    public ServiceResource(ServiceKey service, ServiceKey callerService) {
+        super(service, callerService);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
-        this.service = service;
     }
 
     @Override
@@ -41,31 +37,22 @@ public class ServiceResource implements Resource {
         return Level.SERVICE;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof ServiceResource)) {
-            return false;
-        }
-        ServiceResource that = (ServiceResource) o;
-        return Objects.equals(service, that.service);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(service);
+    public ServiceKey getService() {
+        return service;
     }
 
     @Override
     public String toString() {
-        return "ServiceResource{" +
-                "service=" + service +
-                '}';
+        return "ServiceResource{} " + super.toString();
     }
 
-    public ServiceKey getService() {
-        return service;
+    @Override
+    public boolean equals(Object o) {
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
     }
 }

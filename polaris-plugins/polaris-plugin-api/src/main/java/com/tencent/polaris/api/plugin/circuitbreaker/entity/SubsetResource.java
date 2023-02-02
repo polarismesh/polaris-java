@@ -24,19 +24,22 @@ import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.Map;
 import java.util.Objects;
 
-public class SubsetResource implements Resource {
-
-    private final ServiceKey service;
+public class SubsetResource extends AbstractResource {
 
     private final String subset;
 
     private final Map<String, MatchString> metadata;
 
     public SubsetResource(ServiceKey service, String subset, Map<String, MatchString> metadata) {
+        this(service, subset, metadata, null);
+    }
+
+    public SubsetResource(ServiceKey service, String subset, Map<String, MatchString> metadata,
+            ServiceKey callerService) {
+        super(service, callerService);
         CommonValidator.validateService(service);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
         CommonValidator.validateText(subset, "subset");
-        this.service = service;
         this.subset = subset;
         this.metadata = metadata;
     }
@@ -44,32 +47,6 @@ public class SubsetResource implements Resource {
     @Override
     public Level getLevel() {
         return Level.GROUP;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof SubsetResource)) {
-            return false;
-        }
-        SubsetResource that = (SubsetResource) o;
-        return Objects.equals(service, that.service) &&
-                Objects.equals(subset, that.subset);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(service, subset);
-    }
-
-    @Override
-    public String toString() {
-        return "GroupResource{" +
-                "service=" + service +
-                ", group='" + subset + '\'' +
-                '}';
     }
 
     public ServiceKey getService() {
@@ -82,5 +59,33 @@ public class SubsetResource implements Resource {
 
     public Map<String, MatchString> getMetadata() {
         return metadata;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SubsetResource)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        SubsetResource that = (SubsetResource) o;
+        return Objects.equals(subset, that.subset);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), subset);
+    }
+
+    @Override
+    public String toString() {
+        return "SubsetResource{" +
+                "subset='" + subset + '\'' +
+                ", metadata=" + metadata +
+                "} " + super.toString();
     }
 }

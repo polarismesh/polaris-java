@@ -43,10 +43,16 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
     @Override
     public void onServiceCallResult(InstanceGauge result) {
         List<Resource> resources = new ArrayList<>(2);
+        ServiceKey sourceService = null;
+        if (null != result.getCallerService()) {
+            sourceService = new ServiceKey(result.getCallerService().getNamespace(),
+                    result.getCallerService().getService());
+        }
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
-        resources.add(new InstanceResource(serviceKey, result.getHost(), result.getPort()));
+        resources.add(new InstanceResource(serviceKey, result.getHost(), result.getPort(), sourceService));
         if (StringUtils.isNotBlank(result.getSubset())) {
-            resources.add(new SubsetResource(serviceKey, result.getSubset(), result.getSubsetMetadata()));
+            resources.add(new SubsetResource(
+                    serviceKey, result.getSubset(), result.getSubsetMetadata(), sourceService));
         }
         int retCode = 0;
         if (null != result.getRetCode()) {

@@ -48,7 +48,8 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
 
     private CheckResult commonCheckFunction() {
         // check service
-        Resource svcResource = new ServiceResource(makeDecoratorRequest.getService());
+        Resource svcResource = new ServiceResource(makeDecoratorRequest.getService(),
+                makeDecoratorRequest.getSourceService());
         CheckResult check = circuitBreakAPI.check(svcResource);
         if (!check.isPass()) {
             return check;
@@ -56,7 +57,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         // check method
         if (StringUtils.isNotBlank(makeDecoratorRequest.getMethod())) {
             Resource methodResource = new MethodResource(makeDecoratorRequest.getService(),
-                    makeDecoratorRequest.getMethod());
+                    makeDecoratorRequest.getMethod(), makeDecoratorRequest.getSourceService());
             check = circuitBreakAPI.check(methodResource);
             if (!check.isPass()) {
                 return check;
@@ -67,13 +68,14 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
 
     private void commonReport(int code, long delay, RetStatus retStatus) {
         // report service
-        Resource svcResource = new ServiceResource(makeDecoratorRequest.getService());
+        Resource svcResource = new ServiceResource(makeDecoratorRequest.getService(),
+                makeDecoratorRequest.getSourceService());
         ResourceStat resourceStat = new ResourceStat(svcResource, code, delay, retStatus);
         circuitBreakAPI.report(resourceStat);
         // report method
         if (StringUtils.isNotBlank(makeDecoratorRequest.getMethod())) {
             Resource methodResource = new MethodResource(makeDecoratorRequest.getService(),
-                    makeDecoratorRequest.getMethod());
+                    makeDecoratorRequest.getMethod(), makeDecoratorRequest.getSourceService());
             resourceStat = new ResourceStat(methodResource, code, delay, retStatus);
             circuitBreakAPI.report(resourceStat);
         }

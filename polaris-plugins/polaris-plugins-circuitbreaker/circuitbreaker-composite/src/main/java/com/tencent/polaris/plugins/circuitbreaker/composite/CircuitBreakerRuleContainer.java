@@ -22,6 +22,7 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -158,9 +159,19 @@ public class CircuitBreakerRuleContainer {
             if (null == ruleMatcher) {
                 continue;
             }
+
+            SourceService source = ruleMatcher.getSource();
+            if (null != source && !matchService(resource.getCallerService(), source.getNamespace(),
+                    source.getService())) {
+                continue;
+            }
+
             DestinationService destination = ruleMatcher.getDestination();
             if (isWildcardMatcher(destination.getService(), destination.getNamespace())) {
                 wildcardRules.add(cbRule);
+                continue;
+            }
+            if (!matchService(resource.getService(), destination.getNamespace(), destination.getService())) {
                 continue;
             }
             boolean methodMatched = matchMethod(resource, destination.getMethod());
@@ -169,19 +180,33 @@ public class CircuitBreakerRuleContainer {
             }
         }
         for (CircuitBreakerRule cbRule : wildcardRules) {
-            RuleMatcher ruleMatcher = cbRule.getRuleMatcher();
-            SourceService source = ruleMatcher.getSource();
-            if (!isWildcardMatcher(source.getService(), source.getNamespace())) {
-                continue;
-            }
             return cbRule;
         }
         return null;
     }
 
+    private boolean matchService(ServiceKey serviceKey, String namespace, String service) {
+        String inputNamespace = "";
+        String inputService = "";
+        if (null != serviceKey) {
+            inputNamespace = serviceKey.getNamespace();
+            inputService = serviceKey.getService();
+        }
+        if (StringUtils.isNotBlank(namespace) && !StringUtils.equals(namespace, RuleUtils.MATCH_ALL) && !StringUtils
+                .equals(inputNamespace, namespace)) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(service) && !StringUtils.equals(service, RuleUtils.MATCH_ALL) && !StringUtils
+                .equals(inputService, service)) {
+            return false;
+        }
+        return true;
+    }
+
+
     private boolean matchMethod(Resource resource, MatchString matchString) {
         if (resource.getLevel() != Level.METHOD) {
-            return null == matchString || RuleUtils.isMatchAllValue(matchString);
+            return true;
         }
         String method = ((MethodResource) resource).getMethod();
         return RuleUtils.matchStringValue(matchString, method, regex -> {

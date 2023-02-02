@@ -21,6 +21,8 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 
 public class FunctionalDecoratorRequest {
 
+    private ServiceKey sourceService;
+
     private ServiceKey service;
 
     private String method;
@@ -51,11 +53,21 @@ public class FunctionalDecoratorRequest {
         this.resultToErrorCode = resultToErrorCode;
     }
 
+    public ServiceKey getSourceService() {
+        return sourceService;
+    }
+
+    public void setSourceService(ServiceKey sourceService) {
+        this.sourceService = sourceService;
+    }
+
     @Override
     public String toString() {
-        return "FunctionalDecorator{" +
-                "service=" + service +
+        return "FunctionalDecoratorRequest{" +
+                "sourceService=" + sourceService +
+                ", service=" + service +
                 ", method='" + method + '\'' +
+                ", resultToErrorCode=" + resultToErrorCode +
                 '}';
     }
 
