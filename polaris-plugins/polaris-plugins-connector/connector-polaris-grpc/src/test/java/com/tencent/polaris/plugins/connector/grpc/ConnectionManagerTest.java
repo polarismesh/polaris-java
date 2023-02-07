@@ -112,7 +112,7 @@ public class ConnectionManagerTest {
         System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d",
                 namingServer.getPort()));
         Configuration configuration = TestUtils.configWithEnvAddress();
-        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 0);
+        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 5, 0);
     }
 
     @Test
@@ -120,10 +120,10 @@ public class ConnectionManagerTest {
         System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d,127.0.0.1:%d",
                 namingServer.getPort(), namingServer.getPort()));
         Configuration configuration = TestUtils.configWithEnvAddress();
-        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 1);
+        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 5, 5);
     }
 
-    private void testNoSwitchClientOnFailWhenOnlyOneNode(Configuration configuration, int expected) {
+    private void testNoSwitchClientOnFailWhenOnlyOneNode(Configuration configuration, int reportFailCnt, int expected) {
         ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setServerSwitchInterval(TimeUnit.MINUTES.toMillis(1));
         AtomicInteger switched = new AtomicInteger(0);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
@@ -138,7 +138,9 @@ public class ConnectionManagerTest {
                 System.out.println("server switched to " + connID);
             });
             Connection testConn = connectionManager.getConnection("test", ClusterType.BUILTIN_CLUSTER);
-            connectionManager.reportFailConnection(testConn.getConnID());
+            for (int i = 0; i < reportFailCnt; i ++) {
+                connectionManager.reportFailConnection(testConn.getConnID());
+            }
             Assert.assertNotNull(testConn);
             try {
                 Thread.sleep(5000);
