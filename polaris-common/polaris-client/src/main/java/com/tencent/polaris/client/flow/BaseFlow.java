@@ -51,6 +51,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -200,7 +201,12 @@ public class BaseFlow {
         if (CollectionUtils.isEmpty(paramProvider.getSvcEventKeys()) && null == paramProvider.getSvcEventKey()) {
             return new ResourcesResponse();
         }
-        paramProvider.getSvcEventKey().verify();
+        if (Objects.nonNull(paramProvider.getSvcEventKey())) {
+            paramProvider.getSvcEventKey().verify();
+        }
+        if (CollectionUtils.isNotEmpty(paramProvider.getSvcEventKeys())) {
+            paramProvider.getSvcEventKeys().forEach(ServiceEventKey::verify);
+        }
 
         long currentTime = System.currentTimeMillis();
         long deadline = currentTime + controlParam.getTimeoutMs();
