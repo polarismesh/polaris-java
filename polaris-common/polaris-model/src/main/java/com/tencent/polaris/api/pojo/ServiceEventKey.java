@@ -1,5 +1,7 @@
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.api.utils.StringUtils;
+
 import java.util.Objects;
 
 /**
@@ -70,6 +72,16 @@ public class ServiceEventKey implements Service {
                 "serviceKey=" + serviceKey +
                 ", eventType=" + eventType +
                 '}';
+    }
+
+    public void verify() {
+        if (Objects.equals(EventType.SERVICE, eventType)) {
+            return;
+        }
+        if (StringUtils.isAnyEmpty(serviceKey.getNamespace(), serviceKey.getService())) {
+            throw new IllegalArgumentException(String.format("invalid service key, namespace:%s service:%s",
+                    serviceKey.getNamespace(), serviceKey.getService()));
+        }
     }
 
     public static ServiceEventKeyBuilder builder() {

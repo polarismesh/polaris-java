@@ -62,6 +62,16 @@ public class StringUtils {
         return true;
     }
 
+    public static boolean isAnyEmpty(String ...str) {
+        for (String s : str) {
+            if (isEmpty(s)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
     }

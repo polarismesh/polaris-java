@@ -81,6 +81,7 @@ public class BaseFlow {
     public static Instance commonGetOneInstance(Extensions extensions, ServiceKey serviceKey,
             List<String> coreRouterNames, String lbPolicy, String protocol, String hashKey) {
         ServiceEventKey svcEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
+        svcEventKey.verify();
         LOG.debug("[ConnectionManager]start to discover service {}", svcEventKey);
         DefaultServiceEventKeysProvider provider = new DefaultServiceEventKeysProvider();
         provider.setSvcEventKey(svcEventKey);
@@ -196,10 +197,11 @@ public class BaseFlow {
     public static ResourcesResponse syncGetResources(Extensions extensions, boolean internalRequest,
             ServiceEventKeysProvider paramProvider, FlowControlParam controlParam)
             throws PolarisException {
-
         if (CollectionUtils.isEmpty(paramProvider.getSvcEventKeys()) && null == paramProvider.getSvcEventKey()) {
             return new ResourcesResponse();
         }
+        paramProvider.getSvcEventKey().verify();
+
         long currentTime = System.currentTimeMillis();
         long deadline = currentTime + controlParam.getTimeoutMs();
         int retryTime = 0;
