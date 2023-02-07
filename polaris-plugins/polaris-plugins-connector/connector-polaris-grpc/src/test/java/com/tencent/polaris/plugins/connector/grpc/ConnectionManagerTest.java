@@ -35,9 +35,13 @@ import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
+
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -73,7 +77,7 @@ public class ConnectionManagerTest {
     @Test
     public void testSwitchClient() {
         Configuration configuration = TestUtils.configWithEnvAddress();
-        ((ConfigurationImpl)configuration).getGlobal().getServerConnector().setServerSwitchInterval(1000L);
+        ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setServerSwitchInterval(1000L);
         AtomicBoolean switched = new AtomicBoolean(false);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins().getPlugin(
@@ -103,4 +107,47 @@ public class ConnectionManagerTest {
         Assert.assertTrue(switched.get());
     }
 
+    @Test
+    public void testNoSwitchClientOnFailWhenOnlyOneNode() {
+        System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d",
+                namingServer.getPort()));
+        Configuration configuration = TestUtils.configWithEnvAddress();
+        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 0);
+    }
+
+    @Test
+    public void testNoSwitchClientOnFailWhenMoreOneNode() {
+        System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d,127.0.0.1:%d",
+                namingServer.getPort(), namingServer.getPort()));
+        Configuration configuration = TestUtils.configWithEnvAddress();
+        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 1);
+    }
+
+    private void testNoSwitchClientOnFailWhenOnlyOneNode(Configuration configuration, int expected) {
+        ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setServerSwitchInterval(TimeUnit.MINUTES.toMillis(1));
+        AtomicInteger switched = new AtomicInteger(0);
+        try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
+            ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins().getPlugin(
+                    PluginTypes.SERVER_CONNECTOR.getBaseType(), DefaultValues.DEFAULT_DISCOVER_PROTOCOL);
+            GrpcConnector grpcConnector = (GrpcConnector) serverConnector;
+            ConnectionManager connectionManager = grpcConnector.getConnectionManager();
+            Extensions extensions = new Extensions();
+            connectionManager.setExtensions(extensions);
+            connectionManager.setCallbackOnSwitched(connID -> {
+                switched.incrementAndGet();
+                System.out.println("server switched to " + connID);
+            });
+            Connection testConn = connectionManager.getConnection("test", ClusterType.BUILTIN_CLUSTER);
+            connectionManager.reportFailConnection(testConn.getConnID());
+            Assert.assertNotNull(testConn);
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        Assert.assertEquals(expected, switched.get());
+    }
 }
