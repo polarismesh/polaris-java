@@ -19,7 +19,6 @@ jobs:
           server-password: MAVEN_PASSWORD
 
       - name: "Publish package"
-        if: matrix.type == 'OSSRH'
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
