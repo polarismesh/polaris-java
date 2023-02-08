@@ -3,9 +3,13 @@ name: Snapshot
 # 触发脚本的事件  这里为发布release之后触发
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - release*
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - release*
 jobs:
   release:
     runs-on: ubuntu-latest
