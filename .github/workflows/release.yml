@@ -1,11 +1,9 @@
-name: Standalone
-
+# 相当于脚本用途的一个声明
+name: Release
+# 触发脚本的事件  这里为发布release之后触发
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "tag version for polaris-java"
-        required: true
+  release:
+    types: [published]
 jobs:
   release:
     runs-on: ubuntu-latest

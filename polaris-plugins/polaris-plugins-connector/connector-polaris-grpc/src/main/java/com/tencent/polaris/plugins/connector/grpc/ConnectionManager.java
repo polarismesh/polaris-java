@@ -408,10 +408,6 @@ public class ConnectionManager extends Destroyable {
                     //已经完成切换，不处理
                     return;
                 }
-                if (CollectionUtils.isNotEmpty(nodes) && nodes.size() == 1) {
-                    //只有一个节点，不处理
-                    return;
-                }
                 doSwitchClient(curConnection);
             }
         }

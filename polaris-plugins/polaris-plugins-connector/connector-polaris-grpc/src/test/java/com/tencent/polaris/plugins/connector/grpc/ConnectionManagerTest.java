@@ -24,6 +24,7 @@ import static com.tencent.polaris.test.common.Consts.SERVICE_PROVIDER;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
@@ -108,23 +109,27 @@ public class ConnectionManagerTest {
     }
 
     @Test
-    public void testNoSwitchClientOnFailWhenOnlyOneNode() {
+    public void testNoSwitchClientOnFailNetworkError() {
         System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d",
                 namingServer.getPort()));
         Configuration configuration = TestUtils.configWithEnvAddress();
-        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 5, 0);
+        commonSwitchClientOnFail(configuration, ErrorCode.NETWORK_ERROR, 5, switched -> {
+            Assert.assertTrue(switched >= 1);
+        });
     }
 
     @Test
-    public void testNoSwitchClientOnFailWhenMoreOneNode() {
-        System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d,127.0.0.1:%d",
-                namingServer.getPort(), namingServer.getPort()));
+    public void testSwitchClientOnFailBusinessError() {
+        System.setProperty(TestUtils.SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d",
+                namingServer.getPort()));
         Configuration configuration = TestUtils.configWithEnvAddress();
-        testNoSwitchClientOnFailWhenOnlyOneNode(configuration, 5, 5);
+        commonSwitchClientOnFail(configuration, ErrorCode.INVALID_SERVER_RESPONSE, 5, switched -> {
+            Assert.assertEquals(0, (int) switched);
+        });
     }
 
-    private void testNoSwitchClientOnFailWhenOnlyOneNode(Configuration configuration, int reportFailCnt, int expected) {
-        ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setServerSwitchInterval(TimeUnit.MINUTES.toMillis(1));
+    private void commonSwitchClientOnFail(Configuration configuration, ErrorCode errorCode, int reportFailCnt, Consumer<Integer> predicate) {
+        ((ConfigurationImpl) configuration).getGlobal().getServerConnector().setServerSwitchInterval(TimeUnit.MINUTES.toMillis(10));
         AtomicInteger switched = new AtomicInteger(0);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins().getPlugin(
@@ -137,19 +142,19 @@ public class ConnectionManagerTest {
                 switched.incrementAndGet();
                 System.out.println("server switched to " + connID);
             });
-            Connection testConn = connectionManager.getConnection("test", ClusterType.BUILTIN_CLUSTER);
             for (int i = 0; i < reportFailCnt; i ++) {
-                connectionManager.reportFailConnection(testConn.getConnID());
+                Connection testConn = connectionManager.getConnection("test", ClusterType.BUILTIN_CLUSTER);
+                Assert.assertNotNull(testConn);
+                testConn.reportFail(errorCode);
             }
-            Assert.assertNotNull(testConn);
             try {
-                Thread.sleep(5000);
+                TimeUnit.SECONDS.sleep(30);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         } catch (Throwable e) {
             e.printStackTrace();
         }
-        Assert.assertEquals(expected, switched.get());
+        predicate.accept(switched.get());
     }
 }
