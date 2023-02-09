@@ -26,7 +26,7 @@ public class ServiceEventKeyTest {
     @Test
     public void verifyCase1() {
         int receiveExceptionCnt = 0;
-        int expectExceptionCnt = 5;
+        int expectExceptionCnt = 6;
         for (EventType eventType : EventType.values()) {
             try {
                 ServiceEventKey key = new ServiceEventKey(new ServiceKey("", ""), eventType);
@@ -41,7 +41,7 @@ public class ServiceEventKeyTest {
     @Test
     public void verifyCase2() {
         int receiveExceptionCnt = 0;
-        int expectExceptionCnt = 5;
+        int expectExceptionCnt = 6;
         for (EventType eventType : EventType.values()) {
             try {
                 ServiceEventKey key = new ServiceEventKey(new ServiceKey("test_ns", ""), eventType);
@@ -56,7 +56,7 @@ public class ServiceEventKeyTest {
     @Test
     public void verifyCase3() {
         int receiveExceptionCnt = 0;
-        int expectExceptionCnt = 5;
+        int expectExceptionCnt = 6;
         for (EventType eventType : EventType.values()) {
             try {
                 ServiceEventKey key = new ServiceEventKey(new ServiceKey("", "test_svc"), eventType);
