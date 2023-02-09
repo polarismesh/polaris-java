@@ -1,9 +1,12 @@
 # 相当于脚本用途的一个声明
-name: Release
+name: Snapshot
 # 触发脚本的事件  这里为发布release之后触发
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - main
+      - release*
+
 jobs:
   release:
     runs-on: ubuntu-latest
