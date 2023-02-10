@@ -17,13 +17,14 @@
 
 package com.tencent.polaris.plugin.location.remotehttp;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.TimeUnit;
 
 import com.google.protobuf.StringValue;
-import com.squareup.okhttp.Call;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pb.ModelProto;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -36,8 +37,6 @@ import org.slf4j.Logger;
 public class RemoteHttpLocationProvider extends BaseLocationProvider<BaseLocationProvider.GetOption> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RemoteHttpLocationProvider.class);
-
-	private final OkHttpClient httpClient = new OkHttpClient();
 
 	public RemoteHttpLocationProvider() {
 		super(GetOption.class);
@@ -67,31 +66,39 @@ public class RemoteHttpLocationProvider extends BaseLocationProvider<BaseLocatio
 				.build();
 	}
 
-	private String getResponse(final String url, String label)  {
-		if (StringUtils.isEmpty(url)) {
+	private String getResponse(final String path, String label)  {
+		if (StringUtils.isEmpty(path)) {
 			LOGGER.warn("[Location][Provider][RemoteHttp] get {} from remote url is empty", label);
 			return "";
 		}
 
-		Request request = new Request.Builder()
-				.get()
-				.url(url)
-				.build();
-
-		Call call = httpClient.newCall(request);
-
+		HttpURLConnection conn = null;
 		try {
-			Response response = call.execute();
-			byte[] ret = response.body().bytes();
-			if (response.code() != 200) {
-				LOGGER.error("[Location][Provider][RemoteHttp] get {} from remote {} fail: {}", label, url, new String(ret));
+			URL url = new java.net.URL(path);
+			conn = (HttpURLConnection) url.openConnection();
+
+			conn.setRequestMethod("GET");
+			conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(2));// 连接超时
+			conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(2));// 读取超时
+			BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			StringBuffer buffer = new StringBuffer();
+			String str;
+			while((str = reader.readLine())!= null){
+				buffer.append(str);
+			}
+			if (conn.getResponseCode() != 200) {
+				LOGGER.error("[Location][Provider][RemoteHttp] get {} from remote {} fail: {}", label, url, buffer);
 				return "";
 			}
-			return new String(ret);
+			return buffer.toString();
 		}
 		catch (IOException e) {
-			LOGGER.error("[Location][Provider][RemoteHttp] get {} from remote {} fail : {}", label, url, e.getMessage());
+			LOGGER.error("[Location][Provider][RemoteHttp] get {} from remote {} fail : {}", label, path, e);
 			return "";
+		} finally {
+			if (null != conn) {
+				conn.disconnect();
+			}
 		}
 	}
 }
