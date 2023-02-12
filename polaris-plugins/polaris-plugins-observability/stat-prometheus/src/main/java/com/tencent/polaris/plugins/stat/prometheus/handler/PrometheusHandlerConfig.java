@@ -18,8 +18,10 @@
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -39,7 +41,14 @@ public class PrometheusHandlerConfig implements Verifier {
     private String path = "/metrics";
 
     @JsonProperty
-    private String pushgatewayAddress;
+    private String type;
+
+    @JsonProperty
+    private String address;
+
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long pushInterval;
 
     public PrometheusHandlerConfig() {
     }
@@ -49,7 +58,7 @@ public class PrometheusHandlerConfig implements Verifier {
      */
     @Override
     public void verify() {
-        if (StringUtils.isNotBlank(pushgatewayAddress)) {
+        if (StringUtils.isNotBlank(address)) {
             LOGGER.warn("Prometheus pushgateway stat reporter plugin name has been changed to prometheus-pushgateway.");
         }
     }
@@ -63,6 +72,9 @@ public class PrometheusHandlerConfig implements Verifier {
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             PrometheusHandlerConfig config = (PrometheusHandlerConfig) defaultObject;
+            if (StringUtils.isBlank(type)) {
+                setType(config.getType());
+            }
             if (StringUtils.isBlank(host)) {
                 setHost(config.getHost());
             }
@@ -71,6 +83,12 @@ public class PrometheusHandlerConfig implements Verifier {
             }
             if (StringUtils.isBlank(path)) {
                 setPath(config.getPath());
+            }
+            if (StringUtils.isBlank(address)) {
+                setAddress(config.getAddress());
+            }
+            if (null == pushInterval) {
+                setPushInterval(config.getPushInterval());
             }
         }
     }
@@ -99,11 +117,27 @@ public class PrometheusHandlerConfig implements Verifier {
         this.path = path;
     }
 
-    public String getPushgatewayAddress() {
-        return pushgatewayAddress;
+    public String getAddress() {
+        return address;
     }
 
-    public void setPushgatewayAddress(String pushgatewayAddress) {
-        this.pushgatewayAddress = pushgatewayAddress;
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Long getPushInterval() {
+        return pushInterval;
+    }
+
+    public void setPushInterval(Long pushInterval) {
+        this.pushInterval = pushInterval;
     }
 }
