@@ -134,8 +134,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                 startSchedulePushTask();
             } else {
                 this.scheduledAggregationTask = Executors.newSingleThreadScheduledExecutor();
+                this.reportClientExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(getName()));
                 startScheduleAggregationTask();
-                reportClientExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(getName()));
                 reportClient(extensions);
             }
         }
@@ -235,13 +235,13 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         } else {
             if (Objects.nonNull(scheduledAggregationTask)) {
                 scheduledAggregationTask.shutdown();
+            }
+            if (Objects.nonNull(reportClientExecutor)) {
                 reportClientExecutor.shutdown();
+            }
+            if (Objects.nonNull(httpServer)) {
                 httpServer.stopServer();
             }
-        }
-        if (Objects.nonNull(reportClientExecutor)) {
-            reportClientExecutor.shutdown();
-            reportClientExecutor = null;
         }
     }
 
