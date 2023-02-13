@@ -71,7 +71,7 @@ global:
   #描述: 监控及日志数据上报相关配置
   statReporter:
     #描述: 是否启用上报
-    enable: false
+    enable: true
     plugin:
       prometheus:
         #描述: 设置 prometheus 指标上报模式
@@ -90,13 +90,13 @@ global:
         path: /metric
         # #描述: 设置 pushgateway 的地址, 仅 type == push 时生效
         # #类型:string
-        # #默认 ${global.serverConnector.addresses[0]}:9091
+        # #默认 global.serverConnector.addresses[0]:9091
         # address: 127.0.0.1:9091
         # #描述:设置metric数据推送到pushgateway的执行周期, 仅 type == push 时生效
         # #类型:string
-        # #格式:^\d+(ms|s|m|h)$
-        # #范围:[1m:...]
-        # #默认值:10m
+        # #格式:^\d+(s|m|h)$
+        # #范围:[1s:...]
+        # #默认值:10s
         # pushInterval: 10s
   location:
     providers:

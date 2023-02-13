@@ -34,6 +34,7 @@ import com.tencent.polaris.api.plugin.stat.ReporterMetaInfo;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.InstanceGauge;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -52,6 +53,7 @@ import com.tencent.polaris.version.Version;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Executors;
@@ -302,6 +304,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
 
     private void startSchedulePushTask() {
+        if (StringUtils.isBlank(config.getAddress())) {
+            List<String> addresses = extensions.getConfiguration().getGlobal().getServerConnector().getAddresses();
+            if (CollectionUtils.isNotEmpty(addresses)) {
+                String address = addresses.get(0);
+                config.setAddress(address.split(":")[0] + ":" + 9091);
+            }
+        }
+
         if (null != container && null != scheduledPushTask && null != sampleMapping) {
             this.scheduledPushTask.scheduleWithFixedDelay(this::doPush,
                     config.getPushInterval(),

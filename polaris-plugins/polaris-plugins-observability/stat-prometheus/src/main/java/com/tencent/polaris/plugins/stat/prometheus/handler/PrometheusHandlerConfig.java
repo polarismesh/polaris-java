@@ -58,9 +58,7 @@ public class PrometheusHandlerConfig implements Verifier {
      */
     @Override
     public void verify() {
-        if (StringUtils.isNotBlank(address)) {
-            LOGGER.warn("Prometheus pushgateway stat reporter plugin name has been changed to prometheus-pushgateway.");
-        }
+
     }
 
     /**
