@@ -228,6 +228,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     @Override
     public void destroy() {
+        if (Objects.isNull(config)) {
+            return;
+        }
         if (Objects.equals(config.getType(), "push")) {
             if (Objects.nonNull(scheduledPushTask)) {
                 scheduledPushTask.shutdown();
