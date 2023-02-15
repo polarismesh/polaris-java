@@ -74,13 +74,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
     @Override
     public String getProperty(String key, String defaultValue) {
-        //-D 启动参数优先级高于配置中心
-        String value = System.getProperty(key);
-        if (value != null) {
-            return value;
-        }
-
-        value = properties.get().getProperty(key);
+        String value = properties.get().getProperty(key);
         if (value == null) {
             return defaultValue;
         }
