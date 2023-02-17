@@ -19,6 +19,7 @@ package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.Arrays;
@@ -76,6 +77,10 @@ public class InstancesResponse extends BaseEntity {
 
     public Instance[] getInstances() {
         return instances;
+    }
+
+    public ServiceInstances toServiceInstances() {
+        return new ServiceInstancesWrap(serviceInstances, Arrays.asList(getInstances()), totalWeight);
     }
 
     public int getTotalWeight() {
