@@ -90,6 +90,7 @@ public class Provider {
         registerRequest.setProtocol("http");
         registerRequest.setVersion("1.0.0");
         registerRequest.setTtl(TTL);
+        registerRequest.setInstanceId("instance-provided-id");
         InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
