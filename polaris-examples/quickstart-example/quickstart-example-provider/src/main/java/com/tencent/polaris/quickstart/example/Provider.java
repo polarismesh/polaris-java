@@ -90,6 +90,7 @@ public class Provider {
         registerRequest.setProtocol("http");
         registerRequest.setVersion("1.0.0");
         registerRequest.setTtl(TTL);
+        // 实例id不是必填，如果不填，服务端会默认生成一个唯一Id，否则当提供实例id时，需要保证实例id是唯一的
         registerRequest.setInstanceId("instance-provided-id");
         InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
