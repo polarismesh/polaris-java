@@ -17,63 +17,47 @@
 
 package com.tencent.polaris.cb.example.service;
 
+import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
-import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
-import java.util.function.Consumer;
+import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
+
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ServiceBreakerExample {
 
-    private static class Condition {
-
-        final boolean success;
-        final int count;
-
-        public Condition(boolean success, int count) {
-            this.success = success;
-            this.count = count;
-        }
-    }
-
     public static void main(String[] args) {
+
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPI();
         FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest();
-        makeDecoratorRequest.setService(new ServiceKey("default", "testService1"));
+        makeDecoratorRequest.setService(new ServiceKey("default", "polaris-circuitbreaker-example-b"));
+        makeDecoratorRequest.setMethod("info");
         FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
-        Consumer<Condition> integerConsumer = decorator.decorateConsumer(new Consumer<Condition>() {
-            @Override
-            public void accept(Condition condition) {
-                if (!condition.success) {
-                    if (condition.count % 2 == 0) {
-                        throw new IllegalArgumentException("value divide 2 is zero");
-                    }
-                }
-                System.out.println("invoke success");
-            }
-        });
-        boolean success = false;
-        int afterCount = 20;
-        for (int i = 0; i < 500; i++) {
+        ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPI();
+        // 封装函数接口
+        Supplier<String> decoratedFunction = decorator.decorateSupplier(() -> Consumer.invokeByNameResolution(consumerAPI));
+
+        // 通过执行函数接口，进行服务调用
+        // 在调用过程中，如果出现熔断，会抛出CallAbortedException异常
+        for (int i = 0; i < 100; i++) {
             try {
-                integerConsumer.accept(new Condition(success, i + 1));
-                afterCount--;
-                if (afterCount == 0) {
-                    success = false;
-                }
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-                if (e instanceof CallAbortedException) {
-                    success = true;
-                    afterCount = 20;
-                }
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
+                System.out.println("index: " + i);
+                String msg = decoratedFunction.get();
+                System.out.println("msg: " + msg);
+            } catch(Exception e) {
                 e.printStackTrace();
+            }finally {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignore) {
+
+                }
             }
         }
     }

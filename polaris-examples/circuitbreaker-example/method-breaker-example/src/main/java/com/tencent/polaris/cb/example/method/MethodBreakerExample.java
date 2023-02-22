@@ -31,8 +31,8 @@ public class MethodBreakerExample {
 
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPI();
         FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest();
-        makeDecoratorRequest.setService(new ServiceKey("default", "testSvc2"));
-        makeDecoratorRequest.setMethod("foo");
+        makeDecoratorRequest.setService(new ServiceKey("default", "EchoServerJava"));
+        makeDecoratorRequest.setMethod("echo");
         FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
         Consumer<Boolean> integerConsumer = decorator.decorateConsumer(new Consumer<Boolean>() {
             @Override
