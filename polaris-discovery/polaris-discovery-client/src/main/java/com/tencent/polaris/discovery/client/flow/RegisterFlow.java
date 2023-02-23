@@ -112,6 +112,7 @@ public class RegisterFlow {
         instanceHeartbeatRequest.setToken(registerRequest.getToken());
         instanceHeartbeatRequest.setHost(registerRequest.getHost());
         instanceHeartbeatRequest.setPort(registerRequest.getPort());
+        instanceHeartbeatRequest.setInstanceID(registerRequest.getInstanceId());
         return instanceHeartbeatRequest;
     }
 
