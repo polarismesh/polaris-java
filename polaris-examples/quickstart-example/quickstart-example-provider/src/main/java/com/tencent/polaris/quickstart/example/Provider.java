@@ -105,6 +105,8 @@ public class Provider {
         deregisterRequest.setService(service);
         deregisterRequest.setHost(host);
         deregisterRequest.setPort(port);
+        // 实例id不是必填，如果注册时指定了实例id，则反注册时需要提供同样的id
+        deregisterRequest.setInstanceID("instance-provided-id");
         providerAPI.deRegister(deregisterRequest);
         System.out.printf("deregister instance, address is %s:%d%n", host, port);
     }
