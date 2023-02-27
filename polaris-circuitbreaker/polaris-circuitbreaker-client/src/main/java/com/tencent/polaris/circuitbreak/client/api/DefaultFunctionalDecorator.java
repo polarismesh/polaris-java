@@ -17,18 +17,12 @@
 
 package com.tencent.polaris.circuitbreak.client.api;
 
-import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
-import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
-import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
-import com.tencent.polaris.circuitbreak.api.pojo.ResultToErrorCode;
-import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
+import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
+
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -46,74 +40,21 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         this.circuitBreakAPI = circuitBreakAPI;
     }
 
-    private CheckResult commonCheckFunction() {
-        // check service
-        Resource svcResource = new ServiceResource(makeDecoratorRequest.getService(),
-                makeDecoratorRequest.getSourceService());
-        CheckResult check = circuitBreakAPI.check(svcResource);
-        if (!check.isPass()) {
-            return check;
-        }
-        // check method
-        if (StringUtils.isNotBlank(makeDecoratorRequest.getMethod())) {
-            Resource methodResource = new MethodResource(makeDecoratorRequest.getService(),
-                    makeDecoratorRequest.getMethod(), makeDecoratorRequest.getSourceService());
-            check = circuitBreakAPI.check(methodResource);
-            if (!check.isPass()) {
-                return check;
-            }
-        }
-        return null;
-    }
-
-    private void commonReport(int code, long delay, RetStatus retStatus) {
-        // report service
-        Resource svcResource = new ServiceResource(makeDecoratorRequest.getService(),
-                makeDecoratorRequest.getSourceService());
-        ResourceStat resourceStat = new ResourceStat(svcResource, code, delay, retStatus);
-        circuitBreakAPI.report(resourceStat);
-        // report method
-        if (StringUtils.isNotBlank(makeDecoratorRequest.getMethod())) {
-            Resource methodResource = new MethodResource(makeDecoratorRequest.getService(),
-                    makeDecoratorRequest.getMethod(), makeDecoratorRequest.getSourceService());
-            resourceStat = new ResourceStat(methodResource, code, delay, retStatus);
-            circuitBreakAPI.report(resourceStat);
-        }
-    }
-
     @Override
     public <T> Supplier<T> decorateSupplier(Supplier<T> supplier) {
         return new Supplier<T>() {
             @Override
             public T get() {
-                CheckResult check = commonCheckFunction();
-                if (null != check) {
-                    throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
-                }
-                ResultToErrorCode resultToErrorCode = makeDecoratorRequest.getResultToErrorCode();
+                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     T result = supplier.get();
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = 0;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onSuccess(result);
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetUnknown);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, result, null));
                     return result;
                 } catch (Throwable e) {
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = -1;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onError(e);
-                    }
-                    RetStatus retStatus = RetStatus.RetUnknown;
-                    if (e instanceof CallAbortedException) {
-                        retStatus = RetStatus.RetReject;
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, retStatus);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
                     throw e;
                 }
             }
@@ -125,33 +66,15 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Consumer<T>() {
             @Override
             public void accept(T t) {
-                CheckResult check = commonCheckFunction();
-                if (null != check) {
-                    throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
-                }
-                ResultToErrorCode resultToErrorCode = makeDecoratorRequest.getResultToErrorCode();
+                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     consumer.accept(t);
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = 0;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onSuccess(null);
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetUnknown);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, null));
                 } catch (Throwable e) {
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = -1;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onError(e);
-                    }
-                    RetStatus retStatus = RetStatus.RetUnknown;
-                    if (e instanceof CallAbortedException) {
-                        retStatus = RetStatus.RetReject;
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, retStatus);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
                     throw e;
                 }
             }
@@ -163,34 +86,16 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Function<T, R>() {
             @Override
             public R apply(T t) {
-                CheckResult check = commonCheckFunction();
-                if (null != check) {
-                    throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
-                }
-                ResultToErrorCode resultToErrorCode = makeDecoratorRequest.getResultToErrorCode();
+                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     R result = function.apply(t);
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = 0;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onSuccess(result);
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetUnknown);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, result, null));
                     return result;
                 } catch (Throwable e) {
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = -1;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onError(e);
-                    }
-                    RetStatus retStatus = RetStatus.RetUnknown;
-                    if (e instanceof CallAbortedException) {
-                        retStatus = RetStatus.RetReject;
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, retStatus);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
                     throw e;
                 }
             }
@@ -202,34 +107,16 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Predicate<T>() {
             @Override
             public boolean test(T t) {
-                CheckResult check = commonCheckFunction();
-                if (null != check) {
-                    throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
-                }
-                ResultToErrorCode resultToErrorCode = makeDecoratorRequest.getResultToErrorCode();
+                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     boolean result = predicate.test(t);
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = 0;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onSuccess(result);
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, RetStatus.RetUnknown);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, result, null));
                     return result;
                 } catch (Throwable e) {
-                    long endTimeMilli = System.currentTimeMillis();
-                    int code = -1;
-                    if (null != resultToErrorCode) {
-                        code = resultToErrorCode.onError(e);
-                    }
-                    RetStatus retStatus = RetStatus.RetUnknown;
-                    if (e instanceof CallAbortedException) {
-                        retStatus = RetStatus.RetReject;
-                    }
-                    long delay = endTimeMilli - startTimeMilli;
-                    commonReport(code, delay, retStatus);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
                     throw e;
                 }
             }
