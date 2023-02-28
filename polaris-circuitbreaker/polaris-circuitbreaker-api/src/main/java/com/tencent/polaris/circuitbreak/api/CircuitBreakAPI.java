@@ -49,6 +49,11 @@ public interface CircuitBreakAPI {
      */
     FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest functionalDecoratorRequest);
 
+    /**
+     * make the invoke handler
+     * @param requestContext
+     * @return InvokeHandler
+     */
     InvokeHandler makeInvokeHandler(InvokeContext.RequestContext requestContext);
 
 }

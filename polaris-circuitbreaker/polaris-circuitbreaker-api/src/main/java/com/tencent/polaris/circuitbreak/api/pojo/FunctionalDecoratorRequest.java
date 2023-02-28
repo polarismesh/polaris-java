@@ -17,7 +17,13 @@
 
 package com.tencent.polaris.circuitbreak.api.pojo;
 
+import com.tencent.polaris.api.pojo.ServiceKey;
+
 public class FunctionalDecoratorRequest extends InvokeContext.RequestContext {
+
+    public FunctionalDecoratorRequest(ServiceKey service, String method) {
+        super(service, method);
+    }
 
     @Override
     public String toString() {

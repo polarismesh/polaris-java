@@ -19,6 +19,9 @@ package com.tencent.polaris.circuitbreak.api;
 
 import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 
+/**
+ * InvokeHandler for circuitbreaker process
+ */
 public interface InvokeHandler {
 
 	/**
