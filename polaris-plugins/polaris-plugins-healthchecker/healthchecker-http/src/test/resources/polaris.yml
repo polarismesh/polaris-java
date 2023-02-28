@@ -1,0 +1,76 @@
+global:
+  #描述: 系统相关配置
+  system:
+    variables:
+      x: y
+      x1: y1
+  #描述:对接polaris server的相关配置
+  serverConnector:
+    addresses:
+      - 127.0.0.1:10081
+  api:
+    #api超时时间
+    timeout: 2s
+consumer:
+  #描述:节点熔断相关配置
+  circuitBreaker:
+    #描述: 是否启用本地节点熔断功能
+    enable: true
+    #描述: 故障检测周期，根据周期内故障进行熔断
+    checkPeriod: 1m
+    #描述: 首次熔断时间，后续熔断时间=重试次数*sleepWindow
+    sleepWindow: 30s
+    #描述: 熔断器半开后最大允许的请求数
+    requestCountAfterHalfOpen: 3
+    #描述: 熔断器半开到关闭所必须的最少成功请求数
+    successCountAfterHalfOpen: 3
+    #描述: 熔断规则远程拉取开关
+    enableRemotePull: true
+    #描述:熔断策略，SDK会根据策略名称加载对应的熔断器插件（已注册的熔断器插件名）
+    chain:
+      - composite
+    #描述: 熔断插件配置
+    plugin:
+      #描述:基于周期连续错误数熔断策略配置
+      errorCount:
+        #描述: 触发连续错误熔断的阈值
+        continuousErrorThreshold: 10
+      #描述:基于周期错误率的熔断策略配置
+      errorRate:
+        #描述:触发错误率熔断的阈值百分比
+        errorRateThreshold: 50
+        #描述: 错误率熔断的滑窗数量
+        metricNumBuckets: 5
+        #描述: 触发错误率熔断的最低请求阈值
+        requestVolumeThreshold: 10
+  #描述:主动探测相关配置
+  outlierDetection:
+    #描述：何时开启主动探测。never（永不开启）,on_recover（恢复时才开启主动探测）,always（一直开启主动探测）
+    when: never
+    #描述：主动探测周期
+    checkPeriod: 30s
+    #描述：主动探测插件链
+    chain:
+      - tcp
+      - udp
+      - http
+    plugin:
+      # 描述:基于TCP的故障探测策略
+      tcp:
+        # 描述:tcp发送的探测包，为空则默认只做连接探测
+        send: ""
+        # 描述:期望接收的TCP回复包，为空则默认只做连接或发包探测
+        receive: ""
+      # 描述:基于TCP的故障探测策略
+      udp:
+        # 描述:探测超时时间
+        timeout: 100ms
+        # 描述:udp发送的探测包，假如不配置，则不启动UDP探测
+        send: ""
+        # 描述:期望接收的UDP回复包，假如不配置，则不启动UDP探测
+        receive: ""
+      http:
+        # 描述:探测超时时间
+        timeout: 100ms
+        # 描述:http探测路径，必选字段，假如不配置，则不启用http探测
+        path: /ping

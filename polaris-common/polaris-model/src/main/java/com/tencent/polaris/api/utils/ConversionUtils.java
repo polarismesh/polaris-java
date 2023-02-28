@@ -44,7 +44,7 @@ public class ConversionUtils {
         } else if (value.startsWith(BIN_FLAG)) {
             return binaryStringToByte(value.substring(2));
         }
-        return binaryStringToByte(value);
+        return value.getBytes();
     }
 
     public static byte[] hexStringToByte(String hex) {

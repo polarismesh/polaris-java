@@ -107,6 +107,7 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
             OutputStream os = socket.getOutputStream();
             //发包
             os.write(sendBytes);
+            os.flush();
 
             if (expectRecvStrs.isEmpty()) {
                 return new DetectResult(RetStatus.RetSuccess);

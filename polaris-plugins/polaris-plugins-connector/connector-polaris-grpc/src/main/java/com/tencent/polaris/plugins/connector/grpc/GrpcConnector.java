@@ -296,6 +296,9 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
         ModelProto.Location location = locationBuilder.build();
         instanceBuilder.setLocation(location);
+        if (StringUtils.isNotEmpty(req.getInstanceID())) {
+            instanceBuilder.setId(StringValue.newBuilder().setValue(req.getInstanceID()));
+        }
 
         return instanceBuilder.build();
     }
