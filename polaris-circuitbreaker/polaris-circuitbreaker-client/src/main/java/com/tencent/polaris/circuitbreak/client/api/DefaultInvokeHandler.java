@@ -34,22 +34,23 @@ public class DefaultInvokeHandler implements InvokeHandler {
 
 	private final CircuitBreakAPI circuitBreakAPI;
 
-	public DefaultInvokeHandler(CircuitBreakAPI circuitBreakAPI) {
+	private final InvokeContext.RequestContext requestContext;
+
+	public DefaultInvokeHandler(InvokeContext.RequestContext requestContext, CircuitBreakAPI circuitBreakAPI) {
+		this.requestContext = requestContext;
 		this.circuitBreakAPI = circuitBreakAPI;
 	}
 
 	@Override
-	public void acquirePermission(InvokeContext invokeContext) {
-		CheckResult check = commonCheck(invokeContext.getRequestContext());
+	public void acquirePermission() {
+		CheckResult check = commonCheck(requestContext);
 		if (check != null){
 			throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
 		}
 	}
 
 	@Override
-	public void onSuccess(InvokeContext invokeContext) {
-		InvokeContext.RequestContext requestContext = invokeContext.getRequestContext();
-		InvokeContext.ResponseContext responseContext = invokeContext.getResponseContext();
+	public void onSuccess(InvokeContext.ResponseContext responseContext) {
 		long delay = responseContext.getDurationUnit().toMillis(responseContext.getDuration());
 		ResultToErrorCode resultToErrorCode = requestContext.getResultToErrorCode();
 		int code = 0;
@@ -61,9 +62,7 @@ public class DefaultInvokeHandler implements InvokeHandler {
 	}
 
 	@Override
-	public void onError(InvokeContext invokeContext) {
-		InvokeContext.RequestContext requestContext = invokeContext.getRequestContext();
-		InvokeContext.ResponseContext responseContext = invokeContext.getResponseContext();
+	public void onError(InvokeContext.ResponseContext responseContext) {
 		long delay = responseContext.getDurationUnit().toMillis(responseContext.getDuration());
 		ResultToErrorCode resultToErrorCode = requestContext.getResultToErrorCode();
 		int code = -1;

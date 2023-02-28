@@ -27,8 +27,10 @@ import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
 import com.tencent.polaris.api.pojo.HalfOpenStatus;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
+import com.tencent.polaris.circuitbreak.api.InvokeHandler;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
+import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
@@ -119,6 +121,14 @@ public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAP
         CommonValidator.validateNamespaceService(makeDecoratorRequest.getService().getNamespace(),
                 makeDecoratorRequest.getService().getService());
         return new DefaultFunctionalDecorator(makeDecoratorRequest, this);
+    }
+
+    @Override
+    public InvokeHandler makeInvokeHandler(InvokeContext.RequestContext requestContext) {
+        CommonValidator.validateService(requestContext.getService());
+        CommonValidator.validateNamespaceService(requestContext.getService().getNamespace(),
+                requestContext.getService().getService());
+        return new DefaultInvokeHandler(requestContext, this);
     }
 
 }

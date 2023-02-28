@@ -23,20 +23,19 @@ public interface InvokeHandler {
 
 	/**
 	 * acquire circuitbreaker permission, throw {@code CallAbortedException} when acquire failed
-	 * @param invokeContext
 	 */
-	void acquirePermission(InvokeContext invokeContext);
+	void acquirePermission();
 
 	/**
 	 * post process method when invoke request succeed
-	 * @param invokeContext
+	 * @param responseContext
 	 */
-	void onSuccess(InvokeContext invokeContext);
+	void onSuccess(InvokeContext.ResponseContext responseContext);
 
 	/**
 	 * post process method when invoke request failed
-	 * @param invokeContext
+	 * @param responseContext
 	 */
-	void onError(InvokeContext invokeContext);
+	void onError(InvokeContext.ResponseContext responseContext);
 
 }

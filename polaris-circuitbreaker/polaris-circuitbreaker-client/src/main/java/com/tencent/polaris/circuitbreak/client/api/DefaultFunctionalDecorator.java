@@ -19,6 +19,7 @@ package com.tencent.polaris.circuitbreak.client.api;
 
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
+import com.tencent.polaris.circuitbreak.api.InvokeHandler;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
 import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 
@@ -28,14 +29,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class DefaultFunctionalDecorator extends DefaultInvokeHandler implements FunctionalDecorator {
+public class DefaultFunctionalDecorator implements FunctionalDecorator {
 
-    private final InvokeContext invokeContext;
+    private final InvokeHandler invokeHandler;
 
     public DefaultFunctionalDecorator(FunctionalDecoratorRequest makeDecoratorRequest,
             CircuitBreakAPI circuitBreakAPI) {
-        super(circuitBreakAPI);
-        this.invokeContext = new InvokeContext(makeDecoratorRequest, null);
+        this.invokeHandler = new DefaultInvokeHandler(makeDecoratorRequest, circuitBreakAPI);
     }
 
     @Override
@@ -43,16 +43,24 @@ public class DefaultFunctionalDecorator extends DefaultInvokeHandler implements 
         return new Supplier<T>() {
             @Override
             public T get() {
-                acquirePermission(invokeContext);
+                invokeHandler.acquirePermission();
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     T result = supplier.get();
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, result, null));
-                    onSuccess(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setResult(result);
+                    invokeHandler.onSuccess(responseContext);
                     return result;
                 } catch (Throwable e) {
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
-                    onError(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setError(e);
+                    invokeHandler.onError(responseContext);
                     throw e;
                 }
             }
@@ -64,15 +72,22 @@ public class DefaultFunctionalDecorator extends DefaultInvokeHandler implements 
         return new Consumer<T>() {
             @Override
             public void accept(T t) {
-                acquirePermission(invokeContext);
+                invokeHandler.acquirePermission();
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     consumer.accept(t);
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, null));
-                    onSuccess(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    invokeHandler.onSuccess(responseContext);
                 } catch (Throwable e) {
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
-                    onError(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setError(e);
+                    invokeHandler.onError(responseContext);
                     throw e;
                 }
             }
@@ -84,16 +99,24 @@ public class DefaultFunctionalDecorator extends DefaultInvokeHandler implements 
         return new Function<T, R>() {
             @Override
             public R apply(T t) {
-                acquirePermission(invokeContext);
+                invokeHandler.acquirePermission();
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     R result = function.apply(t);
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, result, null));
-                    onSuccess(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setResult(result);
+                    invokeHandler.onSuccess(responseContext);
                     return result;
                 } catch (Throwable e) {
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
-                    onError(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setError(e);
+                    invokeHandler.onError(responseContext);
                     throw e;
                 }
             }
@@ -105,16 +128,24 @@ public class DefaultFunctionalDecorator extends DefaultInvokeHandler implements 
         return new Predicate<T>() {
             @Override
             public boolean test(T t) {
-                acquirePermission(invokeContext);
+                invokeHandler.acquirePermission();
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     boolean result = predicate.test(t);
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, result, null));
-                    onSuccess(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setResult(result);
+                    invokeHandler.onSuccess(responseContext);
                     return result;
                 } catch (Throwable e) {
-                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
-                    onError(invokeContext);
+                    long delay = System.currentTimeMillis() - startTimeMilli;
+                    InvokeContext.ResponseContext responseContext = new InvokeContext.ResponseContext();
+                    responseContext.setDuration(delay);
+                    responseContext.setDurationUnit(TimeUnit.MILLISECONDS);
+                    responseContext.setError(e);
+                    invokeHandler.onError(responseContext);
                     throw e;
                 }
             }

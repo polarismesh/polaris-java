@@ -9,35 +9,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class InvokeContext {
 
-    private RequestContext requestContext;
-
-    private ResponseContext responseContext;
-
-    public InvokeContext() {
-
-    }
-
-    public InvokeContext(RequestContext requestContext, ResponseContext responseContext) {
-        this.requestContext = requestContext;
-        this.responseContext = responseContext;
-    }
-
-    public RequestContext getRequestContext() {
-        return requestContext;
-    }
-
-    public void setRequestContext(RequestContext requestContext) {
-        this.requestContext = requestContext;
-    }
-
-    public ResponseContext getResponseContext() {
-        return responseContext;
-    }
-
-    public void setResponseContext(ResponseContext responseContext) {
-        this.responseContext = responseContext;
-    }
-
     public static class RequestContext {
 
         private ServiceKey sourceService;
@@ -50,13 +21,6 @@ public class InvokeContext {
 
         public RequestContext(){
 
-        }
-
-        public RequestContext(ServiceKey sourceService, ServiceKey service, String method, ResultToErrorCode resultToErrorCode) {
-            this.sourceService = sourceService;
-            this.service = service;
-            this.method = method;
-            this.resultToErrorCode = resultToErrorCode;
         }
 
         public ServiceKey getSourceService() {
@@ -94,6 +58,7 @@ public class InvokeContext {
     }
 
     public static class ResponseContext {
+
         private long duration;
 
         private TimeUnit durationUnit;
@@ -101,17 +66,6 @@ public class InvokeContext {
         private Object result;
 
         private Throwable error;
-
-        public ResponseContext(){
-
-        }
-
-        public ResponseContext(long duration, TimeUnit durationUnit, Object result, Throwable error) {
-            this.duration = duration;
-            this.durationUnit = durationUnit;
-            this.result = result;
-            this.error = error;
-        }
 
         public long getDuration() {
             return duration;
@@ -144,6 +98,7 @@ public class InvokeContext {
         public void setError(Throwable error) {
             this.error = error;
         }
+
     }
 
 }

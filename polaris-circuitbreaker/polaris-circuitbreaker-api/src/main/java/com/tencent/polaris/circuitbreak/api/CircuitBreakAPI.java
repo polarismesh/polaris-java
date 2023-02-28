@@ -21,6 +21,7 @@ import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
+import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 
 public interface CircuitBreakAPI {
 
@@ -47,5 +48,7 @@ public interface CircuitBreakAPI {
      * @return decorator
      */
     FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest functionalDecoratorRequest);
+
+    InvokeHandler makeInvokeHandler(InvokeContext.RequestContext requestContext);
 
 }
