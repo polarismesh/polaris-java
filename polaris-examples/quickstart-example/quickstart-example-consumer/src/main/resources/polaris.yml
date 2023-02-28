@@ -17,7 +17,8 @@ global:
     enable: true
     plugin:
       prometheus:
-        port: 28081
+        type: pull
+        port: 0
 #consumer:
 #  discoveries:
 #    - serverConnectorId: polaris

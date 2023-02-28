@@ -88,6 +88,10 @@ global:
         #类型:string
         #默认值: /metric
         path: /metric
+        #描述: 设置 prometheus http-server 的监听的IP
+        #类型:string
+        #默认值: 0.0.0.0
+        host: 0.0.0.0
         # #描述: 设置 pushgateway 的地址, 仅 type == push 时生效
         # #类型:string
         # #默认 global.serverConnector.addresses[0]:9091
