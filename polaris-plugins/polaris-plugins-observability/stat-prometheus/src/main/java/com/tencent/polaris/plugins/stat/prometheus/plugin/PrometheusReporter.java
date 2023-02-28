@@ -124,6 +124,10 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                 .getPluginConfig(getName(), PrometheusHandlerConfig.class);
         this.instanceID = extensions.getValueContext().getClientId();
         this.callerIp = StringUtils.isBlank(config.getHost()) ? extensions.getValueContext().getHost() : config.getHost();
+        this.initHandle();
+    }
+
+    void initHandle() {
         if (firstHandle.compareAndSet(false, true)) {
             if (Objects.equals(config.getType(), "push")) {
                 this.scheduledPushTask = Executors.newSingleThreadScheduledExecutor();
