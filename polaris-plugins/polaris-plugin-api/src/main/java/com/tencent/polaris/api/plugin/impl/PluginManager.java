@@ -59,9 +59,11 @@ public class PluginManager implements Manager {
         for (PluginType pluginType : pluginTypes) {
             Map<String, Plugin> plugins = new HashMap<>();
             typedPlugins.put(pluginType, plugins);
+            System.out.println(pluginType);
             ServiceLoader<? extends Plugin> loader = ServiceLoader.load(pluginType.getClazz());
             for (Plugin plugin : loader) {
                 baseId++;
+                System.out.println(plugin);
                 String name = plugin.getName();
                 if (StringUtils.isBlank(name) || plugins.containsKey(name)) {
                     throw new PolarisException(ErrorCode.PLUGIN_ERROR,

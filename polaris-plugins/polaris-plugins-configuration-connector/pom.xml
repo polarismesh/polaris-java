@@ -18,6 +18,7 @@
 	<modules>
 		<module>polaris-configuration-connector</module>
 		<module>local-file-configuration-connector</module>
+		<module>openapi-configuration-connector</module>
 	</modules>
 
 	<dependencies>

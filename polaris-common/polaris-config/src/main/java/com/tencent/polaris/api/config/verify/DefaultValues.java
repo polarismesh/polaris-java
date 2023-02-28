@@ -256,6 +256,8 @@ public interface DefaultValues {
 
 	String LOCAL_FILE_CONNECTOR_TYPE = "localFile";
 
+	String OPENAPI_CONNECTOR_TYPE = "openapi";
+
 	String PATTERN_CONFIG_FILE = "%s#%s#%s.yaml";
 
 }
