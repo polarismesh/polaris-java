@@ -8,7 +8,7 @@ global:
   serverConnector:
     # target server address
     addresses:
-      - 9.134.15.118:8091
+      - 127.0.0.1:8091
 #  serverConnectors:
 #    - id: polaris
 #      protocol: grpc
