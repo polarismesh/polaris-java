@@ -28,16 +28,14 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public class DefaultFunctionalDecorator implements FunctionalDecorator {
+public class DefaultFunctionalDecorator extends DefaultInvokeHandler implements FunctionalDecorator {
 
-    private final FunctionalDecoratorRequest makeDecoratorRequest;
-
-    private final CircuitBreakAPI circuitBreakAPI;
+    private final InvokeContext invokeContext;
 
     public DefaultFunctionalDecorator(FunctionalDecoratorRequest makeDecoratorRequest,
             CircuitBreakAPI circuitBreakAPI) {
-        this.makeDecoratorRequest = makeDecoratorRequest;
-        this.circuitBreakAPI = circuitBreakAPI;
+        super(circuitBreakAPI);
+        this.invokeContext = new InvokeContext(makeDecoratorRequest, null);
     }
 
     @Override
@@ -45,16 +43,16 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Supplier<T>() {
             @Override
             public T get() {
-                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
+                acquirePermission(invokeContext);
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     T result = supplier.get();
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, result, null));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, result, null));
+                    onSuccess(invokeContext);
                     return result;
                 } catch (Throwable e) {
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
+                    onError(invokeContext);
                     throw e;
                 }
             }
@@ -66,15 +64,15 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Consumer<T>() {
             @Override
             public void accept(T t) {
-                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
+                acquirePermission(invokeContext);
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     consumer.accept(t);
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, null));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, null));
+                    onSuccess(invokeContext);
                 } catch (Throwable e) {
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
+                    onError(invokeContext);
                     throw e;
                 }
             }
@@ -86,16 +84,16 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Function<T, R>() {
             @Override
             public R apply(T t) {
-                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
+                acquirePermission(invokeContext);
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     R result = function.apply(t);
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, result, null));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, result, null));
+                    onSuccess(invokeContext);
                     return result;
                 } catch (Throwable e) {
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
+                    onError(invokeContext);
                     throw e;
                 }
             }
@@ -107,16 +105,16 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
         return new Predicate<T>() {
             @Override
             public boolean test(T t) {
-                circuitBreakAPI.acquirePermission(new InvokeContext(makeDecoratorRequest));
+                acquirePermission(invokeContext);
                 long startTimeMilli = System.currentTimeMillis();
                 try {
                     boolean result = predicate.test(t);
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onSuccess(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, result, null));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, result, null));
+                    onSuccess(invokeContext);
                     return result;
                 } catch (Throwable e) {
-                    long delay = System.currentTimeMillis() - startTimeMilli;
-                    circuitBreakAPI.onError(new InvokeContext(makeDecoratorRequest, delay, TimeUnit.MILLISECONDS, null, e));
+                    invokeContext.setResponseContext(new InvokeContext.ResponseContext(System.currentTimeMillis() - startTimeMilli, TimeUnit.MILLISECONDS, null, e));
+                    onError(invokeContext);
                     throw e;
                 }
             }

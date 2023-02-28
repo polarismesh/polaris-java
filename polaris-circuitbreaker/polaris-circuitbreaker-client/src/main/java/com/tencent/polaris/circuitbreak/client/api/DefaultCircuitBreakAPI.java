@@ -20,22 +20,15 @@ package com.tencent.polaris.circuitbreak.client.api;
 import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
 import com.tencent.polaris.api.pojo.HalfOpenStatus;
-import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
-import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
-import com.tencent.polaris.circuitbreak.api.pojo.ResultToErrorCode;
-import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
@@ -126,81 +119,6 @@ public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAP
         CommonValidator.validateNamespaceService(makeDecoratorRequest.getService().getNamespace(),
                 makeDecoratorRequest.getService().getService());
         return new DefaultFunctionalDecorator(makeDecoratorRequest, this);
-    }
-
-    @Override
-    public boolean tryAcquirePermission(InvokeContext invokeContext) {
-        return commonCheck(invokeContext) == null;
-    }
-
-    @Override
-    public void acquirePermission(InvokeContext invokeContext) {
-        CheckResult check = commonCheck(invokeContext);
-        if (check != null){
-            throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
-        }
-    }
-
-    @Override
-    public void onSuccess(InvokeContext invokeContext) {
-        long delay = invokeContext.getDurationUnit().toMillis(invokeContext.getDuration());
-        ResultToErrorCode resultToErrorCode = invokeContext.getResultToErrorCode();
-        int code = 0;
-        RetStatus retStatus = RetStatus.RetUnknown;
-        if (null != resultToErrorCode) {
-            code = resultToErrorCode.onSuccess(invokeContext.getResult());
-        }
-        commonReport(invokeContext, delay, code, retStatus);
-    }
-
-    @Override
-    public void onError(InvokeContext invokeContext) {
-        long delay = invokeContext.getDurationUnit().toMillis(invokeContext.getDuration());
-        ResultToErrorCode resultToErrorCode = invokeContext.getResultToErrorCode();
-        int code = -1;
-        RetStatus retStatus = RetStatus.RetUnknown;
-        if (null != resultToErrorCode) {
-            code = resultToErrorCode.onError(invokeContext.getError());
-        }
-        if (invokeContext.getError() instanceof CallAbortedException) {
-            retStatus = RetStatus.RetReject;
-        }
-        commonReport(invokeContext, delay, code, retStatus);
-    }
-
-    private CheckResult commonCheck(InvokeContext invokeContext) {
-        // check service
-        Resource svcResource = new ServiceResource(invokeContext.getService(),
-                invokeContext.getSourceService());
-        CheckResult check = check(svcResource);
-        if (!check.isPass()) {
-            return check;
-        }
-        // check method
-        if (StringUtils.isNotBlank(invokeContext.getMethod())) {
-            Resource methodResource = new MethodResource(invokeContext.getService(),
-                    invokeContext.getMethod(), invokeContext.getSourceService());
-            check = check(methodResource);
-            if (!check.isPass()) {
-                return check;
-            }
-        }
-        return null;
-    }
-
-    private void commonReport(InvokeContext invokeContext, long delayMills, int code, RetStatus retStatus) {
-        // report service
-        Resource svcResource = new ServiceResource(invokeContext.getService(),
-                invokeContext.getSourceService());
-        ResourceStat resourceStat = new ResourceStat(svcResource, code, delayMills, retStatus);
-        report(resourceStat);
-        // report method
-        if (StringUtils.isNotBlank(invokeContext.getMethod())) {
-            Resource methodResource = new MethodResource(invokeContext.getService(),
-                    invokeContext.getMethod(), invokeContext.getSourceService());
-            resourceStat = new ResourceStat(methodResource, code, delayMills, retStatus);
-            report(resourceStat);
-        }
     }
 
 }

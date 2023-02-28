@@ -22,7 +22,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-public interface FunctionalDecorator {
+public interface FunctionalDecorator extends InvokeHandler {
 
     <T> Supplier<T> decorateSupplier(Supplier<T> supplier);
 

@@ -21,7 +21,6 @@ import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
-import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 
 public interface CircuitBreakAPI {
 
@@ -48,30 +47,5 @@ public interface CircuitBreakAPI {
      * @return decorator
      */
     FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest functionalDecoratorRequest);
-
-    /**
-     * try acquire circuitbreaker permission
-     * @param invokeContext
-     * @return ture when acquire succeed
-     */
-    boolean tryAcquirePermission(InvokeContext invokeContext);
-
-    /**
-     * acquire circuitbreaker permission, throw {@code CallAbortedException} when acquire failed
-     * @param invokeContext
-     */
-    void acquirePermission(InvokeContext invokeContext);
-
-    /**
-     * post process method when invoke request succeed
-     * @param invokeContext
-     */
-    void onSuccess(InvokeContext invokeContext);
-
-    /**
-     * post process method when invoke request failed
-     * @param invokeContext
-     */
-    void onError(InvokeContext invokeContext);
 
 }
