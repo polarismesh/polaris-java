@@ -19,7 +19,6 @@ public class ConfigFileExample {
 		String fileGroup = "group2";
 		String fileName = "conf/group2.json";
 
-
 		//创建配置中心服务类，一般情况下只需要单例对象
 		ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
 
