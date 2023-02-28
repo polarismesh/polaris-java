@@ -13,14 +13,12 @@ global:
   #      protocol: consul
   #      addresses:
   #        - 127.0.0.1:8500
-#  statReporter:
-#    enable: true
-#    plugin:
-#      prometheus:
-#        port: 28081
+  statReporter:
+    enable: true
+    plugin:
+      prometheus:
+        port: 28081
 #consumer:
-#  circuitBreaker:
-#    enableRemotePull: false
 #  discoveries:
 #    - serverConnectorId: polaris
 #      enable: true
