@@ -187,6 +187,8 @@ public class ResourceHealthChecker {
             detectResult = doCheck(instance, Protocol.TCP);
         }
         if (null == detectResult) {
+            LOG.info("[FAULT DETECT] instance id={} host={} port={} detect result is null",
+                    instance.getId(), instance.getHost(), instance.getPort());
             return;
         }
         ResourceStat resourceStat = new ResourceStat(resource, 0, 0, detectResult.getRetStatus());

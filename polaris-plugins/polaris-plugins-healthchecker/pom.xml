@@ -37,5 +37,19 @@
             <artifactId>polaris-config</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!--测试依赖插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-mock-discovery</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
