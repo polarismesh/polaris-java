@@ -17,11 +17,23 @@
 
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author fabian4 2023-02-28
  */
 public class RestUtils {
 
+    private static final Logger LOG = LoggerFactory.getLogger(RestUtils.class);
+
+    public static String toLogin(String address) {
+        return String.format("http://%s/core/v1/user/login", address);
+    }
 
     public static String toCreateConfigFileUrl(String address) {
         return String.format("http://%s/config/v1/configfiles", address);
@@ -29,6 +41,28 @@ public class RestUtils {
 
     public static String toReleaseConfigFileUrl(String address) {
         return String.format("http://%s/config/v1/configfiles/release", address);
+    }
+
+    public static String marshalJsonText(Object value) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            LOG.error("[Core] fail to serialize object {}", value, e);
+        }
+        return "";
+    }
+
+    public static <T> T unmarshalJsonText(String jsonText, Class<T> clazz) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        try {
+            return objectMapper.readValue(jsonText, clazz);
+        } catch (JsonProcessingException e) {
+            LOG.error("[Core] fail to parse json {} to clazz {}", jsonText, clazz.getCanonicalName(), e);
+        }
+        return null;
     }
 
 }

@@ -25,6 +25,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.plugins.connector.openapi.OpenapiServices;
 import com.tencent.polaris.plugins.connector.openapi.config.Authorization;
 
 import java.util.List;
@@ -48,15 +49,12 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        System.out.println("init");
-        System.out.println(ctx);
-        System.out.println(ctx.getConfig().getConfigFile().getServerConnector());
-        Authorization.getInstance(ctx);
+        OpenapiServices.initInstance(ctx);
     }
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
-
+        System.out.println("OpenapiServices.instance: "+OpenapiServices.instance);
     }
 
     @Override

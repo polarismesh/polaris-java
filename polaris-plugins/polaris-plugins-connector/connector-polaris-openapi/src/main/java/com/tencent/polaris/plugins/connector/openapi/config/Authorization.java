@@ -18,35 +18,37 @@
 package com.tencent.polaris.plugins.connector.openapi.config;
 
 import com.tencent.polaris.api.plugin.common.InitContext;
-import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestOperator;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestService;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestUtils;
+import org.springframework.http.HttpMethod;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author fabian4 2023-03-01
  */
 public class Authorization {
-
-    private static Authorization instance;
-
     private String name;
 
     private String password;
 
     private String token;
 
-    private Authorization(InitContext ctx) {
-        System.out.println(ctx.getConfig().getConfigFile().getServerConnector().getUsername());
-        System.out.println(ctx.getConfig().getConfigFile().getServerConnector().getPassword());
-
+    public Authorization(InitContext ctx) {
+        this.name = ctx.getConfig().getConfigFile().getServerConnector().getUsername();
+        this.password = ctx.getConfig().getConfigFile().getServerConnector().getPassword();
     }
 
-    public static Authorization getInstance(InitContext ctx) {
-        if (instance == null) {
-            synchronized (Authorization.class) {
-                if (instance == null) {
-                    instance = new Authorization(ctx);
-                }
-            }
-        }
-        return instance;
+    public void generateToken(List<String> addresses) {
+        String address = RestOperator.pickAddress(addresses);
+        Map<String, String> params = new HashMap<>();
+        params.put("name", name);
+        params.put("password", password);
+        System.out.println(RestUtils.marshalJsonText(params));
+        RestService.sendPost(HttpMethod.POST, RestUtils.toLogin(address), null, RestUtils.marshalJsonText(params));
     }
 }

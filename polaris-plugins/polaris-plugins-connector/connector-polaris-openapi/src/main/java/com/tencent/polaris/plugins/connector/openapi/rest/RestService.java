@@ -32,8 +32,14 @@ public class RestService {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestService.class);
 
-    public static ConfigFileResponse sendPost(RestOperator restOperator, HttpMethod method,
-                                               String url, String token, String body) {
+    private static final RestOperator restOperator = new RestOperator();
+
+    public static RestOperator getRestOperator() {
+        return restOperator;
+    }
+
+    public static void sendPost(HttpMethod method,
+                                              String url, String token, String body) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-Polaris-Token", token);
@@ -43,6 +49,8 @@ public class RestService {
 
         RestResponse<String> restResponse = restOperator
                 .curlRemoteEndpoint(url, method, entity, String.class);
+
+        System.out.println(restResponse.getResponseEntity().toString());
 //        if (restResponse.hasServerError()) {
 //            LOG.error("[Polaris] server error to send post {}, method {}, reason {}",
 //                    url, method, restResponse.getException().getMessage());
@@ -63,7 +71,6 @@ public class RestService {
 //        }
 //        LOG.info("[Polaris] success to send post {}, method {}", url, method);
 //        return ResponseUtils.toConfigFilesResponse(null, StatusCodes.SUCCESS);
-        return null;
     }
 
     private ConfigFileResponse handleResponse(RestResponse<String> response) {
