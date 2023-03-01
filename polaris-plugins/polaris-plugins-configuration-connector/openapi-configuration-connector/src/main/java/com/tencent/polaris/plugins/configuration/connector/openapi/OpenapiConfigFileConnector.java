@@ -47,6 +47,9 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
+        System.out.println("init");
+        System.out.println(ctx);
+        System.out.println(ctx.getConfig().getConfigFile().getServerConnector());
 
     }
 

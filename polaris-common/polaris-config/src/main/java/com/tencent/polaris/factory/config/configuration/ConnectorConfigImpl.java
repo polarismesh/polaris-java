@@ -9,8 +9,7 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
-import static com.tencent.polaris.api.config.verify.DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
-import static com.tencent.polaris.api.config.verify.DefaultValues.LOCAL_FILE_CONNECTOR_TYPE;
+import static com.tencent.polaris.api.config.verify.DefaultValues.*;
 
 /**
  * 配置中心连接器配置
@@ -44,6 +43,10 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
 	@Override
 	public void verify() {
 		ConfigUtils.validateString(connectorType, "configConnectorType");
+		if(StringUtils.equals(connectorType, OPENAPI_CONNECTOR_TYPE)) {
+			ConfigUtils.validateString(getUsername(), "Username");
+			ConfigUtils.validateString(getPassword(), "Password");
+		}
 		if (StringUtils.isBlank(persistDir)) {
 			persistDir = CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
 		}
