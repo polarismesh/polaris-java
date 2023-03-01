@@ -18,7 +18,10 @@
 package com.tencent.polaris.plugins.connector.openapi;
 
 import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.plugins.connector.openapi.config.Authorization;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestService;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestUtils;
 
 import java.util.List;
 
@@ -33,9 +36,18 @@ public class OpenapiServices {
 
     private List<String> address;
 
-    public OpenapiServices(InitContext ctx) {
+    private OpenapiServices(InitContext ctx) {
         this.address = ctx.getConfig().getConfigFile().getServerConnector().getAddresses();
         Authorization authorization = new Authorization(ctx);
-        authorization.generateToken(address);
+        this.token = authorization.generateToken(address);
+    }
+
+    public static void initInstance(InitContext ctx) {
+        instance = new OpenapiServices(ctx);
+    }
+
+    public void getConfigFile(ConfigFile configFile) {
+        System.out.println("token: " + token);
+        RestService.getConfigFile(RestUtils.toConfigFileUrl(address), "******", configFile);
     }
 }

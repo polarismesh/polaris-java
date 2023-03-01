@@ -22,7 +22,9 @@ import com.tencent.polaris.plugins.connector.openapi.model.LoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author fabian4 2023-02-28
@@ -31,22 +33,43 @@ public class RestUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestUtils.class);
 
-    public static String toLogin(String address) {
+    public static String toLogin(List<String> addresses) {
+        String address = pickAddress(addresses);
         return String.format("http://%s/core/v1/user/login", address);
     }
 
-    public static String toCreateConfigFileUrl(String address) {
+    public static String toConfigFileUrl(List<String> addresses) {
+        String address = pickAddress(addresses);
         return String.format("http://%s/config/v1/configfiles", address);
     }
 
-    public static String toReleaseConfigFileUrl(String address) {
+    public static String toReleaseConfigFileUrl(List<String> addresses) {
+        String address = pickAddress(addresses);
         return String.format("http://%s/config/v1/configfiles/release", address);
+    }
+
+
+    public static String pickAddress(List<String> addresses) {
+        if (addresses.size() == 1) {
+            return addresses.get(0);
+        }
+        int i = ThreadLocalRandom.current().nextInt(addresses.size());
+        return addresses.get(i);
     }
 
     public static String phraseToken(RestResponse<String> restResponse) {
         String jsonStr = restResponse.getResponseEntity().getBody();
         LoginResponse loginResponse = JSONObject.parseObject(Objects.requireNonNull(jsonStr), LoginResponse.class);
         return loginResponse.getToken();
+    }
+
+    public static String encodeUrl(String url, JSONObject params) {
+        System.out.println("=============");
+        System.out.println(params.toJSONString());
+        StringBuilder sb = new StringBuilder(url);
+        sb.append("?");
+        params.keySet().forEach(key -> sb.append(key).append("=").append(params.get(key)).append("&"));
+        return sb.toString();
     }
 
 }

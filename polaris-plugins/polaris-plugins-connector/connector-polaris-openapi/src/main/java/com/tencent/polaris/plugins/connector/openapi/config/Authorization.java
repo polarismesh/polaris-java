@@ -43,11 +43,10 @@ public class Authorization {
     }
 
     public String generateToken(List<String> addresses) {
-        String address = RestOperator.pickAddress(addresses);
         JSONObject params = new JSONObject();
         params.put("name", name);
         params.put("password", password);
-        RestResponse<String> restResponse = RestService.sendPost(HttpMethod.POST, RestUtils.toLogin(address), null, params.toString());
+        RestResponse<String> restResponse = RestService.sendPost(HttpMethod.POST, RestUtils.toLogin(addresses), null, params);
         return RestUtils.phraseToken(restResponse);
     }
 }

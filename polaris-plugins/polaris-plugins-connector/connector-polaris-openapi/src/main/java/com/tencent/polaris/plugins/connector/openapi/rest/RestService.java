@@ -17,15 +17,18 @@
 
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
+import com.alibaba.fastjson.JSONObject;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+
+import java.util.Objects;
 
 /**
  * @author fabian4 2023-02-28
@@ -36,58 +39,41 @@ public class RestService {
 
     private static final RestOperator restOperator = new RestOperator();
 
-    public static RestOperator getRestOperator() {
-        return restOperator;
+    public static RestResponse<String> getConfigFile(String url, String token, ConfigFile configFile) {
+        JSONObject params = new JSONObject();
+        params.put("name", configFile.getFileName());
+        params.put("group", configFile.getFileGroup());
+        params.put("namespace", configFile.getNamespace());
+        RestResponse<String> restResponse = sendPost(HttpMethod.GET, url, token, params);
+        System.out.println(restResponse);
+        return null;
     }
 
-    public static RestResponse<String> sendPost(HttpMethod method, String url, String token, String body) {
-
+    public static RestResponse<String> sendPost(HttpMethod method, String url, String token, JSONObject params) {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-Polaris-Token", token);
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
-        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        if (method == HttpMethod.GET && Objects.nonNull(params)) {
+            url = RestUtils.encodeUrl(url, params);
+        } else if (method == HttpMethod.POST) {
+            entity = new HttpEntity<>(params.toString(), headers);
+        }
+
+        LOG.warn("[Polaris] server error to send request {}, body {}, method {}, token {}",
+                url, params.toString(), method, token);
+
 
         RestResponse<String> restResponse = restOperator
                 .curlRemoteEndpoint(url, method, entity, String.class);
 
         if (restResponse.hasServerError()) {
-            LOG.error("[Polaris] server error to send post {}, body {}, method {}, reason {}",
-                    url, body, method, restResponse.getException().getMessage());
+            LOG.error("[Polaris] server error to send request {}, body {}, method {}, reason {}",
+                    url, params.toString(), method, restResponse.getException().getMessage());
             throw new PolarisException(ErrorCode.SERVER_EXCEPTION, restResponse.getException().getMessage());
         }
         return restResponse;
-
-//        if (restResponse.hasTextError()) {
-//            if (StringUtils.contains(restResponse.getStatusText(), "existed resource")) {
-//                LOG.debug("[Polaris] text error to send post {}, method {}, code {}, reason {}",
-//                        url, method, restResponse.getRawStatusCode(),
-//                        restResponse.getStatusText());
-//            } else {
-//                LOG.warn("[Polaris] text error to send post {}, method {}, code {}, reason {}",
-//                        url, method, restResponse.getRawStatusCode(),
-//                        restResponse.getStatusText());
-//            }
-//            return ResponseUtils.toConfigFilesResponse(null, ResponseUtils.normalizeStatusCode(
-//                    restResponse.getRawStatusCode()));
-//        }
-//        LOG.info("[Polaris] success to send post {}, method {}", url, method);
-//        return ResponseUtils.toConfigFilesResponse(null, StatusCodes.SUCCESS);
-    }
-
-    private ConfigFileResponse handleResponse(RestResponse<String> response) {
-//        int code = response.getCode().getValue();
-//        int code = response.getRawStatusCode();
-//        //预期code，正常响应
-//        if (code == ServerCodes.EXECUTE_SUCCESS ||
-//                code == ServerCodes.NOT_FOUND_RESOURCE ||
-//                code == ServerCodes.DATA_NO_CHANGE) {
-//            ConfigFile loadedConfigFile = transferFromDTO(response.getConfigFile());
-//            return new ConfigFileResponse(code, response.getInfo().getValue(), loadedConfigFile);
-//        }
-//        //服务端异常
-//        throw ServerErrorResponseException.build(code, response.getInfo().getValue());
-//    }
-        return null;
     }
 }

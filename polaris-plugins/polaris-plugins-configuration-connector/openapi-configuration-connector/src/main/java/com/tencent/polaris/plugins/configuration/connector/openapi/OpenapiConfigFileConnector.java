@@ -49,12 +49,12 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        new OpenapiServices(ctx);
+        OpenapiServices.initInstance(ctx);
     }
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
-        System.out.println("OpenapiServices.instance: "+OpenapiServices.instance);
+
     }
 
     @Override
@@ -64,6 +64,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public ConfigFileResponse getConfigFile(ConfigFile configFile) {
+        OpenapiServices.instance.getConfigFile(configFile);
         return null;
     }
 

@@ -46,14 +46,6 @@ public class RestOperator {
         restTemplate = restTemplateBuilder.build();
     }
 
-    public static String pickAddress(List<String> addresses) {
-        if (addresses.size() == 1) {
-            return addresses.get(0);
-        }
-        int i = ThreadLocalRandom.current().nextInt(addresses.size());
-        return addresses.get(i);
-    }
-
     public <T> RestResponse<T> curlRemoteEndpoint(String url, HttpMethod method,
                                                   HttpEntity<?> requestEntity, Class<T> clazz) {
         ResponseEntity<T> queryEntity;
