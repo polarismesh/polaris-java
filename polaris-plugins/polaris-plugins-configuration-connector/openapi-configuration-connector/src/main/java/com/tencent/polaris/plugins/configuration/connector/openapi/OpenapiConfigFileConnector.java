@@ -25,6 +25,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.plugins.connector.openapi.config.Authorization;
 
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
         System.out.println("init");
         System.out.println(ctx);
         System.out.println(ctx.getConfig().getConfigFile().getServerConnector());
-
+        Authorization.getInstance(ctx);
     }
 
     @Override

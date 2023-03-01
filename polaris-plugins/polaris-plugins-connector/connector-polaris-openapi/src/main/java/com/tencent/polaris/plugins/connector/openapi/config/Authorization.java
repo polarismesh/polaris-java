@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.openapi.config;
 
+import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.client.api.SDKContext;
 
 /**
@@ -32,16 +33,17 @@ public class Authorization {
 
     private String token;
 
-    private Authorization(SDKContext sdkContext) {
-        System.out.println(sdkContext.getConfig().getConfigFile());
+    private Authorization(InitContext ctx) {
+        System.out.println(ctx.getConfig().getConfigFile().getServerConnector().getUsername());
+        System.out.println(ctx.getConfig().getConfigFile().getServerConnector().getPassword());
 
     }
 
-    public static Authorization getInstance(SDKContext sdkContext) {
+    public static Authorization getInstance(InitContext ctx) {
         if (instance == null) {
             synchronized (Authorization.class) {
                 if (instance == null) {
-                    instance = new Authorization(sdkContext);
+                    instance = new Authorization(ctx);
                 }
             }
         }
