@@ -81,7 +81,7 @@ global:
         type: pull
         #描述: 设置 prometheus http-server 的监听端口
         #类型:int
-        #默认值: 28080
+        #默认值: 28080, 默认会自动从 [28080, 28090] 进行逐个探测占用
         #如果设置为负数，则不会开启默认的http-server，如果设置为0，则随机选择一个可用端口进行启动 http-server
         port: 28080
         #描述: 设置 prometheus http-server 的拉取path

@@ -31,11 +31,16 @@ import org.slf4j.Logger;
 public class PrometheusHandlerConfig implements Verifier {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusHandlerConfig.class);
+
+    public static final Integer DEFAULT_MIN_PULL_PORT = 28080;
+
+    public static final Integer DEFAULT_MAX_PULL_PORT = DEFAULT_MIN_PULL_PORT + 10;
+
     @JsonProperty
     private String host = "0.0.0.0";
 
     @JsonProperty
-    private Integer port = 28080;
+    private Integer port = DEFAULT_MIN_PULL_PORT;
 
     @JsonProperty
     private String path = "/metrics";

@@ -13,4 +13,4 @@ global:
     plugin:
       prometheus:
         type: pull
-        port: 0
+        port: 28080

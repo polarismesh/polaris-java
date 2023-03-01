@@ -92,14 +92,25 @@ public class PrometheusHttpServer {
             this.port = randomPort;
             return;
         }
+        if (port == PrometheusHandlerConfig.DEFAULT_MIN_PULL_PORT) {
+            for (int i = PrometheusHandlerConfig.DEFAULT_MIN_PULL_PORT; i <= PrometheusHandlerConfig.DEFAULT_MAX_PULL_PORT; i ++) {
+                if (isPortAvailable(i)) {
+                    this.port = i;
+                    return;
+                }
+            }
+            String errMsg = String.format("prometheus http server port from %s to %d is used, " +
+                    "please modify ${global.statReporter.plugin.prometheus.port} in polaris.yml",
+                    PrometheusHandlerConfig.DEFAULT_MIN_PULL_PORT, PrometheusHandlerConfig.DEFAULT_MAX_PULL_PORT);
+
+            throw new RuntimeException(errMsg);
+        }
         this.port = port;
     }
 
     private boolean isPortAvailable(int port) {
         try {
-            bindPort("0.0.0.0", port);
-            bindPort(InetAddress.getLocalHost().getHostAddress(), port);
-            bindPort(InetAddress.getLoopbackAddress().getHostAddress(), port);
+            bindPort(this.host, port);
             return true;
         } catch (Exception ignored) {
         }
