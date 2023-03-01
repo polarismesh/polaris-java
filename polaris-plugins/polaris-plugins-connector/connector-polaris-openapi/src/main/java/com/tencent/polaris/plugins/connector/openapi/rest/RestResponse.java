@@ -90,5 +90,15 @@ public class RestResponse<T> {
     public String getStatusText() {
         return statusText;
     }
+
+    @Override
+    public String toString() {
+        return "RestResponse{" +
+                "exception=" + exception +
+                ", responseEntity=" + responseEntity +
+                ", rawStatusCode=" + rawStatusCode +
+                ", statusText='" + statusText + '\'' +
+                '}';
+    }
 }
 

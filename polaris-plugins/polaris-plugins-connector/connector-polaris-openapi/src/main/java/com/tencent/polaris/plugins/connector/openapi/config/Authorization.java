@@ -17,11 +17,15 @@
 
 package com.tencent.polaris.plugins.connector.openapi.config;
 
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestOperator;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestResponse;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestService;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestUtils;
+import jdk.nashorn.internal.parser.JSONParser;
 import org.springframework.http.HttpMethod;
 
 import java.util.HashMap;
@@ -45,10 +49,10 @@ public class Authorization {
 
     public void generateToken(List<String> addresses) {
         String address = RestOperator.pickAddress(addresses);
-        Map<String, String> params = new HashMap<>();
+        JSONObject params = new JSONObject();
         params.put("name", name);
         params.put("password", password);
-        System.out.println(RestUtils.marshalJsonText(params));
-        RestService.sendPost(HttpMethod.POST, RestUtils.toLogin(address), null, RestUtils.marshalJsonText(params));
+        RestResponse<String> restResponse = RestService.sendPost(HttpMethod.POST, RestUtils.toLogin(address), null, params.toString());
+//        this.token = JSONObject.parseObject(restResponse.getResponseEntity().getBody()).getString("loginResponse")
     }
 }

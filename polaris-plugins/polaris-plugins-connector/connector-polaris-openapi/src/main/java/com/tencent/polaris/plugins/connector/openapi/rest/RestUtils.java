@@ -65,5 +65,12 @@ public class RestUtils {
         return null;
     }
 
+    public static String phraseToken(RestResponse<String> restResponse) {
+        String token = restResponse.getResponseEntity().getBody();
+        System.out.println(token);
+//        System.out.println(unmarshalJsonText(token, ));
+        return token;
+    }
+
 }
 

@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +40,7 @@ public class RestService {
         return restOperator;
     }
 
-    public static void sendPost(HttpMethod method,
-                                              String url, String token, String body) {
+    public static RestResponse<String> sendPost(HttpMethod method, String url, String token, String body) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-Polaris-Token", token);
@@ -50,12 +51,13 @@ public class RestService {
         RestResponse<String> restResponse = restOperator
                 .curlRemoteEndpoint(url, method, entity, String.class);
 
-        System.out.println(restResponse.getResponseEntity().toString());
-//        if (restResponse.hasServerError()) {
-//            LOG.error("[Polaris] server error to send post {}, method {}, reason {}",
-//                    url, method, restResponse.getException().getMessage());
-//            return ResponseUtils.toConfigFilesResponse(null, StatusCodes.CONNECT_EXCEPTION);
-//        }
+        if (restResponse.hasServerError()) {
+            LOG.error("[Polaris] server error to send post {}, body {}, method {}, reason {}",
+                    url, body, method, restResponse.getException().getMessage());
+            throw new PolarisException(ErrorCode.SERVER_EXCEPTION, restResponse.getException().getMessage());
+        }
+        return restResponse;
+
 //        if (restResponse.hasTextError()) {
 //            if (StringUtils.contains(restResponse.getStatusText(), "existed resource")) {
 //                LOG.debug("[Polaris] text error to send post {}, method {}, code {}, reason {}",
