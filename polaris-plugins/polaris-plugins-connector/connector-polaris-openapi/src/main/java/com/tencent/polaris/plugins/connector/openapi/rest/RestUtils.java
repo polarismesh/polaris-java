@@ -17,12 +17,12 @@
 
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.alibaba.fastjson.JSONObject;
+import com.tencent.polaris.plugins.connector.openapi.model.LoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 /**
  * @author fabian4 2023-02-28
@@ -43,33 +43,10 @@ public class RestUtils {
         return String.format("http://%s/config/v1/configfiles/release", address);
     }
 
-    public static String marshalJsonText(Object value) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
-            LOG.error("[Core] fail to serialize object {}", value, e);
-        }
-        return "";
-    }
-
-    public static <T> T unmarshalJsonText(String jsonText, Class<T> clazz) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        try {
-            return objectMapper.readValue(jsonText, clazz);
-        } catch (JsonProcessingException e) {
-            LOG.error("[Core] fail to parse json {} to clazz {}", jsonText, clazz.getCanonicalName(), e);
-        }
-        return null;
-    }
-
     public static String phraseToken(RestResponse<String> restResponse) {
-        String token = restResponse.getResponseEntity().getBody();
-        System.out.println(token);
-//        System.out.println(unmarshalJsonText(token, ));
-        return token;
+        String jsonStr = restResponse.getResponseEntity().getBody();
+        LoginResponse loginResponse = JSONObject.parseObject(Objects.requireNonNull(jsonStr), LoginResponse.class);
+        return loginResponse.getToken();
     }
 
 }

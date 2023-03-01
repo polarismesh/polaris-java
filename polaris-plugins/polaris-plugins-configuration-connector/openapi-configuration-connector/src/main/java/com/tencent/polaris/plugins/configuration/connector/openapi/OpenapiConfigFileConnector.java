@@ -49,7 +49,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        OpenapiServices.initInstance(ctx);
+        new OpenapiServices(ctx);
     }
 
     @Override
@@ -64,9 +64,6 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public ConfigFileResponse getConfigFile(ConfigFile configFile) {
-        System.out.println("===============");
-//        RestService.sendPost(new RestOperator(), HttpMethod.POST, RestUtils.toCreateConfigFileUrl(""),
-//                token, );
         return null;
     }
 

@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
-import org.apache.commons.lang.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
@@ -67,28 +66,12 @@ public class RestResponse<T> {
         return null == exception && null == responseEntity;
     }
 
-    public boolean isNotFound() {
-        return hasTextError() && (rawStatusCode == 404 || StringUtils.equalsIgnoreCase(statusText, "not found resource"));
-    }
-
-    public boolean hasNormalResponse() {
-        return null != responseEntity;
-    }
-
     public RestClientException getException() {
         return exception;
     }
 
     public ResponseEntity<T> getResponseEntity() {
         return responseEntity;
-    }
-
-    public int getRawStatusCode() {
-        return rawStatusCode;
-    }
-
-    public String getStatusText() {
-        return statusText;
     }
 
     @Override

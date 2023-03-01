@@ -33,15 +33,9 @@ public class OpenapiServices {
 
     private List<String> address;
 
-    private OpenapiServices(InitContext ctx) {
+    public OpenapiServices(InitContext ctx) {
         this.address = ctx.getConfig().getConfigFile().getServerConnector().getAddresses();
         Authorization authorization = new Authorization(ctx);
         authorization.generateToken(address);
-    }
-
-    public static void initInstance(InitContext ctx) {
-        if (instance == null) {
-            instance = new OpenapiServices(ctx);
-        }
     }
 }
