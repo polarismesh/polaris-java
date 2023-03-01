@@ -91,11 +91,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     private PrometheusHttpServer httpServer;
 
-    private ScheduledExecutorService reportClientExecutor;
-
-    private ScheduledExecutorService scheduledAggregationTask;
-
-    private ScheduledExecutorService scheduledPushTask;
+    private ScheduledExecutorService executorService;
 
     private PushGateway pushGateway;
 
@@ -128,13 +124,11 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     }
 
     void initHandle() {
+        this.executorService = Executors.newScheduledThreadPool(4, new NamedThreadFactory(getName()));
         if (firstHandle.compareAndSet(false, true)) {
             if (Objects.equals(config.getType(), "push")) {
-                this.scheduledPushTask = Executors.newSingleThreadScheduledExecutor();
                 startSchedulePushTask();
             } else {
-                this.scheduledAggregationTask = Executors.newSingleThreadScheduledExecutor();
-                this.reportClientExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(getName()));
                 startScheduleAggregationTask();
                 reportClient(extensions);
             }
@@ -235,20 +229,11 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         if (Objects.isNull(config)) {
             return;
         }
-        if (Objects.equals(config.getType(), "push")) {
-            if (Objects.nonNull(scheduledPushTask)) {
-                scheduledPushTask.shutdown();
-            }
-        } else {
-            if (Objects.nonNull(scheduledAggregationTask)) {
-                scheduledAggregationTask.shutdown();
-            }
-            if (Objects.nonNull(reportClientExecutor)) {
-                reportClientExecutor.shutdown();
-            }
-            if (Objects.nonNull(httpServer)) {
-                httpServer.stopServer();
-            }
+        if (Objects.nonNull(executorService)) {
+            executorService.shutdown();
+        }
+        if (Objects.nonNull(httpServer)) {
+            httpServer.stopServer();
         }
     }
 
@@ -258,8 +243,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
      * @param extensions extensions
      */
     private void reportClient(Extensions extensions) {
-        if (reportClientExecutor != null) {
-            reportClientExecutor.scheduleAtFixedRate(() -> {
+        if (executorService != null) {
+            executorService.scheduleAtFixedRate(() -> {
                 ServerConnector serverConnector = extensions.getServerConnector();
                 ReportClientRequest reportClientRequest = new ReportClientRequest();
                 reportClientRequest.setClientHost(extensions.getValueContext().getHost());
@@ -278,11 +263,12 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     private void startScheduleAggregationTask() {
         // If port is -1, then disable prometheus http server
         if (config.getPort() == -1) {
+            LOGGER.info("[Metrics][Prometheus] port == -1, disable run prometheus http-server");
             return;
         }
         httpServer = new PrometheusHttpServer(config.getHost(), config.getPort(), promRegistry);
-        if (null != container && null != scheduledAggregationTask && null != sampleMapping) {
-            this.scheduledAggregationTask.scheduleWithFixedDelay(this::doAggregation,
+        if (null != container && null != executorService && null != sampleMapping) {
+            this.executorService.scheduleWithFixedDelay(this::doAggregation,
                     CommonHandler.DEFAULT_INTERVAL_MILLI,
                     CommonHandler.DEFAULT_INTERVAL_MILLI,
                     TimeUnit.MILLISECONDS);
@@ -319,8 +305,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             }
         }
 
-        if (null != container && null != scheduledPushTask && null != sampleMapping) {
-            this.scheduledPushTask.scheduleWithFixedDelay(this::doPush,
+        if (null != container && null != executorService && null != sampleMapping) {
+            this.executorService.scheduleWithFixedDelay(this::doPush,
                     config.getPushInterval(),
                     config.getPushInterval(),
                     TimeUnit.MILLISECONDS);
