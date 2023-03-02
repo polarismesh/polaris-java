@@ -12,7 +12,7 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
  */
 public class ConfigFileServiceFactory {
 
-    private static DefaultConfigFileService configFileService;
+    private static volatile DefaultConfigFileService configFileService;
 
     public static ConfigFileService createConfigFileService() throws PolarisException {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
