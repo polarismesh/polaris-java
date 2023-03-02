@@ -63,8 +63,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public ConfigFileResponse getConfigFile(ConfigFile configFile) {
-        OpenapiServices.instance.getConfigFile(configFile);
-        return null;
+        return OpenapiServices.instance.getConfigFile(configFile);
     }
 
     @Override

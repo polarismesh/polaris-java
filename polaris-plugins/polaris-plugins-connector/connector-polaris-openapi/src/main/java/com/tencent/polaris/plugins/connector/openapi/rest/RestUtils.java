@@ -18,11 +18,13 @@
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
 import com.alibaba.fastjson.JSONObject;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -63,6 +65,19 @@ public class RestUtils {
         sb.append("?");
         params.keySet().forEach(key -> sb.append(key).append("=").append(params.get(key)).append("&"));
         return sb.toString();
+    }
+
+    public static ConfigFile transferFromDTO(ConfigClientFile configClientFile) {
+        if (configClientFile == null) {
+            return null;
+        }
+
+        ConfigFile configFile = new ConfigFile(configClientFile.getNamespace(),
+                configClientFile.getGroup(),
+                configClientFile.getName());
+        configFile.setContent(configClientFile.getContent());
+
+        return configFile;
     }
 
 }

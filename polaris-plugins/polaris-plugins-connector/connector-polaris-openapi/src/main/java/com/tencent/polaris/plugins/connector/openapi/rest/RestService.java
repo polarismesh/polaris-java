@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
@@ -39,12 +40,13 @@ public class RestService {
 
     private static final RestOperator restOperator = new RestOperator();
 
-    public static RestResponse<String> getConfigFile(String url, String token, ConfigFile configFile) {
+    public static ConfigClientResponse getConfigFile(String url, String token, ConfigFile configFile) {
         JSONObject params = new JSONObject();
         params.put("name", configFile.getFileName());
         params.put("group", configFile.getFileGroup());
         params.put("namespace", configFile.getNamespace());
-        return sendPost(HttpMethod.GET, url, token, params);
+        RestResponse<String> restResponse = sendPost(HttpMethod.GET, url, token, params);
+        return JSONObject.parseObject(restResponse.getResponseEntity().getBody(), ConfigClientResponse.class);
     }
 
     public static RestResponse<String> sendPost(HttpMethod method, String url, String token, JSONObject params) {

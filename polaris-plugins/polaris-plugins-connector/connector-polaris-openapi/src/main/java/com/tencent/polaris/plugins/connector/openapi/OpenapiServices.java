@@ -18,13 +18,18 @@
 package com.tencent.polaris.plugins.connector.openapi;
 
 import com.alibaba.fastjson.JSONObject;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientResponse;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestResponse;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestService;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestUtils;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author fabian4 2023-03-01
@@ -46,9 +51,16 @@ public class OpenapiServices {
         instance = new OpenapiServices(ctx);
     }
 
-    public void getConfigFile(ConfigFile configFile) {
-        RestResponse<String> response = RestService.getConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
-        Object file = JSONObject.parseObject(response.getResponseEntity().getBody()).get("configFile");
-
+    public ConfigFileResponse getConfigFile(ConfigFile configFile) {
+        ConfigClientResponse configClientResponse = RestService.getConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+        int code = Integer.parseInt(configClientResponse.getCode());
+        //预期code，正常响应
+        if (code == ServerCodes.EXECUTE_SUCCESS ||
+                code == ServerCodes.NOT_FOUND_RESOURCE ||
+                code == ServerCodes.DATA_NO_CHANGE) {
+            ConfigFile loadedConfigFile = RestUtils.transferFromDTO(configClientResponse.getConfigFile());
+            return new ConfigFileResponse(code, configClientResponse.getInfo(), loadedConfigFile);
+        }
+        throw ServerErrorResponseException.build(code, configClientResponse.getInfo());
     }
 }
