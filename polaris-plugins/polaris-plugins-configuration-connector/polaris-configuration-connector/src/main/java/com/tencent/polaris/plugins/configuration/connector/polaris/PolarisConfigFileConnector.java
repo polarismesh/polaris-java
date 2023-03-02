@@ -117,12 +117,12 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void createConfigFileAndRelease(ConfigFile configFile) {
-
+        throw new PolarisException(ErrorCode.NOT_SUPPORT, "PolarisConfigFileConnector does not support create configuration file through GRPC.");
     }
 
     @Override
     public void updateConfigFileAndRelease(ConfigFile configFile) {
-
+        throw new PolarisException(ErrorCode.NOT_SUPPORT, "PolarisConfigFileConnector does not support update configuration file through GRPC.");
     }
 
     @Override

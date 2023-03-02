@@ -68,7 +68,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public ConfigFileResponse watchConfigFiles(List<ConfigFile> configFiles) {
-        throw new PolarisException(ErrorCode.NOT_SUPPORT, "Openapi does not support config file watch.");
+        throw new PolarisException(ErrorCode.NOT_SUPPORT, "OpenapiConfigFileConnector does not support config file watch through HTTP.");
     }
 
     @Override
