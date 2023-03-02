@@ -40,9 +40,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
 	}
 
-	public RemoteConfigFileRepo(SDKContext sdkContext, ConfigFileMetadata configFileMetadata, String content) {
+	public RemoteConfigFileRepo(SDKContext sdkContext, ConfigFileMetadata configFileMetadata) {
 		super(sdkContext, configFileMetadata);
-		setContent(content);
 		remoteConfigFile = new AtomicReference<>();
 		notifiedVersion = new AtomicLong(INIT_VERSION);
 		retryPolicy = new ExponentialRetryPolicy(1, 120);
@@ -123,11 +122,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 	@Override
 	public String getContent() {
 		return remoteConfigFile.get() != null ? remoteConfigFile.get().getContent() : null;
-	}
-
-	@Override
-	public void setContent(String content) {
-		remoteConfigFile.get().setContent(content);
 	}
 
 	public long getConfigFileVersion() {
@@ -275,20 +269,20 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		return configFile;
 	}
 
-	public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata) {
+	public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
 		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
 				configFileMetadata.getFileGroup(),
 				configFileMetadata.getFileName());
 		configFile.setContent(this.getContent());
-		configFileConnector.createConfigFileAndRelease(configFile);
+		configFileConnector.createConfigFileAndRelease(configFile, content);
 	}
 
-	public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata) {
+	public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
 		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
 				configFileMetadata.getFileGroup(),
 				configFileMetadata.getFileName());
 		configFile.setContent(this.getContent());
-		configFileConnector.updateConfigFileAndRelease(configFile);
+		configFileConnector.updateConfigFileAndRelease(configFile, content);
 	}
 
 }

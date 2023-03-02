@@ -72,12 +72,14 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
     }
 
     @Override
-    public void createConfigFileAndRelease(ConfigFile configFile) {
-
+    public void createConfigFileAndRelease(ConfigFile configFile, String content) {
+        System.out.println("===================");
+        System.out.println(content);
+        System.out.println(configFile);
     }
 
     @Override
-    public void updateConfigFileAndRelease(ConfigFile configFile) {
+    public void updateConfigFileAndRelease(ConfigFile configFile, String content) {
 
     }
 }

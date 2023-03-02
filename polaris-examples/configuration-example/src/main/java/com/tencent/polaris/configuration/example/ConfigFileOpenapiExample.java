@@ -22,10 +22,12 @@ public class ConfigFileOpenapiExample {
         //创建配置中心服务类，一般情况下只需要单例对象
         ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
 
-        //获取配置文件
-        ConfigFile configFile = configFileService.getConfigFile(namespace, fileGroup, fileName);
+//        //获取配置文件
+//        ConfigFile configFile = configFileService.getConfigFile(namespace, fileGroup, fileName);
+//
+//        //打印配置文件内容
+//        Utils.print(configFile.getContent());
 
-        //打印配置文件内容
-        Utils.print(configFile.getContent());
+        configFileService.createConfigFileAndRelease(namespace, fileGroup, fileName, "redis.cache.age=100");
     }
 }

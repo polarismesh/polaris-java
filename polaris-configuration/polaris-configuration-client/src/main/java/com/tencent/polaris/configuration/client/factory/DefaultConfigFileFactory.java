@@ -70,14 +70,14 @@ public class DefaultConfigFileFactory implements ConfigFileFactory {
 
     @Override
     public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
-        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata, content);
-        remoteConfigFileRepo.createConfigFileAndRelease(configFileMetadata);
+        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata);
+        remoteConfigFileRepo.createConfigFileAndRelease(configFileMetadata, content);
     }
 
     @Override
     public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
-        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata, content);
-        remoteConfigFileRepo.updateConfigFileAndRelease(configFileMetadata);
+        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata);
+        remoteConfigFileRepo.updateConfigFileAndRelease(configFileMetadata, content);
     }
 
     private ConfigFileRepo createConfigFileRepo(ConfigFileMetadata configFileMetadata) {

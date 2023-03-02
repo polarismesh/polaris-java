@@ -138,12 +138,12 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 	}
 
 	@Override
-	public void createConfigFileAndRelease(ConfigFile configFile) {
+	public void createConfigFileAndRelease(ConfigFile configFile, String content) {
 
 	}
 
 	@Override
-	public void updateConfigFileAndRelease(ConfigFile configFile) {
+	public void updateConfigFileAndRelease(ConfigFile configFile, String content) {
 
 	}
 
