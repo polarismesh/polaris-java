@@ -59,8 +59,6 @@ public class RestUtils {
     }
 
     public static String encodeUrl(String url, JSONObject params) {
-        System.out.println("=============");
-        System.out.println(params.toJSONString());
         StringBuilder sb = new StringBuilder(url);
         sb.append("?");
         params.keySet().forEach(key -> sb.append(key).append("=").append(params.get(key)).append("&"));
