@@ -13,4 +13,8 @@ public interface ConfigFileFactory {
     ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata);
 
     ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat fileFormat);
+
+    void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
+
+    void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
 }

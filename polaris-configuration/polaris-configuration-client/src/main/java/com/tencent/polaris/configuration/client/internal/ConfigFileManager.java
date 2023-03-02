@@ -13,4 +13,8 @@ public interface ConfigFileManager {
     ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata);
 
     ConfigKVFile getConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat fileFormat);
+
+    void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
+
+    void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
 }

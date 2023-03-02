@@ -62,6 +62,38 @@ public interface ConfigFileService {
      * @return config file
      */
     ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata);
-    
+
+    /**
+     * Create and release the configuration file
+     *
+     * @param namespace namespace of config file
+     * @param fileGroup file group of config file
+     * @param fileName file name
+     */
+    void createConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content);
+
+    /**
+     * Create and release the configuration file
+     *
+     * @param configFileMetadata config file metadata
+     */
+    void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
+
+    /**
+     * Update and release the configuration file
+     *
+     * @param namespace namespace of config file
+     * @param fileGroup file group of config file
+     * @param fileName file name
+     */
+    void updateConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content);
+
+    /**
+     * Update and release the configuration file
+     *
+     * @param configFileMetadata config file metadata
+     */
+    void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
+
 
 }

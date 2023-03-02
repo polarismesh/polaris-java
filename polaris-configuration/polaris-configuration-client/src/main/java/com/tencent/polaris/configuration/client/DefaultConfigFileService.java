@@ -67,4 +67,26 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
         return configFileManager.getConfigFile(configFileMetadata);
     }
+
+    @Override
+    public void createConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content) {
+        createConfigFileAndRelease(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    }
+
+    @Override
+    public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
+        configFileManager.createConfigFileAndRelease(configFileMetadata, content);
+    }
+
+    @Override
+    public void updateConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content) {
+        updateConfigFileAndRelease(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    }
+
+    @Override
+    public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
+        configFileManager.updateConfigFileAndRelease(configFileMetadata, content);
+    }
 }

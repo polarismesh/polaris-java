@@ -7,6 +7,9 @@ public interface ConfigFileRepo {
 
     String getContent();
 
+
+    void setContent(String content);
+
     void addChangeListener(ConfigFileRepoChangeListener listener);
 
     void removeChangeListener(ConfigFileRepoChangeListener listener);

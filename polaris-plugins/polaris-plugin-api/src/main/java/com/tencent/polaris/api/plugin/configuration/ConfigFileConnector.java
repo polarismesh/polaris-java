@@ -21,4 +21,18 @@ public interface ConfigFileConnector extends Plugin {
      * @return 变更的配置文件
      */
     ConfigFileResponse watchConfigFiles(List<ConfigFile> configFiles);
+
+    /**
+     * 创建并发布配置文件
+     *
+     * @param configFile 配置文件元信息
+     */
+    void createConfigFileAndRelease(ConfigFile configFile);
+
+    /**
+     * 更新并发布配置文件
+     *
+     * @param configFile 配置文件元信息
+     */
+    void updateConfigFileAndRelease(ConfigFile configFile);
 }

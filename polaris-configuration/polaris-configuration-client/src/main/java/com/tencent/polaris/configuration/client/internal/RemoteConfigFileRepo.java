@@ -40,6 +40,19 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
 	}
 
+	public RemoteConfigFileRepo(SDKContext sdkContext, ConfigFileMetadata configFileMetadata, String content) {
+		super(sdkContext, configFileMetadata);
+		setContent(content);
+		remoteConfigFile = new AtomicReference<>();
+		notifiedVersion = new AtomicLong(INIT_VERSION);
+		retryPolicy = new ExponentialRetryPolicy(1, 120);
+		String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
+				.getConnectorType();
+		this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
+				.getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
+		this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
+	}
+
 	public RemoteConfigFileRepo(SDKContext sdkContext,
 			ConfigFileLongPollingService configFileLongPollingService,
 			ConfigFileConnector configFileConnector,
@@ -110,6 +123,11 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 	@Override
 	public String getContent() {
 		return remoteConfigFile.get() != null ? remoteConfigFile.get().getContent() : null;
+	}
+
+	@Override
+	public void setContent(String content) {
+		remoteConfigFile.get().setContent(content);
 	}
 
 	public long getConfigFileVersion() {
@@ -255,6 +273,22 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		configFile.setVersion(sourceConfigFile.getVersion());
 		configFile.setMd5(sourceConfigFile.getMd5());
 		return configFile;
+	}
+
+	public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata) {
+		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
+				configFileMetadata.getFileGroup(),
+				configFileMetadata.getFileName());
+		configFile.setContent(this.getContent());
+		configFileConnector.createConfigFileAndRelease(configFile);
+	}
+
+	public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata) {
+		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
+				configFileMetadata.getFileGroup(),
+				configFileMetadata.getFileName());
+		configFile.setContent(this.getContent());
+		configFileConnector.updateConfigFileAndRelease(configFile);
 	}
 
 }

@@ -116,6 +116,16 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
     }
 
     @Override
+    public void createConfigFileAndRelease(ConfigFile configFile) {
+
+    }
+
+    @Override
+    public void updateConfigFileAndRelease(ConfigFile configFile) {
+
+    }
+
+    @Override
     public String getName() {
         return "polaris";
     }
