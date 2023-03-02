@@ -26,7 +26,7 @@ public class ConfigClientResponse {
     private String info;
     private String configFileGroup;
     private ConfigClientFile configFile;
-    private String configFileRelease;
+    private ConfigClientFileRelease configFileRelease;
     private String configFileReleaseHistory;
     private String configFileTemplate;
 
@@ -62,11 +62,11 @@ public class ConfigClientResponse {
         this.configFile = configFile;
     }
 
-    public String getConfigFileRelease() {
+    public ConfigClientFileRelease getConfigFileRelease() {
         return configFileRelease;
     }
 
-    public void setConfigFileRelease(String configFileRelease) {
+    public void setConfigFileRelease(ConfigClientFileRelease configFileRelease) {
         this.configFileRelease = configFileRelease;
     }
 

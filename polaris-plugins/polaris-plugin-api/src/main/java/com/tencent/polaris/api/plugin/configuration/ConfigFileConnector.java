@@ -27,12 +27,12 @@ public interface ConfigFileConnector extends Plugin {
      *
      * @param configFile 配置文件元信息
      */
-    void createConfigFileAndRelease(ConfigFile configFile, String content);
+    void createConfigFileAndRelease(ConfigFile configFile);
 
     /**
      * 更新并发布配置文件
      *
      * @param configFile 配置文件元信息
      */
-    void updateConfigFileAndRelease(ConfigFile configFile, String content);
+    void updateConfigFileAndRelease(ConfigFile configFile);
 }

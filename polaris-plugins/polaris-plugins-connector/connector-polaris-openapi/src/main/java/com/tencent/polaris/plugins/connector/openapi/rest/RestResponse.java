@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
@@ -42,19 +43,20 @@ public class RestResponse<T> {
         this.statusText = statusText;
     }
 
-    public static <T> RestResponse<T> withNormalResponse(ResponseEntity<T> responseEntity) {
-        return new RestResponse<T>(null, responseEntity,
+    public static RestResponse<String> withNormalResponse(ResponseEntity<String> responseEntity) {
+        return new RestResponse<>(null, responseEntity,
                 responseEntity.getStatusCode().value(), responseEntity.getStatusCode().getReasonPhrase());
     }
 
-    public static <T> RestResponse<T> withRestClientException(RestClientException restClientException) {
+    public static RestResponse<String> withRestClientException(RestClientException restClientException) {
         if (restClientException instanceof RestClientResponseException) {
             //存在消息返回，只是前面没有出错
             RestClientResponseException restClientResponseException = (RestClientResponseException) restClientException;
-            return new RestResponse<T>(null, null,
-                    restClientResponseException.getRawStatusCode(), restClientResponseException.getResponseBodyAsString());
+            ResponseEntity<String> responseEntity = new ResponseEntity<>(restClientResponseException.getResponseBodyAsString(), HttpStatus.BAD_REQUEST);
+            return new RestResponse<>(null, responseEntity,
+                    restClientResponseException.getRawStatusCode(), restClientResponseException.getStatusText());
         } else {
-            return new RestResponse<T>(restClientException, null, 0, "");
+            return new RestResponse<>(restClientException, null, 0, "");
         }
     }
 

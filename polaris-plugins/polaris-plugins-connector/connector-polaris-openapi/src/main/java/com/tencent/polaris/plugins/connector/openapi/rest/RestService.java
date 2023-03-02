@@ -20,6 +20,8 @@ package com.tencent.polaris.plugins.connector.openapi.rest;
 import com.alibaba.fastjson.JSONObject;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientResponse;
 import org.slf4j.Logger;
@@ -41,15 +43,39 @@ public class RestService {
     private static final RestOperator restOperator = new RestOperator();
 
     public static ConfigClientResponse getConfigFile(String url, String token, ConfigFile configFile) {
-        JSONObject params = new JSONObject();
-        params.put("name", configFile.getFileName());
-        params.put("group", configFile.getFileGroup());
-        params.put("namespace", configFile.getNamespace());
-        RestResponse<String> restResponse = sendPost(HttpMethod.GET, url, token, params);
-        return JSONObject.parseObject(restResponse.getResponseEntity().getBody(), ConfigClientResponse.class);
+        return sendPost(HttpMethod.GET, url, token, RestUtils.getParams(configFile));
     }
 
-    public static RestResponse<String> sendPost(HttpMethod method, String url, String token, JSONObject params) {
+    public static ConfigClientResponse createConfigFile(String url, String token, ConfigFile configFile) {
+        JSONObject params = RestUtils.getParams(configFile);
+        params.put("content", configFile.getContent());
+        ConfigClientResponse response = sendPost(HttpMethod.POST, url, token, params);
+        LOG.info("[Polaris] creat configuration file success: Namespace {}, FileGroup {}, FileName {}, Content {}",
+                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
+        return response;
+    }
+
+    public static ConfigClientResponse updateConfigFile(String url, String token, ConfigFile configFile) {
+        JSONObject params = RestUtils.getParams(configFile);
+        params.put("content", configFile.getContent());
+        ConfigClientResponse response = sendPost(HttpMethod.PUT, url, token, params);
+        LOG.info("[Polaris] update configuration file success: Namespace {}, FileGroup {}, FileName {}, Content {}",
+                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
+        return response;
+    }
+
+    public static ConfigClientResponse releaseConfigFile(String url, String token, ConfigFile configFile) {
+        JSONObject params = new JSONObject();
+        params.put("fileName", configFile.getFileName());
+        params.put("group", configFile.getFileGroup());
+        params.put("namespace", configFile.getNamespace());
+        ConfigClientResponse response = sendPost(HttpMethod.POST, url, token, params);
+        LOG.info("[Polaris] release configuration file success: Namespace {}, FileGroup {}, FileName {}, Content {}",
+                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
+        return response;
+    }
+
+    public static ConfigClientResponse sendPost(HttpMethod method, String url, String token, JSONObject params) {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-Polaris-Token", token);
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
@@ -58,7 +84,7 @@ public class RestService {
 
         if (method == HttpMethod.GET && Objects.nonNull(params)) {
             url = RestUtils.encodeUrl(url, params);
-        } else if (method == HttpMethod.POST) {
+        } else if (method == HttpMethod.POST || method == HttpMethod.PUT) {
             entity = new HttpEntity<>(params.toString(), headers);
         }
         RestResponse<String> restResponse = restOperator
@@ -69,6 +95,15 @@ public class RestService {
                     url, params, method, restResponse.getException().getMessage());
             throw new PolarisException(ErrorCode.SERVER_EXCEPTION, restResponse.getException().getMessage());
         }
-        return restResponse;
+
+        ConfigClientResponse configClientResponse = JSONObject.parseObject(restResponse.getResponseEntity().getBody(), ConfigClientResponse.class);
+        int code = Integer.parseInt(Objects.requireNonNull(configClientResponse).getCode());
+        if (code != ServerCodes.EXECUTE_SUCCESS) {
+            LOG.error("[Polaris] server error to execute request {}, params {}, method {}, reason {}",
+                    url, params, method, configClientResponse.getInfo());
+            throw ServerErrorResponseException.build(code, configClientResponse.getInfo());
+        }
+
+        return configClientResponse;
     }
 }

@@ -46,9 +46,9 @@ public class RestOperator {
         restTemplate = restTemplateBuilder.build();
     }
 
-    public <T> RestResponse<T> curlRemoteEndpoint(String url, HttpMethod method,
-                                                  HttpEntity<?> requestEntity, Class<T> clazz) {
-        ResponseEntity<T> queryEntity;
+    public RestResponse<String> curlRemoteEndpoint(String url, HttpMethod method,
+                                                  HttpEntity<?> requestEntity, Class<String> clazz) {
+        ResponseEntity<String> queryEntity;
         try {
             queryEntity = restTemplate.exchange(url, method, requestEntity, clazz);
         } catch (RestClientException e) {

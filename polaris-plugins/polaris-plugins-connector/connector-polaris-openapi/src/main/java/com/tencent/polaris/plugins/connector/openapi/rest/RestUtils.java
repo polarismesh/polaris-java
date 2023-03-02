@@ -18,9 +18,12 @@
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
 import com.alibaba.fastjson.JSONObject;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientFile;
+import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +36,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class RestUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestUtils.class);
-
-    public static String toLogin(List<String> addresses) {
-        String address = pickAddress(addresses);
-        return String.format("http://%s/core/v1/user/login", address);
-    }
 
     public static String toConfigFileUrl(List<String> addresses) {
         String address = pickAddress(addresses);
@@ -56,6 +54,14 @@ public class RestUtils {
         }
         int i = ThreadLocalRandom.current().nextInt(addresses.size());
         return addresses.get(i);
+    }
+
+    public static JSONObject getParams(ConfigFile configFile) {
+        JSONObject params = new JSONObject();
+        params.put("name", configFile.getFileName());
+        params.put("group", configFile.getFileGroup());
+        params.put("namespace", configFile.getNamespace());
+        return params;
     }
 
     public static String encodeUrl(String url, JSONObject params) {
