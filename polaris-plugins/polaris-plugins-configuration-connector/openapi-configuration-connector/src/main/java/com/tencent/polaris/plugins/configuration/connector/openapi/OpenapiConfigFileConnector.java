@@ -17,7 +17,10 @@
 
 package com.tencent.polaris.plugins.configuration.connector.openapi;
 
+import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -29,8 +32,6 @@ import com.tencent.polaris.plugins.connector.openapi.OpenapiServices;
 
 import java.util.List;
 
-import static com.tencent.polaris.api.config.verify.DefaultValues.OPENAPI_CONNECTOR_TYPE;
-
 /**
  * @author fabian4 2023-02-28
  */
@@ -38,7 +39,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public String getName() {
-        return OPENAPI_CONNECTOR_TYPE;
+        return DefaultValues.OPENAPI_CONNECTOR_TYPE;
     }
 
     @Override
@@ -68,6 +69,6 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public ConfigFileResponse watchConfigFiles(List<ConfigFile> configFiles) {
-        return null;
+        throw new PolarisException(ErrorCode.NOT_SUPPORT, "Openapi does not support config file watch.");
     }
 }

@@ -2,6 +2,7 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
@@ -13,6 +14,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +84,8 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
         //长轮询起始的配置文件版本号应该以第一次同步拉取为准
         notifiedVersion.putIfAbsent(configFileMetadata, version);
 
-        if (!started.get()) {
+        // openapi 不支持长轮询 跳过
+        if (!started.get() && !Objects.equals(configFileConnector.getName(), DefaultValues.OPENAPI_CONNECTOR_TYPE)) {
             startLongPollingTask();
         }
     }

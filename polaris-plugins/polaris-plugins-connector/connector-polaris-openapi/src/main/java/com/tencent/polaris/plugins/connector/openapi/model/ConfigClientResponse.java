@@ -17,9 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.openapi.model;
 
-import java.util.List;
-import java.util.Date;
-
 /**
  * @author fabian4 2023-03-02
  */

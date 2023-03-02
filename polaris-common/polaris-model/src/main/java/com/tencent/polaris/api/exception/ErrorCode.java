@@ -172,7 +172,12 @@ public enum ErrorCode {
     /**
      * 内部错误：未知服务端异常
      */
-    UNKNOWN_SERVER_ERROR(2100);
+    UNKNOWN_SERVER_ERROR(2100),
+
+    /**
+     * 内部错误：暂不支持
+     */
+    NOT_SUPPORT(20010);
 
     private final int code;
 
