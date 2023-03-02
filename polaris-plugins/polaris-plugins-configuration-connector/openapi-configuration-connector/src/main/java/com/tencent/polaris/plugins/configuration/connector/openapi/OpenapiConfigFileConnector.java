@@ -26,7 +26,6 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.plugins.connector.openapi.OpenapiServices;
-import com.tencent.polaris.plugins.connector.openapi.config.Authorization;
 
 import java.util.List;
 

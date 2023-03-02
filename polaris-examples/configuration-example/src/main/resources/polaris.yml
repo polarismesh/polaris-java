@@ -28,6 +28,5 @@ config:
     #fallbackToLocalCache: true
     #persistDir: test/custom/config
     addresses:
-      - 127.0.0.1:8080
-    username: polaris
-    password: polaris
+      - 127.0.0.1:8090
+    token: nu/0WRA4EqSR1FagrjRj0fZwPXuGlMpX+zCuWu4uMqy8xr1vRjisSbA25aAC3mtU8MeeRsKhQiDAynUR09I=

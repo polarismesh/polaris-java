@@ -18,7 +18,6 @@
 package com.tencent.polaris.plugins.connector.openapi.rest;
 
 import com.alibaba.fastjson.JSONObject;
-import com.tencent.polaris.plugins.connector.openapi.model.LoginResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,12 +54,6 @@ public class RestUtils {
         }
         int i = ThreadLocalRandom.current().nextInt(addresses.size());
         return addresses.get(i);
-    }
-
-    public static String phraseToken(RestResponse<String> restResponse) {
-        String jsonStr = restResponse.getResponseEntity().getBody();
-        LoginResponse loginResponse = JSONObject.parseObject(Objects.requireNonNull(jsonStr), LoginResponse.class);
-        return loginResponse.getToken();
     }
 
     public static String encodeUrl(String url, JSONObject params) {

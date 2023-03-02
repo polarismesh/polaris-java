@@ -44,9 +44,7 @@ public class RestService {
         params.put("name", configFile.getFileName());
         params.put("group", configFile.getFileGroup());
         params.put("namespace", configFile.getNamespace());
-        RestResponse<String> restResponse = sendPost(HttpMethod.GET, url, token, params);
-        System.out.println(restResponse);
-        return null;
+        return sendPost(HttpMethod.GET, url, token, params);
     }
 
     public static RestResponse<String> sendPost(HttpMethod method, String url, String token, JSONObject params) {
@@ -61,17 +59,12 @@ public class RestService {
         } else if (method == HttpMethod.POST) {
             entity = new HttpEntity<>(params.toString(), headers);
         }
-
-        LOG.warn("[Polaris] server error to send request {}, body {}, method {}, token {}",
-                url, params.toString(), method, token);
-
-
         RestResponse<String> restResponse = restOperator
                 .curlRemoteEndpoint(url, method, entity, String.class);
 
         if (restResponse.hasServerError()) {
             LOG.error("[Polaris] server error to send request {}, body {}, method {}, reason {}",
-                    url, params.toString(), method, restResponse.getException().getMessage());
+                    url, params, method, restResponse.getException().getMessage());
             throw new PolarisException(ErrorCode.SERVER_EXCEPTION, restResponse.getException().getMessage());
         }
         return restResponse;

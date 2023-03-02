@@ -45,10 +45,8 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     private String protocol;
 
     @JsonProperty
-    private String username;
+    private String token;
 
-    @JsonProperty
-    private String password;
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long connectTimeout;
@@ -82,20 +80,12 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
         this.addresses = addresses;
     }
 
-    public String getUsername() {
-        return username;
+    public String getToken() {
+        return token;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
+    public void setToken(String token) {
+        this.token = token;
     }
 
     @Override

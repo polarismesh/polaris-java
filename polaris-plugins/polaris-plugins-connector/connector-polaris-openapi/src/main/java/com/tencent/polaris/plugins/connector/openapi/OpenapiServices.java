@@ -17,9 +17,10 @@
 
 package com.tencent.polaris.plugins.connector.openapi;
 
+import com.alibaba.fastjson.JSONObject;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
-import com.tencent.polaris.plugins.connector.openapi.config.Authorization;
+import com.tencent.polaris.plugins.connector.openapi.rest.RestResponse;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestService;
 import com.tencent.polaris.plugins.connector.openapi.rest.RestUtils;
 
@@ -38,8 +39,7 @@ public class OpenapiServices {
 
     private OpenapiServices(InitContext ctx) {
         this.address = ctx.getConfig().getConfigFile().getServerConnector().getAddresses();
-        Authorization authorization = new Authorization(ctx);
-        this.token = authorization.generateToken(address);
+        this.token = ctx.getConfig().getConfigFile().getServerConnector().getToken();
     }
 
     public static void initInstance(InitContext ctx) {
@@ -47,7 +47,8 @@ public class OpenapiServices {
     }
 
     public void getConfigFile(ConfigFile configFile) {
-        System.out.println("token: " + token);
-        RestService.getConfigFile(RestUtils.toConfigFileUrl(address), "******", configFile);
+        RestResponse<String> response = RestService.getConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+        Object file = JSONObject.parseObject(response.getResponseEntity().getBody()).get("configFile");
+
     }
 }
