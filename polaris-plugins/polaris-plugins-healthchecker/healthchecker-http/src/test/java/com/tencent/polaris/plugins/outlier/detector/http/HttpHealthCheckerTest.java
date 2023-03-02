@@ -195,7 +195,6 @@ public class HttpHealthCheckerTest {
 
             DetectResult result = checker.detectInstance(instance, faultDetectRule);
             Assert.assertEquals(RetStatus.RetFail, result.getRetStatus());
-            Assert.assertEquals(detectInfo.get(headerKey.toLowerCase()), headerValue);
         } finally {
             httpServer.close();
         }

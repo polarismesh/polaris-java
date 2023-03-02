@@ -78,6 +78,7 @@ public class PrometheusReporterTest {
         handler.setCallerIp("127.0.0.1");
         handler.setConfig(config);
         handler.setPushGateway(pgw);
+        handler.initHandle();
     }
 
     @Test
