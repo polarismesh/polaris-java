@@ -269,20 +269,28 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		return configFile;
 	}
 
-	public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+	public void createConfigFile (ConfigFileMetadata configFileMetadata, String content) {
 		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
 				configFileMetadata.getFileGroup(),
 				configFileMetadata.getFileName());
 		configFile.setContent(content);
-		configFileConnector.createConfigFileAndRelease(configFile);
+		configFileConnector.createConfigFile(configFile);
 	}
 
-	public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+	public void updateConfigFile (ConfigFileMetadata configFileMetadata, String content) {
 		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
 				configFileMetadata.getFileGroup(),
 				configFileMetadata.getFileName());
 		configFile.setContent(content);
-		configFileConnector.updateConfigFileAndRelease(configFile);
+		configFileConnector.updateConfigFile(configFile);
+	}
+
+	public void releaseConfigFile (ConfigFileMetadata configFileMetadata, String content) {
+		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
+				configFileMetadata.getFileGroup(),
+				configFileMetadata.getFileName());
+		configFile.setContent(content);
+		configFileConnector.releaseConfigFile(configFile);
 	}
 
 }

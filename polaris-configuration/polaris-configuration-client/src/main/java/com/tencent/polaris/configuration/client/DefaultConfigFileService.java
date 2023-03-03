@@ -69,24 +69,36 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     }
 
     @Override
-    public void createConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content) {
-        createConfigFileAndRelease(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    public void createConfigFile(String namespace, String fileGroup, String fileName, String content) {
+        createConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
     }
 
     @Override
-    public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+    public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        configFileManager.createConfigFileAndRelease(configFileMetadata, content);
+        configFileManager.createConfigFile(configFileMetadata, content);
     }
 
     @Override
-    public void updateConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content) {
-        updateConfigFileAndRelease(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    public void updateConfigFile(String namespace, String fileGroup, String fileName, String content) {
+        updateConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
     }
 
     @Override
-    public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+    public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        configFileManager.updateConfigFileAndRelease(configFileMetadata, content);
+        configFileManager.updateConfigFile(configFileMetadata, content);
     }
+
+    @Override
+    public void releaseConfigFile(String namespace, String fileGroup, String fileName, String content) {
+        releaseConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    }
+
+    @Override
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
+        configFileManager.releaseConfigFile(configFileMetadata, content);
+    }
+
 }

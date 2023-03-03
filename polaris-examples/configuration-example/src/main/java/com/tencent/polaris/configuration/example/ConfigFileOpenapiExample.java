@@ -15,21 +15,25 @@ public class ConfigFileOpenapiExample {
         Utils.InitResult initResult = Utils.initConfiguration(args);
         String namespace = "default";
         String fileGroup = "test";
-        String fileName = "aa/plugin.json";
+        String fileName = "aa/plin000.json";
 
         //创建配置中心服务类，一般情况下只需要单例对象
         ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
 
         //获取配置文件
-        ConfigFile configFile = configFileService.getConfigFile(namespace, fileGroup, fileName);
+//        ConfigFile configFile = configFileService.getConfigFile(namespace, fileGroup, fileName);
 
         //打印配置文件内容
-        Utils.print(configFile.getContent());
+//        Utils.print(configFile.getContent());
 
-        // 创建新配置
-//        configFileService.createConfigFileAndRelease(namespace, fileGroup, fileName, "redis.cache.age=100");
+        // 创建配置
+//        configFileService.createConfigFile(namespace, fileGroup, fileName, "redis.cache.age=100");
 
         // 更新配置
-//        configFileService.updateConfigFileAndRelease(namespace, fileGroup, fileName, "redis.cache.age=10000");
+        configFileService.updateConfigFile(namespace, fileGroup, fileName, "redis.cache.age=1000");
+
+        // 发布配置
+//        configFileService.releaseConfigFile(namespace, fileGroup, fileName, "redis.cache.age=10");
+
     }
 }

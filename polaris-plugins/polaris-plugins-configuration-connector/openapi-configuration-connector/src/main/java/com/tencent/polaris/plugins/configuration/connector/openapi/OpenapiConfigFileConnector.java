@@ -27,7 +27,6 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.plugins.connector.openapi.OpenapiServices;
 
 import java.util.List;
 
@@ -72,12 +71,18 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
     }
 
     @Override
-    public void createConfigFileAndRelease(ConfigFile configFile) {
-        OpenapiServices.instance.createConfigFileAndRelease(configFile);
+    public void createConfigFile(ConfigFile configFile) {
+        OpenapiServices.instance.createConfigFile(configFile);
     }
 
     @Override
-    public void updateConfigFileAndRelease(ConfigFile configFile) {
-        OpenapiServices.instance.updateConfigFileAndRelease(configFile);
+    public void updateConfigFile(ConfigFile configFile) {
+        OpenapiServices.instance.updateConfigFile(configFile);
     }
+
+    @Override
+    public void releaseConfigFile(ConfigFile configFile) {
+        OpenapiServices.instance.releaseConfigFile(configFile);
+    }
+
 }

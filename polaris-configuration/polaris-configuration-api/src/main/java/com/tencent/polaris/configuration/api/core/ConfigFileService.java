@@ -64,36 +64,52 @@ public interface ConfigFileService {
     ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata);
 
     /**
-     * Create and release the configuration file
+     * Create the configuration file
      *
      * @param namespace namespace of config file
      * @param fileGroup file group of config file
      * @param fileName file name
      */
-    void createConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content);
+    void createConfigFile(String namespace, String fileGroup, String fileName, String content);
 
     /**
-     * Create and release the configuration file
+     * Create the configuration file
      *
      * @param configFileMetadata config file metadata
      */
-    void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
+    void createConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
     /**
-     * Update and release the configuration file
+     * Update the configuration file
      *
      * @param namespace namespace of config file
      * @param fileGroup file group of config file
      * @param fileName file name
      */
-    void updateConfigFileAndRelease(String namespace, String fileGroup, String fileName, String content);
+    void updateConfigFile(String namespace, String fileGroup, String fileName, String content);
 
     /**
-     * Update and release the configuration file
+     * Update the configuration file
      *
      * @param configFileMetadata config file metadata
      */
-    void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content);
+    void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
+
+    /**
+     * Release the configuration file
+     *
+     * @param namespace namespace of config file
+     * @param fileGroup file group of config file
+     * @param fileName file name
+     */
+    void releaseConfigFile(String namespace, String fileGroup, String fileName, String content);
+
+    /**
+     * Release the configuration file
+     *
+     * @param configFileMetadata config file metadata
+     */
+    void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
 
 }

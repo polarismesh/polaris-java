@@ -82,16 +82,22 @@ public class DefaultConfigFileManager implements ConfigFileManager {
     }
 
     @Override
-    public void createConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+    public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
-        configFileFactory.createConfigFileAndRelease(configFileMetadata, content);
-    };
+        configFileFactory.createConfigFile(configFileMetadata, content);
+    }
 
     @Override
-    public void updateConfigFileAndRelease(ConfigFileMetadata configFileMetadata, String content) {
+    public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
-        configFileFactory.updateConfigFileAndRelease(configFileMetadata, content);
-    };
+        configFileFactory.updateConfigFile(configFileMetadata, content);
+    }
+
+    @Override
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+        configFileFactory.releaseConfigFile(configFileMetadata, content);
+    }
 
     void setConfigFileFactoryManager(ConfigFileFactoryManager configFileFactoryManager) {
         this.configFileFactoryManager = configFileFactoryManager;

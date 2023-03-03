@@ -15,16 +15,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.connector.openapi;
+package com.tencent.polaris.plugins.configuration.connector.openapi;
 
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientResponse;
-import com.tencent.polaris.plugins.connector.openapi.rest.RestService;
-import com.tencent.polaris.plugins.connector.openapi.rest.RestUtils;
+import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientResponse;
+import com.tencent.polaris.plugins.configuration.connector.openapi.rest.RestService;
+import com.tencent.polaris.plugins.configuration.connector.openapi.rest.RestUtils;
 
 import java.util.List;
 
@@ -61,17 +61,15 @@ public class OpenapiServices {
         throw ServerErrorResponseException.build(code, configClientResponse.getInfo());
     }
 
-    public void createConfigFileAndRelease(ConfigFile configFile) {
+    public void createConfigFile(ConfigFile configFile) {
         RestService.createConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
-        RestService.releaseConfigFile(RestUtils.toReleaseConfigFileUrl(address), token, configFile);
     }
 
-    public void updateConfigFileAndRelease(ConfigFile configFile) {
-        ConfigClientResponse configClientResponse = RestService.updateConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
-        int code = Integer.parseInt(configClientResponse.getCode());
-        if (code != ServerCodes.EXECUTE_SUCCESS) {
-            throw ServerErrorResponseException.build(code, configClientResponse.getInfo());
-        }
+    public void updateConfigFile(ConfigFile configFile) {
+        RestService.updateConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+    }
+
+    public void releaseConfigFile(ConfigFile configFile) {
         RestService.releaseConfigFile(RestUtils.toReleaseConfigFileUrl(address), token, configFile);
     }
 }

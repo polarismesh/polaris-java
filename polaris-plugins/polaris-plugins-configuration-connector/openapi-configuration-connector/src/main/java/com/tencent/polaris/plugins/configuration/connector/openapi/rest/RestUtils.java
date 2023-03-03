@@ -15,15 +15,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.connector.openapi.rest;
+package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
 
 import com.alibaba.fastjson.JSONObject;
-import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientFile;
-import com.tencent.polaris.plugins.connector.openapi.model.ConfigClientResponse;
+import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,14 +57,16 @@ public class RestUtils {
         params.put("name", configFile.getFileName());
         params.put("group", configFile.getFileGroup());
         params.put("namespace", configFile.getNamespace());
+        params.put("format", RestUtils.getFormat(configFile.getFileName()));
         return params;
     }
 
-    public static String encodeUrl(String url, JSONObject params) {
-        StringBuilder sb = new StringBuilder(url);
-        sb.append("?");
-        params.keySet().forEach(key -> sb.append(key).append("=").append(params.get(key)).append("&"));
-        return sb.toString();
+    public static String getFormat(String filename) {
+        String[] split = filename.split("\\.");
+        if(split.length <= 1){
+            return "test";
+        }
+        return split[split.length - 1];
     }
 
     public static ConfigFile transferFromDTO(ConfigClientFile configClientFile) {
