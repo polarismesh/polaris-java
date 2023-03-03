@@ -86,7 +86,6 @@ public class RestOperator {
 
         try {
             Response response = client.newCall(request).execute();
-            System.out.println(Objects.requireNonNull(response.body()).string());
             configClientResponse = JSONObject.parseObject(Objects.requireNonNull(response.body()).string(), ConfigClientResponse.class);
         } catch (IOException e) {
             throw new RuntimeException(e);

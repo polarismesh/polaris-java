@@ -48,9 +48,8 @@ public class RestService {
     public static ConfigClientResponse createConfigFile(String url, String token, ConfigFile configFile) {
         JSONObject params = RestUtils.getParams(configFile);
         params.put("content", configFile.getContent());
-        System.out.println(params.toJSONString());
         ConfigClientResponse response = restOperator.doPost(url, token, params.toString());
-        LOG.info("[Polaris] creat configuration file success: Namespace {}, FileGroup {}, FileName {}, Content {}",
+        LOG.info("[Polaris] creat configuration file success: Namespace={}, FileGroup={}, FileName={}, Content={}",
                 configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
         return response;
     }
@@ -59,7 +58,7 @@ public class RestService {
         JSONObject params = RestUtils.getParams(configFile);
         params.put("content", configFile.getContent());
         ConfigClientResponse response = restOperator.doPut(url, token, params.toString());
-        LOG.info("[Polaris] update configuration file success: Namespace {}, FileGroup {}, FileName {}, Content {}",
+        LOG.info("[Polaris] update configuration file success: Namespace={}, FileGroup={}, FileName={}, Content={}",
                 configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
         return response;
     }
@@ -70,8 +69,8 @@ public class RestService {
         params.put("group", configFile.getFileGroup());
         params.put("namespace", configFile.getNamespace());
         ConfigClientResponse response = restOperator.doPost(url, token, params.toString());
-        LOG.info("[Polaris] release configuration file success: Namespace {}, FileGroup {}, FileName {}, Content {}",
-                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
+        LOG.info("[Polaris] release configuration file success: Namespace={}, FileGroup={}, FileName={}",
+                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
         return response;
     }
 }
