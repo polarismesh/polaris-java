@@ -102,14 +102,14 @@ public interface ConfigFileService {
      * @param fileGroup file group of config file
      * @param fileName file name
      */
-    void releaseConfigFile(String namespace, String fileGroup, String fileName, String content);
+    void releaseConfigFile(String namespace, String fileGroup, String fileName);
 
     /**
      * Release the configuration file
      *
      * @param configFileMetadata config file metadata
      */
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
 
 
 }

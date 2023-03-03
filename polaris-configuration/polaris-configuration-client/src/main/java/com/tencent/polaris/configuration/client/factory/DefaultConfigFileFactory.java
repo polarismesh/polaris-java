@@ -81,9 +81,9 @@ public class DefaultConfigFileFactory implements ConfigFileFactory {
     }
 
     @Override
-    public void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata);
-        remoteConfigFileRepo.releaseConfigFile(configFileMetadata, content);
+        remoteConfigFileRepo.releaseConfigFile(configFileMetadata);
     }
 
     private ConfigFileRepo createConfigFileRepo(ConfigFileMetadata configFileMetadata) {

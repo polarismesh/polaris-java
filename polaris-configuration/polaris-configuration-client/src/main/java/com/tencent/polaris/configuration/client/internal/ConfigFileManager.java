@@ -18,5 +18,5 @@ public interface ConfigFileManager {
 
     void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }

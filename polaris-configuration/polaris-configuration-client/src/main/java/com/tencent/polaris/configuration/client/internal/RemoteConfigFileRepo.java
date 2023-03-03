@@ -285,11 +285,10 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		configFileConnector.updateConfigFile(configFile);
 	}
 
-	public void releaseConfigFile (ConfigFileMetadata configFileMetadata, String content) {
+	public void releaseConfigFile (ConfigFileMetadata configFileMetadata) {
 		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
 				configFileMetadata.getFileGroup(),
 				configFileMetadata.getFileName());
-		configFile.setContent(content);
 		configFileConnector.releaseConfigFile(configFile);
 	}
 

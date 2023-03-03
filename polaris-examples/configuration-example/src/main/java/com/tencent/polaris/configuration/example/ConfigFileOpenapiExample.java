@@ -30,10 +30,10 @@ public class ConfigFileOpenapiExample {
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, "redis.cache.age=100");
 
         // 更新配置
-        configFileService.updateConfigFile(namespace, fileGroup, fileName, "redis.cache.age=1000");
+//        configFileService.updateConfigFile(namespace, fileGroup, fileName, "redis.cache.age=1000");
 
         // 发布配置
-//        configFileService.releaseConfigFile(namespace, fileGroup, fileName, "redis.cache.age=10");
+        configFileService.releaseConfigFile(namespace, fileGroup, fileName);
 
     }
 }

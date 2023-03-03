@@ -71,7 +71,7 @@ public class ConfigFileFactoryManagerTest {
         }
 
         @Override
-        public void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
 
         }
     }

@@ -91,14 +91,14 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     }
 
     @Override
-    public void releaseConfigFile(String namespace, String fileGroup, String fileName, String content) {
-        releaseConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    public void releaseConfigFile(String namespace, String fileGroup, String fileName) {
+        releaseConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName));
     }
 
     @Override
-    public void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        configFileManager.releaseConfigFile(configFileMetadata, content);
+        configFileManager.releaseConfigFile(configFileMetadata);
     }
 
 }

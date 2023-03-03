@@ -94,9 +94,9 @@ public class DefaultConfigFileManager implements ConfigFileManager {
     }
 
     @Override
-    public void releaseConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
-        configFileFactory.releaseConfigFile(configFileMetadata, content);
+        configFileFactory.releaseConfigFile(configFileMetadata);
     }
 
     void setConfigFileFactoryManager(ConfigFileFactoryManager configFileFactoryManager) {
