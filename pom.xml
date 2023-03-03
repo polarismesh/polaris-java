@@ -101,6 +101,7 @@
         <maven.shaded.plugin.version>3.2.4</maven.shaded.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
+        <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
         <httpclient.version>4.5.14</httpclient.version>
     </properties>
@@ -211,6 +212,26 @@
                         <phase>clean</phase>
                         <goals>
                             <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${maven.jacoco.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
