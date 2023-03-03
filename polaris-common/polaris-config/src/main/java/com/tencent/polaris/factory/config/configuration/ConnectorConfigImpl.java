@@ -4,12 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.configuration.ConnectorConfig;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
-
-import static com.tencent.polaris.api.config.verify.DefaultValues.*;
 
 /**
  * 配置中心连接器配置
@@ -43,13 +42,13 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
 	@Override
 	public void verify() {
 		ConfigUtils.validateString(connectorType, "configConnectorType");
-		if(StringUtils.equals(connectorType, OPENAPI_CONNECTOR_TYPE)) {
+		if(StringUtils.equals(connectorType, DefaultValues.OPENAPI_CONNECTOR_TYPE)) {
 			ConfigUtils.validateString(getToken(), "Token");
 		}
 		if (StringUtils.isBlank(persistDir)) {
-			persistDir = CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
+			persistDir = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
 		}
-		if (!LOCAL_FILE_CONNECTOR_TYPE.equals(connectorType)) {
+		if (!DefaultValues.LOCAL_FILE_CONNECTOR_TYPE.equals(connectorType)) {
 			super.verify();
 		}
 	}

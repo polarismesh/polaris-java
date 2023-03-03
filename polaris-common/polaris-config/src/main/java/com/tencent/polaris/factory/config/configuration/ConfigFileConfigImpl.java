@@ -2,7 +2,6 @@ package com.tencent.polaris.factory.config.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
-import com.tencent.polaris.api.config.configuration.ConnectorConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
 /**
@@ -13,9 +12,9 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     @JsonProperty
     private ConnectorConfigImpl serverConnector;
     @JsonProperty
-    private int                 propertiesValueCacheSize;
+    private int propertiesValueCacheSize;
     @JsonProperty
-    private long                propertiesValueExpireTime;
+    private long propertiesValueExpireTime;
 
     @Override
     public void verify() {
