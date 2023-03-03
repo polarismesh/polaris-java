@@ -78,8 +78,3 @@ jobs:
           
       - name: Upload Codecov
         uses: codecov/codecov-action@v3
-        with:
-          directory: ./coverage/reports/
-          fail_ci_if_error: true
-          files: ./coverage1.xml,./coverage2.xml,!./cache
-          flags: unittests
