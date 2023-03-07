@@ -33,7 +33,7 @@ import java.util.List;
  */
 public class OpenapiServices {
 
-    public static OpenapiServices instance;
+    public static OpenapiServices INSTANCE;
 
     private String token;
 
@@ -45,7 +45,7 @@ public class OpenapiServices {
     }
 
     public static void initInstance(InitContext ctx) {
-        instance = new OpenapiServices(ctx);
+        INSTANCE = new OpenapiServices(ctx);
     }
 
     public ConfigFileResponse getConfigFile(ConfigFile configFile) {

@@ -21,7 +21,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientResponse;
-import okhttp3.*;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
