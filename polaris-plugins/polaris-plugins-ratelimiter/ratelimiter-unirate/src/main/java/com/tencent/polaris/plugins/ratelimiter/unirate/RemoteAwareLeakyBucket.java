@@ -30,6 +30,8 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 
 /**
@@ -56,6 +58,9 @@ public class RemoteAwareLeakyBucket implements QuotaBucket {
         boolean effective = false;
         double effectiveRate = 0.0F;
         leakyBucket.setMaxQueuingDuration(configuration.getProvider().getRateLimit().getMaxQueuingTime());
+        if (rule.getMaxQueueDelay().getValue() > 0) {
+            leakyBucket.setMaxQueuingDuration(TimeUnit.SECONDS.toMillis(rule.getMaxQueueDelay().getValue()));
+        }
         long maxDuration = 0;
         for (Amount amount : rule.getAmountsList()) {
             int maxAmount = amount.getMaxAmount().getValue();

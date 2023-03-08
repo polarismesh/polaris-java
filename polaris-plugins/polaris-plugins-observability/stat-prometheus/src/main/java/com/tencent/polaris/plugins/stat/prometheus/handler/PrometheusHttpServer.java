@@ -18,6 +18,8 @@
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
 import com.sun.net.httpserver.HttpServer;
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.io.IOException;
@@ -42,20 +44,29 @@ import org.slf4j.Logger;
 public class PrometheusHttpServer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusHttpServer.class);
+
     private static final String DEFAULT_PATH = "/metrics";
+
     /**
      * The minimal random port
      */
     private static final int MIN_RANDOM_PORT = 20000;
+
     /**
      * The maximum random port
      */
     private static final int MAX_RANDOM_PORT = 65535;
+
     private final HttpServer httpServer;
+
     private final ThreadFactory threadFactory;
+
     private final ExecutorService executor;
+
     private final String host;
+
     private int port;
+
     private String path;
 
     public PrometheusHttpServer(String host, int port, CollectorRegistry registry) {
@@ -92,14 +103,26 @@ public class PrometheusHttpServer {
             this.port = randomPort;
             return;
         }
+        if (port == PrometheusHandlerConfig.DEFAULT_MIN_PULL_PORT) {
+            for (int i = PrometheusHandlerConfig.DEFAULT_MIN_PULL_PORT; i <= PrometheusHandlerConfig.DEFAULT_MAX_PULL_PORT; i ++) {
+                if (isPortAvailable(i)) {
+                    this.port = i;
+                    return;
+                }
+            }
+            String errMsg = String.format("prometheus http server port from %s to %d is used, " +
+                    "please modify ${global.statReporter.plugin.prometheus.port} in polaris.yml",
+                    PrometheusHandlerConfig.DEFAULT_MIN_PULL_PORT, PrometheusHandlerConfig.DEFAULT_MAX_PULL_PORT);
+
+            throw new PolarisException(ErrorCode.INTERNAL_ERROR, errMsg);
+        }
         this.port = port;
+        LOGGER.info("[Metrics][Prometheus] http-server listen port : {}", port);
     }
 
     private boolean isPortAvailable(int port) {
         try {
-            bindPort("0.0.0.0", port);
-            bindPort(InetAddress.getLocalHost().getHostAddress(), port);
-            bindPort(InetAddress.getLoopbackAddress().getHostAddress(), port);
+            bindPort(this.host, port);
             return true;
         } catch (Exception ignored) {
         }
