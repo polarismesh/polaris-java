@@ -47,11 +47,9 @@ import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest.RouterNamesGroup;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
 import com.tencent.polaris.router.client.util.RouterValidator;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.slf4j.Logger;
 
 /**
@@ -106,7 +104,8 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
         SourceService sourceService = new SourceService();
         sourceService.setService(request.getSourceService().getService());
         sourceService.setNamespace(request.getSourceService().getNamespace());
-        RouteInfo routeInfo = new RouteInfo(sourceService, dstInstances, request.getMethod());
+        RouteInfo routeInfo = new RouteInfo(sourceService, dstInstances, request.getMethod(),
+                config.getProvider().getService());
         routeInfo.setRouterArguments(request.getRouterArguments());
         if (request.getMetadataFailoverType() != null) {
             routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
