@@ -42,7 +42,7 @@ public class ConfigFileOpenapiExample {
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
 
         // 发布配置
-        configFileService.releaseConfigFile(fileMetadata);
+//        configFileService.releaseConfigFile(fileMetadata);
 //        configFileService.releaseConfigFile(namespace, fileGroup, fileName);
 
     }

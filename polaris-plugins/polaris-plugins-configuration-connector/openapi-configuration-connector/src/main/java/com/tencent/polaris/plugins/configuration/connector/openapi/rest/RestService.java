@@ -32,9 +32,7 @@ import java.util.Objects;
  */
 public class RestService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RestService.class);c
-
-    private static final Gson gson = new Gson();
+    private static final Logger LOG = LoggerFactory.getLogger(RestService.class);
 
     private static final RestOperator restOperator = new RestOperator();
 

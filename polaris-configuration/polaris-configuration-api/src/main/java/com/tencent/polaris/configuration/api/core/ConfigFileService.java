@@ -95,21 +95,4 @@ public interface ConfigFileService {
      */
     void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    /**
-     * Release the configuration file
-     *
-     * @param namespace namespace of config file
-     * @param fileGroup file group of config file
-     * @param fileName file name
-     */
-    void releaseConfigFile(String namespace, String fileGroup, String fileName);
-
-    /**
-     * Release the configuration file
-     *
-     * @param configFileMetadata config file metadata
-     */
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
-
-
 }
