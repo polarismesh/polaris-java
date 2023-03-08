@@ -146,11 +146,14 @@ public class Consumer {
                     e.printStackTrace();
                 }
             }
+            long startMills = System.currentTimeMillis();
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < curRate; i++) {
                 String response = invokeByNameResolution(namespace, service, echoValue, consumerAPI);
                 builder.append(i).append(": ").append(response).append("\n");
             }
+            long costMills = System.currentTimeMillis() - startMills;
+            builder.append("\n").append("cost time mills ").append(costMills);
             exchange.sendResponseHeaders(200, 0);
             OutputStream os = exchange.getResponseBody();
             os.write(builder.toString().getBytes());

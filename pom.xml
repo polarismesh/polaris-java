@@ -64,7 +64,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>1.11.0-SNAPSHOT</revision>
+        <revision>1.12.0-SNAPSHOT</revision>
 
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
@@ -74,7 +74,7 @@
         <maven.compiler.encoding>UTF-8</maven.compiler.encoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.14.2</jackson.version>
         <specification.version>1.1.0</specification.version>
         <consul.version>1.4.5</consul.version>
         <nacos.version>2.1.1</nacos.version>
@@ -87,7 +87,7 @@
         <guava.version>29.0-android</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.9</logback.version>
-        <log4j2.version>2.17.2</log4j2.version>
+        <log4j2.version>2.19.0</log4j2.version>
         <disruptor.version>3.4.4</disruptor.version>
         <log4j.version>1.2.17</log4j.version>
         <junit.version>4.13.1</junit.version>
@@ -102,6 +102,7 @@
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
+        <httpclient.version>4.5.14</httpclient.version>
     </properties>
 
     <dependencies>

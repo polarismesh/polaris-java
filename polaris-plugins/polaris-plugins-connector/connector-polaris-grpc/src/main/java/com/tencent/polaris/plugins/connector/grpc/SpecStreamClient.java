@@ -203,7 +203,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         }
 
         //report down
-        connection.reportFail();
+        connection.reportFail(validResult.getErrorCode());
         List<ServiceUpdateTask> notifyTasks = new ArrayList<>();
         synchronized (clientLock) {
             ServiceEventKey serviceEventKey = validResult.getServiceEventKey();

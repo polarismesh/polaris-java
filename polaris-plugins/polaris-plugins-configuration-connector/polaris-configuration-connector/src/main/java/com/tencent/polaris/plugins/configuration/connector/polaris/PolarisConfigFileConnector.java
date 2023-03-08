@@ -65,7 +65,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         } catch (Throwable t) {
             // 网络访问异常
             if (connection != null) {
-                connection.reportFail();
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                                          String.format(
@@ -105,7 +105,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         } catch (Throwable t) {
             // 网络访问异常
             if (connection != null) {
-                connection.reportFail();
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR, "[Config] failed to watch config file", t);
         } finally {

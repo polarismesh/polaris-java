@@ -55,6 +55,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * SDK初始化相关的上下文信息
@@ -164,6 +165,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         try {
             ((ConfigurationImpl) config).setDefault();
             config.verify();
+            LOG.info("SDKContext config{}:\n" + new Yaml().dump(config));
         } catch (IllegalArgumentException e) {
             throw new PolarisException(ErrorCode.INVALID_CONFIG, "fail to verify configuration", e);
         }

@@ -20,9 +20,12 @@ package com.tencent.polaris.discovery.example.consumer;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
+import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils.InitResult;
+
+import java.util.Arrays;
 
 public class GetInstancesExample {
 
@@ -47,6 +50,12 @@ public class GetInstancesExample {
             getHealthyInstancesRequest.setService(service);
             InstancesResponse healthyInstancesResponse = consumerAPI.getHealthyInstances(getHealthyInstancesRequest);
             System.out.println("healthy instances count is " + healthyInstancesResponse.getInstances().length);
+
+            GetInstancesRequest getInstancesRequest = new GetInstancesRequest();
+            getInstancesRequest.setNamespace(namespace);
+            getInstancesRequest.setService(service);
+            InstancesResponse instances = consumerAPI.getInstances(getInstancesRequest);
+            System.out.println("instances " + Arrays.toString(instances.getInstances()));
         }
     }
 }

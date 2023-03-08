@@ -16,7 +16,6 @@
     <description>Polaris Plugins Observability POM</description>
 
     <modules>
-        <module>stat-pushgateway</module>
         <module>stat-prometheus</module>
         <module>stat-common</module>
     </modules>

@@ -28,6 +28,14 @@ import java.util.Map;
  */
 public class InstanceRegisterRequest extends CommonProviderBaseEntity {
 
+    public String getInstanceId() {
+        return request.getInstanceID();
+    }
+
+    public void setInstanceId(String instanceId) {
+        request.setInstanceID(instanceId);
+    }
+
     public String getVersion() {
         return request.getVersion();
     }

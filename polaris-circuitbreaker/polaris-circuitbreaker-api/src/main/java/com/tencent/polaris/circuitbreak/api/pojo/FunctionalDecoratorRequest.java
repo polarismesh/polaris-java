@@ -19,55 +19,19 @@ package com.tencent.polaris.circuitbreak.api.pojo;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
 
-public class FunctionalDecoratorRequest {
+public class FunctionalDecoratorRequest extends InvokeContext.RequestContext {
 
-    private ServiceKey sourceService;
-
-    private ServiceKey service;
-
-    private String method;
-
-    private ResultToErrorCode resultToErrorCode;
-
-    public ServiceKey getService() {
-        return service;
-    }
-
-    public void setService(ServiceKey service) {
-        this.service = service;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public ResultToErrorCode getResultToErrorCode() {
-        return resultToErrorCode;
-    }
-
-    public void setResultToErrorCode(ResultToErrorCode resultToErrorCode) {
-        this.resultToErrorCode = resultToErrorCode;
-    }
-
-    public ServiceKey getSourceService() {
-        return sourceService;
-    }
-
-    public void setSourceService(ServiceKey sourceService) {
-        this.sourceService = sourceService;
+    public FunctionalDecoratorRequest(ServiceKey service, String method) {
+        super(service, method);
     }
 
     @Override
     public String toString() {
         return "FunctionalDecoratorRequest{" +
-                "sourceService=" + sourceService +
-                ", service=" + service +
-                ", method='" + method + '\'' +
-                ", resultToErrorCode=" + resultToErrorCode +
+                "sourceService=" + getSourceService() +
+                ", service=" + getService() +
+                ", method='" + getMethod() + '\'' +
+                ", resultToErrorCode=" + getResultToErrorCode() +
                 '}';
     }
 

@@ -41,10 +41,15 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 
 /**
@@ -60,6 +65,8 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     public static final String ROUTER_METADATA_KEY_ZONE = "zone";
     public static final String ROUTER_METADATA_KEY_REGION = "region";
     public static final String ROUTER_METADATA_KEY_CAMPUS = "campus";
+
+    private static final String NEARBY_METADATA_ENABLE  = "internal-enable-nearby";
 
 
     private static final Logger LOG = LoggerFactory.getLogger(NearbyRouter.class);
@@ -339,6 +346,12 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         if (MapUtils.isEmpty(clientLocationInfo)) {
             return false;
         }
+
+        Map<String, String> destSvcMetadata = Optional.ofNullable(dstSvcInfo.getMetadata()).orElse(Collections.emptyMap());
+        if (Boolean.parseBoolean(destSvcMetadata.get(NEARBY_METADATA_ENABLE))) {
+            return true;
+        }
+
         //默认关闭，需要显示打开
         Map<String, String> routerMetadata = routeInfo.getRouterMetadata(ROUTER_TYPE_NEAR_BY);
         if (MapUtils.isNotEmpty(routerMetadata)) {

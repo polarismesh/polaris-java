@@ -71,18 +71,37 @@ global:
   #描述: 监控及日志数据上报相关配置
   statReporter:
     #描述: 是否启用上报
-    enable: false
+    enable: true
     plugin:
       prometheus:
+        #描述: 设置 prometheus 指标上报模式
+        #类型:string
+        #默认值:pull
+        #范围:pull|push
+        type: pull
         #描述: 设置 prometheus http-server 的监听端口
         #类型:int
-        #默认值: 28080
+        #默认值: 28080, 默认会自动从 [28080, 28090] 进行逐个探测占用
         #如果设置为负数，则不会开启默认的http-server，如果设置为0，则随机选择一个可用端口进行启动 http-server
         port: 28080
         #描述: 设置 prometheus http-server 的拉取path
         #类型:string
         #默认值: /metric
         path: /metric
+        #描述: 设置 prometheus http-server 的监听的IP
+        #类型:string
+        #默认值: 0.0.0.0
+        host: 0.0.0.0
+        # #描述: 设置 pushgateway 的地址, 仅 type == push 时生效
+        # #类型:string
+        # #默认 global.serverConnector.addresses[0]:9091
+        # address: 127.0.0.1:9091
+        # #描述:设置metric数据推送到pushgateway的执行周期, 仅 type == push 时生效
+        # #类型:string
+        # #格式:^\d+(s|m|h)$
+        # #范围:[1s:...]
+        # #默认值:10s
+        # pushInterval: 10s
   location:
     providers:
       - type: local

@@ -239,7 +239,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                 throw t;
             }
             if (null != connection) {
-                connection.reportFail();
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to register host %s:%d service %s", req.getHost(), req.getPort(), serviceKey),
@@ -296,6 +296,9 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
         ModelProto.Location location = locationBuilder.build();
         instanceBuilder.setLocation(location);
+        if (StringUtils.isNotEmpty(req.getInstanceID())) {
+            instanceBuilder.setId(StringValue.newBuilder().setValue(req.getInstanceID()));
+        }
 
         return instanceBuilder.build();
     }
@@ -385,7 +388,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                 throw t;
             }
             if (null != connection) {
-                connection.reportFail();
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to deregister id %s, host %s:%d service %s",
@@ -421,7 +424,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                 throw t;
             }
             if (null != connection) {
-                connection.reportFail();
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to heartbeat id %s, host %s:%d service %s",
@@ -465,7 +468,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                 throw t;
             }
             if (null != connection) {
-                connection.reportFail();
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to report client host %s, version %s service %s",

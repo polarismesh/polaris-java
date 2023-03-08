@@ -12,5 +12,5 @@ global:
     enable: true
     plugin:
       prometheus:
-        pushgatewayAddress: 127.0.0.1:9091
-        port: 28082
+        type: pull
+        port: 28080

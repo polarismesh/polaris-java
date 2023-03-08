@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -64,7 +65,7 @@ public class InstancesDetectTask implements Runnable {
     public void run() {
         Set<ServiceKey> services = extensions.getLocalRegistry().getServices();
         for (ServiceKey serviceKey : services) {
-            if (serviceKey.getNamespace().equals("Polaris")) {
+            if (Objects.equals(serviceKey.getNamespace(), "Polaris")) {
                 continue; // 北极星内部服务器不进行网络探测
             }
             try {

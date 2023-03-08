@@ -40,8 +40,7 @@ public class ServiceBreakerExample {
 
     public static void main(String[] args) {
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPI();
-        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest();
-        makeDecoratorRequest.setService(new ServiceKey("default", "testService1"));
+        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(new ServiceKey("default", "testService1"), "");
         FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
         Consumer<Condition> integerConsumer = decorator.decorateConsumer(new Consumer<Condition>() {
             @Override
