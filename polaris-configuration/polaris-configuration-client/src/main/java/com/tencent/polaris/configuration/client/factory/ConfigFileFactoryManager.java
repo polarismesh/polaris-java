@@ -7,5 +7,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
  */
 public interface ConfigFileFactoryManager {
 
-    ConfigFileFactory getFactory(ConfigFileMetadata configFileMetadata);
+    ConfigFileFactory getConfigFileFactory(ConfigFileMetadata configFileMetadata);
+
+    ConfigFilePublishFactory getConfigFilePublishFactory(ConfigFileMetadata configFileMetadata);
 }

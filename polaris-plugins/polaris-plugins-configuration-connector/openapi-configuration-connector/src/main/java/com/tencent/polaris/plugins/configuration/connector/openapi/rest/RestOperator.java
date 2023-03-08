@@ -58,6 +58,7 @@ public class RestOperator {
     }
 
     public ConfigClientResponse doGet(String url, String token) {
+        LOG.debug("[Polaris] server send get request={}", url);
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("X-Polaris-Token", token)
@@ -68,6 +69,8 @@ public class RestOperator {
     }
 
     public ConfigClientResponse doPost(String url, String token, String body) {
+        LOG.warn("[Polaris] server send post request={}, body={}",
+                url, body);
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("X-Polaris-Token", token)
@@ -78,6 +81,8 @@ public class RestOperator {
     }
 
     public ConfigClientResponse doPut(String url, String token, String body) {
+        LOG.debug("[Polaris] server send put request={}, body={}",
+                url, body);
         Request request = new Request.Builder()
                 .url(url)
                 .addHeader("X-Polaris-Token", token)

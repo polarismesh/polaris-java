@@ -1,6 +1,7 @@
 package com.tencent.polaris.configuration.example;
 
 import com.tencent.polaris.configuration.api.core.ConfigFile;
+import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 
@@ -16,15 +17,16 @@ public class ConfigFileOpenapiExample {
         Utils.InitResult initResult = Utils.initConfiguration(args);
         String namespace = "default";
         String fileGroup = "test";
-        String fileName = "test/openapi.json";
+        String fileName = "test/openaapi.json";
 
         String content = "redis.cache.age=1000";
+
+        // 创建配置文件元信息
+        DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
 
         // 创建配置中心服务类，一般情况下只需要单例对象
         ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
 
-        // 创建配置文件元信息
-        DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
 
         // 获取配置文件
 //        ConfigFile configFile = configFileService.getConfigFile(fileMetadata);
@@ -34,15 +36,18 @@ public class ConfigFileOpenapiExample {
 //        Utils.print(configFile.getContent());
 
         // 创建配置
-//        configFileService.createConfigFile(fileMetadata, content);
+        configFileService.createConfigFile(fileMetadata, content);
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, content);
 
         // 更新配置
-        configFileService.updateConfigFile(fileMetadata, content);
+//        configFileService.updateConfigFile(fileMetadata, content);
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
 
+        // 创建配置中心服务发布类，一般情况下只需要单例对象
+        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
+
         // 发布配置
-//        configFileService.releaseConfigFile(fileMetadata);
+        configFilePublishService.releaseConfigFile(fileMetadata);
 //        configFileService.releaseConfigFile(namespace, fileGroup, fileName);
 
     }

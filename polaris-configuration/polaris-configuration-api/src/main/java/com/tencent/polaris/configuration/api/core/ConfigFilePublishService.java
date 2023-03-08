@@ -3,7 +3,7 @@ package com.tencent.polaris.configuration.api.core;
 /**
  * @author fabian4 2023-03-08
  */
-public interface ConfigFilePublishAPI {
+public interface ConfigFilePublishService {
 
     /**
      * Release the configuration file

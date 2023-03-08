@@ -12,7 +12,7 @@ import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 /**
  * @author lepdou 2022-03-01
  */
-public class DefaultConfigFileService extends BaseEngine implements ConfigFileService, ConfigFilePublishAPI {
+public class DefaultConfigFileService extends BaseEngine implements ConfigFileService {
 
     private ConfigFileManager configFileManager;
 
@@ -85,16 +85,4 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
         configFileManager.updateConfigFile(configFileMetadata, content);
     }
-
-    @Override
-    public void releaseConfigFile(String namespace, String fileGroup, String fileName) {
-        releaseConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName));
-    }
-
-    @Override
-    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
-        ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        configFileManager.releaseConfigFile(configFileMetadata);
-    }
-
 }

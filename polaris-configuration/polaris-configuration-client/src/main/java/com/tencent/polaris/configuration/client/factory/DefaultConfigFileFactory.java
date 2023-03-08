@@ -1,5 +1,7 @@
 package com.tencent.polaris.configuration.client.factory;
 
+import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
@@ -22,11 +24,17 @@ public class DefaultConfigFileFactory implements ConfigFileFactory {
 
     private final SDKContext sdkContext;
 
+    private final ConfigFileConnector configFileConnector;
+
     private final ConfigFileLongPollingService configFileLongPollingService;
 
     private DefaultConfigFileFactory(SDKContext sdkContext) {
         this.sdkContext = sdkContext;
         this.configFileLongPollingService = DefaultConfigFileLongPollingService.getInstance(sdkContext);
+        String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
+                .getConnectorType();
+        this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
+                .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
     }
 
     public static DefaultConfigFileFactory getInstance(SDKContext sdkContext) {
@@ -70,20 +78,20 @@ public class DefaultConfigFileFactory implements ConfigFileFactory {
 
     @Override
     public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata);
-        remoteConfigFileRepo.createConfigFile(configFileMetadata, content);
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                configFileMetadata.getFileGroup(),
+                configFileMetadata.getFileName());
+        configFile.setContent(content);
+        configFileConnector.createConfigFile(configFile);
     }
 
     @Override
     public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata);
-        remoteConfigFileRepo.updateConfigFile(configFileMetadata, content);
-    }
-
-    @Override
-    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
-        RemoteConfigFileRepo remoteConfigFileRepo = new RemoteConfigFileRepo(sdkContext, configFileMetadata);
-        remoteConfigFileRepo.releaseConfigFile(configFileMetadata);
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                configFileMetadata.getFileGroup(),
+                configFileMetadata.getFileName());
+        configFile.setContent(content);
+        configFileConnector.updateConfigFile(configFile);
     }
 
     private ConfigFileRepo createConfigFileRepo(ConfigFileMetadata configFileMetadata) {

@@ -18,5 +18,4 @@ public interface ConfigFileFactory {
 
     void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }

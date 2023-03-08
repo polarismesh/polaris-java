@@ -38,7 +38,7 @@ public class ConfigFileFactoryManagerTest {
     public void testGetDefaultFactory() {
         ConfigFileMetadata configFileMetadata = assembleConfigFileMeta();
 
-        ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+        ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
 
         Assert.assertEquals(defaultConfigFileFactory, configFileFactory);
     }
@@ -67,11 +67,6 @@ public class ConfigFileFactoryManagerTest {
 
         @Override
         public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-
-        }
-
-        @Override
-        public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
 
         }
     }

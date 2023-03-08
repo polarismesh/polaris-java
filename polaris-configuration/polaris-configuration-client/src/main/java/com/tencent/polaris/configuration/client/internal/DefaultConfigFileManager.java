@@ -9,6 +9,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactory;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactoryManager;
+import com.tencent.polaris.configuration.client.factory.ConfigFilePublishFactory;
 import com.tencent.polaris.configuration.client.factory.DefaultConfigFileFactoryManager;
 
 import java.util.Map;
@@ -49,7 +50,7 @@ public class DefaultConfigFileManager implements ConfigFileManager {
             synchronized (this) {
                 configFile = configFileCache.get(configFileMetadata);
                 if (configFile == null) {
-                    ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+                    ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
 
                     configFile = configFileFactory.createConfigFile(configFileMetadata);
 
@@ -69,7 +70,7 @@ public class DefaultConfigFileManager implements ConfigFileManager {
             synchronized (this) {
                 configFile = configPropertiesFileCache.get(configFileMetadata);
                 if (configFile == null) {
-                    ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+                    ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
 
                     configFile = configFileFactory.createConfigKVFile(configFileMetadata, fileFormat);
 
@@ -83,20 +84,20 @@ public class DefaultConfigFileManager implements ConfigFileManager {
 
     @Override
     public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+        ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
         configFileFactory.createConfigFile(configFileMetadata, content);
     }
 
     @Override
     public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+        ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
         configFileFactory.updateConfigFile(configFileMetadata, content);
     }
 
     @Override
     public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
-        ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
-        configFileFactory.releaseConfigFile(configFileMetadata);
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.releaseConfigFile(configFileMetadata);
     }
 
     void setConfigFileFactoryManager(ConfigFileFactoryManager configFileFactoryManager) {
