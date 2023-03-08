@@ -62,7 +62,7 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
                             if (!Utils.isHealthyInstance(instance)) {
                                 return false;
                             }
-                            return checkCircuitBreakerPassing(instance);
+                            return checkCircuitBreakerPassing(routeInfo, instance);
                         }
                     }
             )
@@ -120,13 +120,17 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
         return true;
     }
 
-    private boolean checkCircuitBreakerPassing(Instance instance) {
+    private boolean checkCircuitBreakerPassing(RouteInfo routeInfo, Instance instance) {
         CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
         if (null != circuitBreakerStatus) {
             return circuitBreakerStatus.getStatus() != CircuitBreakerStatus.Status.OPEN;
         }
+        ServiceKey sourceService = null;
+        if (null != routeInfo.getSourceService()) {
+            sourceService = routeInfo.getSourceService().getServiceKey();
+        }
         Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
-                instance.getHost(), instance.getPort());
+                instance.getHost(), instance.getPort(), sourceService);
         CheckResult check = DefaultCircuitBreakAPI.check(resource, extensions);
         return check.isPass();
     }

@@ -27,9 +27,7 @@ import java.util.Map;
  */
 public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
-    private String namespace;
-
-    private String service;
+    private final ServiceKey serviceKey = new ServiceKey();
 
     private Map<String, String> metadata;
 
@@ -37,20 +35,20 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
     @Override
     public String getNamespace() {
-        return namespace;
+        return serviceKey.getNamespace();
     }
 
     public void setNamespace(String namespace) {
-        this.namespace = namespace;
+        serviceKey.setNamespace(namespace);
     }
 
     @Override
     public String getService() {
-        return service;
+        return serviceKey.getService();
     }
 
     public void setService(String service) {
-        this.service = service;
+        serviceKey.setService(service);
     }
 
     public String getRevision() {
@@ -70,12 +68,16 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         this.metadata = metadata;
     }
 
+    public ServiceKey getServiceKey() {
+        return serviceKey;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "ServiceInfo{" +
-                "namespace='" + namespace + '\'' +
-                ", service='" + service + '\'' +
+                "namespace='" + serviceKey.getNamespace() + '\'' +
+                ", service='" + serviceKey.getService() + '\'' +
                 ", metadata=" + metadata +
                 '}';
     }
@@ -86,8 +88,8 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
     @Override
     public int compareTo(ServiceInfo o) {
-        String key1 = namespace + "##" + service;
-        String key2 = o.namespace + "##" + o.service;
+        String key1 = serviceKey.getNamespace() + "##" + serviceKey.getService();
+        String key2 = o.getNamespace() + "##" + o.getService();
         return key1.compareTo(key2);
     }
 
