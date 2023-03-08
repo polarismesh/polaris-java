@@ -17,7 +17,8 @@
 
 package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientResponse;
 import okhttp3.HttpUrl;
@@ -31,7 +32,9 @@ import java.util.Objects;
  */
 public class RestService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RestService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RestService.class);c
+
+    private static final Gson gson = new Gson();
 
     private static final RestOperator restOperator = new RestOperator();
 
@@ -46,8 +49,8 @@ public class RestService {
     }
 
     public static ConfigClientResponse createConfigFile(String url, String token, ConfigFile configFile) {
-        JSONObject params = RestUtils.getParams(configFile);
-        params.put("content", configFile.getContent());
+        JsonObject params = RestUtils.getParams(configFile);
+        params.addProperty("content", configFile.getContent());
         ConfigClientResponse response = restOperator.doPost(url, token, params.toString());
         LOG.info("[Polaris] creat configuration file success: Namespace={}, FileGroup={}, FileName={}, Content={}",
                 configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
@@ -55,8 +58,8 @@ public class RestService {
     }
 
     public static ConfigClientResponse updateConfigFile(String url, String token, ConfigFile configFile) {
-        JSONObject params = RestUtils.getParams(configFile);
-        params.put("content", configFile.getContent());
+        JsonObject params = RestUtils.getParams(configFile);
+        params.addProperty("content", configFile.getContent());
         ConfigClientResponse response = restOperator.doPut(url, token, params.toString());
         LOG.info("[Polaris] update configuration file success: Namespace={}, FileGroup={}, FileName={}, Content={}",
                 configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
@@ -64,10 +67,10 @@ public class RestService {
     }
 
     public static ConfigClientResponse releaseConfigFile(String url, String token, ConfigFile configFile) {
-        JSONObject params = new JSONObject();
-        params.put("fileName", configFile.getFileName());
-        params.put("group", configFile.getFileGroup());
-        params.put("namespace", configFile.getNamespace());
+        JsonObject params = new JsonObject();
+        params.addProperty("fileName", configFile.getFileName());
+        params.addProperty("group", configFile.getFileGroup());
+        params.addProperty("namespace", configFile.getNamespace());
         ConfigClientResponse response = restOperator.doPost(url, token, params.toString());
         LOG.info("[Polaris] release configuration file success: Namespace={}, FileGroup={}, FileName={}",
                 configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());

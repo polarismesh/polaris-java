@@ -62,7 +62,7 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public ConfigFileResponse getConfigFile(ConfigFile configFile) {
-        return OpenapiServices.instance.getConfigFile(configFile);
+        return OpenapiServices.INSTANCE.getConfigFile(configFile);
     }
 
     @Override
@@ -72,17 +72,17 @@ public class OpenapiConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void createConfigFile(ConfigFile configFile) {
-        OpenapiServices.instance.createConfigFile(configFile);
+        OpenapiServices.INSTANCE.createConfigFile(configFile);
     }
 
     @Override
     public void updateConfigFile(ConfigFile configFile) {
-        OpenapiServices.instance.updateConfigFile(configFile);
+        OpenapiServices.INSTANCE.updateConfigFile(configFile);
     }
 
     @Override
     public void releaseConfigFile(ConfigFile configFile) {
-        OpenapiServices.instance.releaseConfigFile(configFile);
+        OpenapiServices.INSTANCE.releaseConfigFile(configFile);
     }
 
 }

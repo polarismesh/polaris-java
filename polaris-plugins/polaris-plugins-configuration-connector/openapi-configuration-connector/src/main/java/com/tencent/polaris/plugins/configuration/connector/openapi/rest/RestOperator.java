@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.Gson;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientResponse;
@@ -43,6 +43,8 @@ public class RestOperator {
     private static final int DEFAULT_HTTP_TIMEOUT = 5000;
 
     private static final int DEFAULT_HTTP_READ_TIMEOUT = 10000;
+
+    private static final Gson gson = new Gson();
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -90,7 +92,7 @@ public class RestOperator {
 
         try {
             Response response = client.newCall(request).execute();
-            configClientResponse = JSONObject.parseObject(Objects.requireNonNull(response.body()).string(), ConfigClientResponse.class);
+            configClientResponse = gson.fromJson(Objects.requireNonNull(response.body()).string(), ConfigClientResponse.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
 
-import com.alibaba.fastjson.JSONObject;
+import com.google.gson.JsonObject;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientFile;
 import org.slf4j.Logger;
@@ -52,12 +52,12 @@ public class RestUtils {
         return addresses.get(i);
     }
 
-    public static JSONObject getParams(ConfigFile configFile) {
-        JSONObject params = new JSONObject();
-        params.put("name", configFile.getFileName());
-        params.put("group", configFile.getFileGroup());
-        params.put("namespace", configFile.getNamespace());
-        params.put("format", RestUtils.getFormat(configFile.getFileName()));
+    public static JsonObject getParams(ConfigFile configFile) {
+        JsonObject params = new JsonObject();
+        params.addProperty("name", configFile.getFileName());
+        params.addProperty("group", configFile.getFileGroup());
+        params.addProperty("namespace", configFile.getNamespace());
+        params.addProperty("format", RestUtils.getFormat(configFile.getFileName()));
         return params;
     }
 
