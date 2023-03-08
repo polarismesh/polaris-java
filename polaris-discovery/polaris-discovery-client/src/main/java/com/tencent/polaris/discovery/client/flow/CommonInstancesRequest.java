@@ -101,7 +101,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         dstServiceInfo.setService(request.getService());
         dstServiceInfo.setMetadata(request.getMetadata());
 
-        routeInfo = new RouteInfo(null, dstServiceInfo, null);
+        routeInfo = new RouteInfo(null, dstServiceInfo, null, configuration.getProvider().getService());
         routeInfo.setIncludeUnhealthyInstances(false);
         Boolean includeCircuitBreak = request.getIncludeCircuitBreakInstances();
         if (null != includeCircuitBreak) {
@@ -147,7 +147,8 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         dstServiceInfo.setNamespace(request.getNamespace());
         dstServiceInfo.setService(request.getService());
         dstServiceInfo.setMetadata(request.getMetadata());
-        routeInfo = new RouteInfo(srcServiceInfo, dstServiceInfo, request.getMethod());
+        routeInfo = new RouteInfo(srcServiceInfo, dstServiceInfo, request.getMethod(),
+                configuration.getProvider().getService());
         routeInfo.setCanary(request.getCanary());
         routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
         criteria = request.getCriteria();
@@ -179,7 +180,8 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         dstServiceInfo.setNamespace(request.getNamespace());
         dstServiceInfo.setService(request.getService());
         dstServiceInfo.setMetadata(request.getMetadata());
-        routeInfo = new RouteInfo(srcServiceInfo, dstServiceInfo, request.getMethod());
+        routeInfo = new RouteInfo(srcServiceInfo, dstServiceInfo, request.getMethod(),
+                configuration.getProvider().getService());
         routeInfo.setIncludeCircuitBreakInstances(request.isIncludeCircuitBreak());
         routeInfo.setIncludeUnhealthyInstances(request.isIncludeUnhealthy());
         routeInfo.setCanary(request.getCanary());
