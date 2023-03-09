@@ -34,12 +34,6 @@
 
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>openapi-configuration-connector</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
             <artifactId>local-file-configuration-connector</artifactId>
             <version>${project.version}</version>
         </dependency>
