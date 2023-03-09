@@ -48,7 +48,7 @@ public class ConfigFileOpenapiExample {
 
         // 发布配置
         configFilePublishService.releaseConfigFile(fileMetadata);
-//        configFileService.releaseConfigFile(namespace, fileGroup, fileName);
+//        configFilePublishService.releaseConfigFile(namespace, fileGroup, fileName);
 
     }
 }
