@@ -27,13 +27,17 @@ import java.util.Objects;
  */
 public class ServiceKey implements Service {
 
-    private final String namespace;
+    private String namespace;
 
-    private final String service;
+    private String service;
 
     public ServiceKey(String namespace, String service) {
         this.namespace = namespace;
         this.service = service;
+    }
+
+    public ServiceKey() {
+
     }
 
     @Override
@@ -44,6 +48,14 @@ public class ServiceKey implements Service {
     @Override
     public String getService() {
         return service;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public void setService(String service) {
+        this.service = service;
     }
 
     @Override

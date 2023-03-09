@@ -19,15 +19,12 @@ package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.SourceService;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiConsumer;
 
 /**
  * 单个服务实例查询请求
@@ -61,6 +58,7 @@ public class GetOneInstanceRequest extends RequestBaseEntity {
      * 可选, metadata失败降级策略
      */
     private MetadataFailoverType metadataFailoverType;
+
 
     /**
      * 主调方服务信息
