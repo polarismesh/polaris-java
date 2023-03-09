@@ -43,19 +43,19 @@ public class ConfigFileManagerTest {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
         ConfigFile mockedConfigFile = mock(ConfigFile.class);
 
-        when(configFileFactoryManager.getFactory(any())).thenReturn(configFileFactory);
+        when(configFileFactoryManager.getConfigFileFactory(any())).thenReturn(configFileFactory);
         when(configFileFactory.createConfigFile(configFileMetadata)).thenReturn(mockedConfigFile);
 
         //第一次获取
         ConfigFile configFile = defaultConfigFileManager.getConfigFile(configFileMetadata);
 
-        verify(configFileFactoryManager).getFactory(configFileMetadata);
+        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
         verify(configFileFactory).createConfigFile(configFileMetadata);
         Assert.assertEquals(mockedConfigFile, configFile);
 
         //第二次获取，经过缓存
         ConfigFile configFile2 = defaultConfigFileManager.getConfigFile(configFileMetadata);
-        verify(configFileFactoryManager).getFactory(configFileMetadata);
+        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
         verify(configFileFactory).createConfigFile(configFileMetadata);
         Assert.assertEquals(mockedConfigFile, configFile2);
 
@@ -66,19 +66,19 @@ public class ConfigFileManagerTest {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
         ConfigKVFile mockedConfigFile = mock(ConfigKVFile.class);
 
-        when(configFileFactoryManager.getFactory(any())).thenReturn(configFileFactory);
+        when(configFileFactoryManager.getConfigFileFactory(any())).thenReturn(configFileFactory);
         when(configFileFactory.createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties)).thenReturn(mockedConfigFile);
 
         //第一次获取
         ConfigKVFile configFile = defaultConfigFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
 
-        verify(configFileFactoryManager).getFactory(configFileMetadata);
+        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
         verify(configFileFactory).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
         Assert.assertEquals(mockedConfigFile, configFile);
 
         //第二次获取，经过缓存
         ConfigKVFile configFile2 = defaultConfigFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
-        verify(configFileFactoryManager).getFactory(configFileMetadata);
+        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
         verify(configFileFactory).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
         Assert.assertEquals(mockedConfigFile, configFile2);
 
