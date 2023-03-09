@@ -19,12 +19,15 @@ package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
 
 import com.google.gson.JsonObject;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
 import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 
 /**
  * @author fabian4 2023-02-28
@@ -43,6 +46,14 @@ public class RestUtils {
         return String.format("http://%s/config/v1/configfiles/release", address);
     }
 
+    public static List<String> getAddress(ConnectorConfigImpl config) {
+        List<String> addresses = config.getOpenapiAddresses();
+        if (addresses == null || addresses.isEmpty()) {
+            addresses = config.getAddresses();
+            addresses = addresses.stream().map(address -> address.replaceAll(":.*", ":8090")).collect(Collectors.toList());
+        }
+        return addresses;
+    }
 
     public static String pickAddress(List<String> addresses) {
         if (addresses.size() == 1) {
@@ -63,7 +74,7 @@ public class RestUtils {
 
     public static String getFormat(String filename) {
         String[] split = filename.split("\\.");
-        if(split.length <= 1){
+        if (split.length <= 1) {
             return "test";
         }
         return split[split.length - 1];

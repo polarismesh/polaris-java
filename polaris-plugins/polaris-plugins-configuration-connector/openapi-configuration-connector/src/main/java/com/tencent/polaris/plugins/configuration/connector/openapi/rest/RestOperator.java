@@ -69,7 +69,7 @@ public class RestOperator {
     }
 
     public ConfigClientResponse doPost(String url, String token, String body) {
-        LOG.warn("[Polaris] server send post request={}, body={}",
+        LOG.debug("[Polaris] server send post request={}, body={}",
                 url, body);
         Request request = new Request.Builder()
                 .url(url)

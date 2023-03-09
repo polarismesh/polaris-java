@@ -19,7 +19,7 @@ public class ConfigFileOpenapiExample {
         String fileGroup = "test";
         String fileName = "test/openaapi.json";
 
-        String content = "redis.cache.age=1000";
+        String content = "redis.cache.age=10";
 
         // 创建配置文件元信息
         DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
@@ -36,11 +36,11 @@ public class ConfigFileOpenapiExample {
 //        Utils.print(configFile.getContent());
 
         // 创建配置
-        configFileService.createConfigFile(fileMetadata, content);
+//        configFileService.createConfigFile(fileMetadata, content);
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, content);
 
         // 更新配置
-//        configFileService.updateConfigFile(fileMetadata, content);
+        configFileService.updateConfigFile(fileMetadata, content);
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
 
         // 创建配置中心服务发布类，一般情况下只需要单例对象

@@ -40,7 +40,7 @@ public class OpenapiServices {
     private List<String> address;
 
     private OpenapiServices(InitContext ctx) {
-        this.address = ctx.getConfig().getConfigFile().getServerConnector().getAddresses();
+        this.address = RestUtils.getAddress(ctx.getConfig().getConfigFile().getServerConnector());
         this.token = ctx.getConfig().getConfigFile().getServerConnector().getToken();
     }
 

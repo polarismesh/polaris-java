@@ -45,6 +45,9 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     private String protocol;
 
     @JsonProperty
+    private List<String> openapiAddresses;
+
+    @JsonProperty
     private String token;
 
     @JsonProperty
@@ -78,6 +81,14 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
 
     public void setAddresses(List<String> addresses) {
         this.addresses = addresses;
+    }
+
+    public List<String> getOpenapiAddresses() {
+        return openapiAddresses;
+    }
+
+    public void setOpenapiAddresses(List<String> openapiAddresses) {
+        this.openapiAddresses = openapiAddresses;
     }
 
     public String getToken() {
