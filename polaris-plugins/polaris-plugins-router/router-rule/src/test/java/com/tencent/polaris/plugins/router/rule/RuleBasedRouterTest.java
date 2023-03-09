@@ -135,7 +135,7 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("application", "demo-consumer");
         v1ServiceInfo.setMetadata(v1ReqMeta);
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+                v1ServiceInfo, null, defaultServiceInstances, rule, "bid", null);
         Map<String, Set<RouteArgument>> argumentsMap = new HashMap<>();
         argumentsMap.put("ruleRouter", new HashSet<>());
         argumentsMap.get("ruleRouter").add(RouteArgument.buildHeader("req", "v1"));
@@ -170,7 +170,7 @@ public class RuleBasedRouterTest {
         v1ServiceInfo.setMetadata(v1ReqMeta);
         v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "v1_copy"));
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+                v1ServiceInfo, null, defaultServiceInstances, rule, "bid", null);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         RouteResult result = ruleBasedRouter.router(v1RouteInfo, defaultServiceInstances);
@@ -201,7 +201,7 @@ public class RuleBasedRouterTest {
         v1ServiceInfo.setMetadata(v1ReqMeta);
         v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "v1_copy"));
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+                v1ServiceInfo, null, defaultServiceInstances, rule, "bid", null);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         RouteResult result = ruleBasedRouter.router(v1RouteInfo, defaultServiceInstances);
@@ -232,7 +232,7 @@ public class RuleBasedRouterTest {
         v1ServiceInfo.setMetadata(v1ReqMeta);
         v1ServiceInfo.appendArguments(RouteArgument.buildHeader("req", "polarissssssmesh"));
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+                v1ServiceInfo, null, defaultServiceInstances, rule, "bid", null);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         RouteResult result = ruleBasedRouter.router(v1RouteInfo, defaultServiceInstances);
@@ -263,7 +263,7 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("req", "v1");
         v1ServiceInfo.setMetadata(v1ReqMeta);
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, "bid");
+                v1ServiceInfo, null, defaultServiceInstances, rule, "bid", null);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         RouteResult result = ruleBasedRouter.router(v1RouteInfo, defaultServiceInstances);
@@ -307,7 +307,7 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("req", "v1");
         v1ServiceInfo.setMetadata(v1ReqMeta);
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, null);
+                v1ServiceInfo, null, defaultServiceInstances, rule, null, null);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         for (int i = 0; i < 10; i++) {
@@ -321,7 +321,7 @@ public class RuleBasedRouterTest {
         v2ReqMeta.put("req", "v2");
         v2ServiceInfo.setMetadata(v2ReqMeta);
         RouteInfo v2RouteInfo = new RouteInfo(
-                v2ServiceInfo, null, defaultServiceInstances, rule, null);
+                v2ServiceInfo, null, defaultServiceInstances, rule, null, null);
         boolean enableV2 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV2);
         for (int i = 0; i < 10; i++) {
@@ -367,7 +367,7 @@ public class RuleBasedRouterTest {
         v1ReqMeta.put("req", "v1");
         v1ServiceInfo.setMetadata(v1ReqMeta);
         RouteInfo v1RouteInfo = new RouteInfo(
-                v1ServiceInfo, null, defaultServiceInstances, rule, null);
+                v1ServiceInfo, null, defaultServiceInstances, rule, null, null);
         boolean enableV1 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV1);
         for (int i = 0; i < 10; i++) {
@@ -381,7 +381,7 @@ public class RuleBasedRouterTest {
         v2ReqMeta.put("req", "v2");
         v2ServiceInfo.setMetadata(v2ReqMeta);
         RouteInfo v2RouteInfo = new RouteInfo(
-                v2ServiceInfo, null, defaultServiceInstances, rule, null);
+                v2ServiceInfo, null, defaultServiceInstances, rule, null, null);
         boolean enableV2 = ruleBasedRouter.enable(v1RouteInfo, defaultServiceInstances);
         Assert.assertTrue(enableV2);
         for (int i = 0; i < 10; i++) {
