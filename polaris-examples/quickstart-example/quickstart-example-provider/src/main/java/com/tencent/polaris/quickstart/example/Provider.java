@@ -79,6 +79,10 @@ public class Provider {
         server.start();
     }
 
+    private static String providedInstanceId(String namespace, String service, String host, int port) {
+        return String.format("%s#%s#%s#%d", namespace, service, host, port);
+    }
+
     // do the instance register
     private static void register(String namespace, String service, String host, int port,
             ProviderAPI providerAPI) {
@@ -91,7 +95,7 @@ public class Provider {
         registerRequest.setVersion("1.0.0");
         registerRequest.setTtl(TTL);
         // 实例id不是必填，如果不填，服务端会默认生成一个唯一Id，否则当提供实例id时，需要保证实例id是唯一的
-        registerRequest.setInstanceId("instance-provided-id");
+        registerRequest.setInstanceId(providedInstanceId(namespace, service, host, port));
         InstanceRegisterResponse registerResp = providerAPI.registerInstance(registerRequest);
         System.out.printf("register instance %s:%d to service %s(%s), id is %s%n",
                 host, port, service, namespace, registerResp.getInstanceId());
@@ -106,7 +110,7 @@ public class Provider {
         deregisterRequest.setHost(host);
         deregisterRequest.setPort(port);
         // 实例id不是必填，如果注册时指定了实例id，则反注册时需要提供同样的id
-        deregisterRequest.setInstanceID("instance-provided-id");
+        deregisterRequest.setInstanceID(providedInstanceId(namespace, service, host, port));
         providerAPI.deRegister(deregisterRequest);
         System.out.printf("deregister instance, address is %s:%d%n", host, port);
     }
