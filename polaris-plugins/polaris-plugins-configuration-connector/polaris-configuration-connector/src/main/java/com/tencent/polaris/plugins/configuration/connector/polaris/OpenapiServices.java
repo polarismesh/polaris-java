@@ -15,16 +15,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configuration.connector.openapi;
+package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientResponse;
-import com.tencent.polaris.plugins.configuration.connector.openapi.rest.RestService;
-import com.tencent.polaris.plugins.configuration.connector.openapi.rest.RestUtils;
+import com.tencent.polaris.plugins.configuration.connector.polaris.model.ConfigClientResponse;
+import com.tencent.polaris.plugins.configuration.connector.polaris.rest.RestService;
+import com.tencent.polaris.plugins.configuration.connector.polaris.rest.RestUtils;
 
 import java.util.List;
 

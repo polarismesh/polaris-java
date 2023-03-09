@@ -15,12 +15,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
+package com.tencent.polaris.plugins.configuration.connector.polaris.rest;
 
 import com.google.gson.Gson;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
-import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientResponse;
+import com.tencent.polaris.plugins.configuration.connector.polaris.model.ConfigClientResponse;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

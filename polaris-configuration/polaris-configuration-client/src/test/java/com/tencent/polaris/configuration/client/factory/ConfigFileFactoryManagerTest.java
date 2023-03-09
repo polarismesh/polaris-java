@@ -59,15 +59,5 @@ public class ConfigFileFactoryManagerTest {
         public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat fileFormat) {
             return null;
         }
-
-        @Override
-        public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-
-        }
-
-        @Override
-        public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-
-        }
     }
 }

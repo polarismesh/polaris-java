@@ -44,6 +44,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_CONFIG_CLUSTER, readyFuture);
         connectionManager = new ConnectionManager(ctx, ctx.getConfig().getConfigFile().getServerConnector(), futures);
+        OpenapiServices.initInstance(ctx);
     }
 
     @Override
@@ -117,17 +118,17 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void createConfigFile(ConfigFile configFile) {
-        throw new PolarisException(ErrorCode.NOT_SUPPORT, "PolarisConfigFileConnector does not support create configuration file through GRPC.");
+        OpenapiServices.INSTANCE.createConfigFile(configFile);
     }
 
     @Override
     public void updateConfigFile(ConfigFile configFile) {
-        throw new PolarisException(ErrorCode.NOT_SUPPORT, "PolarisConfigFileConnector does not support update configuration file through GRPC.");
+        OpenapiServices.INSTANCE.updateConfigFile(configFile);
     }
 
     @Override
     public void releaseConfigFile(ConfigFile configFile) {
-        throw new PolarisException(ErrorCode.NOT_SUPPORT, "PolarisConfigFileConnector does not support release configuration file through GRPC.");
+        OpenapiServices.INSTANCE.releaseConfigFile(configFile);
     }
 
     @Override

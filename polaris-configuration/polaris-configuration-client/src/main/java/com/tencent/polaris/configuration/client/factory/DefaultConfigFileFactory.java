@@ -76,24 +76,6 @@ public class DefaultConfigFileFactory implements ConfigFileFactory {
         }
     }
 
-    @Override
-    public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
-                configFileMetadata.getFileGroup(),
-                configFileMetadata.getFileName());
-        configFile.setContent(content);
-        configFileConnector.createConfigFile(configFile);
-    }
-
-    @Override
-    public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
-                configFileMetadata.getFileGroup(),
-                configFileMetadata.getFileName());
-        configFile.setContent(content);
-        configFileConnector.updateConfigFile(configFile);
-    }
-
     private ConfigFileRepo createConfigFileRepo(ConfigFileMetadata configFileMetadata) {
         return new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, null, configFileMetadata);
     }

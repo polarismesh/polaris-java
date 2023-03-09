@@ -15,16 +15,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configuration.connector.openapi.rest;
+package com.tencent.polaris.plugins.configuration.connector.polaris.rest;
 
 import com.google.gson.JsonObject;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
-import com.tencent.polaris.plugins.configuration.connector.openapi.model.ConfigClientFile;
+import com.tencent.polaris.plugins.configuration.connector.polaris.model.ConfigClientFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;

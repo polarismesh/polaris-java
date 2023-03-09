@@ -84,14 +84,14 @@ public class DefaultConfigFileManager implements ConfigFileManager {
 
     @Override
     public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
-        configFileFactory.createConfigFile(configFileMetadata, content);
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.createConfigFile(configFileMetadata, content);
     }
 
     @Override
     public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
-        configFileFactory.updateConfigFile(configFileMetadata, content);
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.updateConfigFile(configFileMetadata, content);
     }
 
     @Override

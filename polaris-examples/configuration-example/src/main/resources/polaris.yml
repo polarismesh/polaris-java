@@ -21,8 +21,7 @@ consumer:
     enable: false
 config:
   serverConnector:
-    connectorType: openapi
-    #connectorType: polaris
+    connectorType: polaris
     #connectorType: localFile
     #persistEnable: true
     #fallbackToLocalCache: true

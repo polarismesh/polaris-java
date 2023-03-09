@@ -1,6 +1,5 @@
 package com.tencent.polaris.configuration.example;
 
-import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
@@ -11,7 +10,7 @@ import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetada
  *
  * @author fabian 2023-03-02
  */
-public class ConfigFileOpenapiExample {
+public class ConfigFileReleaseExample {
 
     public static void main(String[] args) throws Exception {
         Utils.InitResult initResult = Utils.initConfiguration(args);
@@ -24,27 +23,16 @@ public class ConfigFileOpenapiExample {
         // 创建配置文件元信息
         DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
 
-        // 创建配置中心服务类，一般情况下只需要单例对象
-        ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
-
-
-        // 获取配置文件
-//        ConfigFile configFile = configFileService.getConfigFile(fileMetadata);
-//        ConfigFile configFile = configFileService.getConfigFile(namespace, fileGroup, fileName);
-
-        // 打印配置文件内容
-//        Utils.print(configFile.getContent());
+        // 创建配置中心服务发布类，一般情况下只需要单例对象
+        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
 
         // 创建配置
-//        configFileService.createConfigFile(fileMetadata, content);
+        configFilePublishService.createConfigFile(fileMetadata, content);
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, content);
 
         // 更新配置
-        configFileService.updateConfigFile(fileMetadata, content);
+        configFilePublishService.updateConfigFile(fileMetadata, content);
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
-
-        // 创建配置中心服务发布类，一般情况下只需要单例对象
-        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
 
         // 发布配置
         configFilePublishService.releaseConfigFile(fileMetadata);

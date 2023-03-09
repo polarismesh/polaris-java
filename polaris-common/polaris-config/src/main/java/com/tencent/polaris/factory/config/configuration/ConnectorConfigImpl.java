@@ -42,9 +42,6 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
 	@Override
 	public void verify() {
 		ConfigUtils.validateString(connectorType, "configConnectorType");
-		if(StringUtils.equals(connectorType, DefaultValues.OPENAPI_CONNECTOR_TYPE)) {
-			ConfigUtils.validateString(getToken(), "Token");
-		}
 		if (StringUtils.isBlank(persistDir)) {
 			persistDir = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
 		}

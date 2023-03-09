@@ -84,8 +84,7 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
         //长轮询起始的配置文件版本号应该以第一次同步拉取为准
         notifiedVersion.putIfAbsent(configFileMetadata, version);
 
-        // openapi 不支持长轮询 跳过
-        if (!started.get() && !Objects.equals(configFileConnector.getName(), DefaultValues.OPENAPI_CONNECTOR_TYPE)) {
+        if (!started.get()) {
             startLongPollingTask();
         }
     }
