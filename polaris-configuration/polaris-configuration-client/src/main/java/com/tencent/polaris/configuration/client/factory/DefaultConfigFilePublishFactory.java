@@ -1,6 +1,7 @@
 package com.tencent.polaris.configuration.client.factory;
 
 import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -37,7 +38,7 @@ public class DefaultConfigFilePublishFactory implements ConfigFilePublishFactory
 
     @Override
     public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
                 configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName());
         configFile.setContent(content);
@@ -46,7 +47,7 @@ public class DefaultConfigFilePublishFactory implements ConfigFilePublishFactory
 
     @Override
     public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
-        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
                 configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName());
         configFile.setContent(content);
@@ -55,7 +56,7 @@ public class DefaultConfigFilePublishFactory implements ConfigFilePublishFactory
 
     @Override
     public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
-        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
                 configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName());
         configFileConnector.releaseConfigFile(configFile);
