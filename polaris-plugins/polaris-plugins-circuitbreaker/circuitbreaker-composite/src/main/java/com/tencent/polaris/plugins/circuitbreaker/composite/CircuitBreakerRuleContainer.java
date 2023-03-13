@@ -151,6 +151,9 @@ public class CircuitBreakerRuleContainer {
         }
         List<CircuitBreakerRule> wildcardRules = new ArrayList<>();
         for (CircuitBreakerRule cbRule : rules) {
+            if (!cbRule.getEnable()){
+                continue;
+            }
             Level level = resource.getLevel();
             if (cbRule.getLevel() != level) {
                 continue;
