@@ -16,7 +16,7 @@ public class ConfigFileReleaseExample {
         Utils.InitResult initResult = Utils.initConfiguration(args);
         String namespace = "default";
         String fileGroup = "test";
-        String fileName = "test/openaapi.json";
+        String fileName = "test/aapi.json";
 
         String content = "redis.cache.age=10";
 
@@ -27,7 +27,7 @@ public class ConfigFileReleaseExample {
         ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
 
         // 创建配置
-        configFilePublishService.createConfigFile(fileMetadata, content);
+//        configFilePublishService.createConfigFile(fileMetadata, content);
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, content);
 
         // 更新配置
@@ -35,7 +35,7 @@ public class ConfigFileReleaseExample {
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
 
         // 发布配置
-        configFilePublishService.releaseConfigFile(fileMetadata);
+//        configFilePublishService.releaseConfigFile(fileMetadata);
 //        configFilePublishService.releaseConfigFile(namespace, fileGroup, fileName);
 
     }

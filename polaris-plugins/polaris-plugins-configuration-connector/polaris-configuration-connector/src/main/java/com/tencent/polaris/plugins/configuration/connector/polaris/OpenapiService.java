@@ -15,27 +15,75 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configuration.connector.polaris.rest;
+package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.google.gson.JsonObject;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.exception.ServerErrorResponseException;
+import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.plugins.configuration.connector.polaris.model.ConfigClientResponse;
+import com.tencent.polaris.plugins.configuration.connector.polaris.rest.RestOperator;
+import com.tencent.polaris.plugins.configuration.connector.polaris.rest.RestUtils;
 import okhttp3.HttpUrl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
- * @author fabian4 2023-02-28
+ * @author fabian4 2023-03-01
  */
-public class RestService {
+public class OpenapiService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RestService.class);
+    public static OpenapiService INSTANCE;
 
-    private static final RestOperator restOperator = new RestOperator();
+    private static final Logger LOG = LoggerFactory.getLogger(OpenapiService.class);
 
-    public static ConfigClientResponse getConfigFile(String url, String token, ConfigFile configFile) {
+    private final String token;
+
+    private final List<String> address;
+
+    private final RestOperator restOperator;
+
+    private OpenapiService(InitContext ctx) {
+        this.restOperator = new RestOperator();
+        this.address = RestUtils.getAddress(ctx.getConfig().getConfigFile().getServerConnector());
+        this.token = ctx.getConfig().getConfigFile().getServerConnector().getToken();
+    }
+
+    public static void initInstance(InitContext ctx) {
+        INSTANCE = new OpenapiService(ctx);
+    }
+
+    public ConfigFileResponse getConfigFile(ConfigFile configFile) {
+        ConfigClientResponse configClientResponse = getConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+        int code = Integer.parseInt(configClientResponse.getCode());
+        //预期code，正常响应
+        if (code == ServerCodes.EXECUTE_SUCCESS ||
+                code == ServerCodes.NOT_FOUND_RESOURCE ||
+                code == ServerCodes.DATA_NO_CHANGE) {
+            ConfigFile loadedConfigFile = RestUtils.transferFromDTO(configClientResponse.getConfigFile());
+            return new ConfigFileResponse(code, configClientResponse.getInfo(), loadedConfigFile);
+        }
+        throw ServerErrorResponseException.build(code, configClientResponse.getInfo());
+    }
+
+    public void createConfigFile(ConfigFile configFile) {
+        createConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+    }
+
+    public void updateConfigFile(ConfigFile configFile) {
+        updateConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+    }
+
+    public void releaseConfigFile(ConfigFile configFile) {
+        releaseConfigFile(RestUtils.toReleaseConfigFileUrl(address), token, configFile);
+    }
+
+    public ConfigClientResponse getConfigFile(String url, String token, ConfigFile configFile) {
         url = Objects.requireNonNull(HttpUrl.parse(url)).newBuilder()
                 .addQueryParameter("name", configFile.getFileName())
                 .addQueryParameter("group", configFile.getFileGroup())
@@ -45,7 +93,7 @@ public class RestService {
         return restOperator.doGet(url, token);
     }
 
-    public static ConfigClientResponse createConfigFile(String url, String token, ConfigFile configFile) {
+    public ConfigClientResponse createConfigFile(String url, String token, ConfigFile configFile) {
         JsonObject params = RestUtils.getParams(configFile);
         params.addProperty("content", configFile.getContent());
         ConfigClientResponse response = restOperator.doPost(url, token, params.toString());
@@ -54,7 +102,7 @@ public class RestService {
         return response;
     }
 
-    public static ConfigClientResponse updateConfigFile(String url, String token, ConfigFile configFile) {
+    public ConfigClientResponse updateConfigFile(String url, String token, ConfigFile configFile) {
         JsonObject params = RestUtils.getParams(configFile);
         params.addProperty("content", configFile.getContent());
         ConfigClientResponse response = restOperator.doPut(url, token, params.toString());
@@ -63,7 +111,7 @@ public class RestService {
         return response;
     }
 
-    public static ConfigClientResponse releaseConfigFile(String url, String token, ConfigFile configFile) {
+    public ConfigClientResponse releaseConfigFile(String url, String token, ConfigFile configFile) {
         JsonObject params = new JsonObject();
         params.addProperty("fileName", configFile.getFileName());
         params.addProperty("group", configFile.getFileGroup());
