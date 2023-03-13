@@ -17,17 +17,26 @@
 
 package com.tencent.polaris.plugins.configuration.connector.polaris.model;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * @author fabian4 2023-03-02
  */
 public class ConfigClientResponse {
 
+    @SerializedName("code")
     private String code;
+    @SerializedName("info")
     private String info;
+    @SerializedName("configFileGroup")
     private String configFileGroup;
+    @SerializedName("configFile")
     private ConfigClientFile configFile;
+    @SerializedName("configFileRelease")
     private ConfigClientFileRelease configFileRelease;
+    @SerializedName("configFileReleaseHistory")
     private String configFileReleaseHistory;
+    @SerializedName("configFileTemplate")
     private String configFileTemplate;
 
     public String getCode() {

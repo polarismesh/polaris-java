@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.plugins.configuration.connector.polaris.model;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.Date;
 import java.util.List;
 
@@ -25,20 +27,35 @@ import java.util.List;
  */
 public class ConfigClientFile {
 
+    @SerializedName("id")
     private String id;
+    @SerializedName("name")
     private String name;
+    @SerializedName("namespace")
     private String namespace;
+    @SerializedName("group")
     private String group;
+    @SerializedName("content")
     private String content;
+    @SerializedName("format")
     private String format;
+    @SerializedName("comment")
     private String comment;
+    @SerializedName("status")
     private String status;
+    @SerializedName("tags")
     private List<String> tags;
+    @SerializedName("createTime")
     private Date createTime;
+    @SerializedName("createBy")
     private String createBy;
+    @SerializedName("modifyTime")
     private Date modifyTime;
+    @SerializedName("modifyBy")
     private String modifyBy;
+    @SerializedName("releaseTime")
     private Date releaseTime;
+    @SerializedName("releaseBy")
     private String releaseBy;
 
     public String getId() {
