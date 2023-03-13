@@ -79,4 +79,4 @@ jobs:
       - name: Upload Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: ${{ github.workspace }}/polaris-java/**/target/site/jacoco/jacoco.xml
+          files: ${{ github.workspace }}/**/target/site/jacoco/jacoco.xml
