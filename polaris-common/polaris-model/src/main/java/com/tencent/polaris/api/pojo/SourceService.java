@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.api.utils.CollectionUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,53 +25,51 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.tencent.polaris.api.utils.CollectionUtils;
-
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class SourceService extends ServiceInfo {
 
-	private Set<RouteArgument> arguments = new HashSet<>();
+    private final Set<RouteArgument> arguments = new HashSet<>();
 
-	public Set<RouteArgument> getArguments() {
-		return arguments;
-	}
+    public Set<RouteArgument> getArguments() {
+        return arguments;
+    }
 
-	public void appendArguments(RouteArgument argument) {
-		arguments.add(argument);
-	}
+    public void appendArguments(RouteArgument argument) {
+        arguments.add(argument);
+    }
 
-	public void setArguments(Set<RouteArgument> arguments) {
-		if (!CollectionUtils.isEmpty(arguments)) {
-			this.arguments.addAll(arguments);
-		}
-	}
+    public void setArguments(Set<RouteArgument> arguments) {
+        if (!CollectionUtils.isEmpty(arguments)) {
+            this.arguments.addAll(arguments);
+        }
+    }
 
-	public Map<String, String> getLabels() {
-		if (CollectionUtils.isEmpty(arguments)) {
-			return Optional.ofNullable(super.getMetadata()).orElse(Collections.emptyMap());
-		}
+    public Map<String, String> getLabels() {
+        if (CollectionUtils.isEmpty(arguments)) {
+            return Optional.ofNullable(super.getMetadata()).orElse(Collections.emptyMap());
+        }
 
-		Map<String, String> labels = new HashMap<>();
-		arguments.forEach(entry -> entry.toLabel(labels));
-		return labels;
-	}
+        Map<String, String> labels = new HashMap<>();
+        arguments.forEach(entry -> entry.toLabel(labels));
+        return labels;
+    }
 
-	/**
-	 * use {@link SourceService#setArguments(Set)} to replace {@link SourceService#setMetadata(Map)}
-	 *
-	 * @param metadata
-	 */
-	@Deprecated
-	@Override
-	public void setMetadata(Map<String, String> metadata) {
-		metadata.forEach((key, value) -> appendArguments(RouteArgument.fromLabel(key, value)));
-	}
+    /**
+     * use {@link SourceService#setArguments(Set)} to replace {@link SourceService#setMetadata(Map)}
+     *
+     * @param metadata
+     */
+    @Deprecated
+    @Override
+    public void setMetadata(Map<String, String> metadata) {
+        metadata.forEach((key, value) -> appendArguments(RouteArgument.fromLabel(key, value)));
+    }
 
-	@Deprecated
-	@Override
-	public Map<String, String> getMetadata() {
-		return getLabels();
-	}
+    @Deprecated
+    @Override
+    public Map<String, String> getMetadata() {
+        return getLabels();
+    }
 }

@@ -17,15 +17,14 @@
 
 package com.tencent.polaris.api.rpc;
 
+import com.tencent.polaris.api.pojo.RouteArgument;
+import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.SourceService;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-
-import com.tencent.polaris.api.pojo.RouteArgument;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.SourceService;
 
 /**
  * 批量服务实例查询请求
@@ -35,120 +34,123 @@ import com.tencent.polaris.api.pojo.SourceService;
  */
 public class GetInstancesRequest extends RequestBaseEntity {
 
-	/**
-	 * 服务元数据信息，用于服务路由过滤
-	 */
-	private Map<String, String> metadata;
+    /**
+     * 服务元数据信息，用于服务路由过滤
+     */
+    private Map<String, String> metadata;
 
-	/**
-	 * 主调方服务信息
-	 */
-	private SourceService sourceService;
+    /**
+     * 主调方服务信息
+     */
+    private SourceService sourceService;
 
-	/**
-	 * 是否返回熔断实例，默认否
-	 */
-	private boolean includeCircuitBreak;
-	/**
-	 * 是否返回不健康的服务实例，默认否
-	 */
-	private boolean includeUnhealthy;
+    /**
+     * 是否返回熔断实例，默认否
+     */
+    private boolean includeCircuitBreak;
+    /**
+     * 是否返回不健康的服务实例，默认否
+     */
+    private boolean includeUnhealthy;
 
-	/**
-	 * 金丝雀集群
-	 */
-	private String canary;
+ 
+    //各个路由插件依赖的 metadata 参数
+    private Map<String, Set<RouteArgument>> routerArgument;
 
-	/**
-	 * 接口参数
-	 */
-	private String method;
+    /**
+     * 金丝雀集群
+     */
+    private String canary;
 
-	/**
-	 * 可选, metadata失败降级策略
-	 */
-	private MetadataFailoverType metadataFailoverType;
+    /**
+     * 接口参数
+     */
+    private String method;
 
-	public boolean isIncludeCircuitBreak() {
-		return includeCircuitBreak;
-	}
+    /**
+     * 可选, metadata失败降级策略
+     */
+    private MetadataFailoverType metadataFailoverType;
 
-	public void setIncludeCircuitBreak(boolean includeCircuitBreak) {
-		this.includeCircuitBreak = includeCircuitBreak;
-	}
+    public boolean isIncludeCircuitBreak() {
+        return includeCircuitBreak;
+    }
 
-	public Map<String, String> getMetadata() {
-		return metadata;
-	}
+    public void setIncludeCircuitBreak(boolean includeCircuitBreak) {
+        this.includeCircuitBreak = includeCircuitBreak;
+    }
 
-	public void setMetadata(Map<String, String> metadata) {
-		this.metadata = metadata;
-	}
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
 
-	public boolean isIncludeUnhealthy() {
-		return includeUnhealthy;
-	}
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
+    }
 
-	public void setIncludeUnhealthy(boolean includeUnhealthy) {
-		this.includeUnhealthy = includeUnhealthy;
-	}
+    public boolean isIncludeUnhealthy() {
+        return includeUnhealthy;
+    }
+
+    public void setIncludeUnhealthy(boolean includeUnhealthy) {
+        this.includeUnhealthy = includeUnhealthy;
+    }
 
 
-	public SourceService getServiceInfo() {
-		return sourceService;
-	}
+    public SourceService getServiceInfo() {
+        return sourceService;
+    }
 
-	public void setServiceInfo(ServiceInfo serviceInfo) {
-		if (serviceInfo instanceof SourceService) {
-			this.sourceService = (SourceService) serviceInfo;
-		}
-		else {
-			SourceService sourceService = new SourceService();
-			sourceService.setNamespace(serviceInfo.getNamespace());
-			sourceService.setService(serviceInfo.getService());
-			Set<RouteArgument> argumentSet = new HashSet<>();
-			Optional.ofNullable(serviceInfo.getMetadata()).orElse(Collections.emptyMap())
-					.forEach((key, value) -> argumentSet.add(RouteArgument.fromLabel(key, value)));
-			sourceService.setArguments(argumentSet);
-			this.sourceService = sourceService;
-		}
-	}
+    public void setServiceInfo(ServiceInfo serviceInfo) {
+        if (serviceInfo instanceof SourceService) {
+            this.sourceService = (SourceService) serviceInfo;
+        } else {
+            SourceService sourceService = new SourceService();
+            sourceService.setNamespace(serviceInfo.getNamespace());
+            sourceService.setService(serviceInfo.getService());
+            Set<RouteArgument> argumentSet = new HashSet<>();
+            Optional.ofNullable(serviceInfo.getMetadata()).orElse(Collections.emptyMap())
+                    .forEach((key, value) -> argumentSet.add(RouteArgument.fromLabel(key, value)));
+            sourceService.setArguments(argumentSet);
+            this.sourceService = sourceService;
+        }
+    }
 
-	public String getCanary() {
-		return canary;
-	}
+    public String getCanary() {
+        return canary;
+    }
 
-	public void setCanary(String canary) {
-		this.canary = canary;
-	}
+    public void setCanary(String canary) {
+        this.canary = canary;
+    }
 
-	public String getMethod() {
-		return method;
-	}
+    public String getMethod() {
+        return method;
+    }
 
-	public void setMethod(String method) {
-		this.method = method;
-	}
+    public void setMethod(String method) {
+        this.method = method;
+    }
 
-	public MetadataFailoverType getMetadataFailoverType() {
-		return metadataFailoverType;
-	}
+    public MetadataFailoverType getMetadataFailoverType() {
+        return metadataFailoverType;
+    }
 
-	public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
-		this.metadataFailoverType = metadataFailoverType;
-	}
+    public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
+        this.metadataFailoverType = metadataFailoverType;
+    }
 
-	@Override
-	@SuppressWarnings("checkstyle:all")
-	public String toString() {
-		return "GetInstancesRequest{" +
-				"metadata=" + metadata +
-				", sourceService=" + sourceService +
-				", includeCircuitBreak=" + includeCircuitBreak +
-				", includeUnhealthy=" + includeUnhealthy +
-				", canary='" + canary + '\'' +
-				", method='" + method + '\'' +
-				", metadataFailoverType=" + metadataFailoverType +
-				"} " + super.toString();
-	}
+    @Override
+    @SuppressWarnings("checkstyle:all")
+    public String toString() {
+        return "GetInstancesRequest{" +
+                "metadata=" + metadata +
+                ", sourceService=" + sourceService +
+                ", includeCircuitBreak=" + includeCircuitBreak +
+                ", includeUnhealthy=" + includeUnhealthy +
+                ", canary='" + canary + '\'' +
+                ", method='" + method + '\'' +
+                ", metadataFailoverType=" + metadataFailoverType +
+                "} " + super.toString();
+    }
 }

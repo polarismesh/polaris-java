@@ -16,7 +16,9 @@
 
 package com.tencent.polaris.api.plugin.route;
 
+import com.tencent.polaris.api.config.provider.ServiceConfig;
 import com.tencent.polaris.api.pojo.RouteArgument;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.pojo.SourceService;
@@ -76,6 +78,7 @@ public class RouteInfo {
 
     private Map<String, MatchString> subsetMetadata;
 
+
     /**
      * 构造器
      *
@@ -84,10 +87,17 @@ public class RouteInfo {
      * @param destService 目标服务
      * @param destRouteRule 目标规则
      * @param method 接口名
+     * @param serviceConfig 配置的当前服务名
      */
     public RouteInfo(SourceService sourceService, ServiceRule sourceRouteRule,
-            ServiceMetadata destService, ServiceRule destRouteRule, String method) {
-        this.sourceService = sourceService;
+            ServiceMetadata destService, ServiceRule destRouteRule, String method, ServiceConfig serviceConfig) {
+        if (isEmptyService(sourceService) && !isEmptyService(serviceConfig)) {
+            this.sourceService = new SourceService();
+            this.sourceService.setNamespace(serviceConfig.getNamespace());
+            this.sourceService.setService(serviceConfig.getName());
+        } else {
+            this.sourceService = sourceService;
+        }
         if (Objects.nonNull(sourceService)) {
             this.routerMetadata.computeIfAbsent("ruleRouter", k -> new HashMap<>());
             this.routerMetadata.get("ruleRouter").putAll(sourceService.getLabels());
@@ -117,8 +127,9 @@ public class RouteInfo {
      * @param destService 目标服务
      * @param method 接口名
      */
-    public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method) {
-        this(sourceService, null, destService, null, method);
+    public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method,
+            ServiceConfig serviceConfig) {
+        this(sourceService, null, destService, null, method, serviceConfig);
     }
 
     public MetadataFailoverType getMetadataFailoverType() {
@@ -262,4 +273,19 @@ public class RouteInfo {
             Map<String, MatchString> subsetMetadata) {
         this.subsetMetadata = subsetMetadata;
     }
+
+    private static boolean isEmptyService(ServiceInfo serviceInfo) {
+        if (Objects.isNull(serviceInfo)) {
+            return true;
+        }
+        return StringUtils.isBlank(serviceInfo.getNamespace()) && StringUtils.isBlank(serviceInfo.getService());
+    }
+
+    private static boolean isEmptyService(ServiceConfig serviceConfig) {
+        if (Objects.isNull(serviceConfig)) {
+            return true;
+        }
+        return StringUtils.isBlank(serviceConfig.getNamespace()) && StringUtils.isBlank(serviceConfig.getName());
+    }
+
 }

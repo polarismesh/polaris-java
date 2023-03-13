@@ -19,6 +19,7 @@ package com.tencent.polaris.client.flow;
 
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.APIConfig;
+import com.tencent.polaris.api.config.provider.ServiceConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
@@ -96,8 +97,9 @@ public class BaseFlow {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("protocol", protocol);
         dstSvcInfo.setMetadata(metadata);
+        ServiceConfig serviceConfig = extensions.getConfiguration().getProvider().getService();
         RouteInfo routeInfo = new RouteInfo(
-                null, null, dstSvcInfo, null, "");
+                null, null, dstSvcInfo, null, "", serviceConfig);
         ResourcesResponse resourcesResponse = BaseFlow
                 .syncGetResources(extensions, false, provider, flowControlParam);
         LOG.debug("[ConnectionManager]success to discover service {}", svcEventKey);
