@@ -142,12 +142,11 @@ public class InstancesDetectTask implements Runnable {
             DetectResult pluginResult = detector.detectInstance(instance, null);
             if (pluginResult == null) {
                 continue;
-            }else {
-                result = pluginResult;
             }
-            if (pluginResult.getRetStatus() == RetStatus.RetSuccess) {
-                pluginResult.setDetectType(detector.getName());
-                return pluginResult;
+            result = pluginResult;
+            if (result.getRetStatus() == RetStatus.RetSuccess) {
+                result.setDetectType(detector.getName());
+                return result;
             }
         }
         if (result != null) {
