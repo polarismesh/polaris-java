@@ -101,7 +101,7 @@ public class CircuitBreakerRuleContainer {
                     polarisCircuitBreaker.getPullRulesExecutors().schedule(pullFdRuleTask, 5, TimeUnit.SECONDS);
                     return;
                 }
-                FaultDetector faultDetector = selectFaultDetector(faultDetectRule);
+                FaultDetector faultDetector = selectFaultDetector(faultDetectRule, resource);
                 Map<Resource, ResourceHealthChecker> healthCheckCache = polarisCircuitBreaker.getHealthCheckCache();
                 if (null != faultDetector) {
                     ResourceHealthChecker curChecker = healthCheckCache.get(resource);
@@ -125,12 +125,20 @@ public class CircuitBreakerRuleContainer {
         schedule();
     }
 
-    private FaultDetector selectFaultDetector(ServiceRule serviceRule) {
+    private FaultDetector selectFaultDetector(ServiceRule serviceRule, Resource resource) {
         if (null == serviceRule) {
             return null;
         }
         Object rule = serviceRule.getRule();
         if (null == rule) {
+            return null;
+        }
+        // check if FaultDetect is enabled in CircuitBreaker
+        ResourceCounters resourceCounters = polarisCircuitBreaker.getCountersCache().get(resource.getLevel()).get(resource);
+        if (resourceCounters == null) {
+            return null;
+        }
+        if (!resourceCounters.getCurrentActiveRule().getFaultDetectConfig().getEnable()){
             return null;
         }
         return (FaultDetector) rule;
