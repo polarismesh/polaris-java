@@ -26,6 +26,7 @@ import com.tencent.polaris.api.pojo.CircuitBreakerStatus.FallbackInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
 import com.tencent.polaris.api.pojo.HalfOpenStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ConsecutiveCounter;
@@ -72,6 +73,13 @@ public class ResourceCounters implements StatusChangeHandler {
     private final FallbackInfo fallbackInfo;
 
     private final int consecutiveSuccessCount;
+
+    private final Function<String, Pattern> regexFunction = new Function<String, Pattern>() {
+        @Override
+        public Pattern apply(String s) {
+            return Pattern.compile(s);
+        }
+    };
 
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
             ScheduledExecutorService stateChangeExecutors) {
@@ -217,43 +225,38 @@ public class ResourceCounters implements StatusChangeHandler {
         }
     }
 
-    public void report(ResourceStat resourceStat) {
+    public RetStatus parseRetStatus(ResourceStat resourceStat) {
         List<ErrorCondition> errorConditionsList = currentActiveRule.getErrorConditionsList();
-        Function<String, Pattern> function = new Function<String, Pattern>() {
-            @Override
-            public Pattern apply(String s) {
-                return Pattern.compile(s);
-            }
-        };
-        boolean success = true;
-        RetStatus retStatus = resourceStat.getRetStatus();
-        if (retStatus == RetStatus.RetSuccess) {
-            success = true;
-        } else if (retStatus == RetStatus.RetFail) {
-            success = false;
-        } else {
-            for (ErrorCondition errorCondition : errorConditionsList) {
-                MatchString condition = errorCondition.getCondition();
-                switch (errorCondition.getInputType()) {
-                    case RET_CODE:
-                        boolean codeMatched = RuleUtils
-                                .matchStringValue(condition, String.valueOf(resourceStat.getRetCode()), function);
-                        if (codeMatched) {
-                            success = false;
-                        }
-                        break;
-                    case DELAY:
-                        String value = condition.getValue().getValue();
-                        int delayValue = Integer.parseInt(value);
-                        if (resourceStat.getDelay() >= delayValue) {
-                            success = false;
-                        }
-                        break;
-                    default:
-                        break;
-                }
+        if (CollectionUtils.isEmpty(errorConditionsList)) {
+            return resourceStat.getRetStatus();
+        }
+        for (ErrorCondition errorCondition : errorConditionsList) {
+            MatchString condition = errorCondition.getCondition();
+            switch (errorCondition.getInputType()) {
+                case RET_CODE:
+                    boolean codeMatched = RuleUtils
+                            .matchStringValue(condition, String.valueOf(resourceStat.getRetCode()), regexFunction);
+                    if (codeMatched) {
+                        return RetStatus.RetFail;
+                    }
+                    break;
+                case DELAY:
+                    String value = condition.getValue().getValue();
+                    int delayValue = Integer.parseInt(value);
+                    if (resourceStat.getDelay() >= delayValue) {
+                        return RetStatus.RetTimeout;
+                    }
+                    break;
+                default:
+                    break;
             }
         }
+        return RetStatus.RetSuccess;
+    }
+
+    public void report(ResourceStat resourceStat) {
+        RetStatus retStatus = parseRetStatus(resourceStat);
+        boolean success = retStatus != RetStatus.RetFail && retStatus != RetStatus.RetTimeout;
         CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
         if (null != circuitBreakerStatus && circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
             HalfOpenStatus halfOpenStatus = (HalfOpenStatus) circuitBreakerStatus;
