@@ -64,7 +64,8 @@ public class ResourceCountersTest {
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
-        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), scheduledExecutorService);
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), scheduledExecutorService,
+                null);
         CheckSet checkSet = new CheckSet();
         Resource methodResource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
         for (int i = 0; i < 5; i++) {
@@ -117,7 +118,7 @@ public class ResourceCountersTest {
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         Resource resource = new InstanceResource(
                 new ServiceKey("test", "TestSvc"), "127.0.0.1", 8088);
-        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null);
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
         ResourceStat stat1 = new ResourceStat(resource, 500, 100, RetStatus.RetUnknown);
         RetStatus nextStatus = resourceCounters.parseRetStatus(stat1);
         Assert.assertEquals(RetStatus.RetFail, nextStatus);
@@ -136,7 +137,7 @@ public class ResourceCountersTest {
                 TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
 
-        resourceCounters = new ResourceCounters(resource, builder.build(), null);
+        resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
         nextStatus = resourceCounters.parseRetStatus(stat3);
         Assert.assertEquals(RetStatus.RetSuccess, nextStatus);
     }

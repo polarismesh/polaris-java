@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
+import static com.tencent.polaris.plugins.circuitbreaker.composite.CircuitBreakerRuleContainer.compareService;
+import static com.tencent.polaris.plugins.circuitbreaker.composite.CircuitBreakerRuleContainer.compareSingleValue;
+
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
@@ -34,9 +37,12 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.DestinationService;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +62,8 @@ public class ResourceHealthChecker {
     private final Resource resource;
 
     private final FaultDetector faultDetector;
+
+    private final List<FaultDetectRule> rules;
 
     private final ScheduledExecutorService checkScheduler;
 
@@ -77,6 +85,7 @@ public class ResourceHealthChecker {
             PolarisCircuitBreaker polarisCircuitBreaker) {
         this.resource = resource;
         this.faultDetector = faultDetector;
+        this.rules = sortFaultDetectRules(faultDetector.getRulesList());
         this.checkScheduler = polarisCircuitBreaker.getHealthCheckExecutors();
         this.serviceResourceProvider = polarisCircuitBreaker.getServiceRuleProvider();
         this.healthCheckers = polarisCircuitBreaker.getHealthCheckers();
@@ -84,12 +93,38 @@ public class ResourceHealthChecker {
         start();
     }
 
+    // 优先匹配非通配规则，再匹配通配规则
+    private static List<FaultDetectRule> sortFaultDetectRules(List<FaultDetectRule> rules) {
+        List<FaultDetectRule> outRules = new ArrayList<>(rules);
+        outRules.sort(new Comparator<FaultDetectRule>() {
+            @Override
+            public int compare(FaultDetectRule rule1, FaultDetectRule rule2) {
+                // 1. compare destination service
+                DestinationService targetService1 = rule1.getTargetService();
+                String destNamespace1 = targetService1.getNamespace();
+                String destService1 = targetService1.getService();
+                String destMethod1 = targetService1.getMethod().getValue().getValue();
+
+                DestinationService targetService2 = rule2.getTargetService();
+                String destNamespace2 = targetService2.getNamespace();
+                String destService2 = targetService2.getService();
+                String destMethod2 = targetService2.getMethod().getValue().getValue();
+
+                int svcResult = compareService(destNamespace1, destService1, destNamespace2, destService2);
+                if (svcResult != 0) {
+                    return svcResult;
+                }
+                return compareSingleValue(destMethod1, destMethod2);
+            }
+        });
+        return outRules;
+    }
+
     private void start() {
         String methodName = "";
         if (resource instanceof MethodResource) {
             methodName = ((MethodResource) resource).getMethod();
         }
-        List<FaultDetectRule> rules = faultDetector.getRulesList();
         for (FaultDetectRule rule : rules) {
             if (!matchMethodRule(methodName, rule)) {
                 continue;

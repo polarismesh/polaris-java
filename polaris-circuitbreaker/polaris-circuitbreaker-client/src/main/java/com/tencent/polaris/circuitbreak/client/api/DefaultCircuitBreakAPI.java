@@ -24,7 +24,6 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
-import com.tencent.polaris.api.pojo.HalfOpenStatus;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.InvokeHandler;
@@ -88,17 +87,11 @@ public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAP
 
     private static CheckResult circuitBreakerStatusToResult(CircuitBreakerStatus circuitBreakerStatus) {
         Status status = circuitBreakerStatus.getStatus();
-        if (status == Status.CLOSE) {
-            return new CheckResult(true, circuitBreakerStatus.getCircuitBreaker(),
-                    circuitBreakerStatus.getFallbackInfo());
-        }
         if (status == Status.OPEN) {
             return new CheckResult(false, circuitBreakerStatus.getCircuitBreaker(),
                     circuitBreakerStatus.getFallbackInfo());
         }
-        HalfOpenStatus halfOpenStatus = (HalfOpenStatus) circuitBreakerStatus;
-        boolean allocated = halfOpenStatus.allocate();
-        return new CheckResult(allocated, circuitBreakerStatus.getCircuitBreaker(),
+        return new CheckResult(true, circuitBreakerStatus.getCircuitBreaker(),
                 circuitBreakerStatus.getFallbackInfo());
     }
 
