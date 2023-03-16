@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.circuitbreaker.composite;
 
 import static com.tencent.polaris.logging.LoggingConsts.LOGGING_CIRCUITBREAKER_EVENT;
 
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
@@ -48,7 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -68,28 +68,25 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private final AtomicReference<CircuitBreakerStatus> circuitBreakerStatusReference = new AtomicReference<>();
 
-    private final AtomicInteger halfOpenSuccess = new AtomicInteger(0);
-
     private final FallbackInfo fallbackInfo;
 
-    private final int consecutiveSuccessCount;
-
-    private final Function<String, Pattern> regexFunction = new Function<String, Pattern>() {
-        @Override
-        public Pattern apply(String s) {
-            return Pattern.compile(s);
-        }
-    };
+    private final Function<String, Pattern> regexFunction;
 
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
-            ScheduledExecutorService stateChangeExecutors) {
+            ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
         this.currentActiveRule = currentActiveRule;
         this.resource = resource;
         this.stateChangeExecutors = stateChangeExecutors;
+        this.regexFunction = regex -> {
+            if (null == polarisCircuitBreaker) {
+                return Pattern.compile(regex);
+            }
+            FlowCache flowCache = polarisCircuitBreaker.getExtensions().getFlowCache();
+            return flowCache.loadOrStoreCompiledRegex(regex);
+        };
         circuitBreakerStatusReference
                 .set(new CircuitBreakerStatus(currentActiveRule.getName(), Status.CLOSE, System.currentTimeMillis()));
         fallbackInfo = buildFallbackInfo(currentActiveRule);
-        consecutiveSuccessCount = currentActiveRule.getRecoverCondition().getConsecutiveSuccess();
         init();
     }
 
@@ -174,26 +171,12 @@ public class ResourceCounters implements StatusChangeHandler {
                 return;
             }
             int consecutiveSuccess = currentActiveRule.getRecoverCondition().getConsecutiveSuccess();
-            halfOpenSuccess.set(0);
             HalfOpenStatus halfOpenStatus = new HalfOpenStatus(
                     circuitBreakerStatus.getCircuitBreaker(), System.currentTimeMillis(), consecutiveSuccess);
             CB_EVENT_LOG.info("previous status {}, current status {}, resource {}, rule {}",
                     circuitBreakerStatus.getStatus(),
                     halfOpenStatus.getStatus(), resource, circuitBreakerStatus.getCircuitBreaker());
             circuitBreakerStatusReference.set(halfOpenStatus);
-        }
-    }
-
-    private void checkHalfOpenConversion() {
-        int halfOpenSuccessCount = halfOpenSuccess.get();
-        if (halfOpenSuccessCount >= consecutiveSuccessCount) {
-            System.out.println("halfOpenSuccessCount " + halfOpenSuccessCount + ", consecutiveSuccessCount "
-                    + consecutiveSuccessCount + ", do halfOpenToClose");
-            halfOpenToClose();
-        } else {
-            System.out.println("halfOpenSuccessCount " + halfOpenSuccessCount + ", consecutiveSuccessCount "
-                    + consecutiveSuccessCount + ", do halfOpenToOpen");
-            halfOpenToOpen();
         }
     }
 
@@ -260,14 +243,19 @@ public class ResourceCounters implements StatusChangeHandler {
         CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
         if (null != circuitBreakerStatus && circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
             HalfOpenStatus halfOpenStatus = (HalfOpenStatus) circuitBreakerStatus;
-            if (success) {
-                int count = halfOpenSuccess.incrementAndGet();
-                if (count >= consecutiveSuccessCount) {
-                    scheduleHalfOpenConversion(halfOpenStatus);
+            boolean checked = halfOpenStatus.report(success);
+            if (checked) {
+                Status nextStatus = halfOpenStatus.calNextStatus();
+                switch (nextStatus) {
+                    case CLOSE:
+                        halfOpenToClose();
+                        break;
+                    case OPEN:
+                        halfOpenToOpen();
+                        break;
+                    default:
+                        break;
                 }
-            } else {
-                halfOpenSuccess.set(0);
-                scheduleHalfOpenConversion(halfOpenStatus);
             }
         } else {
             for (TriggerCounter counter : counters) {
@@ -275,18 +263,6 @@ public class ResourceCounters implements StatusChangeHandler {
             }
         }
     }
-
-    private void scheduleHalfOpenConversion(HalfOpenStatus halfOpenStatus) {
-        if (halfOpenStatus.schedule()) {
-            stateChangeExecutors.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    checkHalfOpenConversion();
-                }
-            }, 1, TimeUnit.SECONDS);
-        }
-    }
-
 
     public CircuitBreakerStatus getCircuitBreakerStatus() {
         return circuitBreakerStatusReference.get();
