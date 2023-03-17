@@ -5,12 +5,13 @@ name: Testing
 on:
   push:
     branches:
-      - main
-      - release*
-  pull_request:
-    branches:
-      - main
-      - release*
+      - add_support_for_codecov
+#      - main
+#      - release*
+#  pull_request:
+#    branches:
+#      - main
+#      - release*
 
 jobs:
   build:
