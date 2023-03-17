@@ -4,10 +4,14 @@
 name: Testing
 on:
   push:
-  pull_request:
     branches:
-      - main
-      - release*
+#      - main
+#      - release*
+      - add_support_for_configuration
+#  pull_request:
+#    branches:
+#      - main
+#      - release*
 
 jobs:
   build:
