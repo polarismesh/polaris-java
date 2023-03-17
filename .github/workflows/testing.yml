@@ -5,13 +5,12 @@ name: Testing
 on:
   push:
     branches:
-#      - main
-#      - release*
-      - add_support_for_configuration
-#  pull_request:
-#    branches:
-#      - main
-#      - release*
+      - main
+      - release*
+  pull_request:
+    branches:
+      - main
+      - release*
 
 jobs:
   build:
@@ -37,6 +36,3 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Test with Maven
         run: mvn -B test --file pom.xml
-
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
