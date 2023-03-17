@@ -57,6 +57,6 @@ public class MatchUtils {
     }
 
     public static boolean isWildcardMatcherSingle(String name) {
-        return name.equals(RuleUtils.MATCH_ALL);
+        return name.equals(RuleUtils.MATCH_ALL) || StringUtils.isEmpty(name);
     }
 }
