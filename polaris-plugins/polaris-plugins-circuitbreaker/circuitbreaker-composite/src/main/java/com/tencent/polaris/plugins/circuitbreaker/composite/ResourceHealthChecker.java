@@ -33,6 +33,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceResourceProvider;
+import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -137,7 +138,7 @@ public class ResourceHealthChecker {
                 }
             } else {
                 // only match empty method rules
-                if (!StringUtils.isBlank(targetService.getMethod().getValue().getValue())) {
+                if (!RuleUtils.isMatchAllValue(targetService.getMethod())) {
                     continue;
                 }
             }

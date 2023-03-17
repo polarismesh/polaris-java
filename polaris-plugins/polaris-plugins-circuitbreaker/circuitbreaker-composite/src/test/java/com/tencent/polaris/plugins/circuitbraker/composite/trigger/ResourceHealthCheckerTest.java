@@ -17,12 +17,15 @@
 
 package com.tencent.polaris.plugins.circuitbraker.composite.trigger;
 
+import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.plugins.circuitbreaker.composite.ResourceHealthChecker;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.DestinationService;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -40,6 +43,15 @@ public class ResourceHealthCheckerTest {
         builder.setTargetService(
                 FaultDetectRule.DestinationService.newBuilder().setNamespace("default").setService("svc1").build());
         builder.setProtocol(Protocol.HTTP);
+        cbBuilder.addRules(builder.build());
+
+        builder = FaultDetectRule.newBuilder();
+        builder.setName("test_cb_default_svc_foo1");
+        builder.setTargetService(
+                DestinationService.newBuilder().setNamespace("default").setService("svc1").setMethod(
+                        MatchString.newBuilder().setValue(StringValue.newBuilder().setValue("foo1").build()).build())
+                        .build());
+        builder.setProtocol(Protocol.TCP);
         cbBuilder.addRules(builder.build());
 
         builder = FaultDetectRule.newBuilder();
