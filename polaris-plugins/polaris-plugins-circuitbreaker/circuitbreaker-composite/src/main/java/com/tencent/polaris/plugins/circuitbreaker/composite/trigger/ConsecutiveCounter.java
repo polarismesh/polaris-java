@@ -17,9 +17,13 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
 
 public class ConsecutiveCounter extends TriggerCounter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConsecutiveCounter.class);
 
     private final AtomicInteger consecutiveErrors = new AtomicInteger(0);
 
@@ -31,6 +35,7 @@ public class ConsecutiveCounter extends TriggerCounter {
 
     @Override
     protected void init() {
+        LOG.info("[CircuitBreaker][Counter] consecutiveCounter {} initialized, resource {}", ruleName, resource);
         maxCount = triggerCondition.getErrorCount();
     }
 

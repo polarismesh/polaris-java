@@ -57,4 +57,13 @@ public class ResourceStat {
         return retStatus;
     }
 
+    @Override
+    public String toString() {
+        return "ResourceStat{" +
+                "resource=" + resource +
+                ", retCode=" + retCode +
+                ", delay=" + delay +
+                ", retStatus=" + retStatus +
+                '}';
+    }
 }

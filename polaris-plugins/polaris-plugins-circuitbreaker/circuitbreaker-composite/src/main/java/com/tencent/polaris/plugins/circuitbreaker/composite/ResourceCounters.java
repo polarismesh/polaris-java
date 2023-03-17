@@ -58,6 +58,8 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private static final Logger CB_EVENT_LOG = LoggerFactory.getLogger(LOGGING_CIRCUITBREAKER_EVENT);
 
+    private static final Logger LOG = LoggerFactory.getLogger(ErrRateCounter.class);
+
     private final CircuitBreakerProto.CircuitBreakerRule currentActiveRule;
 
     private final List<TriggerCounter> counters = new ArrayList<>();
@@ -241,23 +243,37 @@ public class ResourceCounters implements StatusChangeHandler {
         RetStatus retStatus = parseRetStatus(resourceStat);
         boolean success = retStatus != RetStatus.RetFail && retStatus != RetStatus.RetTimeout;
         CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
+        LOG.debug("[CircuitBreaker] report resource stat {}", resourceStat);
         if (null != circuitBreakerStatus && circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
             HalfOpenStatus halfOpenStatus = (HalfOpenStatus) circuitBreakerStatus;
             boolean checked = halfOpenStatus.report(success);
+            LOG.debug("[CircuitBreaker] report resource halfOpen stat {}, checked {}", resourceStat.getResource(),
+                    checked);
             if (checked) {
                 Status nextStatus = halfOpenStatus.calNextStatus();
                 switch (nextStatus) {
                     case CLOSE:
-                        halfOpenToClose();
+                        stateChangeExecutors.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                halfOpenToClose();
+                            }
+                        });
                         break;
                     case OPEN:
-                        halfOpenToOpen();
+                        stateChangeExecutors.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                halfOpenToOpen();
+                            }
+                        });
                         break;
                     default:
                         break;
                 }
             }
         } else {
+            LOG.debug("[CircuitBreaker] report resource stat to counter {}", resourceStat.getResource());
             for (TriggerCounter counter : counters) {
                 counter.report(success);
             }

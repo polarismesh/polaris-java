@@ -92,10 +92,10 @@ public class InstanceBreakerExample {
         }));
 
         ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
-        for (int i = 0; i < 200; i++) {
+        for (int i = 0; i < 20000; i++) {
             String test = Utils.invokeByNameResolution("/echo", NAMESPACE, SERVICE, "test", consumerAPI);
             System.out.println("invoke " + i + " times, result " + test);
-            Thread.sleep(10000);
+            Thread.sleep(1000);
         }
 
     }
