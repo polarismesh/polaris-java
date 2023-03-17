@@ -66,8 +66,6 @@ public class ResourceHealthChecker {
 
     private final FaultDetector faultDetector;
 
-    private final List<FaultDetectRule> rules;
-
     private final ScheduledExecutorService checkScheduler;
 
     private final ServiceResourceProvider serviceResourceProvider;
