@@ -103,7 +103,6 @@
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
         <httpclient.version>4.5.14</httpclient.version>
-        <jacoco-maven-plugin.version>0.8.8</jacoco-maven-plugin.version>
     </properties>
 
     <dependencies>
