@@ -40,16 +40,14 @@ public class ResourceHealthCheckerTest {
         builder.setTargetService(
                 FaultDetectRule.DestinationService.newBuilder().setNamespace("default").setService("svc1").build());
         builder.setProtocol(Protocol.HTTP);
-        cbBuilder.addRules(builder);
+        cbBuilder.addRules(builder.build());
 
         builder = FaultDetectRule.newBuilder();
         builder.setName("test_cb_all_ns_all_svc");
         builder.setTargetService(
                 FaultDetectRule.DestinationService.newBuilder().setNamespace("*").setService("*").build());
-        cbBuilder.addRules(builder);
         builder.setProtocol(Protocol.HTTP);
-
-        cbBuilder.addRules(builder);
+        cbBuilder.addRules(builder.build());
 
         cbBuilder.setRevision("xxxxxyyyyyy");
 
