@@ -97,7 +97,7 @@ public class ResourceHealthChecker {
     }
 
     // 优先匹配非通配规则，再匹配通配规则
-    private static List<FaultDetectRule> sortFaultDetectRules(List<FaultDetectRule> rules) {
+    private static List<FaultDetectRule> sortFaultDetectRules(List<FaultDetectRule> rules, Resource resource) {
         List<FaultDetectRule> outRules = new ArrayList<>(rules);
         outRules.sort(new Comparator<FaultDetectRule>() {
             @Override
@@ -117,7 +117,13 @@ public class ResourceHealthChecker {
                 if (svcResult != 0) {
                     return svcResult;
                 }
-                return compareSingleValue(destMethod1, destMethod2);
+                int methodResult = compareSingleValue(destMethod1, destMethod2);
+                if (Level.METHOD.equals(resource.getLevel()) && methodResult != 0) {
+                    if (StringUtils.isEmpty(destMethod1) || StringUtils.isEmpty(destMethod2)){
+                        return - methodResult;
+                    }
+                }
+                return methodResult;
             }
         });
         return outRules;
@@ -125,7 +131,7 @@ public class ResourceHealthChecker {
 
     public static Map<String, FaultDetectRule> selectFaultDetectRules(Resource resource,
             FaultDetector faultDetector, Function<String, Pattern> regexToPattern) {
-        List<FaultDetectRule> sortedRules = sortFaultDetectRules(faultDetector.getRulesList());
+        List<FaultDetectRule> sortedRules = sortFaultDetectRules(faultDetector.getRulesList(), resource);
         Map<String, FaultDetectRule> out = new HashMap<>();
         for (FaultDetectRule sortedRule : sortedRules) {
             DestinationService targetService = sortedRule.getTargetService();
