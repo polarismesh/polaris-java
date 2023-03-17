@@ -53,7 +53,7 @@ public class RuleUtils {
      * @return 是否全匹配，全匹配则忽略该规则
      */
     public static boolean isMatchAllValue(String value) {
-        return StringUtils.isEmpty(value) || StringUtils.equals(value, MATCH_ALL);
+        return StringUtils.equals(value, MATCH_ALL) || StringUtils.equals(value, "");
     }
 
     public static boolean matchStringValue(MatchString matchString, String actualValue,
@@ -69,6 +69,8 @@ public class RuleUtils {
 
     private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
             Function<String, Pattern> regexToPattern) {
+        actualValue = StringUtils.defaultString(actualValue);
+        matchValue = StringUtils.defaultString(matchValue);
         if (RuleUtils.isMatchAllValue(matchValue)) {
             return true;
         }

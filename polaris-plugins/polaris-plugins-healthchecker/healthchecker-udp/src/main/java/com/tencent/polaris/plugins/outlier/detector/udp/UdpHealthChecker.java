@@ -39,9 +39,9 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorPro
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import org.slf4j.Logger;
 
 /**
@@ -75,30 +75,25 @@ public class UdpHealthChecker implements HealthChecker, PluginConfigProvider {
         }
         byte[] sendBytes = null;
         int maxLength = 0;
-        Set<String> expectRecvStrs = new HashSet<>();
+        List<byte[]> expectRecvStrs = new ArrayList<>();
         if (null != curConfig) {
             if (StringUtils.isNotBlank(curConfig.getSend())) {
                 sendBytes = ConversionUtils.anyStringToByte(curConfig.getSend());
             }
             for (String receiveStr : curConfig.getReceiveList()) {
                 byte[] receiveBytes = ConversionUtils.anyStringToByte(receiveStr);
-                if (null != receiveBytes) {
-                    String hexStr = ConversionUtils.byteArrayToHexString(receiveBytes);
-                    if (StringUtils.isNotBlank(hexStr)) {
-                        expectRecvStrs.add(hexStr);
-                        if (receiveBytes.length > maxLength) {
-                            maxLength = receiveBytes.length;
-                        }
-                    }
+                if (receiveBytes.length > maxLength) {
+                    maxLength = receiveBytes.length;
                 }
+                expectRecvStrs.add(receiveBytes);
             }
         }
         boolean needSendData = null != sendBytes && sendBytes.length > 0;
         if (!needSendData) {
             //未配置发送包，则连接成功即可
-            return new DetectResult(RetStatus.RetSuccess);
+            return new DetectResult(0, 0, RetStatus.RetSuccess);
         }
-
+        long startTimeMillis = System.currentTimeMillis();
         DatagramSocket socket = null;
         try {
             InetAddress inet = InetAddress.getByName(host);
@@ -114,17 +109,27 @@ public class UdpHealthChecker implements HealthChecker, PluginConfigProvider {
             socket.receive(recvPacket);
 
             socket.close();
-            byte[] recvBytesClone = Arrays.copyOfRange(recvBuf, 0, maxLength);
-            String recvHexStr = ConversionUtils.byteArrayToHexString(recvBytesClone);
-            if (expectRecvStrs.contains(recvHexStr)) {
-                //回包符合预期
-                return new DetectResult(RetStatus.RetSuccess);
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
+            byte[] recvBytes = Arrays.copyOfRange(recvBuf, 0, maxLength);
+            System.out.println("[UDP] checker receive bytes " + new String(recvBytes));
+            boolean found = false;
+            for (byte[] expectRecvStr : expectRecvStrs) {
+                byte[] recvBytesClone = Arrays.copyOfRange(recvBytes, 0, expectRecvStr.length);
+                if (Arrays.equals(expectRecvStr, recvBytesClone)) {
+                    found = true;
+                    break;
+                }
             }
-            return new DetectResult(RetStatus.RetFail);
+            if (found) {
+                //回包符合预期
+                return new DetectResult(0, delayMillis, RetStatus.RetSuccess);
+            }
+            return new DetectResult(-1, delayMillis, RetStatus.RetFail);
 
         } catch (Exception e) {
             LOG.warn("udp detect instance exception, host:{}, port:{}.", instance.getHost(), instance.getPort());
-            return new DetectResult(RetStatus.RetFail);
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
+            return new DetectResult(-1, delayMillis, RetStatus.RetFail);
         } finally {
             if (socket != null) {
                 socket.close();

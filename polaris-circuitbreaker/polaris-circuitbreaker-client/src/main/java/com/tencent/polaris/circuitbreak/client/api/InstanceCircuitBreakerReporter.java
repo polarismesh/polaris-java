@@ -20,12 +20,10 @@ package com.tencent.polaris.circuitbreak.client.api;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.SubsetResource;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
 import java.util.ArrayList;
@@ -50,10 +48,6 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
         }
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
         resources.add(new InstanceResource(serviceKey, result.getHost(), result.getPort(), sourceService));
-        if (StringUtils.isNotBlank(result.getSubset())) {
-            resources.add(new SubsetResource(
-                    serviceKey, result.getSubset(), result.getSubsetMetadata(), sourceService));
-        }
         int retCode = 0;
         if (null != result.getRetCode()) {
             retCode = result.getRetCode();
