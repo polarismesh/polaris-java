@@ -65,8 +65,12 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
                 switch (svcEventKey.getEventType()) {
                     case CIRCUIT_BREAKING:
                         entry.getValue().scheduleCircuitBreaker();
+                        break;
                     case FAULT_DETECTING:
                         entry.getValue().scheduleHealthCheck();
+                        break;
+                    default:
+                        break;
                 }
             }
         }
