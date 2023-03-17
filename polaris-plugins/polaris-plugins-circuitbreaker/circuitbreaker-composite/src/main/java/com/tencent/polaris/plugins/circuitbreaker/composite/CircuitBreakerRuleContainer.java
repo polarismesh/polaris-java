@@ -17,14 +17,15 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
+import static com.tencent.polaris.plugins.circuitbreaker.composite.MatchUtils.isWildcardMatcherSingle;
+import static com.tencent.polaris.plugins.circuitbreaker.composite.MatchUtils.matchMethod;
+import static com.tencent.polaris.plugins.circuitbreaker.composite.MatchUtils.matchService;
+
 import com.tencent.polaris.api.plugin.cache.FlowCache;
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
@@ -34,7 +35,6 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RuleMatcher.DestinationService;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RuleMatcher.SourceService;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
-import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -255,42 +255,6 @@ public class CircuitBreakerRuleContainer {
             }
         }
         return null;
-    }
-
-    private static boolean matchService(ServiceKey serviceKey, String namespace, String service) {
-        String inputNamespace = "";
-        String inputService = "";
-        if (null != serviceKey) {
-            inputNamespace = serviceKey.getNamespace();
-            inputService = serviceKey.getService();
-        }
-        if (StringUtils.isNotBlank(namespace) && !StringUtils.equals(namespace, RuleUtils.MATCH_ALL) && !StringUtils
-                .equals(inputNamespace, namespace)) {
-            return false;
-        }
-        if (StringUtils.isNotBlank(service) && !StringUtils.equals(service, RuleUtils.MATCH_ALL) && !StringUtils
-                .equals(inputService, service)) {
-            return false;
-        }
-        return true;
-    }
-
-
-    private static boolean matchMethod(Resource resource, MatchString matchString,
-            Function<String, Pattern> regexToPattern) {
-        if (resource.getLevel() != Level.METHOD) {
-            return true;
-        }
-        String method = ((MethodResource) resource).getMethod();
-        return RuleUtils.matchStringValue(matchString, method, regexToPattern);
-    }
-
-    private static boolean isWildcardMatcher(String service, String namespace) {
-        return isWildcardMatcherSingle(service) || isWildcardMatcherSingle(namespace);
-    }
-
-    private static boolean isWildcardMatcherSingle(String name) {
-        return name.equals(RuleUtils.MATCH_ALL);
     }
 
     public void schedule() {
