@@ -22,6 +22,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.cb.example.common.EchoServer;
+import com.tencent.polaris.cb.example.common.HealthServer;
 import com.tencent.polaris.cb.example.common.ServerType;
 import com.tencent.polaris.cb.example.common.Utils;
 import com.tencent.polaris.client.api.SDKContext;
@@ -52,7 +53,7 @@ public class InstanceBreakerExample {
         HttpServer normalServer = HttpServer.create(new InetSocketAddress(PORT_NORMAL), 0);
         System.out.println("Instance cb normal server listen port is " + PORT_NORMAL);
         normalServer.createContext("/echo", normalEchoServer);
-
+        normalServer.createContext("/health", new HealthServer(true));
         InstanceRegisterRequest abnormalRequest = new InstanceRegisterRequest();
         abnormalRequest.setHost(localHost);
         abnormalRequest.setPort(PORT_ABNORMAL);
@@ -62,6 +63,7 @@ public class InstanceBreakerExample {
         HttpServer abnormalServer = HttpServer.create(new InetSocketAddress(PORT_ABNORMAL), 0);
         System.out.println("Instance cb abnormal server listen port is " + PORT_ABNORMAL);
         abnormalServer.createContext("/echo", abnormalEchoServer);
+        abnormalServer.createContext("/health", new HealthServer(false));
 
         normalEchoServer.register();
         abnormalEchoServer.register();

@@ -46,6 +46,22 @@
 
             <DefaultRolloverStrategy max="${sys:polaris.circuitbreaker.event.log.retain.count:-7}"/>
         </RollingFile>
+
+        <RollingFile name="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"
+                fileName="${sys:polaris.log.home}/polaris-healthcheck-event"
+                filePattern="${sys:polaris.log.home}/polaris-healthcheck-event.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy
+                        size="${sys:polaris.healthcheck.event.log.file.size:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:polaris.healthcheck.event.log.retain.count:-7}"/>
+        </RollingFile>
     </Appenders>
 
     <Loggers>
@@ -63,6 +79,11 @@
                 level="${sys:polaris.circuitbreaker.event.log.level:-info}"
                 additivity="false">
             <AppenderRef ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
+        </Logger>
+        <Logger name="polaris-healthcheck-event"
+                level="${sys:polaris.healthcheck.event.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"/>
         </Logger>
         <!--        <AsyncLogger name="polaris-update-event-async"-->
         <!--                level="${sys:polaris-update-event.log.level:-info}"-->
