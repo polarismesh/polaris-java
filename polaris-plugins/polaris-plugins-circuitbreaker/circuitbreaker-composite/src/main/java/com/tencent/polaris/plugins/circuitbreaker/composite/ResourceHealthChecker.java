@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
+import static com.tencent.polaris.logging.LoggingConsts.LOGGING_HEALTHCHECK_EVENT;
 import static com.tencent.polaris.plugins.circuitbreaker.composite.CircuitBreakerRuleContainer.compareService;
 import static com.tencent.polaris.plugins.circuitbreaker.composite.CircuitBreakerRuleContainer.compareSingleValue;
 import static com.tencent.polaris.plugins.circuitbreaker.composite.MatchUtils.matchMethod;
@@ -58,6 +59,8 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 
 public class ResourceHealthChecker {
+
+    private static final Logger HC_EVENT_LOG = LoggerFactory.getLogger(LOGGING_HEALTHCHECK_EVENT);
 
     private static final Logger LOG = LoggerFactory.getLogger(ResourceHealthChecker.class);
 
@@ -270,6 +273,10 @@ public class ResourceHealthChecker {
         DetectResult detectResult = healthChecker.detectInstance(instance, faultDetectRule);
         ResourceStat resourceStat = new ResourceStat(resource, detectResult.getStatusCode(), detectResult.getDelay(),
                 detectResult.getRetStatus());
+        HC_EVENT_LOG
+                .info("health check instance {}:{}, resource {}, protocol {}, result: code {}, delay {}ms, status {}",
+                        instance.getHost(), instance.getPort(), resource, protocol, detectResult.getStatusCode(),
+                        detectResult.getDelay(), detectResult.getRetStatus());
         polarisCircuitBreaker.report(resourceStat);
     }
 
