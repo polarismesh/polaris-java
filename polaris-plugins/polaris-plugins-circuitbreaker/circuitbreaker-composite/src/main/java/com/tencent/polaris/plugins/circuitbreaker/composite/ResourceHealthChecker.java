@@ -283,12 +283,11 @@ public class ResourceHealthChecker {
         polarisCircuitBreaker.report(resourceStat);
     }
 
-    public void setStopped(boolean value) {
-        stopped.set(value);
-        if (value) {
-            for (ScheduledFuture<?> future : futures) {
-                future.cancel(true);
-            }
+    public void stop() {
+        LOG.info("health checker for resource {} has stopped", resource);
+        stopped.set(true);
+        for (ScheduledFuture<?> future : futures) {
+            future.cancel(true);
         }
     }
 

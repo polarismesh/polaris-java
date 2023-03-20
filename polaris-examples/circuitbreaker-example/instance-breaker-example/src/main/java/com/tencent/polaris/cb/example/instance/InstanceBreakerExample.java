@@ -20,6 +20,7 @@ package com.tencent.polaris.cb.example.instance;
 import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.cb.example.common.EchoServer;
 import com.tencent.polaris.cb.example.common.HealthServer;
@@ -39,6 +40,8 @@ public class InstanceBreakerExample {
     private static final String NAMESPACE = "test";
 
     private static final String SERVICE = "instanceCbService";
+
+    private static final String SOURCE_SERVICE = "instanceCbSrcService";
 
     public static void main(String[] args) throws Exception {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
@@ -94,9 +97,12 @@ public class InstanceBreakerExample {
         }));
 
         ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
+        ServiceInfo sourceService = new ServiceInfo();
+        sourceService.setNamespace(NAMESPACE);
+        sourceService.setService(SOURCE_SERVICE);
         for (int i = 0; i < 20000; i++) {
-            String test = Utils.invokeByNameResolution("/echo", NAMESPACE, SERVICE, "test", consumerAPI);
-            System.out.println("invoke " + i + " times, result " + test);
+            String test = Utils.invokeByNameResolution("/echo", NAMESPACE, SERVICE, "test", sourceService, consumerAPI);
+            System.out.println("[InstanceCbTest] invoke " + i + " times, result " + test);
             Thread.sleep(1000);
         }
 

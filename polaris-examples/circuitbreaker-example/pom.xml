@@ -23,7 +23,6 @@
 
     <modules>
         <module>instance-breaker-example</module>
-        <module>subset-breaker-example</module>
         <module>method-breaker-example</module>
         <module>service-breaker-example</module>
         <module>common-breaker</module>
