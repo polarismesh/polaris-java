@@ -268,13 +268,16 @@ public class ResourceHealthChecker {
     private void doCheck(Instance instance, Protocol protocol, FaultDetectRule faultDetectRule) {
         HealthChecker healthChecker = healthCheckers.get(protocol.name().toLowerCase());
         if (null == healthChecker) {
+            HC_EVENT_LOG
+                    .info("plugin not found, skip health check for instance {}:{}, resource {}, protocol {}",
+                            instance.getHost(), instance.getPort(), resource, protocol);
             return;
         }
         DetectResult detectResult = healthChecker.detectInstance(instance, faultDetectRule);
         ResourceStat resourceStat = new ResourceStat(resource, detectResult.getStatusCode(), detectResult.getDelay(),
                 detectResult.getRetStatus());
         HC_EVENT_LOG
-                .info("health check instance {}:{}, resource {}, protocol {}, result: code {}, delay {}ms, status {}",
+                .info("health check for instance {}:{}, resource {}, protocol {}, result: code {}, delay {}ms, status {}",
                         instance.getHost(), instance.getPort(), resource, protocol, detectResult.getStatusCode(),
                         detectResult.getDelay(), detectResult.getRetStatus());
         polarisCircuitBreaker.report(resourceStat);
