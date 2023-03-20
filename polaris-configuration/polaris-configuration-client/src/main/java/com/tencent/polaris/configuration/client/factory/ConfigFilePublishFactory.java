@@ -15,17 +15,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.configuration.api.core;
+package com.tencent.polaris.configuration.client.factory;
+
+import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 
 /**
- * @author lepdou 2022-03-01
+ * @author fabian4 2022-03-08
  */
-public interface ConfigKVFileChangeListener {
+public interface ConfigFilePublishFactory {
 
-    /**
-     * onChange method will be invoked, when config file published
-     *
-     * @param event publish event, contain change info
-     */
-    void onChange(ConfigKVFileChangeEvent event);
+    void createConfigFile(ConfigFileMetadata configFileMetadata, String content);
+
+    void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
+
+    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }

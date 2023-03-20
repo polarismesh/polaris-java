@@ -15,17 +15,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.configuration.api.core;
+package com.tencent.polaris.plugins.configuration.connector.polaris.gson;
+
+import com.google.gson.Gson;
+import com.google.gson.TypeAdapter;
+import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
+
+import java.util.Date;
 
 /**
- * @author lepdou 2022-03-01
+ * @author fabian4 2023-03-13
  */
-public interface ConfigKVFileChangeListener {
+public class DateNullAdapterFactory<T> implements TypeAdapterFactory {
 
-    /**
-     * onChange method will be invoked, when config file published
-     *
-     * @param event publish event, contain change info
-     */
-    void onChange(ConfigKVFileChangeEvent event);
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
+        Class<T> rawType = (Class<T>) type.getRawType();
+        if (rawType != Date.class) {
+            return null;
+        }
+        return (TypeAdapter<T>) new DateNullAdapter();
+    }
 }

@@ -20,31 +20,22 @@ package com.tencent.polaris.configuration.client;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.configuration.api.core.ConfigFile;
-import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
-import com.tencent.polaris.configuration.api.core.ConfigFileService;
-import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
 /**
- * @author lepdou 2022-03-01
+ * @author fabian4 2022-03-08
  */
-public class DefaultConfigFileService extends BaseEngine implements ConfigFileService {
+public class DefaultConfigFilePublishService  extends BaseEngine implements ConfigFilePublishService {
 
     private ConfigFileManager configFileManager;
 
-    public DefaultConfigFileService(SDKContext sdkContext) {
+    public DefaultConfigFilePublishService(SDKContext sdkContext) {
         super(sdkContext);
-    }
-
-    @JustForTest
-    DefaultConfigFileService(SDKContext sdkContext, ConfigFileManager configFileManager) {
-        super(sdkContext);
-        this.configFileManager = configFileManager;
     }
 
     @Override
@@ -53,36 +44,36 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     }
 
     @Override
-    public ConfigKVFile getConfigPropertiesFile(String namespace, String fileGroup, String fileName) {
-        return getConfigPropertiesFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName));
+    public void createConfigFile(String namespace, String fileGroup, String fileName, String content) {
+        createConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
     }
 
     @Override
-    public ConfigKVFile getConfigPropertiesFile(ConfigFileMetadata configFileMetadata) {
+    public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
+        configFileManager.createConfigFile(configFileMetadata, content);
     }
 
     @Override
-    public ConfigKVFile getConfigYamlFile(String namespace, String fileGroup, String fileName) {
-        return getConfigYamlFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName));
+    public void updateConfigFile(String namespace, String fileGroup, String fileName, String content) {
+        updateConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
     }
 
     @Override
-    public ConfigKVFile getConfigYamlFile(ConfigFileMetadata configFileMetadata) {
+    public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Yaml);
+        configFileManager.updateConfigFile(configFileMetadata, content);
     }
 
     @Override
-    public ConfigFile getConfigFile(String namespace, String fileGroup, String fileName) {
-        return getConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName));
+    public void releaseConfigFile(String namespace, String fileGroup, String fileName) {
+        releaseConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName));
     }
 
     @Override
-    public ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata) {
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.getConfigFile(configFileMetadata);
+        configFileManager.releaseConfigFile(configFileMetadata);
     }
 
 }

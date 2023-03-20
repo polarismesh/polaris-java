@@ -1,8 +1,11 @@
 package com.tencent.polaris.configuration.example;
 
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.client.factory.ConfigFilePublishFactory;
 import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
+import com.tencent.polaris.configuration.factory.ConfigFileServicePublishFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import org.apache.commons.cli.*;
 
@@ -64,6 +67,15 @@ public class Utils {
             }
         }
         return ConfigFileServiceFactory.createConfigFileService();
+    }
+
+    public static ConfigFilePublishService createConfigFilePublishService(String config) throws IOException {
+        if (StringUtils.isNotBlank(config)) {
+            try (InputStream inputStream = new FileInputStream(config)) {
+                return ConfigFileServicePublishFactory.createConfigFilePublishService(ConfigAPIFactory.loadConfig(inputStream));
+            }
+        }
+        return ConfigFileServicePublishFactory.createConfigFilePublishService();
     }
 
 }

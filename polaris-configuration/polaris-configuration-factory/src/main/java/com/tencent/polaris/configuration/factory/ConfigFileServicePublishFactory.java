@@ -20,37 +20,36 @@ package com.tencent.polaris.configuration.factory;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.configuration.api.core.ConfigFileService;
-import com.tencent.polaris.configuration.client.DefaultConfigFileService;
+import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
+import com.tencent.polaris.configuration.client.DefaultConfigFilePublishService;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 
 /**
- * @author lepdou 2022-03-01
+ * @author fabian4 2022-03-08
  */
-public class ConfigFileServiceFactory {
+public class ConfigFileServicePublishFactory {
 
-    private static DefaultConfigFileService configFileService;
+    private static DefaultConfigFilePublishService configFilePublishService;
 
-    public static ConfigFileService createConfigFileService() throws PolarisException {
+    public static ConfigFilePublishService createConfigFilePublishService() throws PolarisException {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
-        return createConfigFileService(configuration);
+        return createConfigFilePublishService(configuration);
     }
 
-    public static ConfigFileService createConfigFileService(Configuration config) throws PolarisException {
+    public static ConfigFilePublishService createConfigFilePublishService(Configuration config) throws PolarisException {
         SDKContext context = SDKContext.initContextByConfig(config);
-        return createConfigFileService(context);
+        return createConfigFilePublishService(context);
     }
 
-    public static ConfigFileService createConfigFileService(SDKContext sdkContext) throws PolarisException {
-        if (configFileService == null) {
+    public static ConfigFilePublishService createConfigFilePublishService(SDKContext sdkContext) throws PolarisException {
+        if (configFilePublishService == null) {
             synchronized (ConfigFileServiceFactory.class) {
-                if (configFileService == null) {
-                    configFileService = new DefaultConfigFileService(sdkContext);
-                    configFileService.init();
+                if (configFilePublishService == null) {
+                    configFilePublishService = new DefaultConfigFilePublishService(sdkContext);
+                    configFilePublishService.init();
                 }
             }
         }
-        return configFileService;
+        return configFilePublishService;
     }
-
 }

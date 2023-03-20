@@ -138,6 +138,21 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 	}
 
 	@Override
+	public void createConfigFile(ConfigFile configFile) {
+
+	}
+
+	@Override
+	public void updateConfigFile(ConfigFile configFile) {
+
+	}
+
+	@Override
+	public void releaseConfigFile(ConfigFile configFile) {
+
+	}
+
+	@Override
 	public String getName() {
 		return LOCAL_FILE_CONNECTOR_TYPE;
 	}
