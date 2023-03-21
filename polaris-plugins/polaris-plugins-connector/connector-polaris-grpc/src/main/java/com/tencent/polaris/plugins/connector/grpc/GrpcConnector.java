@@ -256,8 +256,9 @@ public class GrpcConnector extends DestroyableServerConnector {
                         @Override
                         public void onError(Throwable t) {
                             countDownLatch.countDown();
-                            LOG.error("[ServerConnector] fail to wait check event type {}", eventType, t);
-                            throw new RuntimeException(t);
+                            LOG.error("[ServerConnector] fail to acquire check event type {}", eventType, t);
+                            throw new PolarisException(ErrorCode.NETWORK_ERROR,
+                                    "[ServerConnector] fail to acquire check event type " + eventType, t);
                         }
 
                         @Override
@@ -278,7 +279,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                 return aBoolean;
             }
             LOG.error("[ServerConnector] timeout to wait check event type {}", eventType);
-            throw new RuntimeException("[ServerConnector] timeout to check compatible for event type " + eventType);
+            throw new PolarisException(ErrorCode.API_TIMEOUT,
+                    "[ServerConnector] timeout to check compatible for event type " + eventType);
         }
     }
 
