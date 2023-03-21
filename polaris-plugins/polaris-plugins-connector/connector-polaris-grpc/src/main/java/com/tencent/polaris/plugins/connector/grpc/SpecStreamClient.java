@@ -97,7 +97,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         createTimeMs = System.currentTimeMillis();
         reqId = GrpcUtil.nextGetInstanceReqId();
         PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
-        GrpcUtil.attachRequestHeader(namingStub, GrpcUtil.nextGetInstanceReqId());
+        GrpcUtil.attachRequestHeader(namingStub, reqId);
         discoverClient = namingStub.discover(this);
         pendingTask.put(serviceUpdateTask.getServiceEventKey(), serviceUpdateTask);
     }

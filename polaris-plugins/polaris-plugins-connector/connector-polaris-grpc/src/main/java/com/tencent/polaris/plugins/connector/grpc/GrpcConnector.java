@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.plugins.connector.grpc;
 
+import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.ExecuteSuccess;
+import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.InvalidDiscoverResource;
+
 import com.google.protobuf.StringValue;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.UInt32Value;
@@ -36,9 +39,11 @@ import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.plugin.server.TargetServer;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
@@ -54,13 +59,20 @@ import com.tencent.polaris.specification.api.v1.service.manage.ClientProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.Client;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.StatInfo;
 import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
+import com.tencent.polaris.specification.api.v1.service.manage.RequestProto;
+import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
+import io.grpc.stub.StreamObserver;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -111,6 +123,10 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     private CompletableFuture<String> readyFuture;
 
+    private final Object lock = new Object();
+
+    private final Map<EventType, Boolean> supportedResourcesType = new ConcurrentHashMap<>();
+
     private static TargetServer connectionToTargetNode(Connection connection) {
         ConnID connID = connection.getConnID();
         return new TargetServer(connID.getServiceKey(), connID.getHost(), connID.getPort(), connID.getProtocol());
@@ -119,6 +135,10 @@ public class GrpcConnector extends DestroyableServerConnector {
     @Override
     public void init(InitContext ctx) throws PolarisException {
         if (!initialized) {
+            supportedResourcesType.put(EventType.INSTANCE, true);
+            supportedResourcesType.put(EventType.ROUTING, true);
+            supportedResourcesType.put(EventType.SERVICE, true);
+            supportedResourcesType.put(EventType.RATE_LIMITING, true);
             if (getName().equals(ctx.getValueContext().getServerConnectorProtocol())) {
                 standalone = true;
                 initActually(ctx, ctx.getConfig().getGlobal().getServerConnector());
@@ -179,8 +199,87 @@ public class GrpcConnector extends DestroyableServerConnector {
     @Override
     public void registerServiceHandler(ServiceEventHandler handler) {
         checkDestroyed();
+        ServiceEventKey serviceEventKey = handler.getServiceEventKey();
+        if (!checkEventSupported(serviceEventKey.getEventType())) {
+            LOG.info("[ServerConnector] not supported event type for {}", serviceEventKey);
+            handler.getEventHandler()
+                    .onEventUpdate(new ServerEvent(serviceEventKey, buildEmptyResponse(serviceEventKey), null));
+            return;
+        }
         ServiceUpdateTask serviceUpdateTask = new GrpcServiceUpdateTask(handler, this);
         submitServiceHandler(serviceUpdateTask, 0);
+    }
+
+    private DiscoverResponse buildEmptyResponse(ServiceEventKey serviceEventKey) {
+        DiscoverResponse.Builder builder = DiscoverResponse.newBuilder();
+        builder.setService(
+                Service.newBuilder().setName(StringValue.newBuilder().setValue(serviceEventKey.getService()).build())
+                        .setNamespace(
+                                StringValue.newBuilder().setValue(serviceEventKey.getNamespace()).build()));
+        builder.setCode(UInt32Value.newBuilder().setValue(ExecuteSuccess.getNumber()).build());
+        builder.setType(GrpcUtil.buildDiscoverResponseType(serviceEventKey.getEventType()));
+        return builder.build();
+    }
+
+    private boolean checkEventSupported(EventType eventType) {
+        Boolean aBoolean = supportedResourcesType.get(eventType);
+        if (null != aBoolean) {
+            return aBoolean;
+        }
+        synchronized (lock) {
+            aBoolean = supportedResourcesType.get(eventType);
+            if (null != aBoolean) {
+                return aBoolean;
+            }
+            LOG.info("[ServerConnector] start to check compatible for event type {}", eventType);
+            Connection connection = connectionManager.getConnection(
+                    "check-compatible", ClusterType.BUILTIN_CLUSTER);
+            String reqId = GrpcUtil.nextGetInstanceReqId();
+            PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
+            GrpcUtil.attachRequestHeader(namingStub, reqId);
+            CountDownLatch countDownLatch = new CountDownLatch(1);
+            StreamObserver<DiscoverRequest> discoverClient = namingStub
+                    .discover(new StreamObserver<DiscoverResponse>() {
+                        @Override
+                        public void onNext(DiscoverResponse value) {
+                            int code = value.getCode().getValue();
+                            boolean supported = true;
+                            if (code == InvalidDiscoverResource.getNumber()) {
+                                supported = false;
+                            }
+                            supportedResourcesType.put(eventType, supported);
+                            LOG.info("[ServerConnector] success to check compatible for event type {}, result {}",
+                                    eventType, supported);
+                            countDownLatch.countDown();
+                        }
+
+                        @Override
+                        public void onError(Throwable t) {
+                            countDownLatch.countDown();
+                            LOG.error("[ServerConnector] fail to wait check event type {}", eventType, t);
+                            throw new RuntimeException(t);
+                        }
+
+                        @Override
+                        public void onCompleted() {
+                            countDownLatch.countDown();
+                        }
+                    });
+            RequestProto.DiscoverRequest.Builder req = RequestProto.DiscoverRequest.newBuilder();
+            req.setType(GrpcUtil.buildDiscoverRequestType(eventType));
+            discoverClient.onNext(req.build());
+            try {
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                LOG.error("[ServerConnector] fail to wait check event type {}", eventType, e);
+            }
+            aBoolean = supportedResourcesType.get(eventType);
+            if (null != aBoolean) {
+                return aBoolean;
+            }
+            LOG.error("[ServerConnector] timeout to wait check event type {}", eventType);
+            throw new RuntimeException("[ServerConnector] timeout to check compatible for event type " + eventType);
+        }
     }
 
     @Override

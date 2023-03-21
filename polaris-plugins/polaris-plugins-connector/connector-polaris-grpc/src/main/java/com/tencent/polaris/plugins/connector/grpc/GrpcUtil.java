@@ -184,6 +184,26 @@ public class GrpcUtil {
         }
     }
 
+    public static DiscoverResponseType buildDiscoverResponseType(
+            ServiceEventKey.EventType type) {
+        switch (type) {
+            case INSTANCE:
+                return DiscoverResponseType.INSTANCE;
+            case ROUTING:
+                return DiscoverResponseType.ROUTING;
+            case RATE_LIMITING:
+                return DiscoverResponseType.RATE_LIMIT;
+            case CIRCUIT_BREAKING:
+                return DiscoverResponseType.CIRCUIT_BREAKER;
+            case SERVICE:
+                return DiscoverResponseType.SERVICES;
+            case FAULT_DETECTING:
+                return DiscoverResponseType.FAULT_DETECTOR;
+            default:
+                return DiscoverResponseType.UNKNOWN;
+        }
+    }
+
     public static EventType buildEventType(DiscoverResponseType responseType) {
         switch (responseType) {
             case INSTANCE:
