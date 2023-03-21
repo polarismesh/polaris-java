@@ -93,7 +93,11 @@ public class CircuitBreakerRuleContainer {
                                 polarisCircuitBreaker.getStateChangeExecutors(), polarisCircuitBreaker));
                         scheduleHealthCheck();
                     } else {
-                        resourceResourceCounters.remove(resource);
+                        ResourceCounters oldCounters = resourceResourceCounters.remove(resource);
+                        if (null != oldCounters) {
+                            // remove the old health check scheduler
+                            scheduleHealthCheck();
+                        }
                     }
                 }
             }
