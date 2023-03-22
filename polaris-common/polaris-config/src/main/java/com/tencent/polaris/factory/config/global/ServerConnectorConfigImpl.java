@@ -43,6 +43,13 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     private List<String> addresses;
     @JsonProperty
     private String protocol;
+
+    @JsonProperty
+    private List<String> openapiAddresses;
+
+    @JsonProperty
+    private String token;
+
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long connectTimeout;
@@ -74,6 +81,22 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
 
     public void setAddresses(List<String> addresses) {
         this.addresses = addresses;
+    }
+
+    public List<String> getOpenapiAddresses() {
+        return openapiAddresses;
+    }
+
+    public void setOpenapiAddresses(List<String> openapiAddresses) {
+        this.openapiAddresses = openapiAddresses;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     @Override

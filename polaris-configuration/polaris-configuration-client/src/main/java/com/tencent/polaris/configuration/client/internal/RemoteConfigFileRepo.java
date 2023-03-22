@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.exception.ServerCodes;
@@ -38,6 +55,18 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
 	static {
 		pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
+	}
+
+	public RemoteConfigFileRepo(SDKContext sdkContext, ConfigFileMetadata configFileMetadata) {
+		super(sdkContext, configFileMetadata);
+		remoteConfigFile = new AtomicReference<>();
+		notifiedVersion = new AtomicLong(INIT_VERSION);
+		retryPolicy = new ExponentialRetryPolicy(1, 120);
+		String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
+				.getConnectorType();
+		this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
+				.getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
+		this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
 	}
 
 	public RemoteConfigFileRepo(SDKContext sdkContext,
@@ -255,6 +284,14 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 		configFile.setVersion(sourceConfigFile.getVersion());
 		configFile.setMd5(sourceConfigFile.getMd5());
 		return configFile;
+	}
+
+
+	public void releaseConfigFile (ConfigFileMetadata configFileMetadata) {
+		ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
+				configFileMetadata.getFileGroup(),
+				configFileMetadata.getFileName());
+		configFileConnector.releaseConfigFile(configFile);
 	}
 
 }

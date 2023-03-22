@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Maps;
@@ -9,6 +26,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactory;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactoryManager;
+import com.tencent.polaris.configuration.client.factory.ConfigFilePublishFactory;
 import com.tencent.polaris.configuration.client.factory.DefaultConfigFileFactoryManager;
 
 import java.util.Map;
@@ -49,7 +67,7 @@ public class DefaultConfigFileManager implements ConfigFileManager {
             synchronized (this) {
                 configFile = configFileCache.get(configFileMetadata);
                 if (configFile == null) {
-                    ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+                    ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
 
                     configFile = configFileFactory.createConfigFile(configFileMetadata);
 
@@ -69,7 +87,7 @@ public class DefaultConfigFileManager implements ConfigFileManager {
             synchronized (this) {
                 configFile = configPropertiesFileCache.get(configFileMetadata);
                 if (configFile == null) {
-                    ConfigFileFactory configFileFactory = configFileFactoryManager.getFactory(configFileMetadata);
+                    ConfigFileFactory configFileFactory = configFileFactoryManager.getConfigFileFactory(configFileMetadata);
 
                     configFile = configFileFactory.createConfigKVFile(configFileMetadata, fileFormat);
 
@@ -79,6 +97,24 @@ public class DefaultConfigFileManager implements ConfigFileManager {
         }
 
         return configFile;
+    }
+
+    @Override
+    public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.createConfigFile(configFileMetadata, content);
+    }
+
+    @Override
+    public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.updateConfigFile(configFileMetadata, content);
+    }
+
+    @Override
+    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.releaseConfigFile(configFileMetadata);
     }
 
     void setConfigFileFactoryManager(ConfigFileFactoryManager configFileFactoryManager) {

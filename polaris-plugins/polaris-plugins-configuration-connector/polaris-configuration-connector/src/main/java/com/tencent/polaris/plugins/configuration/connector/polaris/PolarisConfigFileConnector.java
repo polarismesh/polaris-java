@@ -44,6 +44,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_CONFIG_CLUSTER, readyFuture);
         connectionManager = new ConnectionManager(ctx, ctx.getConfig().getConfigFile().getServerConnector(), futures);
+        OpenapiService.initInstance(ctx);
     }
 
     @Override
@@ -113,6 +114,21 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
                 connection.release(OP_KEY_GET_CONFIG_FILE);
             }
         }
+    }
+
+    @Override
+    public void createConfigFile(ConfigFile configFile) {
+        OpenapiService.INSTANCE.createConfigFile(configFile);
+    }
+
+    @Override
+    public void updateConfigFile(ConfigFile configFile) {
+        OpenapiService.INSTANCE.updateConfigFile(configFile);
+    }
+
+    @Override
+    public void releaseConfigFile(ConfigFile configFile) {
+        OpenapiService.INSTANCE.releaseConfigFile(configFile);
     }
 
     @Override
