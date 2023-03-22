@@ -18,6 +18,13 @@ global:
 #      protocol: nacos
 #      addresses:
 #        - nacos:nacos@127.0.0.1:8848
+  statReporter:
+    enable: true
+    plugin:
+      prometheus:
+        type: pull
+        port: 28080
+
 #描述:主调端配置
 consumer:
   #描述:节点熔断相关配置

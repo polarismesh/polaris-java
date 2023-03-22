@@ -29,7 +29,10 @@ public interface LoggingConsts {
     String LOGGING_PATH_PROPERTY = "polaris.log.home";
 
     String LOGGING_UPDATE_EVENT = "polaris-update-event";
+
     String LOGGING_UPDATE_EVENT_ASYNC = "polaris-update-event-async";
 
     String LOGGING_CIRCUITBREAKER_EVENT = "polaris-circuitbreaker-event";
+
+    String LOGGING_HEARTBEAT = "polaris-heartbeat";
 }

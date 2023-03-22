@@ -28,30 +28,41 @@ public enum RetStatus {
     /**
      * unknown status
      */
-    RetUnknown,
+    RetUnknown("unknown"),
 
     /**
      * invoke success
      */
-    RetSuccess,
+    RetSuccess("success"),
 
     /**
      * invoke fail
      */
-    RetFail,
+    RetFail("fail"),
 
     /**
      * invoke timeout
      */
-    RetTimeout,
+    RetTimeout("timeout"),
 
     /**
      * reject request by circuitbreaking
      */
-    RetReject,
+    RetReject("reject"),
 
     /**
      * request cancel by flow control
      */
-    RetFlowControl,
+    RetFlowControl("flow_control"),
+
+    ;
+    private final String desc;
+
+    RetStatus(String desc) {
+        this.desc = desc;
+    }
+
+    public String getDesc() {
+        return desc;
+    }
 }

@@ -119,7 +119,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         this.config = extensions.getConfiguration().getGlobal().getStatReporter()
                 .getPluginConfig(getName(), PrometheusHandlerConfig.class);
         this.instanceID = extensions.getValueContext().getClientId();
-        this.callerIp = StringUtils.isBlank(config.getHost()) ? extensions.getValueContext().getHost() : config.getHost();
+        this.callerIp = extensions.getValueContext().getHost();
         this.initHandle();
     }
 
