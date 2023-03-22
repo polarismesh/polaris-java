@@ -1,5 +1,6 @@
 polaris-java
 ========================================
+[![codecov](https://codecov.io/gh/polarismesh/polaris-java/branch/main/graph/badge.svg?token=4M42F4S0FR)](https://codecov.io/gh/polarismesh/polaris-java)
 [![Build Status](https://github.com/polarismesh/polaris-java/actions/workflows/testing.yml/badge.svg)](https://github.com/PolarisMesh/polaris-java/actions/workflows/testing.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/com.tencent.polaris/polaris-dependencies?label=Maven%20Central)](https://search.maven.org/search?q=g:com.tencent.polaris%20AND%20a:polaris-dependencies)
 
