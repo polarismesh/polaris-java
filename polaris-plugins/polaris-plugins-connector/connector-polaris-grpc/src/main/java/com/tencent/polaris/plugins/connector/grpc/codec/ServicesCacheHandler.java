@@ -23,6 +23,8 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
 
+import java.util.Objects;
+
 
 public class ServicesCacheHandler extends AbstractCacheHandler {
 
@@ -33,7 +35,10 @@ public class ServicesCacheHandler extends AbstractCacheHandler {
 
     @Override
     protected String getRevision(DiscoverResponse discoverResponse) {
-        return "";
+        if (Objects.isNull(discoverResponse.getService())) {
+            return "";
+        }
+        return discoverResponse.getService().getRevision().getValue();
     }
 
     @Override

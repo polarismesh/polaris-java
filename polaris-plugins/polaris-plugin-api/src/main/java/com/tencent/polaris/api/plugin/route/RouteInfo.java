@@ -43,9 +43,9 @@ import java.util.Set;
 public class RouteInfo {
 
     //源服务信息
-    private final SourceService sourceService;
+    private SourceService sourceService;
     //目的服务信息
-    private final ServiceMetadata destService;
+    private ServiceMetadata destService;
 
     //源路由规则
     private ServiceRule sourceRouteRule;
@@ -130,6 +130,14 @@ public class RouteInfo {
     public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method,
             ServiceConfig serviceConfig) {
         this(sourceService, null, destService, null, method, serviceConfig);
+    }
+
+    public void setSourceService(SourceService sourceService) {
+        this.sourceService = sourceService;
+    }
+
+    public void setDestService(ServiceMetadata destService) {
+        this.destService = destService;
     }
 
     public MetadataFailoverType getMetadataFailoverType() {

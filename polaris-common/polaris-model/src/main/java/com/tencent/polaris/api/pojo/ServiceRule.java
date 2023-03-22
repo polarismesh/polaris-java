@@ -42,4 +42,11 @@ public interface ServiceRule {
      * @return revision
      */
     String getRevision();
+
+    /**
+     * 获取服务原始名称信息
+     *
+     * @return {@link ServiceKey}
+     */
+    ServiceKey getAliasFor();
 }

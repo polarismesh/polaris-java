@@ -22,6 +22,7 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 
 public class ServiceInstancesCacheHandler extends AbstractCacheHandler {
 

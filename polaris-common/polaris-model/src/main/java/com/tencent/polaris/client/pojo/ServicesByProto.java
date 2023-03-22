@@ -42,6 +42,8 @@ public class ServicesByProto implements Services, RegistryCacheValue {
 
     private final int hashCode;
 
+    private String revision;
+
     private ServiceKey svcKey;
 
     public ServicesByProto() {
@@ -63,6 +65,9 @@ public class ServicesByProto implements Services, RegistryCacheValue {
 
         this.services = new ArrayList<>();
         this.svcKey = new ServiceKey("", "");
+        if (Objects.nonNull(response.getService())) {
+            this.revision = response.getService().getRevision().getValue();
+        }
 
         if (CollectionUtils.isNotEmpty(tmpServices)) {
             ServiceProto.Service svc = tmpServices.get(0);

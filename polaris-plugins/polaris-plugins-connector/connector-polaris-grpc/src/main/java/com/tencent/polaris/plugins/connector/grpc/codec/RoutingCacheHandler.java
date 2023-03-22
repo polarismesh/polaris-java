@@ -22,6 +22,7 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Routing;
 
 public class RoutingCacheHandler extends AbstractCacheHandler {
@@ -39,7 +40,8 @@ public class RoutingCacheHandler extends AbstractCacheHandler {
         if (null != routing) {
             revision = routing.getRevision().getValue();
         }
-        return new ServiceRuleByProto(routing, revision, isCacheLoaded, getTargetEventType());
+        Service aliasFor = discoverResponse.getAliasFor();
+        return new ServiceRuleByProto(routing, aliasFor, revision, isCacheLoaded, getTargetEventType());
     }
 
     @Override

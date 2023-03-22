@@ -23,6 +23,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 
 public class FaultDetectCacheHandler extends AbstractCacheHandler {
 
@@ -48,6 +49,7 @@ public class FaultDetectCacheHandler extends AbstractCacheHandler {
         if (null != faultDetector) {
             revision = faultDetector.getRevision();
         }
-        return new ServiceRuleByProto(faultDetector, revision, isCacheLoaded, getTargetEventType());
+        Service aliasFor = discoverResponse.getAliasFor();
+        return new ServiceRuleByProto(faultDetector, aliasFor, revision, isCacheLoaded, getTargetEventType());
     }
 }

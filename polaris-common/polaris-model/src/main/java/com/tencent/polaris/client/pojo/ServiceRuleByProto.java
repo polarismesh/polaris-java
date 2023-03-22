@@ -21,7 +21,11 @@ import com.google.protobuf.Message;
 import com.google.protobuf.TextFormat;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
+
+import java.util.Objects;
 
 /**
  * 通过PB对象封装的服务信息
@@ -43,12 +47,21 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
     private final EventType eventType;
 
-    public ServiceRuleByProto(Message ruleValue, String revision, boolean loadFromFile, EventType eventType) {
+    private ServiceKey aliasFor;
+
+    public ServiceRuleByProto(Message ruleValue, Service aliasFor, String revision, boolean loadFromFile, EventType eventType) {
         this.ruleValue = ruleValue;
         this.revision = revision;
         this.loadFromFile = loadFromFile;
         this.initialized = true;
         this.eventType = eventType;
+        if (Objects.nonNull(aliasFor)) {
+            this.aliasFor = new ServiceKey(aliasFor.getNamespace().getValue(), aliasFor.getName().getValue());
+        }
+    }
+
+    public ServiceRuleByProto(Message ruleValue, String revision, boolean loadFromFile, EventType eventType) {
+        this(ruleValue, null, revision, loadFromFile, eventType);
     }
 
     public ServiceRuleByProto() {
@@ -67,6 +80,11 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
     @Override
     public String getRevision() {
         return revision;
+    }
+
+    @Override
+    public ServiceKey getAliasFor() {
+        return aliasFor;
     }
 
 

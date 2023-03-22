@@ -23,6 +23,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 
 public class CircuitBreakCacheHandler extends AbstractCacheHandler {
 
@@ -48,6 +49,7 @@ public class CircuitBreakCacheHandler extends AbstractCacheHandler {
         if (null != circuitBreaker) {
             revision = circuitBreaker.getRevision().getValue();
         }
-        return new ServiceRuleByProto(circuitBreaker, revision, isCacheLoaded, getTargetEventType());
+        Service aliasFor = discoverResponse.getAliasFor();
+        return new ServiceRuleByProto(circuitBreaker, aliasFor, revision, isCacheLoaded, getTargetEventType());
     }
 }

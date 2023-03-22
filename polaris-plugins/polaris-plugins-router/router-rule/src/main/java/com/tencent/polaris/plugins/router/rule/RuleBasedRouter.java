@@ -30,11 +30,15 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
+import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.Service;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
@@ -51,7 +55,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
+
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Source;
 import org.slf4j.Logger;
 
 /**
@@ -352,47 +360,83 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         List<Instance> destFilteredInstances = null;
         List<Instance> sourceFilteredInstances = null;
         MatchStatus matchStatus = new MatchStatus();
-        if (routeInfo.getDestRouteRule() != null) {
-            destFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
-                    RuleMatchType.destRouteRuleMatch, matchStatus);
-            if (!destFilteredInstances.isEmpty()) {
-                ruleStatus = RuleStatus.destRuleSucc;
-            }
-            if (destFilteredInstances.isEmpty() && matchStatus.matched) {
-                ruleStatus = RuleStatus.destRuleFail;
-            }
-        }
-        if (ruleStatus == RuleStatus.noRule && routeInfo.getSourceRouteRule() != null) {
-            // 然后匹配outbound规则
-            sourceFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
-                    RuleMatchType.sourceRouteRuleMatch, matchStatus);
-            if (sourceFilteredInstances.isEmpty()) {
-                ruleStatus = RuleStatus.sourceRuleFail;
-            } else {
-                ruleStatus = RuleStatus.sourceRuleSucc;
-            }
-        }
-        switch (ruleStatus) {
-            case sourceRuleSucc:
-                return new RouteResult(sourceFilteredInstances, RouteResult.State.Next);
-            case destRuleSucc:
-                return new RouteResult(destFilteredInstances, RouteResult.State.Next);
-            default:
-                LOG.warn("route rule not match, rule status: {}, not matched source {}", ruleStatus,
-                        routeInfo.getSourceService());
 
-                //请求里的配置优先级高于配置文件
-                RuleBasedRouterFailoverType failoverType = routeInfo.getRuleBasedRouterFailoverType();
-                if (failoverType == null) {
-                    failoverType = routerConfig.getFailoverType();
+        SourceService oldSourceService = routeInfo.getSourceService();
+        ServiceMetadata oldDestService = routeInfo.getDestService();
+
+        // 替换为真正的服务名称数据信息
+        routeInfo = replaceServiceInfo(routeInfo);
+        try {
+            if (routeInfo.getDestRouteRule() != null) {
+                // 调整 ServiceInstances 的服务名称
+                destFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
+                        RuleMatchType.destRouteRuleMatch, matchStatus);
+                if (!destFilteredInstances.isEmpty()) {
+                    ruleStatus = RuleStatus.destRuleSucc;
                 }
-
-                if (failoverType == RuleBasedRouterFailoverType.none) {
-                    return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
+                if (destFilteredInstances.isEmpty() && matchStatus.matched) {
+                    ruleStatus = RuleStatus.destRuleFail;
                 }
+            }
+            if (ruleStatus == RuleStatus.noRule && routeInfo.getSourceRouteRule() != null) {
+                // 然后匹配outbound规则
+                sourceFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
+                        RuleMatchType.sourceRouteRuleMatch, matchStatus);
+                if (sourceFilteredInstances.isEmpty()) {
+                    ruleStatus = RuleStatus.sourceRuleFail;
+                } else {
+                    ruleStatus = RuleStatus.sourceRuleSucc;
+                }
+            }
+            switch (ruleStatus) {
+                case sourceRuleSucc:
+                    return new RouteResult(sourceFilteredInstances, RouteResult.State.Next);
+                case destRuleSucc:
+                    return new RouteResult(destFilteredInstances, RouteResult.State.Next);
+                default:
+                    LOG.warn("route rule not match, rule status: {}, not matched source {}", ruleStatus,
+                            routeInfo.getSourceService());
 
-                return new RouteResult(instances.getInstances(), RouteResult.State.Next);
+                    //请求里的配置优先级高于配置文件
+                    RuleBasedRouterFailoverType failoverType = routeInfo.getRuleBasedRouterFailoverType();
+                    if (failoverType == null) {
+                        failoverType = routerConfig.getFailoverType();
+                    }
+
+                    if (failoverType == RuleBasedRouterFailoverType.none) {
+                        return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
+                    }
+
+                    return new RouteResult(instances.getInstances(), RouteResult.State.Next);
+            }
+        } finally {
+            // 恢复入参的原始信息数据
+            routeInfo.setDestService(oldDestService);
+            routeInfo.setSourceService(oldSourceService);
         }
+    }
+
+    private RouteInfo replaceServiceInfo(RouteInfo routeInfo) {
+        SourceService oldSourceService = routeInfo.getSourceService();
+        ServiceMetadata oldDestService = routeInfo.getDestService();
+        if (Objects.nonNull(routeInfo.getDestRouteRule())) {
+            Service key = Optional.ofNullable((Service) routeInfo.getDestRouteRule().getAliasFor()).orElse(oldDestService);
+            ServiceInfo info = new ServiceInfo();
+            info.setMetadata(oldDestService.getMetadata());
+            info.setService(key.getService());
+            info.setNamespace(key.getNamespace());
+            routeInfo.setDestService(info);
+        }
+        if (Objects.nonNull(routeInfo.getSourceRouteRule())) {
+            Service key = Optional.ofNullable((Service) routeInfo.getSourceRouteRule().getAliasFor()).orElse(oldSourceService);
+            SourceService info = new SourceService();
+            info.setArguments(oldSourceService.getArguments());
+            info.setService(key.getService());
+            info.setNamespace(key.getNamespace());
+            routeInfo.setSourceService(info);
+        }
+
+        return routeInfo;
     }
 
     private static class MatchStatus {
