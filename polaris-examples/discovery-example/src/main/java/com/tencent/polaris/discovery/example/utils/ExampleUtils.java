@@ -17,9 +17,12 @@
 
 package com.tencent.polaris.discovery.example.utils;
 
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -151,6 +154,17 @@ public class ExampleUtils {
         }
         return new InitResult(namespace, service, host, port, token, ttl, config);
     }
+
+    public static SDKContext createSDKContext(String config) throws IOException {
+        if (StringUtils.isNotBlank(config)) {
+            try (InputStream inputStream = new FileInputStream(config)) {
+                Configuration configuration = ConfigAPIFactory.loadConfig(inputStream);
+                return SDKContext.initContextByConfig(configuration);
+            }
+        }
+        return SDKContext.initContext();
+    }
+
 
     /**
      * 创建ConsumerAPI

@@ -110,6 +110,11 @@ public class CommonHandler {
                             null == insGauge.getRetCode() ? null : insGauge.getRetCode().toString();
                     addLabel(labelName, retCodeStr, labels);
                     break;
+                case SystemMetricName.CALLEE_RESULT:
+                    String retStatusStr =
+                            null == insGauge.getRetStatus() ? null : insGauge.getRetStatus().getDesc();
+                    addLabel(labelName, retStatusStr, labels);
+                    break;
                 case SystemMetricName.CALLER_LABELS:
                     addLabel(labelName, insGauge.getLabels(), labels);
                     break;
