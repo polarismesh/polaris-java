@@ -23,6 +23,7 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 
 import java.util.Objects;
@@ -84,6 +85,9 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
     @Override
     public ServiceKey getAliasFor() {
+        if (StringUtils.isAllEmpty(aliasFor.getService(), aliasFor.getNamespace())) {
+            return null;
+        }
         return aliasFor;
     }
 
