@@ -20,11 +20,21 @@ package com.tencent.polaris.circuitbreak.client.api;
 import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.AbstractResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.SubsetResource;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
 import com.tencent.polaris.api.pojo.HalfOpenStatus;
+import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.InvokeHandler;
@@ -34,10 +44,19 @@ import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
+import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.CommonValidator;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAPI {
+
+    private static Logger LOG = LoggerFactory.getLogger(DefaultCircuitBreakAPI.class);
 
     private ServiceCallResultChecker checker;
 
@@ -112,7 +131,52 @@ public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAP
         if (null == circuitBreaker) {
             return;
         }
-        circuitBreaker.report(reportStat);
+        Resource resource = replaceResource(reportStat.getResource(), extensions);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[CircuitBreaker] report resource old info : {} new info : {}", reportStat.getResource(), resource);
+        }
+        ResourceStat copyStat = new ResourceStat(resource, reportStat.getRetCode(), reportStat.getDelay(), reportStat.getRetStatus());
+        circuitBreaker.report(copyStat);
+    }
+
+
+    private static Resource replaceResource(Resource resource, Extensions extensions) {
+        try {
+            if (!(resource instanceof AbstractResource)) {
+                return resource;
+            }
+            ServiceKey callerService = resource.getCallerService();
+            if (Objects.isNull(callerService)) {
+                return resource;
+            }
+            if (StringUtils.isAllEmpty(callerService.getService(), callerService.getNamespace())) {
+                return resource;
+            }
+            DefaultServiceResourceProvider provider = new DefaultServiceResourceProvider(extensions);
+            ServiceRule rule = provider.getServiceRule(new ServiceEventKey(callerService, EventType.CIRCUIT_BREAKING));
+            ServiceKey serviceKey = Optional.ofNullable(rule.getAliasFor()).orElse(callerService);
+
+            if (resource instanceof InstanceResource) {
+                InstanceResource old = (InstanceResource) resource;
+                return new InstanceResource(old.getService(), old.getHost(), old.getPort(), serviceKey);
+            }
+            if (resource instanceof MethodResource) {
+                MethodResource old = (MethodResource) resource;
+                return new MethodResource(old.getService(), old.getMethod(), serviceKey);
+            }
+            if (resource instanceof ServiceResource) {
+                ServiceResource old = (ServiceResource) resource;
+                return new ServiceResource(old.getService(), serviceKey);
+            }
+            if (resource instanceof SubsetResource) {
+                SubsetResource old = (SubsetResource) resource;
+                return new SubsetResource(old.getService(), old.getSubset(), old.getMetadata(), serviceKey);
+            }
+            return resource;
+        } catch (Throwable ex) {
+            LOG.error("[CircuitBreaker] replace resource caller_service info fail", ex);
+            return resource;
+        }
     }
 
     @Override

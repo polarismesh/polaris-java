@@ -24,7 +24,7 @@ public abstract class AbstractResource implements Resource {
 
     protected final ServiceKey service;
 
-    protected final ServiceKey callerService;
+    protected ServiceKey callerService;
 
     public AbstractResource(ServiceKey service, ServiceKey callerService) {
         this.service = service;
@@ -39,6 +39,10 @@ public abstract class AbstractResource implements Resource {
     @Override
     public ServiceKey getService() {
         return service;
+    }
+
+    public void setCallerService(ServiceKey callerService) {
+        this.callerService = callerService;
     }
 
     @Override

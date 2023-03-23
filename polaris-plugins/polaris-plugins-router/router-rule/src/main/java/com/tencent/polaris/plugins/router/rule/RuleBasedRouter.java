@@ -361,9 +361,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         List<Instance> sourceFilteredInstances = null;
         MatchStatus matchStatus = new MatchStatus();
 
-        SourceService oldSourceService = routeInfo.getSourceService();
         ServiceMetadata oldDestService = routeInfo.getDestService();
-
         // 替换为真正的服务名称数据信息
         routeInfo = replaceServiceInfo(routeInfo);
         try {
@@ -412,12 +410,10 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         } finally {
             // 恢复入参的原始信息数据
             routeInfo.setDestService(oldDestService);
-            routeInfo.setSourceService(oldSourceService);
         }
     }
 
     private RouteInfo replaceServiceInfo(RouteInfo routeInfo) {
-        SourceService oldSourceService = routeInfo.getSourceService();
         ServiceMetadata oldDestService = routeInfo.getDestService();
         if (Objects.nonNull(routeInfo.getDestRouteRule())) {
             Service key = Optional.ofNullable((Service) routeInfo.getDestRouteRule().getAliasFor()).orElse(oldDestService);
@@ -427,15 +423,6 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             info.setNamespace(key.getNamespace());
             routeInfo.setDestService(info);
         }
-        if (Objects.nonNull(routeInfo.getSourceRouteRule())) {
-            Service key = Optional.ofNullable((Service) routeInfo.getSourceRouteRule().getAliasFor()).orElse(oldSourceService);
-            SourceService info = new SourceService();
-            info.setArguments(oldSourceService.getArguments());
-            info.setService(key.getService());
-            info.setNamespace(key.getNamespace());
-            routeInfo.setSourceService(info);
-        }
-
         return routeInfo;
     }
 
