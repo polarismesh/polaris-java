@@ -120,4 +120,11 @@ public interface InstanceGauge extends Service {
      * @return metadata
      */
     Map<String, MatchString> getSubsetMetadata();
+
+    /**
+     * 获取主调节点的IP信息
+     *
+     * @return callerIp
+     */
+    String getCallerIp();
 }
