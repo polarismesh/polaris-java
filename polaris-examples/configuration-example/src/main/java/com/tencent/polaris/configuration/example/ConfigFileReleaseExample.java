@@ -1,8 +1,13 @@
 package com.tencent.polaris.configuration.example;
 
+import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.client.factory.ConfigFilePublishFactory;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
+import com.tencent.polaris.configuration.factory.ConfigFileServiceFactory;
+import com.tencent.polaris.configuration.factory.ConfigFileServicePublishFactory;
+import com.tencent.polaris.factory.ConfigAPIFactory;
 
 /**
  * 运行前请修改 polaris.yml 中的北极星服务地址
@@ -24,7 +29,9 @@ public class ConfigFileReleaseExample {
         DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
 
         // 创建配置中心服务发布类，一般情况下只需要单例对象
-        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
+//        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
+        Configuration configuration = ConfigAPIFactory.createConfigurationByAddress("192.168.1.107:8080");
+        ConfigFilePublishService configFilePublishService = ConfigFileServicePublishFactory.createConfigFilePublishService(configuration);
 
         // 创建配置
 //        configFilePublishService.createConfigFile(fileMetadata, content);
