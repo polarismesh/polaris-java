@@ -28,6 +28,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLEE_SUBSET,
                 SystemMetricName.CALLEE_INSTANCE,
                 SystemMetricName.CALLEE_RET_CODE,
+                SystemMetricName.CALLEE_RESULT,
                 SystemMetricName.CALLER_LABELS,
                 SystemMetricName.CALLER_NAMESPACE,
                 SystemMetricName.CALLER_SERVICE,
@@ -40,6 +41,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLEE_METHOD,
                 SystemMetricName.CALLER_LABELS,
                 SystemMetricName.METRIC_NAME_LABEL,
+                SystemMetricName.RULE_NAME,
         };
         public static final String[] CIRCUIT_BREAKER_LABEL_ORDER = new String[]{
                 SystemMetricName.CALLEE_NAMESPACE,
@@ -51,6 +53,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLER_SERVICE,
                 SystemMetricName.CALLER_IP,
                 SystemMetricName.METRIC_NAME_LABEL,
+                SystemMetricName.RULE_NAME,
         };
     }
 
@@ -62,11 +65,13 @@ public class SystemMetricModel {
         public static final String CALLEE_INSTANCE = "callee_instance";
         public static final String CALLEE_RET_CODE = "callee_result_code";
         public static final String CALLEE_METHOD = "callee_method";
+        public static final String CALLEE_RESULT = "callee_result";
         public static final String CALLER_NAMESPACE = "caller_namespace";
         public static final String CALLER_SERVICE = "caller_service";
         public static final String CALLER_IP = "caller_ip";
         public static final String CALLER_LABELS = "caller_labels";
         public static final String METRIC_NAME_LABEL = "metric_name";
+        public static final String RULE_NAME = "rule_name";
     }
 
     public static class SystemMetricValue {
