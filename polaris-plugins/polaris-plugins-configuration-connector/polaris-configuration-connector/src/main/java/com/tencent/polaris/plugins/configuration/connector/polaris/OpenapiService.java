@@ -18,6 +18,8 @@
 package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.google.gson.JsonObject;
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -125,7 +127,7 @@ public class OpenapiService {
             if (e.getServerCode() == ServerCodes.EXISTED_RESOURCE) {
                 response = restOperator.doPut(url, token, params.toString());
             } else {
-                throw e;
+                throw new PolarisException(ErrorCode.SERVER_ERROR, e.getMessage());
             }
         }
 

@@ -139,17 +139,17 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 
 	@Override
 	public void createConfigFile(ConfigFile configFile) {
-
+		throw new PolarisException(ErrorCode.NOT_SUPPORT, "local file config file connector not support create config file.");
 	}
 
 	@Override
 	public void updateConfigFile(ConfigFile configFile) {
-
+		throw new PolarisException(ErrorCode.NOT_SUPPORT, "local file config file connector not support update config file.");
 	}
 
 	@Override
 	public void upsertConfigFile(ConfigFile configFile) {
-
+		throw new PolarisException(ErrorCode.NOT_SUPPORT, "local file config file connector not support upsert config file.");
 	}
 
 	@Override

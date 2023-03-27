@@ -46,7 +46,7 @@ public class RestOperator {
 
     private static final int DEFAULT_HTTP_READ_TIMEOUT = 10000;
 
-    private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new DateNullAdapterFactory<>()).create();
+    private static final Gson GSON = new GsonBuilder().registerTypeAdapterFactory(new DateNullAdapterFactory<>()).create();
     ;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -100,7 +100,7 @@ public class RestOperator {
 
         try {
             Response response = client.newCall(request).execute();
-            configClientResponse = gson.fromJson(Objects.requireNonNull(response.body()).string(), ConfigClientResponse.class);
+            configClientResponse = GSON.fromJson(Objects.requireNonNull(response.body()).string(), ConfigClientResponse.class);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
