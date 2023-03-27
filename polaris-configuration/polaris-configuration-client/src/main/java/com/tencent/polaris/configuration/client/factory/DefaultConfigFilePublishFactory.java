@@ -72,6 +72,15 @@ public class DefaultConfigFilePublishFactory implements ConfigFilePublishFactory
     }
 
     @Override
+    public void upsertConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
+                configFileMetadata.getFileGroup(),
+                configFileMetadata.getFileName());
+        configFile.setContent(content);
+        configFileConnector.upsertConfigFile(configFile);
+    }
+
+    @Override
     public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new ConfigFile(configFileMetadata.getNamespace(),
                 configFileMetadata.getFileGroup(),

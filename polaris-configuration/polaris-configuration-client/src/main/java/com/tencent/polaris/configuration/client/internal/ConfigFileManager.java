@@ -35,5 +35,7 @@ public interface ConfigFileManager {
 
     void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
+    void upsertConfigFile(ConfigFileMetadata configFileMetadata, String content);
+
     void releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }

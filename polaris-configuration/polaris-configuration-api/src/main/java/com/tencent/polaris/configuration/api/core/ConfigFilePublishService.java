@@ -55,6 +55,22 @@ public interface ConfigFilePublishService {
     void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
     /**
+     * Create or update the configuration file
+     *
+     * @param namespace namespace of config file
+     * @param fileGroup file group of config file
+     * @param fileName file name
+     */
+    void upsertConfigFile(String namespace, String fileGroup, String fileName, String content);
+
+    /**
+     * Create or update the configuration file
+     *
+     * @param configFileMetadata config file metadata
+     */
+    void upsertConfigFile(ConfigFileMetadata configFileMetadata, String content);
+
+    /**
      * Release the configuration file
      *
      * @param namespace namespace of config file

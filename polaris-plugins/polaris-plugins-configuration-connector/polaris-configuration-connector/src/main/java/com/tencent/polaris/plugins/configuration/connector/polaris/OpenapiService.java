@@ -79,6 +79,10 @@ public class OpenapiService {
         updateConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
     }
 
+    public void upsertConfigFile(ConfigFile configFile) {
+        upsertConfigFile(RestUtils.toConfigFileUrl(address), token, configFile);
+    }
+
     public void releaseConfigFile(ConfigFile configFile) {
         releaseConfigFile(RestUtils.toReleaseConfigFileUrl(address), token, configFile);
     }
@@ -107,6 +111,25 @@ public class OpenapiService {
         params.addProperty("content", configFile.getContent());
         ConfigClientResponse response = restOperator.doPut(url, token, params.toString());
         LOG.info("[Polaris] update configuration file success: Namespace={}, FileGroup={}, FileName={}, Content={}",
+                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
+        return response;
+    }
+
+    public ConfigClientResponse upsertConfigFile(String url, String token, ConfigFile configFile) {
+        JsonObject params = RestUtils.getParams(configFile);
+        params.addProperty("content", configFile.getContent());
+        ConfigClientResponse response = null;
+        try {
+            response = restOperator.doPost(url, token, params.toString());
+        } catch (ServerErrorResponseException e) {
+            if (e.getServerCode() == ServerCodes.EXISTED_RESOURCE) {
+                response = restOperator.doPut(url, token, params.toString());
+            } else {
+                throw e;
+            }
+        }
+
+        LOG.info("[Polaris] upsert configuration file success: Namespace={}, FileGroup={}, FileName={}, Content={}",
                 configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent());
         return response;
     }

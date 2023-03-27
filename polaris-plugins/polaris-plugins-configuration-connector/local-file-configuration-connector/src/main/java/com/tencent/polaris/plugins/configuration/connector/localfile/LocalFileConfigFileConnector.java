@@ -148,6 +148,11 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 	}
 
 	@Override
+	public void upsertConfigFile(ConfigFile configFile) {
+
+	}
+
+	@Override
 	public void releaseConfigFile(ConfigFile configFile) {
 
 	}

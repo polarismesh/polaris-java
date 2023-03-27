@@ -127,6 +127,11 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
     }
 
     @Override
+    public void upsertConfigFile(ConfigFile configFile) {
+        OpenapiService.INSTANCE.upsertConfigFile(configFile);
+    }
+
+    @Override
     public void releaseConfigFile(ConfigFile configFile) {
         OpenapiService.INSTANCE.releaseConfigFile(configFile);
     }

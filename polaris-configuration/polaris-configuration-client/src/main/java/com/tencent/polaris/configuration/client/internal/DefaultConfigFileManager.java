@@ -112,6 +112,12 @@ public class DefaultConfigFileManager implements ConfigFileManager {
     }
 
     @Override
+    public void upsertConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
+        configFilePublishFactory.upsertConfigFile(configFileMetadata, content);
+    }
+
+    @Override
     public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
         configFilePublishFactory.releaseConfigFile(configFileMetadata);

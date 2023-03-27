@@ -36,8 +36,12 @@ public class ConfigFileReleaseExample {
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, content);
 
         // 更新配置
-        configFilePublishService.updateConfigFile(fileMetadata, content);
+//        configFilePublishService.updateConfigFile(fileMetadata, content);
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
+
+        // 创建或更新配置
+        configFilePublishService.upsertConfigFile(fileMetadata, content);
+//        configFileService.upsertConfigFile(namespace, fileGroup, fileName, content);
 
         // 发布配置
         configFilePublishService.releaseConfigFile(fileMetadata);

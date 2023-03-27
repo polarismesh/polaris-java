@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.configuration.connector.polaris.rest;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.plugins.configuration.connector.polaris.gson.DateNullAdapterFactory;

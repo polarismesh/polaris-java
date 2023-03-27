@@ -30,7 +30,7 @@ import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 /**
  * @author fabian4 2022-03-08
  */
-public class DefaultConfigFilePublishService  extends BaseEngine implements ConfigFilePublishService {
+public class DefaultConfigFilePublishService extends BaseEngine implements ConfigFilePublishService {
 
     private ConfigFileManager configFileManager;
 
@@ -63,6 +63,17 @@ public class DefaultConfigFilePublishService  extends BaseEngine implements Conf
     public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
         configFileManager.updateConfigFile(configFileMetadata, content);
+    }
+
+    @Override
+    public void upsertConfigFile(String namespace, String fileGroup, String fileName, String content) {
+        upsertConfigFile(new DefaultConfigFileMetadata(namespace, fileGroup, fileName), content);
+    }
+
+    @Override
+    public void upsertConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
+        configFileManager.upsertConfigFile(configFileMetadata, content);
     }
 
     @Override

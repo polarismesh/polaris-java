@@ -37,6 +37,13 @@ public interface ConfigFileConnector extends Plugin {
     void updateConfigFile(ConfigFile configFile);
 
     /**
+     * 创建或更新配置文件
+     *
+     * @param configFile 配置文件元信息
+     */
+    void upsertConfigFile(ConfigFile configFile);
+
+    /**
      * 发布配置文件
      *
      * @param configFile 配置文件元信息
