@@ -34,6 +34,8 @@ public class GrpcUtil {
 
     public static final String OP_KEY_REPORT_CLIENT = "ReportClient";
 
+    public static final String OP_KEY_CHECK_COMPATIBLE = "CheckCompatible";
+
     /**
      * 请求ID的key
      */
