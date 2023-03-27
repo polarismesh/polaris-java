@@ -97,6 +97,11 @@ public class ServiceCallResult implements InstanceGauge {
      */
     private Service callerService;
 
+    /**
+     * 主调节点 IP
+     */
+    private String callerIp;
+
     @Override
     public String getHost() {
         if (null != instance) {
@@ -231,6 +236,14 @@ public class ServiceCallResult implements InstanceGauge {
 
     public void setCallerService(Service callerService) {
         this.callerService = callerService;
+    }
+
+    public String getCallerIp() {
+        return callerIp;
+    }
+
+    public void setCallerIp(String callerIp) {
+        this.callerIp = callerIp;
     }
 
     public Map<String, MatchString> getSubsetMetadata() {
