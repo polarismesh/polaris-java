@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.circuitbreak.client.api;
 
+import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
@@ -24,6 +25,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
 import java.util.ArrayList;
@@ -40,14 +42,16 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
 
     @Override
     public void onServiceCallResult(InstanceGauge result) {
-        List<Resource> resources = new ArrayList<>(2);
+        if (!needReportStat(result)) {
+            return;
+        }
         ServiceKey sourceService = null;
         if (null != result.getCallerService()) {
             sourceService = new ServiceKey(result.getCallerService().getNamespace(),
                     result.getCallerService().getService());
         }
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
-        resources.add(new InstanceResource(serviceKey, result.getHost(), result.getPort(), sourceService));
+        Resource resource = new InstanceResource(serviceKey, result.getHost(), result.getPort(), sourceService);
         int retCode = 0;
         if (null != result.getRetCode()) {
             retCode = result.getRetCode();
@@ -60,10 +64,19 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
         if (null != result.getRetStatus()) {
             retStatus = result.getRetStatus();
         }
-        for (Resource resource : resources) {
             ResourceStat resourceStat = new ResourceStat(resource, retCode, delay, retStatus);
             DefaultCircuitBreakAPI.report(resourceStat, extensions);
+    }
+
+    private static boolean needReportStat(InstanceGauge result) {
+        if (StringUtils.isBlank(result.getService()) || StringUtils.isBlank(result.getNamespace())) {
+            return false;
         }
+        if (StringUtils.equals(result.getNamespace(), DefaultValues.DEFAULT_SYSTEM_NAMESPACE)
+                && StringUtils.equals(result.getNamespace(), DefaultValues.DEFAULT_BUILTIN_DISCOVER)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
