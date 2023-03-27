@@ -133,5 +133,5 @@ public interface InstanceGauge extends Service {
      *
      * @return ruleName
      */
-    String ruleName();
+    String getRuleName();
 }

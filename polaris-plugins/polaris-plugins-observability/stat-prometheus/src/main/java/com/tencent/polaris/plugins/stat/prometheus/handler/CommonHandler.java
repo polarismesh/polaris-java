@@ -133,6 +133,10 @@ public class CommonHandler {
                     String callerIp = Objects.isNull(insGauge.getCallerIp()) ? sdkIP : insGauge.getCallerIp();
                     addLabel(labelName, callerIp, labels);
                     break;
+                case SystemMetricName.RULE_NAME:
+                    String ruleName = Objects.isNull(insGauge.getRuleName()) ? null : insGauge.getCallerIp();
+                    addLabel(labelName, ruleName, labels);
+                    break;
                 default:
             }
         }
