@@ -72,12 +72,15 @@ public class QuotaFlow extends Destroyable {
      */
     private String clientId;
 
+    private boolean enabled;
+
     private final Map<ServiceKey, RateLimitWindowSet> svcToWindowSet = new ConcurrentHashMap<>();
 
     public void init(Extensions extensions) throws PolarisException {
         clientId = extensions.getValueContext().getClientId();
         rateLimitExtension = new RateLimitExtension(extensions);
         rateLimitConfig = rateLimitExtension.getExtensions().getConfiguration().getProvider().getRateLimit();
+        enabled = rateLimitConfig.isEnable();
         extensions.getLocalRegistry().registerResourceListener(new RateLimitRuleListener());
     }
 
@@ -86,11 +89,15 @@ public class QuotaFlow extends Destroyable {
     }
 
     public QuotaResponse getQuota(CommonQuotaRequest request) throws PolarisException {
+        if (!enabled) {
+            return new QuotaResponse(
+                    new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.REASON_DISABLED));
+        }
         List<RateLimitWindow> windows = lookupRateLimitWindow(request);
         if (CollectionUtils.isEmpty(windows)) {
             //没有限流规则，直接放通
             return new QuotaResponse(
-                    new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.RULE_NOT_EXISTS));
+                    new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.REASON_RULE_NOT_EXISTS));
         }
         long maxWaitMs = 0;
         for (RateLimitWindow rateLimitWindow : windows) {

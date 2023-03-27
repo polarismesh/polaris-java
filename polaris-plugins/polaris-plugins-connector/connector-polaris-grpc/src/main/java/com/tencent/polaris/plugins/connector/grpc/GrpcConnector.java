@@ -232,55 +232,61 @@ public class GrpcConnector extends DestroyableServerConnector {
                 return aBoolean;
             }
             LOG.info("[ServerConnector] start to check compatible for event type {}", eventType);
-            Connection connection = connectionManager.getConnection(
-                    "check-compatible", ClusterType.BUILTIN_CLUSTER);
-            String reqId = GrpcUtil.nextGetInstanceReqId();
-            PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(namingStub, reqId);
-            CountDownLatch countDownLatch = new CountDownLatch(1);
-            StreamObserver<DiscoverRequest> discoverClient = namingStub
-                    .discover(new StreamObserver<DiscoverResponse>() {
-                        @Override
-                        public void onNext(DiscoverResponse value) {
-                            int code = value.getCode().getValue();
-                            boolean supported = true;
-                            if (code == InvalidDiscoverResource.getNumber()) {
-                                supported = false;
-                            }
-                            supportedResourcesType.put(eventType, supported);
-                            LOG.info("[ServerConnector] success to check compatible for event type {}, result {}",
-                                    eventType, supported);
-                            countDownLatch.countDown();
-                        }
-
-                        @Override
-                        public void onError(Throwable t) {
-                            countDownLatch.countDown();
-                            LOG.error("[ServerConnector] fail to acquire check event type {}", eventType, t);
-                            throw new PolarisException(ErrorCode.NETWORK_ERROR,
-                                    "[ServerConnector] fail to acquire check event type " + eventType, t);
-                        }
-
-                        @Override
-                        public void onCompleted() {
-                            countDownLatch.countDown();
-                        }
-                    });
-            RequestProto.DiscoverRequest.Builder req = RequestProto.DiscoverRequest.newBuilder();
-            req.setType(GrpcUtil.buildDiscoverRequestType(eventType));
-            discoverClient.onNext(req.build());
+            Connection connection = null;
             try {
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                LOG.error("[ServerConnector] fail to wait check event type {}", eventType, e);
+                connection = connectionManager.getConnection(GrpcUtil.OP_KEY_CHECK_COMPATIBLE, ClusterType.BUILTIN_CLUSTER);
+                String reqId = GrpcUtil.nextGetInstanceReqId();
+                PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
+                GrpcUtil.attachRequestHeader(namingStub, reqId);
+                CountDownLatch countDownLatch = new CountDownLatch(1);
+                StreamObserver<DiscoverRequest> discoverClient = namingStub
+                        .discover(new StreamObserver<DiscoverResponse>() {
+                            @Override
+                            public void onNext(DiscoverResponse value) {
+                                int code = value.getCode().getValue();
+                                boolean supported = true;
+                                if (code == InvalidDiscoverResource.getNumber()) {
+                                    supported = false;
+                                }
+                                supportedResourcesType.put(eventType, supported);
+                                LOG.info("[ServerConnector] success to check compatible for event type {}, result {}",
+                                        eventType, supported);
+                                countDownLatch.countDown();
+                            }
+
+                            @Override
+                            public void onError(Throwable t) {
+                                countDownLatch.countDown();
+                                LOG.error("[ServerConnector] fail to acquire check event type {}", eventType, t);
+                                throw new PolarisException(ErrorCode.NETWORK_ERROR,
+                                        "[ServerConnector] fail to acquire check event type " + eventType, t);
+                            }
+
+                            @Override
+                            public void onCompleted() {
+                                countDownLatch.countDown();
+                            }
+                        });
+                RequestProto.DiscoverRequest.Builder req = RequestProto.DiscoverRequest.newBuilder();
+                req.setType(GrpcUtil.buildDiscoverRequestType(eventType));
+                discoverClient.onNext(req.build());
+                try {
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    LOG.error("[ServerConnector] fail to wait check event type {}", eventType, e);
+                }
+                aBoolean = supportedResourcesType.get(eventType);
+                if (null != aBoolean) {
+                    return aBoolean;
+                }
+                LOG.error("[ServerConnector] timeout to wait check event type {}", eventType);
+                throw new PolarisException(ErrorCode.API_TIMEOUT,
+                        "[ServerConnector] timeout to check compatible for event type " + eventType);
+            } finally {
+                if (null != connection) {
+                    connection.release(GrpcUtil.OP_KEY_CHECK_COMPATIBLE);
+                }
             }
-            aBoolean = supportedResourcesType.get(eventType);
-            if (null != aBoolean) {
-                return aBoolean;
-            }
-            LOG.error("[ServerConnector] timeout to wait check event type {}", eventType);
-            throw new PolarisException(ErrorCode.API_TIMEOUT,
-                    "[ServerConnector] timeout to check compatible for event type " + eventType);
         }
     }
 

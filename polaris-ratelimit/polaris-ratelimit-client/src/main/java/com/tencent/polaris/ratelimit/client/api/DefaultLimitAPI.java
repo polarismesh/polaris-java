@@ -82,7 +82,7 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
     }
 
     private void reportRateLimit(QuotaRequest req, QuotaResponse rsp) {
-        if (null != statPlugins) {
+        if (null != statPlugins && !RateLimitConstants.REASON_DISABLED.equals(rsp.getInfo())) {
             try {
                 DefaultRateLimitResult rateLimitGauge = new DefaultRateLimitResult();
                 rateLimitGauge.setLabels(formatLabelsToStr(req.getLabels()));
