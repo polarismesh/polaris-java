@@ -33,6 +33,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLER_NAMESPACE,
                 SystemMetricName.CALLER_SERVICE,
                 SystemMetricName.CALLER_IP,
+                SystemMetricName.RULE_NAME,
                 SystemMetricName.METRIC_NAME_LABEL,
         };
         public static final String[] RATELIMIT_GAUGE_LABEL_ORDER = new String[]{

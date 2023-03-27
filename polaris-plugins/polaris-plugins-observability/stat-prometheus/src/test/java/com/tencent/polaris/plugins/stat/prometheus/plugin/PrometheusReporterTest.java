@@ -75,7 +75,7 @@ public class PrometheusReporterTest {
         config.setAddress(PUSH_DEFAULT_ADDRESS);
         MockPushGateway pgw = new MockPushGateway(PUSH_DEFAULT_ADDRESS);
         handler = new PrometheusReporter();
-        handler.setCallerIp("127.0.0.1");
+        handler.setSdkIP("127.0.0.1");
         handler.setConfig(config);
         handler.setPushGateway(pgw);
         handler.initHandle();
@@ -440,7 +440,7 @@ public class PrometheusReporterTest {
 
     private Map<String, String> getServiceCallLabels(MetricValueAggregationStrategy<InstanceGauge> strategy,
                                                      InstanceGauge gauge) {
-        Map<String, String> labels = CommonHandler.convertInsGaugeToLabels(gauge, handler.getCallerIp());
+        Map<String, String> labels = CommonHandler.convertInsGaugeToLabels(gauge, handler.getSdkIP());
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
     }
@@ -454,7 +454,7 @@ public class PrometheusReporterTest {
 
     private Map<String, String> getCircuitBreakerLabels(MetricValueAggregationStrategy<CircuitBreakGauge> strategy,
                                                         CircuitBreakGauge gauge) {
-        Map<String, String> labels = CommonHandler.convertCircuitBreakToLabels(gauge, handler.getCallerIp());
+        Map<String, String> labels = CommonHandler.convertCircuitBreakToLabels(gauge, handler.getSdkIP());
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
     }

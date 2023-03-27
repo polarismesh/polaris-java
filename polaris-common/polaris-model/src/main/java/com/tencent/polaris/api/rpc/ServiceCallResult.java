@@ -97,6 +97,16 @@ public class ServiceCallResult implements InstanceGauge {
      */
     private Service callerService;
 
+    /**
+     * 主调节点 IP
+     */
+    private String callerIp;
+
+    /**
+     * 当 RetStatus 为 flow_control 或者 reject 时，需要设置生效的规则名称
+     */
+    private String ruleName;
+
     @Override
     public String getHost() {
         if (null != instance) {
@@ -233,6 +243,14 @@ public class ServiceCallResult implements InstanceGauge {
         this.callerService = callerService;
     }
 
+    public String getCallerIp() {
+        return callerIp;
+    }
+
+    public void setCallerIp(String callerIp) {
+        this.callerIp = callerIp;
+    }
+
     public Map<String, MatchString> getSubsetMetadata() {
         return subsetMetadata;
     }
@@ -240,6 +258,14 @@ public class ServiceCallResult implements InstanceGauge {
     public void setSubsetMetadata(
             Map<String, MatchString> subsetMetadata) {
         this.subsetMetadata = subsetMetadata;
+    }
+
+    public String getRuleName() {
+        return ruleName;
+    }
+
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
     }
 
     @Override
@@ -258,6 +284,8 @@ public class ServiceCallResult implements InstanceGauge {
                 ", subsetMetadata=" + subsetMetadata +
                 ", method='" + method + '\'' +
                 ", callerService=" + callerService +
+                ", callerIp='" + callerIp + '\'' +
+                ", ruleName='" + ruleName + '\'' +
                 '}';
     }
 }
