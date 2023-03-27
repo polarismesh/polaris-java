@@ -30,7 +30,7 @@ public interface RateLimitConstants {
     String DEFAULT_ENTRY_SEPARATOR = "|";
 
     /**
-     * 熔断开关未开启
+     * 客户端限流开关未开启
      */
     String REASON_DISABLED = "disabled";
 
