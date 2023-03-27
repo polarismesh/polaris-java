@@ -19,7 +19,6 @@ package com.tencent.polaris.plugins.configuration.connector.polaris.rest;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.plugins.configuration.connector.polaris.gson.DateNullAdapterFactory;
@@ -47,7 +46,8 @@ public class RestOperator {
 
     private static final int DEFAULT_HTTP_READ_TIMEOUT = 10000;
 
-    private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new DateNullAdapterFactory<>()).create();;
+    private static final Gson gson = new GsonBuilder().registerTypeAdapterFactory(new DateNullAdapterFactory<>()).create();
+    ;
 
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
