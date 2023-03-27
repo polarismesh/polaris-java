@@ -29,9 +29,7 @@ public class ConfigFileReleaseExample {
         DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
 
         // 创建配置中心服务发布类，一般情况下只需要单例对象
-//        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
-        Configuration configuration = ConfigAPIFactory.createConfigurationByAddress("192.168.1.107:8080");
-        ConfigFilePublishService configFilePublishService = ConfigFileServicePublishFactory.createConfigFilePublishService(configuration);
+        ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
 
         // 创建配置
 //        configFilePublishService.createConfigFile(fileMetadata, content);
