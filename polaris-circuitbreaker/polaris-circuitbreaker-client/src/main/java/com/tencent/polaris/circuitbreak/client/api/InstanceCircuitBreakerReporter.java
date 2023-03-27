@@ -28,8 +28,6 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
-import java.util.ArrayList;
-import java.util.List;
 
 public class InstanceCircuitBreakerReporter implements ServiceCallResultListener {
 
@@ -64,8 +62,8 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
         if (null != result.getRetStatus()) {
             retStatus = result.getRetStatus();
         }
-            ResourceStat resourceStat = new ResourceStat(resource, retCode, delay, retStatus);
-            DefaultCircuitBreakAPI.report(resourceStat, extensions);
+        ResourceStat resourceStat = new ResourceStat(resource, retCode, delay, retStatus);
+        DefaultCircuitBreakAPI.report(resourceStat, extensions);
     }
 
     private static boolean needReportStat(InstanceGauge result) {
