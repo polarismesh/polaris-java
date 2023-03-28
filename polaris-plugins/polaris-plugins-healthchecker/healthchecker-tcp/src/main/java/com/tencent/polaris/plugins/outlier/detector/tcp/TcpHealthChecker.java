@@ -31,6 +31,7 @@ import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.utils.ConversionUtils;
+import com.tencent.polaris.api.utils.IOUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
@@ -40,9 +41,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import org.slf4j.Logger;
 
 /**
@@ -76,53 +77,58 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
         }
         byte[] sendBytes = null;
         int maxLength = 0;
-        Set<String> expectRecvStrs = new HashSet<>();
+        List<byte[]> expectRecvStrs = new ArrayList<>();
         if (null != curConfig) {
             if (StringUtils.isNotBlank(curConfig.getSend())) {
                 sendBytes = ConversionUtils.anyStringToByte(curConfig.getSend());
             }
             for (String receiveStr : curConfig.getReceiveList()) {
                 byte[] receiveBytes = ConversionUtils.anyStringToByte(receiveStr);
-                if (null != receiveBytes) {
-                    String hexStr = ConversionUtils.byteArrayToHexString(receiveBytes);
-                    if (StringUtils.isNotBlank(hexStr)) {
-                        expectRecvStrs.add(hexStr);
-                        if (receiveBytes.length > maxLength) {
-                            maxLength = receiveBytes.length;
-                        }
-                    }
+                if (receiveBytes.length > maxLength) {
+                    maxLength = receiveBytes.length;
                 }
+                expectRecvStrs.add(receiveBytes);
             }
         }
-
+        long startTimeMillis = System.currentTimeMillis();
         Socket socket = null;
         try {
             socket = new Socket(host, port);
             boolean needSendData = null != sendBytes && sendBytes.length > 0;
             if (!needSendData) {
                 //未配置发送包，则连接成功即可
-                return new DetectResult(RetStatus.RetSuccess);
+                long delayMillis = System.currentTimeMillis() - startTimeMillis;
+                return new DetectResult(0, delayMillis, RetStatus.RetSuccess);
             }
             socket.setSoTimeout(timeoutMs);
             OutputStream os = socket.getOutputStream();
             //发包
             os.write(sendBytes);
             os.flush();
-
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
             if (expectRecvStrs.isEmpty()) {
-                return new DetectResult(RetStatus.RetSuccess);
+                return new DetectResult(0, delayMillis, RetStatus.RetSuccess);
             }
-            byte[] recvBytes = recvFromSocket(socket, maxLength);
-            byte[] recvBytesClone = Arrays.copyOfRange(recvBytes, 0, maxLength);
-            String recvHexStr = ConversionUtils.byteArrayToHexString(recvBytesClone);
-            if (expectRecvStrs.contains(recvHexStr)) {
+            byte[] recvBytes = recvFromSocket(socket);
+            System.out.println("[TCP] checker receive bytes " + new String(recvBytes));
+            boolean found = false;
+            for (byte[] expectRecvStr : expectRecvStrs) {
+                byte[] recvBytesClone = Arrays.copyOfRange(recvBytes, 0, expectRecvStr.length);
+                if (Arrays.equals(expectRecvStr, recvBytesClone)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
                 //回包符合预期
-                return new DetectResult(RetStatus.RetSuccess);
+                return new DetectResult(0, delayMillis, RetStatus.RetSuccess);
             }
-            return new DetectResult(RetStatus.RetFail);
+            return new DetectResult(-1, delayMillis, RetStatus.RetFail);
         } catch (IOException e) {
-            LOG.warn("tcp detect instance, create sock exception, host:{}, port:{}.", host, port);
-            return new DetectResult(RetStatus.RetFail);
+            LOG.warn("tcp detect instance, create sock exception, host:{}, port:{}, error {}", host, port,
+                    e.getMessage());
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
+            return new DetectResult(-1, delayMillis, RetStatus.RetFail);
         } finally {
             if (socket != null) {
                 try {
@@ -134,25 +140,12 @@ public class TcpHealthChecker implements HealthChecker, PluginConfigProvider {
         }
     }
 
-    private byte[] recvFromSocket(Socket socket, int maxLen) throws IOException {
+    private byte[] recvFromSocket(Socket socket) throws IOException {
         InputStream is = socket.getInputStream();
-        byte[] recvBytes = new byte[1024];
-        int recvLen = 0;
-        int tempLen;
-        do {
-            if (recvLen + maxLen > recvBytes.length) {
-                break;
-            }
-            tempLen = is.read(recvBytes, recvLen, maxLen);
-            if (tempLen >= 0) {
-                recvLen += tempLen;
-            } else {
-                // 当返回-1时代表已经读完，防止死循环
-                return recvBytes;
-            }
-        } while (recvLen >= maxLen);
 
-        return recvBytes;
+        byte[] recvBytes = new byte[1024];
+        int read = IOUtils.read(is, recvBytes, 0, recvBytes.length);
+        return Arrays.copyOfRange(recvBytes, 0, read);
     }
 
 

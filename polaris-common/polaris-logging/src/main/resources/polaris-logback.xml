@@ -58,18 +58,18 @@
         </encoder>
     </appender>
 
-    <appender name="POLARIS_HEARTBEAT_LOG_FILE"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${polaris.log.home}/polaris-instance-heartbeat.log</file>
+    <appender name="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"
+            class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/polaris-healthcheck-event.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${polaris.log.home}/polaris-instance-heartbeat.log.%i
+            <fileNamePattern>${polaris.log.home}/polaris-healthcheck-event.log.%i
             </fileNamePattern>
-            <maxIndex>${polaris.instance.heartbeat.log.retain.count:-7}</maxIndex>
+            <maxIndex>${polaris.healthcheck.event.log.retain.count:-7}</maxIndex>
         </rollingPolicy>
 
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>${polaris.instance.heartbeat.log.file.size:-10MB}</maxFileSize>
+            <maxFileSize>${polaris.healthcheck.event.log.file.size:-10MB}</maxFileSize>
         </triggeringPolicy>
 
         <encoder>
@@ -105,9 +105,9 @@
         <appender-ref ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
     </logger>
 
-    <logger name="polaris-heartbeat"
-            level="${polaris.instance.heartbeat.log.level:-info}"
+    <logger name="polaris-healthcheck-event"
+            level="${polaris.healthcheck.event.log.level:-info}"
             additivity="false">
-        <appender-ref ref="POLARIS_HEARTBEAT_LOG_FILE"/>
+        <appender-ref ref="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"/>
     </logger>
 </configuration>

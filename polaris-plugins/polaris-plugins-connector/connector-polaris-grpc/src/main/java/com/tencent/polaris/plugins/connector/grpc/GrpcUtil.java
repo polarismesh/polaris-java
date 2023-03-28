@@ -34,6 +34,8 @@ public class GrpcUtil {
 
     public static final String OP_KEY_REPORT_CLIENT = "ReportClient";
 
+    public static final String OP_KEY_CHECK_COMPATIBLE = "CheckCompatible";
+
     /**
      * 请求ID的key
      */
@@ -181,6 +183,26 @@ public class GrpcUtil {
                 return DiscoverRequestType.FAULT_DETECTOR;
             default:
                 return DiscoverRequestType.UNKNOWN;
+        }
+    }
+
+    public static DiscoverResponseType buildDiscoverResponseType(
+            ServiceEventKey.EventType type) {
+        switch (type) {
+            case INSTANCE:
+                return DiscoverResponseType.INSTANCE;
+            case ROUTING:
+                return DiscoverResponseType.ROUTING;
+            case RATE_LIMITING:
+                return DiscoverResponseType.RATE_LIMIT;
+            case CIRCUIT_BREAKING:
+                return DiscoverResponseType.CIRCUIT_BREAKER;
+            case SERVICE:
+                return DiscoverResponseType.SERVICES;
+            case FAULT_DETECTING:
+                return DiscoverResponseType.FAULT_DETECTOR;
+            default:
+                return DiscoverResponseType.UNKNOWN;
         }
     }
 

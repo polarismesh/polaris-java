@@ -18,11 +18,15 @@
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
 
 public abstract class TriggerCounter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TriggerCounter.class);
 
     protected final String ruleName;
 
@@ -44,10 +48,12 @@ public abstract class TriggerCounter {
 
     public void suspend() {
         suspended.set(true);
+        LOG.info("[CircuitBreaker][Counter] counter {} suspend", ruleName);
     }
 
     public void resume() {
         suspended.set(false);
+        LOG.info("[CircuitBreaker][Counter] counter {} resume", ruleName);
     }
 
     protected abstract void init();

@@ -69,6 +69,8 @@ public class RuleUtils {
 
     private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
             Function<String, Pattern> regexToPattern) {
+        actualValue = StringUtils.defaultString(actualValue);
+        matchValue = StringUtils.defaultString(matchValue);
         if (RuleUtils.isMatchAllValue(matchValue)) {
             return true;
         }

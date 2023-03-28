@@ -30,9 +30,14 @@ public interface RateLimitConstants {
     String DEFAULT_ENTRY_SEPARATOR = "|";
 
     /**
+     * 客户端限流开关未开启
+     */
+    String REASON_DISABLED = "disabled";
+
+    /**
      * 规则不存在的报错
      */
-    String RULE_NOT_EXISTS = "quota rule not exists";
+    String REASON_RULE_NOT_EXISTS = "quota rule not exists";
 
     /**
      * 默认的名字分隔符

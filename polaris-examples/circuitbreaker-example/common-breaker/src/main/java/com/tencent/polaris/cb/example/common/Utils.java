@@ -20,6 +20,7 @@ package com.tencent.polaris.cb.example.common;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
@@ -53,17 +54,19 @@ public class Utils {
     }
 
     public static String invokeByNameResolution(String path, String namespace, String service, String value,
-            ConsumerAPI consumerAPI) {
+            ServiceInfo sourceService, ConsumerAPI consumerAPI) {
         System.out.println("namespace " + namespace + ", service " + service);
         // 1. we need to do naming resolution to get a load balanced host and port
         GetOneInstanceRequest getOneInstanceRequest = new GetOneInstanceRequest();
         getOneInstanceRequest.setNamespace(namespace);
+        getOneInstanceRequest.setServiceInfo(sourceService);
         getOneInstanceRequest.setService(service);
         InstancesResponse oneInstance = consumerAPI.getOneInstance(getOneInstanceRequest);
         Instance[] instances = oneInstance.getInstances();
         System.out.println("instances count is " + instances.length);
         Instance targetInstance = instances[0];
-        System.out.printf("target instance is %s:%d%n", targetInstance.getHost(), targetInstance.getPort());
+        System.out.printf("[InstanceCbTest] now is %d, target instance is %s:%d%n", System.currentTimeMillis(),
+                targetInstance.getHost(), targetInstance.getPort());
 
         // 2. invoke the server by the resolved address
         String urlStr = String
@@ -82,6 +85,7 @@ public class Utils {
         result.setPort(targetInstance.getPort());
         result.setRetCode(httpResult.code);
         result.setDelay(delay);
+        result.setCallerService(sourceService);
         consumerAPI.updateServiceCallResult(result);
         System.out.println("success to call updateServiceCallResult");
         return httpResult.message;

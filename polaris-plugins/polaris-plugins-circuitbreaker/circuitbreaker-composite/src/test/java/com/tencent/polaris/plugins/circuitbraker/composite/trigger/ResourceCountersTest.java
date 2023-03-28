@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.circuitbraker.composite.trigger;
 
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
@@ -63,7 +64,8 @@ public class ResourceCountersTest {
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
-        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), scheduledExecutorService);
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), scheduledExecutorService,
+                null);
         CheckSet checkSet = new CheckSet();
         Resource methodResource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
         for (int i = 0; i < 5; i++) {
@@ -97,6 +99,47 @@ public class ResourceCountersTest {
         Thread.sleep(10 * 1000);
         Assert.assertTrue(checkSet.hasOpen);
         Assert.assertTrue(checkSet.hasHalfOpen);
+    }
+
+    @Test
+    public void testParseStatus() {
+        CircuitBreakerRule.Builder builder = CircuitBreakerRule.newBuilder();
+        builder.setName("test_cb_rule");
+        builder.setEnable(true);
+        builder.setLevel(Level.METHOD);
+        builder.addTriggerCondition(
+                TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
+        builder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT)
+                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        builder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.DELAY).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT)
+                        .setValue(StringValue.newBuilder().setValue("600").build()).build()).build());
+        builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
+        Resource resource = new InstanceResource(
+                new ServiceKey("test", "TestSvc"), "127.0.0.1", 8088);
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
+        ResourceStat stat1 = new ResourceStat(resource, 500, 100, RetStatus.RetUnknown);
+        RetStatus nextStatus = resourceCounters.parseRetStatus(stat1);
+        Assert.assertEquals(RetStatus.RetFail, nextStatus);
+        ResourceStat stat2 = new ResourceStat(resource, 502, 100, RetStatus.RetFail);
+        nextStatus = resourceCounters.parseRetStatus(stat2);
+        Assert.assertEquals(RetStatus.RetSuccess, nextStatus);
+        ResourceStat stat3 = new ResourceStat(resource, 200, 1000, RetStatus.RetSuccess);
+        nextStatus = resourceCounters.parseRetStatus(stat3);
+        Assert.assertEquals(RetStatus.RetTimeout, nextStatus);
+
+        builder = CircuitBreakerRule.newBuilder();
+        builder.setName("test_cb_rule");
+        builder.setEnable(true);
+        builder.setLevel(Level.METHOD);
+        builder.addTriggerCondition(
+                TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
+        builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
+
+        resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
+        nextStatus = resourceCounters.parseRetStatus(stat3);
+        Assert.assertEquals(RetStatus.RetSuccess, nextStatus);
     }
 
 }
