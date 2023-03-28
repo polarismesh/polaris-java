@@ -179,12 +179,12 @@ public class ResourceCounters implements StatusChangeHandler {
     private void checkHalfOpenConversion() {
         int halfOpenSuccessCount = halfOpenSuccess.get();
         if (halfOpenSuccessCount >= consecutiveSuccessCount) {
-            System.out.println("halfOpenSuccessCount " + halfOpenSuccessCount + ", consecutiveSuccessCount "
-                    + consecutiveSuccessCount + ", do halfOpenToClose");
+            CB_EVENT_LOG.info("resource {} rule {} halfOpenSuccessCount {}, consecutiveSuccessCount {}, do halfOpenToClose",
+                    resource, currentActiveRule.getName(), halfOpenSuccessCount, consecutiveSuccessCount);
             halfOpenToClose();
         } else {
-            System.out.println("halfOpenSuccessCount " + halfOpenSuccessCount + ", consecutiveSuccessCount "
-                    + consecutiveSuccessCount + ", do halfOpenToOpen");
+            CB_EVENT_LOG.info("resource {} rule {} halfOpenSuccessCount {}, consecutiveSuccessCount {}, do halfOpenToOpen",
+                    resource, currentActiveRule.getName(), halfOpenSuccessCount, consecutiveSuccessCount);
             halfOpenToOpen();
         }
     }
