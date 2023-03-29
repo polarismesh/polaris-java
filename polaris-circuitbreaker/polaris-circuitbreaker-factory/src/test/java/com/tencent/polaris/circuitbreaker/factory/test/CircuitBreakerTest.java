@@ -45,7 +45,6 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +53,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -89,13 +87,15 @@ public class CircuitBreakerTest {
         parameter.setIsolated(false);
         parameter.setWeight(100);
         namingServer.getNamingService().batchAddInstances(serviceKey, 10010, MAX_COUNT, parameter);
-
-        CircuitBreakerProto.CircuitBreakerRule.Builder circuitBreakerRuleBuilder =  CircuitBreakerProto.CircuitBreakerRule.newBuilder();
+        CircuitBreakerProto.CircuitBreakerRule.Builder circuitBreakerRuleBuilder = CircuitBreakerProto.CircuitBreakerRule
+                .newBuilder();
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("circuitBreakerRule.json");
-        String json = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.joining(""));
+        String json = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
+                .collect(Collectors.joining(""));
         JsonFormat.parser().ignoringUnknownFields().merge(json, circuitBreakerRuleBuilder);
         CircuitBreakerProto.CircuitBreakerRule circuitBreakerRule = circuitBreakerRuleBuilder.build();
-        CircuitBreakerProto.CircuitBreaker circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder().addRules(circuitBreakerRule).build();
+        CircuitBreakerProto.CircuitBreaker circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder()
+                .addRules(circuitBreakerRule).build();
         namingServer.getNamingService().setCircuitBreaker(serviceKey, circuitBreaker);
 
     }
@@ -121,6 +121,7 @@ public class CircuitBreakerTest {
     public void testUpdateServiceCallResult() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            Utils.sleepUninterrupted(10000);
             int index = 1;
             GetInstancesRequest req = new GetInstancesRequest();
             req.setNamespace(NAMESPACE_TEST);
@@ -262,7 +263,8 @@ public class CircuitBreakerTest {
     public void testFunctionalDecorator() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configuration);
-        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "'");
+        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
+                new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "'");
         FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
         Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
             if (num % 2 == 0) {
@@ -276,8 +278,8 @@ public class CircuitBreakerTest {
             Utils.sleepUninterrupted(1000);
             integerConsumer.accept(2);
             Utils.sleepUninterrupted(1000);
-        }catch (Exception e){
-            if (!(e instanceof IllegalArgumentException)){
+        } catch (Exception e) {
+            if (!(e instanceof IllegalArgumentException)) {
                 throw e;
             }
         }

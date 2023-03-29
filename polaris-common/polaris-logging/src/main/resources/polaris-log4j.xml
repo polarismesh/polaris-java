@@ -38,15 +38,15 @@
                     value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
         </layout>
     </appender>
-    <appender name="POLARIS_HEARTBEAT_LOG_FILE"
-              class="org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${polaris.log.home}/polaris-instance-heartbeat.log"/>
+    <appender name="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"
+            class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${polaris.log.home}/polaris-healthcheck-event.log"/>
         <param name="Append" value="true"/>
         <param name="MaxBackupIndex" value="10"/>
         <param name="MaxFileSize" value="10MB"/>
         <layout class="org.apache.log4j.PatternLayout">
             <param name="ConversionPattern"
-                   value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
+                    value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
         </layout>
     </appender>
 
@@ -66,8 +66,8 @@
         <level value="INFO"/>
         <appender-ref ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
     </logger>
-    <logger name="polaris-heartbeat" additivity="false">
+    <logger name="polaris-healthcheck-event" additivity="false">
         <level value="INFO"/>
-        <appender-ref ref="POLARIS_HEARTBEAT_LOG_FILE"/>
+        <appender-ref ref="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"/>
     </logger>
 </log4j:configuration>

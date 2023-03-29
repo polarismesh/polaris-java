@@ -25,12 +25,11 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.discovery.client.flow.RegisterStateManager.RegisterState;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.logging.LoggingConsts;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
-import com.tencent.polaris.logging.LoggingConsts;
 import org.slf4j.Logger;
 
 /**
@@ -42,7 +41,7 @@ public class RegisterFlow {
 
     private static final Logger LOG = LoggerFactory.getLogger(RegisterFlow.class);
 
-    private static final Logger HEARTBEAT_LOG = LoggerFactory.getLogger(LoggingConsts.LOGGING_HEARTBEAT);
+    private static final Logger HEARTBEAT_LOG = LoggerFactory.getLogger(LoggingConsts.LOGGING_HEALTHCHECK_EVENT);
 
     /**
      * 异步注册header key
@@ -73,9 +72,10 @@ public class RegisterFlow {
     private void doRunHeartbeat(RegisterState registerState, RegisterFunction registerFunction,
             HeartbeatFunction heartbeatFunction) {
         InstanceRegisterRequest registerRequest = registerState.getInstanceRegisterRequest();
-        HEARTBEAT_LOG.info("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
-                registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                registerRequest.getPort());
+        HEARTBEAT_LOG
+                .info("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
+                        registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
+                        registerRequest.getPort());
         try {
             heartbeatFunction.doHeartbeat(buildHeartbeatRequest(registerRequest));
             HEARTBEAT_LOG.info("[AsyncHeartbeat]Instance heartbeat success, namespace:{}, service:{}, host:{}, port:{}",
@@ -98,9 +98,10 @@ public class RegisterFlow {
         }
         try {
             registerFunction.doRegister(registerRequest, createRegisterV2Header());
-            HEARTBEAT_LOG.info("[AsyncHeartbeat]Re-register instance success, namespace:{}, service:{}, host:{}, port:{}",
-                    registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort());
+            HEARTBEAT_LOG
+                    .info("[AsyncHeartbeat]Re-register instance success, namespace:{}, service:{}, host:{}, port:{}",
+                            registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
+                            registerRequest.getPort());
             registerState.resetFailCount();
         } catch (PolarisException e) {
             HEARTBEAT_LOG.error(
