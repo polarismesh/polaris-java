@@ -206,8 +206,8 @@ public class NacosConnector extends DestroyableServerConnector {
 			try {
 				Thread.sleep(1000);
 			}
-			catch (InterruptedException e) {
-				e.printStackTrace();
+			catch (InterruptedException ignore) {
+				Thread.currentThread().interrupt();
 			}
 
 			namingServices.put(namespace, namingService);
@@ -321,7 +321,8 @@ public class NacosConnector extends DestroyableServerConnector {
 				instance.setPort(service.getPort());
 				instance.setHealthy(service.isHealthy());
 				instance.setMetadata(Optional.ofNullable(service.getMetadata()).orElse(new HashMap<>()));
-				instance.setIsolated(service.isEnabled());
+				// nacos 的 enable 属性标记实例是否可用， enable == true 时，对应北极星的 isolate == false
+				instance.setIsolated(!service.isEnabled());
 				instance.setWeight((int) (100 * service.getWeight()));
 
 				String protocol = instance.getMetadata().getOrDefault("protocol", "");
