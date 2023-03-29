@@ -120,4 +120,12 @@ public interface InstanceGauge extends Service {
      * @return metadata
      */
     Map<String, MatchString> getSubsetMetadata();
+
+    /**
+     * 获取实例的协议信息
+     *
+     * @return protocol
+     */
+    String getProtocol();
+
 }

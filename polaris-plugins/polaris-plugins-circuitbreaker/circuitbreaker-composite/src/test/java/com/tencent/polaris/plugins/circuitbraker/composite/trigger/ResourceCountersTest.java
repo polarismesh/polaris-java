@@ -117,7 +117,7 @@ public class ResourceCountersTest {
                         .setValue(StringValue.newBuilder().setValue("600").build()).build()).build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         Resource resource = new InstanceResource(
-                new ServiceKey("test", "TestSvc"), "127.0.0.1", 8088);
+                new ServiceKey("test", "TestSvc"), "127.0.0.1", 8088, null, "http");
         ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
         ResourceStat stat1 = new ResourceStat(resource, 500, 100, RetStatus.RetUnknown);
         RetStatus nextStatus = resourceCounters.parseRetStatus(stat1);

@@ -53,6 +53,11 @@ public class ServiceCallResult implements InstanceGauge {
     private int port;
 
     /**
+     * 实例的协议
+     */
+    private String protocol;
+
+    /**
      * 服务实例信息
      */
     private Instance instance;
@@ -241,6 +246,18 @@ public class ServiceCallResult implements InstanceGauge {
             Map<String, MatchString> subsetMetadata) {
         this.subsetMetadata = subsetMetadata;
     }
+
+    public String getProtocol() {
+        if (null != instance) {
+            return instance.getProtocol();
+        }
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
+    }
+
 
     @Override
     public String toString() {
