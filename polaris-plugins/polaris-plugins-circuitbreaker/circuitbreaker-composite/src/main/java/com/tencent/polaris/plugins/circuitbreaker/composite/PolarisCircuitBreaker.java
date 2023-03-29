@@ -23,6 +23,7 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -100,6 +101,18 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             });
         } else {
             resourceCounters.report(resourceStat);
+            addInstanceForHealthCheck(resourceStat.getResource());
+        }
+    }
+
+    private void addInstanceForHealthCheck(Resource resource) {
+        if (!(resource instanceof InstanceResource)) {
+            return;
+        }
+        InstanceResource instanceResource = (InstanceResource) resource;
+        ResourceHealthChecker resourceHealthChecker = healthCheckCache.get(instanceResource.getServiceResource());
+        if (null != resourceHealthChecker) {
+            resourceHealthChecker.addInstance(instanceResource);
         }
     }
 

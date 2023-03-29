@@ -84,6 +84,7 @@ public class Utils {
         result.setSubset(oneInstance.getSubset());
         result.setPort(targetInstance.getPort());
         result.setRetCode(httpResult.code);
+        result.setProtocol("http");
         result.setDelay(delay);
         result.setCallerService(sourceService);
         consumerAPI.updateServiceCallResult(result);

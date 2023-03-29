@@ -23,13 +23,17 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 
 public class ServiceResource extends AbstractResource {
 
+    protected final ServiceKey service;
+
     public ServiceResource(ServiceKey service) {
         this(service, null);
     }
 
     public ServiceResource(ServiceKey service, ServiceKey callerService) {
-        super(service, callerService);
+        super(callerService);
+        CommonValidator.validateService(service);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
+        this.service = service;
     }
 
     @Override

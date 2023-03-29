@@ -22,23 +22,15 @@ import java.util.Objects;
 
 public abstract class AbstractResource implements Resource {
 
-    protected final ServiceKey service;
-
     protected final ServiceKey callerService;
 
-    public AbstractResource(ServiceKey service, ServiceKey callerService) {
-        this.service = service;
+    public AbstractResource(ServiceKey callerService) {
         this.callerService = callerService;
     }
 
     @Override
     public ServiceKey getCallerService() {
         return callerService;
-    }
-
-    @Override
-    public ServiceKey getService() {
-        return service;
     }
 
     @Override
@@ -50,20 +42,18 @@ public abstract class AbstractResource implements Resource {
             return false;
         }
         AbstractResource that = (AbstractResource) o;
-        return Objects.equals(service, that.service) &&
-                Objects.equals(callerService, that.callerService);
+        return Objects.equals(callerService, that.callerService);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(service, callerService);
+        return Objects.hash(callerService);
     }
 
     @Override
     public String toString() {
         return "AbstractResource{" +
-                "service=" + service +
-                ", callerService=" + callerService +
+                "callerService=" + callerService +
                 '}';
     }
 }

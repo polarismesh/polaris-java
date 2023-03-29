@@ -134,4 +134,11 @@ public interface InstanceGauge extends Service {
      * @return ruleName
      */
     String getRuleName();
+
+    /**
+     * 获取实例的协议信息
+     *
+     * @return protocol
+     */
+    String getProtocol();
 }
