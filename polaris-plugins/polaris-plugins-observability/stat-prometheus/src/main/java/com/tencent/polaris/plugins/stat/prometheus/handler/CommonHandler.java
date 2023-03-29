@@ -134,7 +134,7 @@ public class CommonHandler {
                     addLabel(labelName, callerIp, labels);
                     break;
                 case SystemMetricName.RULE_NAME:
-                    String ruleName = Objects.isNull(insGauge.getRuleName()) ? null : insGauge.getCallerIp();
+                    String ruleName = Objects.isNull(insGauge.getRuleName()) ? null : insGauge.getRuleName();
                     addLabel(labelName, ruleName, labels);
                     break;
                 default:

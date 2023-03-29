@@ -96,7 +96,7 @@ public class QuotaFlow extends Destroyable {
         }
         List<RateLimitWindow> windows = lookupRateLimitWindow(request);
         if (CollectionUtils.isEmpty(windows)) {
-            //没有限流规则，直接放通
+            // 没有限流规则，直接放通
             return new QuotaResponse(
                     new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.REASON_RULE_NOT_EXISTS));
         }
