@@ -381,7 +381,7 @@ public class PrometheusReporterTest {
     }
 
     private Double getServiceCallResult(ServiceCallResult example,
-                                        MetricValueAggregationStrategy<InstanceGauge> strategy) {
+            MetricValueAggregationStrategy<InstanceGauge> strategy) {
         CollectorRegistry registry = handler.getPromRegistry();
         String[] labelKeys = SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER;
         String[] labelValues = CommonHandler.getOrderedMetricLabelValues(
@@ -405,7 +405,7 @@ public class PrometheusReporterTest {
     }
 
     private Double getRateLimitResult(DefaultRateLimitResult example,
-                                      MetricValueAggregationStrategy<RateLimitGauge> strategy) {
+            MetricValueAggregationStrategy<RateLimitGauge> strategy) {
         CollectorRegistry registry = handler.getPromRegistry();
         String[] labelKeys = SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER;
         String[] labelValues = CommonHandler.getOrderedMetricLabelValues(
@@ -430,7 +430,7 @@ public class PrometheusReporterTest {
     }
 
     private Double getCircuitBreakerResult(DefaultCircuitBreakResult example,
-                                           MetricValueAggregationStrategy<CircuitBreakGauge> strategy) {
+            MetricValueAggregationStrategy<CircuitBreakGauge> strategy) {
         CollectorRegistry registry = handler.getPromRegistry();
         String[] labelKeys = SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER;
         String[] labelValues = CommonHandler.getOrderedMetricLabelValues(
@@ -439,21 +439,21 @@ public class PrometheusReporterTest {
     }
 
     private Map<String, String> getServiceCallLabels(MetricValueAggregationStrategy<InstanceGauge> strategy,
-                                                     InstanceGauge gauge) {
+            InstanceGauge gauge) {
         Map<String, String> labels = CommonHandler.convertInsGaugeToLabels(gauge, handler.getSdkIP());
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
     }
 
     private Map<String, String> getRateLimitLabels(MetricValueAggregationStrategy<RateLimitGauge> strategy,
-                                                   RateLimitGauge gauge) {
+            RateLimitGauge gauge) {
         Map<String, String> labels = CommonHandler.convertRateLimitGaugeToLabels(gauge);
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
     }
 
     private Map<String, String> getCircuitBreakerLabels(MetricValueAggregationStrategy<CircuitBreakGauge> strategy,
-                                                        CircuitBreakGauge gauge) {
+            CircuitBreakGauge gauge) {
         Map<String, String> labels = CommonHandler.convertCircuitBreakToLabels(gauge, handler.getSdkIP());
         labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
         return labels;
