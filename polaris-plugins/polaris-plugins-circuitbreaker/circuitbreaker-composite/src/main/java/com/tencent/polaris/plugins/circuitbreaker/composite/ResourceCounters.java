@@ -323,13 +323,16 @@ public class ResourceCounters implements StatusChangeHandler {
                         switch (resource.getLevel()) {
                             case SERVICE:
                                 ServiceResource serviceResource = (ServiceResource) resource;
+                                break;
                             case METHOD:
                                 MethodResource methodResource = (MethodResource) resource;
                                 result.setMethod(methodResource.getMethod());
+                                break;
                             case INSTANCE:
                                 InstanceResource instanceResource= (InstanceResource) resource;
                                 result.setHost(instanceResource.getHost());
                                 result.setPort(instanceResource.getPort());
+                                break;
                         }
 
                         StatInfo info = new StatInfo();
