@@ -49,7 +49,8 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
                     result.getCallerService().getService());
         }
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
-        Resource resource = new InstanceResource(serviceKey, result.getHost(), result.getPort(), sourceService);
+        Resource resource = new InstanceResource(serviceKey, result.getHost(), result.getPort(), sourceService,
+                result.getProtocol());
         int retCode = 0;
         if (null != result.getRetCode()) {
             retCode = result.getRetCode();
@@ -71,7 +72,7 @@ public class InstanceCircuitBreakerReporter implements ServiceCallResultListener
             return false;
         }
         if (StringUtils.equals(result.getNamespace(), DefaultValues.DEFAULT_SYSTEM_NAMESPACE)
-                && StringUtils.equals(result.getNamespace(), DefaultValues.DEFAULT_BUILTIN_DISCOVER)) {
+                && StringUtils.equals(result.getService(), DefaultValues.DEFAULT_BUILTIN_DISCOVER)) {
             return false;
         }
         return true;

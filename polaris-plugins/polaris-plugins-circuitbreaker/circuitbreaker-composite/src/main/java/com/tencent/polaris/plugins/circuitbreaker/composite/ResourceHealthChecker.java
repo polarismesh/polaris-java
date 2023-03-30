@@ -31,11 +31,7 @@ import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceResourceProvider;
 import com.tencent.polaris.api.utils.RuleUtils;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
@@ -50,10 +46,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -72,8 +70,6 @@ public class ResourceHealthChecker {
 
     private final ScheduledExecutorService checkScheduler;
 
-    private final ServiceResourceProvider serviceResourceProvider;
-
     private final AtomicBoolean stopped = new AtomicBoolean(false);
 
     private final Map<String, HealthChecker> healthCheckers;
@@ -84,6 +80,8 @@ public class ResourceHealthChecker {
 
     private final List<ScheduledFuture<?>> futures = new ArrayList<>();
 
+    private final Map<Node, ProtocolInstance> instances = new ConcurrentHashMap<>();
+
     public ResourceHealthChecker(Resource resource, FaultDetector faultDetector,
             PolarisCircuitBreaker polarisCircuitBreaker) {
         this.resource = resource;
@@ -93,13 +91,27 @@ public class ResourceHealthChecker {
             return flowCache.loadOrStoreCompiledRegex(regex);
         };
         this.checkScheduler = polarisCircuitBreaker.getHealthCheckExecutors();
-        this.serviceResourceProvider = polarisCircuitBreaker.getServiceRuleProvider();
         this.healthCheckers = polarisCircuitBreaker.getHealthCheckers();
         this.polarisCircuitBreaker = polarisCircuitBreaker;
+        if (resource instanceof InstanceResource) {
+            addInstance((InstanceResource) resource, false);
+        }
         start();
     }
 
-    // 优先匹配非通配规则，再匹配通配规则
+    public void addInstance(InstanceResource instanceResource, boolean record) {
+        ProtocolInstance protocolInstance = instances.get(instanceResource.getNode());
+        if (null == protocolInstance) {
+            instances.put(instanceResource.getNode(),
+                    new ProtocolInstance(HealthCheckUtils.parseProtocol(instanceResource.getProtocol()),
+                            instanceResource));
+            return;
+        }
+        if (record) {
+            protocolInstance.doReport();
+        }
+    }
+
     private static List<FaultDetectRule> sortFaultDetectRules(List<FaultDetectRule> rules) {
         List<FaultDetectRule> outRules = new ArrayList<>(rules);
         outRules.sort(new Comparator<FaultDetectRule>() {
@@ -164,70 +176,26 @@ public class ResourceHealthChecker {
             if (stopped.get()) {
                 return;
             }
-            if (resource instanceof InstanceResource) {
-                checkInstanceResource(protocol, faultDetectRule);
-            } else {
-                checkServiceResource(protocol, faultDetectRule);
-            }
+            checkResource(protocol, faultDetectRule);
         };
     }
 
-    private void checkServiceResource(Protocol protocol, FaultDetectRule faultDetectRule) {
+    private void checkResource(Protocol protocol, FaultDetectRule faultDetectRule) {
         int port = faultDetectRule.getPort();
-        ServiceKey service = resource.getService();
-        ServiceInstances serviceInstances;
-        try {
-            serviceInstances = serviceResourceProvider.getServiceInstances(service);
-        } catch (Throwable t) {
-            LOG.warn("fail to get service for {}", service, t);
-            return;
-        }
         if (port > 0) {
             Set<String> hosts = new HashSet<>();
-            for (Instance instance : serviceInstances.getInstances()) {
-                if (!instance.isHealthy() || instance.isIsolated()) {
-                    continue;
-                }
+            for (Node instance : instances.keySet()) {
                 if (!hosts.contains(instance.getHost())) {
                     hosts.add(instance.getHost());
                     doCheck(createDefaultInstance(instance.getHost(), port), protocol, faultDetectRule);
                 }
             }
         } else {
-            for (Instance instance : serviceInstances.getInstances()) {
-                if (!instance.isHealthy() || instance.isIsolated()) {
-                    continue;
+            for (Map.Entry<Node, ProtocolInstance> entry : instances.entrySet()) {
+                if (protocol == entry.getValue().getProtocol()) {
+                    InstanceResource instance = entry.getValue().getInstanceResource();
+                    doCheck(createDefaultInstance(instance.getHost(), instance.getPort()), protocol, faultDetectRule);
                 }
-                if (verifyProtocol(instance, protocol)) {
-                    doCheck(instance, protocol, faultDetectRule);
-                }
-            }
-        }
-    }
-
-    private void checkInstanceResource(Protocol protocol, FaultDetectRule faultDetectRule) {
-        int port = faultDetectRule.getPort();
-        ServiceKey service = resource.getService();
-        InstanceResource instanceResource = (InstanceResource) resource;
-        if (port > 0) {
-            // port greater than zero, directly use the port in rule to check
-            doCheck(createDefaultInstance(instanceResource.getHost(), port), protocol, faultDetectRule);
-        } else {
-            // use instances
-            ServiceInstances serviceInstances;
-            try {
-                serviceInstances = serviceResourceProvider.getServiceInstances(service);
-            } catch (Throwable t) {
-                LOG.warn("fail to get service for {}", service, t);
-                return;
-            }
-            Instance instance = serviceInstances
-                    .getInstance(new Node(instanceResource.getHost(), instanceResource.getPort()));
-            if (null == instance) {
-                instance = createDefaultInstance(instanceResource.getHost(), instanceResource.getPort());
-            }
-            if (verifyProtocol(instance, protocol)) {
-                doCheck(instance, protocol, faultDetectRule);
             }
         }
     }
@@ -241,28 +209,23 @@ public class ResourceHealthChecker {
             if (faultDetectRule.getInterval() > 0) {
                 interval = faultDetectRule.getInterval();
             }
-            LOG.info("schedule task: protocol {}, interval {}, rule {}", entry.getKey(), interval,
-                    faultDetectRule.getName());
+            LOG.info("schedule task: resource {}, protocol {}, interval {}, rule {}", resource, entry.getKey(),
+                    interval, faultDetectRule.getName());
             ScheduledFuture<?> future = checkScheduler
                     .scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.SECONDS);
             futures.add(future);
         }
-    }
-
-    private boolean verifyProtocol(Instance instance, Protocol targetProtocol) {
-        String protocol = StringUtils.defaultString(instance.getProtocol()).toLowerCase();
-        if (StringUtils.isBlank(protocol)) {
-            return true;
+        if (resource.getLevel() != Level.INSTANCE) {
+            long checkPeriod = polarisCircuitBreaker.getCheckPeriod();
+            LOG.info("schedule expire task: resource {}, interval {}", resource, checkPeriod);
+            ScheduledFuture<?> future = checkScheduler.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    cleanInstances();
+                }
+            }, checkPeriod, checkPeriod, TimeUnit.MILLISECONDS);
+            futures.add(future);
         }
-        Protocol iProtocol = Protocol.TCP;
-        if (protocol.equals("http") || protocol.equals("tcp/http") || protocol.equals("http/tcp")) {
-            // handle with http
-            iProtocol = Protocol.HTTP;
-        } else if (protocol.startsWith("udp") || protocol.endsWith("udp")) {
-            // handle with udp
-            iProtocol = Protocol.UDP;
-        }
-        return iProtocol == targetProtocol;
     }
 
     private void doCheck(Instance instance, Protocol protocol, FaultDetectRule faultDetectRule) {
@@ -280,7 +243,22 @@ public class ResourceHealthChecker {
                 .info("health check for instance {}:{}, resource {}, protocol {}, result: code {}, delay {}ms, status {}",
                         instance.getHost(), instance.getPort(), resource, protocol, detectResult.getStatusCode(),
                         detectResult.getDelay(), detectResult.getRetStatus());
-        polarisCircuitBreaker.report(resourceStat);
+        polarisCircuitBreaker.doReport(resourceStat, false);
+    }
+
+    public void cleanInstances() {
+        long curTimeMilli = System.currentTimeMillis();
+        long expireIntervalMilli = polarisCircuitBreaker.getHealthCheckInstanceExpireInterval();
+        for (Map.Entry<Node, ProtocolInstance> entry : instances.entrySet()) {
+            long lastReportMilli = entry.getValue().getLastReportMilli().get();
+            Node node = entry.getKey();
+            if (curTimeMilli - lastReportMilli >= expireIntervalMilli) {
+                instances.remove(node);
+                HC_EVENT_LOG
+                        .info("clean instance from health check tasks, resource {}, expired node {}, lastReportMilli {}",
+                                resource, node, lastReportMilli);
+            }
+        }
     }
 
     public void stop() {
@@ -294,4 +272,37 @@ public class ResourceHealthChecker {
     public FaultDetector getFaultDetector() {
         return faultDetector;
     }
+
+    private static class ProtocolInstance {
+
+        final Protocol protocol;
+
+        final InstanceResource instanceResource;
+
+        final AtomicLong lastReportMilli = new AtomicLong(0);
+
+        ProtocolInstance(
+                Protocol protocol, InstanceResource instanceResource) {
+            this.protocol = protocol;
+            this.instanceResource = instanceResource;
+            lastReportMilli.set(System.currentTimeMillis());
+        }
+
+        Protocol getProtocol() {
+            return protocol;
+        }
+
+        InstanceResource getInstanceResource() {
+            return instanceResource;
+        }
+
+        public AtomicLong getLastReportMilli() {
+            return lastReportMilli;
+        }
+
+        void doReport() {
+            lastReportMilli.set(System.currentTimeMillis());
+        }
+    }
+
 }
