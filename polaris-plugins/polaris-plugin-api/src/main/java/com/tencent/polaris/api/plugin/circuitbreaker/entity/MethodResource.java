@@ -24,8 +24,6 @@ import java.util.Objects;
 
 public class MethodResource extends AbstractResource {
 
-    protected final ServiceKey service;
-
     private final String method;
 
     public MethodResource(ServiceKey service, String methodName) {
@@ -33,21 +31,15 @@ public class MethodResource extends AbstractResource {
     }
 
     public MethodResource(ServiceKey service, String methodName, ServiceKey callerService) {
-        super(callerService);
-        CommonValidator.validateService(service);
+        super(service, callerService);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
         CommonValidator.validateText(methodName, "method");
-        this.service = service;
         this.method = methodName;
     }
 
     @Override
     public Level getLevel() {
         return Level.METHOD;
-    }
-
-    public ServiceKey getService() {
-        return service;
     }
 
     public String getMethod() {
@@ -66,20 +58,18 @@ public class MethodResource extends AbstractResource {
             return false;
         }
         MethodResource that = (MethodResource) o;
-        return Objects.equals(service, that.service) &&
-                Objects.equals(method, that.method);
+        return Objects.equals(method, that.method);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), service, method);
+        return Objects.hash(super.hashCode(), method);
     }
 
     @Override
     public String toString() {
         return "MethodResource{" +
-                "service=" + service +
-                ", method='" + method + '\'' +
+                "method='" + method + '\'' +
                 "} " + super.toString();
     }
 }
