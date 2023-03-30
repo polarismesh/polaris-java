@@ -14,6 +14,10 @@ public class DefaultCircuitBreakResult implements CircuitBreakGauge {
     private Service callerService;
     private CircuitBreakerStatus circuitBreakStatus;
 
+    private String ruleName;
+
+    private String level;
+
     public void setService(String service) {
         this.service = service;
     }
@@ -44,6 +48,10 @@ public class DefaultCircuitBreakResult implements CircuitBreakGauge {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
     }
 
     @Override
@@ -84,6 +92,19 @@ public class DefaultCircuitBreakResult implements CircuitBreakGauge {
     @Override
     public CircuitBreakerStatus getCircuitBreakStatus() {
         return circuitBreakStatus;
+    }
+
+    @Override
+    public String getLevel() {
+        return level;
+    }
+
+    public String getRuleName() {
+        return ruleName;
+    }
+
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
     }
 
     @Override

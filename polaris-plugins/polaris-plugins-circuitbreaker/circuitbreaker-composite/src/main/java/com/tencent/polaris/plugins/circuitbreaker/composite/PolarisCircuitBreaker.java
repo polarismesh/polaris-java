@@ -20,6 +20,7 @@ package com.tencent.polaris.plugins.circuitbreaker.composite;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
@@ -29,12 +30,18 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
+import com.tencent.polaris.api.plugin.stat.StatInfo;
+import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceResourceProvider;
 import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +51,8 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.function.Function;
 
 public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PolarisCircuitBreaker.class);
 
     private final Map<Level, Map<Resource, ResourceCounters>> countersCache = new HashMap<>();
 

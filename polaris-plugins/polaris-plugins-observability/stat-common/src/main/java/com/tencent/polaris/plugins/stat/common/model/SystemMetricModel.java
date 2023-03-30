@@ -55,6 +55,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLER_IP,
                 SystemMetricName.METRIC_NAME_LABEL,
                 SystemMetricName.RULE_NAME,
+                SystemMetricName.LEVEL,
         };
     }
 
@@ -73,6 +74,8 @@ public class SystemMetricModel {
         public static final String CALLER_LABELS = "caller_labels";
         public static final String METRIC_NAME_LABEL = "metric_name";
         public static final String RULE_NAME = "rule_name";
+
+        public static final String LEVEL = "level";
     }
 
     public static class SystemMetricValue {
