@@ -95,6 +95,7 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
                 rateLimitGauge.setService(req.getService());
                 rateLimitGauge.setResult(
                         rsp.getCode() == QuotaResultOk ? RateLimitGauge.Result.PASSED : RateLimitGauge.Result.LIMITED);
+                rateLimitGauge.setRuleName(rsp.getActiveRule() == null ? null : rsp.getActiveRule().getName().getValue());
                 StatInfo statInfo = new StatInfo();
                 statInfo.setRateLimitGauge(rateLimitGauge);
 

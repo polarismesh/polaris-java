@@ -312,7 +312,7 @@ public class ResourceCounters implements StatusChangeHandler {
                         result.setCircuitBreakStatus(getCircuitBreakerStatus());
                         result.setService(resource.getService().getService());
                         result.setNamespace(resource.getService().getNamespace());
-
+                        result.setLevel(resource.getLevel().name());
                         switch (resource.getLevel()) {
                             case SERVICE:
                                 ServiceResource serviceResource = (ServiceResource) resource;
