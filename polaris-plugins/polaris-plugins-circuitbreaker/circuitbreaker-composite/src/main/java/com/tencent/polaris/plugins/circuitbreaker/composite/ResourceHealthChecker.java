@@ -254,7 +254,9 @@ public class ResourceHealthChecker {
             Node node = entry.getKey();
             if (curTimeMilli - lastReportMilli >= expireIntervalMilli) {
                 instances.remove(node);
-                HC_EVENT_LOG.info("clean instance from health check tasks, resource {}, node {}", resource, node);
+                HC_EVENT_LOG
+                        .info("clean instance from health check tasks, resource {}, expired node {}, lastReportMilli {}",
+                                resource, node, lastReportMilli);
             }
         }
     }

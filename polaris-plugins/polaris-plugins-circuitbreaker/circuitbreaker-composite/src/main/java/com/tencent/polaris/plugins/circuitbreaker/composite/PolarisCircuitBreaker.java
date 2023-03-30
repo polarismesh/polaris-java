@@ -135,7 +135,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         countersCache.put(Level.METHOD, new ConcurrentHashMap<>());
         countersCache.put(Level.GROUP, new ConcurrentHashMap<>());
         countersCache.put(Level.INSTANCE, new ConcurrentHashMap<>());
-        checkPeriod = ctx.getConfig().getConsumer().getCircuitBreaker().getCheckPeriod();
+        checkPeriod = 0;
+        if (null != ctx) {
+            checkPeriod = ctx.getConfig().getConsumer().getCircuitBreaker().getCheckPeriod();
+        }
         if (checkPeriod == 0) {
             checkPeriod = HealthCheckUtils.DEFAULT_CHECK_INTERVAL;
         }
