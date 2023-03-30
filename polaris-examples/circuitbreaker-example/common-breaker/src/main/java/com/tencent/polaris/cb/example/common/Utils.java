@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.cb.example.common;
 
+import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.Instance;
@@ -28,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URL;
 
@@ -52,6 +54,7 @@ public class Utils {
             this.message = message;
         }
     }
+
 
     public static String invokeByNameResolution(String path, String namespace, String service, String value,
             ServiceInfo sourceService, ConsumerAPI consumerAPI) {
@@ -122,5 +125,31 @@ public class Utils {
             }
         }
         return new HttpResult(code, respMessage);
+    }
+
+    public static void createHttpServers(int normalPort, int abnormalPort) throws Exception {
+        HttpServer normalServer = HttpServer.create(new InetSocketAddress(normalPort), 0);
+        System.out.println("cb normal server listen port is " + normalPort);
+        normalServer.createContext("/health", new HealthServer(true));
+        HttpServer abnormalServer = HttpServer.create(new InetSocketAddress(abnormalPort), 0);
+        System.out.println("cb abnormal server listen port is " + abnormalPort);
+        abnormalServer.createContext("/health", new HealthServer(false));
+        Thread normalStartThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                normalServer.start();
+            }
+        });
+        normalStartThread.setDaemon(true);
+        Thread abnormalStartThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                abnormalServer.start();
+            }
+        });
+        abnormalStartThread.setDaemon(true);
+        normalStartThread.start();
+        abnormalStartThread.start();
+        Thread.sleep(5000);
     }
 }

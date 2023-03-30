@@ -18,14 +18,25 @@
 package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.client.util.CommonValidator;
 import java.util.Objects;
 
 public abstract class AbstractResource implements Resource {
 
+    protected final ServiceKey service;
+
     protected final ServiceKey callerService;
 
-    public AbstractResource(ServiceKey callerService) {
+    public AbstractResource(ServiceKey service, ServiceKey callerService) {
+        CommonValidator.validateService(service);
+        CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
+        this.service = service;
         this.callerService = callerService;
+    }
+
+    @Override
+    public ServiceKey getService() {
+        return service;
     }
 
     @Override
@@ -42,18 +53,20 @@ public abstract class AbstractResource implements Resource {
             return false;
         }
         AbstractResource that = (AbstractResource) o;
-        return Objects.equals(callerService, that.callerService);
+        return Objects.equals(service, that.service) &&
+                Objects.equals(callerService, that.callerService);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(callerService);
+        return Objects.hash(service, callerService);
     }
 
     @Override
     public String toString() {
         return "AbstractResource{" +
-                "callerService=" + callerService +
+                "service=" + service +
+                ", callerService=" + callerService +
                 '}';
     }
 }

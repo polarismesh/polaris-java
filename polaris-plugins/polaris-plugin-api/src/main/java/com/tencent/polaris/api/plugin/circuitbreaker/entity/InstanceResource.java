@@ -25,18 +25,13 @@ import java.util.Objects;
 
 public class InstanceResource extends AbstractResource {
 
-    private final ServiceResource serviceResource;
-
     private final Node node;
 
     private final String protocol;
 
     public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService, String protocol) {
-        super(callerService);
-        CommonValidator.validateService(service);
-        CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
+        super(service, callerService);
         CommonValidator.validateText(host, "host");
-        this.serviceResource = new ServiceResource(service);
         this.node = new Node(host, port);
         this.protocol = protocol;
     }
@@ -52,14 +47,6 @@ public class InstanceResource extends AbstractResource {
 
     public int getPort() {
         return node.getPort();
-    }
-
-    public ServiceKey getService() {
-        return serviceResource.getService();
-    }
-
-    public ServiceResource getServiceResource() {
-        return serviceResource;
     }
 
     public Node getNode() {
@@ -82,20 +69,19 @@ public class InstanceResource extends AbstractResource {
             return false;
         }
         InstanceResource that = (InstanceResource) o;
-        return Objects.equals(serviceResource, that.serviceResource) &&
-                Objects.equals(node, that.node);
+        return Objects.equals(node, that.node) &&
+                Objects.equals(protocol, that.protocol);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), serviceResource, node);
+        return Objects.hash(super.hashCode(), node, protocol);
     }
 
     @Override
     public String toString() {
         return "InstanceResource{" +
-                "serviceResource=" + serviceResource +
-                ", node=" + node +
+                "node=" + node +
                 ", protocol='" + protocol + '\'' +
                 "} " + super.toString();
     }

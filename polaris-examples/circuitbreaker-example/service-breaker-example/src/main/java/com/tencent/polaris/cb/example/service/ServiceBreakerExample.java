@@ -17,11 +17,10 @@
 
 package com.tencent.polaris.cb.example.service;
 
-import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
-import com.tencent.polaris.cb.example.common.HealthServer;
+import com.tencent.polaris.cb.example.common.Utils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
@@ -30,7 +29,6 @@ import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
-import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
 public class ServiceBreakerExample {
@@ -56,34 +54,8 @@ public class ServiceBreakerExample {
         }
     }
 
-    private static void createHttpServers() throws Exception {
-        HttpServer normalServer = HttpServer.create(new InetSocketAddress(PORT_NORMAL), 0);
-        System.out.println("Service cb normal server listen port is " + PORT_NORMAL);
-        normalServer.createContext("/health", new HealthServer(true));
-        HttpServer abnormalServer = HttpServer.create(new InetSocketAddress(PORT_ABNORMAL), 0);
-        System.out.println("Instance cb abnormal server listen port is " + PORT_ABNORMAL);
-        abnormalServer.createContext("/health", new HealthServer(false));
-        Thread normalStartThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                normalServer.start();
-            }
-        });
-        normalStartThread.setDaemon(true);
-        Thread abnormalStartThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                abnormalServer.start();
-            }
-        });
-        abnormalStartThread.setDaemon(true);
-        normalStartThread.start();
-        abnormalStartThread.start();
-        Thread.sleep(5000);
-    }
-
     public static void main(String[] args) throws Exception {
-        createHttpServers();
+        Utils.createHttpServers(PORT_NORMAL, PORT_ABNORMAL);
         int[] ports = new int[]{PORT_NORMAL, PORT_ABNORMAL};
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPI();
         ConsumerAPI consumerAPI = DiscoveryAPIFactory

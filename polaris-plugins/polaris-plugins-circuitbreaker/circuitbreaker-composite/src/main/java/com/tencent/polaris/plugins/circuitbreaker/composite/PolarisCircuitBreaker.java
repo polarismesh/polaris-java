@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceResourceProvider;
 import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.NamedThreadFactory;
@@ -47,7 +48,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     private final Map<Level, Map<Resource, ResourceCounters>> countersCache = new HashMap<>();
 
-    private final Map<Resource, ResourceHealthChecker> healthCheckCache = new HashMap<>();
+    private final Map<Resource, ResourceHealthChecker> healthCheckCache = new ConcurrentHashMap<>();
+
+    // service and method resource health checkers
+    private final Map<ServiceKey, Map<Resource, ResourceHealthChecker>> serviceHealthCheckCache = new ConcurrentHashMap<>();
 
     private final ScheduledExecutorService stateChangeExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("circuitbreaker-state-worker"));
@@ -118,8 +122,12 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             return;
         }
         InstanceResource instanceResource = (InstanceResource) resource;
-        ResourceHealthChecker resourceHealthChecker = healthCheckCache.get(instanceResource.getServiceResource());
-        if (null != resourceHealthChecker) {
+        Map<Resource, ResourceHealthChecker> resourceResourceHealthCheckerMap = serviceHealthCheckCache
+                .get(instanceResource.getService());
+        if (null == resourceResourceHealthCheckerMap) {
+            return;
+        }
+        for (ResourceHealthChecker resourceHealthChecker : resourceResourceHealthCheckerMap.values()) {
             resourceHealthChecker.addInstance(instanceResource, record);
         }
     }
@@ -189,6 +197,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     Map<Resource, ResourceHealthChecker> getHealthCheckCache() {
         return healthCheckCache;
+    }
+
+    Map<ServiceKey, Map<Resource, ResourceHealthChecker>> getServiceHealthCheckCache() {
+        return serviceHealthCheckCache;
     }
 
     Extensions getExtensions() {

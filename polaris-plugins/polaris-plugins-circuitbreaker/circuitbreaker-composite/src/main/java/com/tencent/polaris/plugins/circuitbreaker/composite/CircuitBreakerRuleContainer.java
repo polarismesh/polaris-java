@@ -25,6 +25,7 @@ import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -134,6 +136,8 @@ public class CircuitBreakerRuleContainer {
                     }
                     FaultDetector faultDetector = selectFaultDetector(faultDetectRule);
                     Map<Resource, ResourceHealthChecker> healthCheckCache = polarisCircuitBreaker.getHealthCheckCache();
+                    Map<ServiceKey, Map<Resource, ResourceHealthChecker>> serviceHealthCheckCache = polarisCircuitBreaker
+                            .getServiceHealthCheckCache();
                     if (null != faultDetector) {
                         ResourceHealthChecker curChecker = healthCheckCache.get(resource);
                         if (null != curChecker) {
@@ -143,9 +147,19 @@ public class CircuitBreakerRuleContainer {
                             }
                             curChecker.stop();
                         }
-                        healthCheckCache
-                                .put(resource,
-                                        new ResourceHealthChecker(resource, faultDetector, polarisCircuitBreaker));
+                        ResourceHealthChecker newHealthChecker = new ResourceHealthChecker(resource, faultDetector,
+                                polarisCircuitBreaker);
+                        healthCheckCache.put(resource, newHealthChecker);
+                        if (resource.getLevel() != Level.INSTANCE) {
+                            ServiceKey svcKey = resource.getService();
+                            Map<Resource, ResourceHealthChecker> resourceHealthCheckerMap = serviceHealthCheckCache
+                                    .get(svcKey);
+                            if (null == resourceHealthCheckerMap) {
+                                resourceHealthCheckerMap = new ConcurrentHashMap<>();
+                                serviceHealthCheckCache.put(svcKey, resourceHealthCheckerMap);
+                            }
+                            resourceHealthCheckerMap.put(resource, newHealthChecker);
+                        }
                         faultDetectEnabled = true;
                     }
                 }
@@ -155,6 +169,17 @@ public class CircuitBreakerRuleContainer {
                     ResourceHealthChecker preChecker = healthCheckCache.remove(resource);
                     if (null != preChecker) {
                         preChecker.stop();
+                    }
+                    if (resource.getLevel() != Level.INSTANCE) {
+                        ServiceKey svcKey = resource.getService();
+                        Map<Resource, ResourceHealthChecker> resourceHealthCheckerMap = polarisCircuitBreaker
+                                .getServiceHealthCheckCache().get(svcKey);
+                        if (null != resourceHealthCheckerMap) {
+                            resourceHealthCheckerMap.remove(resource);
+                            if (resourceHealthCheckerMap.isEmpty()) {
+                                polarisCircuitBreaker.getServiceHealthCheckCache().remove(svcKey);
+                            }
+                        }
                     }
                 }
             }
