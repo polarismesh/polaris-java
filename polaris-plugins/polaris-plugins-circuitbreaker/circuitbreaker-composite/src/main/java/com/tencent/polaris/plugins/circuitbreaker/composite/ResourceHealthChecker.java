@@ -54,6 +54,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
@@ -96,16 +97,21 @@ public class ResourceHealthChecker {
         this.healthCheckers = polarisCircuitBreaker.getHealthCheckers();
         this.polarisCircuitBreaker = polarisCircuitBreaker;
         if (resource instanceof InstanceResource) {
-            addInstance((InstanceResource) resource);
+            addInstance((InstanceResource) resource, false);
         }
         start();
     }
 
-    public void addInstance(InstanceResource instanceResource) {
-        if (!instances.containsKey(instanceResource.getNode())) {
+    public void addInstance(InstanceResource instanceResource, boolean record) {
+        ProtocolInstance protocolInstance = instances.get(instanceResource.getNode());
+        if (null == protocolInstance) {
             instances.put(instanceResource.getNode(),
                     new ProtocolInstance(HealthCheckUtils.parseProtocol(instanceResource.getProtocol()),
                             instanceResource));
+            return;
+        }
+        if (record) {
+            protocolInstance.doReport();
         }
     }
 
@@ -206,10 +212,21 @@ public class ResourceHealthChecker {
             if (faultDetectRule.getInterval() > 0) {
                 interval = faultDetectRule.getInterval();
             }
-            LOG.info("schedule task: protocol {}, interval {}, rule {}", entry.getKey(), interval,
-                    faultDetectRule.getName());
+            LOG.info("schedule task: resource {}, protocol {}, interval {}, rule {}", resource, entry.getKey(),
+                    interval, faultDetectRule.getName());
             ScheduledFuture<?> future = checkScheduler
                     .scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.SECONDS);
+            futures.add(future);
+        }
+        if (resource.getLevel() != Level.INSTANCE) {
+            long checkPeriod = polarisCircuitBreaker.getCheckPeriod();
+            LOG.info("schedule expire task: resource {}, interval {}", resource, checkPeriod);
+            ScheduledFuture<?> future = checkScheduler.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    cleanInstances();
+                }
+            }, checkPeriod, checkPeriod, TimeUnit.MILLISECONDS);
             futures.add(future);
         }
     }
@@ -229,7 +246,20 @@ public class ResourceHealthChecker {
                 .info("health check for instance {}:{}, resource {}, protocol {}, result: code {}, delay {}ms, status {}",
                         instance.getHost(), instance.getPort(), resource, protocol, detectResult.getStatusCode(),
                         detectResult.getDelay(), detectResult.getRetStatus());
-        polarisCircuitBreaker.report(resourceStat);
+        polarisCircuitBreaker.doReport(resourceStat, false);
+    }
+
+    public void cleanInstances() {
+        long curTimeMilli = System.currentTimeMillis();
+        long expireIntervalMilli = polarisCircuitBreaker.getHealthCheckInstanceExpireInterval();
+        for (Map.Entry<Node, ProtocolInstance> entry : instances.entrySet()) {
+            long lastReportMilli = entry.getValue().getLastReportMilli().get();
+            Node node = entry.getKey();
+            if (curTimeMilli - lastReportMilli >= expireIntervalMilli) {
+                instances.remove(node);
+                HC_EVENT_LOG.info("clean instance from health check tasks, resource {}, node {}", resource, node);
+            }
+        }
     }
 
     public void stop() {
@@ -250,10 +280,13 @@ public class ResourceHealthChecker {
 
         final InstanceResource instanceResource;
 
+        final AtomicLong lastReportMilli = new AtomicLong(0);
+
         ProtocolInstance(
                 Protocol protocol, InstanceResource instanceResource) {
             this.protocol = protocol;
             this.instanceResource = instanceResource;
+            lastReportMilli.set(System.currentTimeMillis());
         }
 
         Protocol getProtocol() {
@@ -263,5 +296,14 @@ public class ResourceHealthChecker {
         InstanceResource getInstanceResource() {
             return instanceResource;
         }
+
+        public AtomicLong getLastReportMilli() {
+            return lastReportMilli;
+        }
+
+        void doReport() {
+            lastReportMilli.set(System.currentTimeMillis());
+        }
     }
+
 }

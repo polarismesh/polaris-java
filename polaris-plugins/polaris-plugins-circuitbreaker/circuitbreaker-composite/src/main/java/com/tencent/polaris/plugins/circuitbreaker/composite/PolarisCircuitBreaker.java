@@ -67,6 +67,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     private Map<String, HealthChecker> healthCheckers = Collections.emptyMap();
 
+    private long healthCheckInstanceExpireInterval;
+
+    private long checkPeriod;
+
     @Override
     public CircuitBreakerStatus checkResource(Resource resource) {
         ResourceCounters resourceCounters = getResourceCounters(resource);
@@ -83,6 +87,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     @Override
     public void report(ResourceStat resourceStat) {
+        doReport(resourceStat, true);
+    }
+
+    void doReport(ResourceStat resourceStat, boolean record) {
         Resource resource = resourceStat.getResource();
         if (resource.getLevel() == Level.UNKNOWN) {
             return;
@@ -101,18 +109,18 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             });
         } else {
             resourceCounters.report(resourceStat);
-            addInstanceForHealthCheck(resourceStat.getResource());
         }
+        addInstanceForHealthCheck(resourceStat.getResource(), record);
     }
 
-    private void addInstanceForHealthCheck(Resource resource) {
+    private void addInstanceForHealthCheck(Resource resource, boolean record) {
         if (!(resource instanceof InstanceResource)) {
             return;
         }
         InstanceResource instanceResource = (InstanceResource) resource;
         ResourceHealthChecker resourceHealthChecker = healthCheckCache.get(instanceResource.getServiceResource());
         if (null != resourceHealthChecker) {
-            resourceHealthChecker.addInstance(instanceResource);
+            resourceHealthChecker.addInstance(instanceResource, record);
         }
     }
 
@@ -127,6 +135,11 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         countersCache.put(Level.METHOD, new ConcurrentHashMap<>());
         countersCache.put(Level.GROUP, new ConcurrentHashMap<>());
         countersCache.put(Level.INSTANCE, new ConcurrentHashMap<>());
+        checkPeriod = ctx.getConfig().getConsumer().getCircuitBreaker().getCheckPeriod();
+        if (checkPeriod == 0) {
+            checkPeriod = HealthCheckUtils.DEFAULT_CHECK_INTERVAL;
+        }
+        healthCheckInstanceExpireInterval = HealthCheckUtils.CHECK_PERIOD_MULTIPLE * checkPeriod;
     }
 
     @Override
@@ -140,6 +153,24 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
     // for test
     public void setServiceRuleProvider(ServiceResourceProvider serviceResourceProvider) {
         this.serviceResourceProvider = serviceResourceProvider;
+    }
+
+    public long getHealthCheckInstanceExpireInterval() {
+        return healthCheckInstanceExpireInterval;
+    }
+
+    // for test
+    public void setHealthCheckInstanceExpireInterval(long healthCheckInstanceExpireInterval) {
+        this.healthCheckInstanceExpireInterval = healthCheckInstanceExpireInterval;
+    }
+
+    public long getCheckPeriod() {
+        return checkPeriod;
+    }
+
+    // for test
+    public void setCheckPeriod(long checkPeriod) {
+        this.checkPeriod = checkPeriod;
     }
 
     @Override

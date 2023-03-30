@@ -23,6 +23,16 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorPro
 public class HealthCheckUtils {
 
     /**
+     * instance expire interval = multiple * check expire period
+     */
+    public static int CHECK_PERIOD_MULTIPLE = 3;
+
+    /**
+     * default check expire period
+     */
+    public static int DEFAULT_CHECK_INTERVAL = 60 * 1000;
+
+    /**
      * parse protocol string to enum
      *
      * @param protocol protocol string
