@@ -57,6 +57,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -302,6 +303,9 @@ public class ResourceCounters implements StatusChangeHandler {
 
 
     public void reportCircuitStatus() {
+        if (Objects.isNull(extensions)) {
+            return;
+        }
         Collection<Plugin> statPlugins = extensions.getPlugins().getPlugins(PluginTypes.STAT_REPORTER.getBaseType());
         if (null != statPlugins) {
             try {
@@ -313,6 +317,7 @@ public class ResourceCounters implements StatusChangeHandler {
                         result.setService(resource.getService().getService());
                         result.setNamespace(resource.getService().getNamespace());
                         result.setLevel(resource.getLevel().name());
+                        result.setRuleName(currentActiveRule.getName());
                         switch (resource.getLevel()) {
                             case SERVICE:
                                 ServiceResource serviceResource = (ServiceResource) resource;
