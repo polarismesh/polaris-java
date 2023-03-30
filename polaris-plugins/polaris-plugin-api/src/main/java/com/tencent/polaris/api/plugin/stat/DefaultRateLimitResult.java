@@ -6,6 +6,7 @@ public class DefaultRateLimitResult implements RateLimitGauge {
     private Result result;
     private String service;
     private String namespace;
+    private String ruleName;
 
     @Override
     public String getMethod() {
@@ -50,5 +51,14 @@ public class DefaultRateLimitResult implements RateLimitGauge {
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    @Override
+    public String getRuleName() {
+        return ruleName;
+    }
+
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
     }
 }
