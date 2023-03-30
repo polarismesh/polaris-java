@@ -76,4 +76,18 @@ public interface CircuitBreakGauge extends Service {
      * @return 熔断状态
      */
     CircuitBreakerStatus getCircuitBreakStatus();
+
+    /**
+     * 获取熔断粒度
+     *
+     * @return 熔断粒度
+     */
+    String getLevel();
+
+    /**
+     * 获取生效的熔断规则名称
+     *
+     * @return 熔断规则名称
+     */
+    String getRuleName();
 }

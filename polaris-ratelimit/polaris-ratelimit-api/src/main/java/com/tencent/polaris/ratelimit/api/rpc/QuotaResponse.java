@@ -18,24 +18,32 @@
 package com.tencent.polaris.ratelimit.api.rpc;
 
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 
 public class QuotaResponse {
 
     private final QuotaResult quotaResult;
 
+    private RateLimitProto.Rule activeRule;
+
     public QuotaResponse(QuotaResult quotaResult) {
         this.quotaResult = quotaResult;
     }
-
     public QuotaResultCode getCode() {
         return QuotaResultCode.values()[quotaResult.getCode().ordinal()];
     }
-
     public long getWaitMs() {
         return quotaResult.getWaitMs();
     }
-
     public String getInfo() {
         return quotaResult.getInfo();
+    }
+
+    public void setActiveRule(RateLimitProto.Rule activeRule) {
+        this.activeRule = activeRule;
+    }
+
+    public RateLimitProto.Rule getActiveRule() {
+        return activeRule;
     }
 }

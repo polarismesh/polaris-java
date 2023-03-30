@@ -105,6 +105,8 @@ public class QuotaFlow extends Destroyable {
             QuotaResponse quotaResponse = new QuotaResponse(rateLimitWindow.allocateQuota(request.getCount()));
             if (quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
                 //一个限流则直接限流
+                // 记录这个限流 RateLimitWindow 对应的限流规则信息，放到 QuotaResponse 中返回
+                quotaResponse.setActiveRule(rateLimitWindow.getRule());
                 return quotaResponse;
             }
             if (quotaResponse.getWaitMs() > maxWaitMs) {
