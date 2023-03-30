@@ -85,7 +85,7 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private final Function<String, Pattern> regexFunction;
 
-    private final Extensions extensions;
+    private Extensions extensions;
 
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
             ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
