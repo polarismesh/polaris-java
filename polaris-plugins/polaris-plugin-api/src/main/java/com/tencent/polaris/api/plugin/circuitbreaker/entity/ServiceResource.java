@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
+import java.util.Objects;
 
 public class ServiceResource extends AbstractResource {
 
@@ -46,17 +47,29 @@ public class ServiceResource extends AbstractResource {
     }
 
     @Override
-    public String toString() {
-        return "ServiceResource{} " + super.toString();
-    }
-
-    @Override
     public boolean equals(Object o) {
-        return super.equals(o);
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ServiceResource)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        ServiceResource that = (ServiceResource) o;
+        return Objects.equals(service, that.service);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return Objects.hash(super.hashCode(), service);
+    }
+
+    @Override
+    public String toString() {
+        return "ServiceResource{" +
+                "service=" + service +
+                "} " + super.toString();
     }
 }
