@@ -19,9 +19,18 @@ package com.tencent.polaris.plugins.circuitbreaker.composite;
 
 import static com.tencent.polaris.logging.LoggingConsts.LOGGING_CIRCUITBREAKER_EVENT;
 
+import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
+import com.tencent.polaris.api.plugin.stat.StatInfo;
+import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.FallbackInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
@@ -44,6 +53,7 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,8 +84,11 @@ public class ResourceCounters implements StatusChangeHandler {
 
     private final Function<String, Pattern> regexFunction;
 
+    private final Extensions extensions;
+
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
             ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
+        this.extensions = polarisCircuitBreaker.getExtensions();
         this.currentActiveRule = currentActiveRule;
         this.resource = resource;
         this.stateChangeExecutors = stateChangeExecutors;
@@ -179,6 +192,7 @@ public class ResourceCounters implements StatusChangeHandler {
                     circuitBreakerStatus.getStatus(),
                     halfOpenStatus.getStatus(), resource, circuitBreakerStatus.getCircuitBreaker());
             circuitBreakerStatusReference.set(halfOpenStatus);
+            reportCircuitStatus();
         }
     }
 
@@ -197,6 +211,7 @@ public class ResourceCounters implements StatusChangeHandler {
                     triggerCounter.resume();
                 }
             }
+            reportCircuitStatus();
         }
     }
 
@@ -207,6 +222,7 @@ public class ResourceCounters implements StatusChangeHandler {
             if (circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
                 toOpen(circuitBreakerStatus, circuitBreakerStatus.getCircuitBreaker());
             }
+            reportCircuitStatus();
         }
     }
 
@@ -282,5 +298,41 @@ public class ResourceCounters implements StatusChangeHandler {
 
     public CircuitBreakerStatus getCircuitBreakerStatus() {
         return circuitBreakerStatusReference.get();
+    }
+
+
+    public void reportCircuitStatus() {
+        Collection<Plugin> statPlugins = extensions.getPlugins().getPlugins(PluginTypes.STAT_REPORTER.getBaseType());
+        if (null != statPlugins) {
+            try {
+                for (Plugin statPlugin : statPlugins) {
+                    if (statPlugin instanceof StatReporter) {
+                        DefaultCircuitBreakResult result = new DefaultCircuitBreakResult();
+                        result.setCallerService(resource.getCallerService());
+                        result.setCircuitBreakStatus(getCircuitBreakerStatus());
+                        result.setService(resource.getService().getService());
+                        result.setNamespace(resource.getService().getNamespace());
+
+                        switch (resource.getLevel()) {
+                            case SERVICE:
+                                ServiceResource serviceResource = (ServiceResource) resource;
+                            case METHOD:
+                                MethodResource methodResource = (MethodResource) resource;
+                                result.setMethod(methodResource.getMethod());
+                            case INSTANCE:
+                                InstanceResource instanceResource= (InstanceResource) resource;
+                                result.setHost(instanceResource.getHost());
+                                result.setPort(instanceResource.getPort());
+                        }
+
+                        StatInfo info = new StatInfo();
+                        info.setCircuitBreakGauge(result);
+                        ((StatReporter) statPlugin).reportStat(info);
+                    }
+                }
+            } catch (Exception ex) {
+                LOG.info("circuit breaker report encountered exception, e: {}", ex.getMessage());
+            }
+        }
     }
 }
