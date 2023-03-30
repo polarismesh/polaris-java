@@ -74,6 +74,11 @@ public class MetadataRouterTest {
         namingServer.getNamingService().addInstance(serviceKey1, new Node("127.0.0.1", 80), parameter);
         parameter.setMetadata(null);
         namingServer.getNamingService().addInstance(serviceKey1, new Node("127.0.0.1", 81), parameter);
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @After
