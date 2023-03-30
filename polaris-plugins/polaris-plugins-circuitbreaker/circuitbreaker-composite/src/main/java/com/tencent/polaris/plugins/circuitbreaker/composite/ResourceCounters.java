@@ -89,7 +89,6 @@ public class ResourceCounters implements StatusChangeHandler {
 
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
             ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
-        this.extensions = polarisCircuitBreaker.getExtensions();
         this.currentActiveRule = currentActiveRule;
         this.resource = resource;
         this.stateChangeExecutors = stateChangeExecutors;
@@ -103,6 +102,9 @@ public class ResourceCounters implements StatusChangeHandler {
         circuitBreakerStatusReference
                 .set(new CircuitBreakerStatus(currentActiveRule.getName(), Status.CLOSE, System.currentTimeMillis()));
         fallbackInfo = buildFallbackInfo(currentActiveRule);
+        if (Objects.nonNull(polarisCircuitBreaker)) {
+            this.extensions = polarisCircuitBreaker.getExtensions();
+        }
         init();
     }
 
