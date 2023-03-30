@@ -321,7 +321,7 @@ public class NacosConnector extends DestroyableServerConnector {
 				instance.setPort(service.getPort());
 				instance.setHealthy(service.isHealthy());
 				instance.setMetadata(Optional.ofNullable(service.getMetadata()).orElse(new HashMap<>()));
-				instance.setIsolated(service.isEnabled());
+				instance.setIsolated(!service.isEnabled());
 				instance.setWeight((int) (100 * service.getWeight()));
 
 				String protocol = instance.getMetadata().getOrDefault("protocol", "");

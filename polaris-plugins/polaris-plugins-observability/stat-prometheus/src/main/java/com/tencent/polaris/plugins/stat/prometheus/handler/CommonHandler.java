@@ -160,6 +160,9 @@ public class CommonHandler {
                 case SystemMetricName.CALLER_LABELS:
                     addLabel(labelName, rateLimitGauge.getLabels(), labels);
                     break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
+                    break;
                 default:
             }
         }
@@ -198,6 +201,12 @@ public class CommonHandler {
                     break;
                 case SystemMetricName.CALLER_IP:
                     addLabel(labelName, callerIp, labels);
+                    break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, gauge.getRuleName(), labels);
+                    break;
+                case SystemMetricName.LEVEL:
+                    addLabel(labelName, gauge.getLevel(), labels);
                     break;
                 default:
             }
