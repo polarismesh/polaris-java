@@ -160,6 +160,9 @@ public class CommonHandler {
                 case SystemMetricName.CALLER_LABELS:
                     addLabel(labelName, rateLimitGauge.getLabels(), labels);
                     break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
+                    break;
                 default:
             }
         }
