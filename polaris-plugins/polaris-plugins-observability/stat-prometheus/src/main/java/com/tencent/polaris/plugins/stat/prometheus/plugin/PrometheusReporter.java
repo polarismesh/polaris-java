@@ -85,7 +85,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     private StatInfoCollectorContainer container;
 
-    private String callerIp;
+    private String sdkIP;
 
     private String instanceID;
 
@@ -119,7 +119,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         this.config = extensions.getConfiguration().getGlobal().getStatReporter()
                 .getPluginConfig(getName(), PrometheusHandlerConfig.class);
         this.instanceID = extensions.getValueContext().getClientId();
-        this.callerIp = StringUtils.isBlank(config.getHost()) ? extensions.getValueContext().getHost() : config.getHost();
+        this.sdkIP = extensions.getValueContext().getHost();
         this.initHandle();
     }
 
@@ -161,7 +161,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     public void handleRouterGauge(InstanceGauge instanceGauge) {
         if (null != container && null != container.getInsCollector()) {
             container.getInsCollector().collectStatInfo(instanceGauge,
-                    CommonHandler.convertInsGaugeToLabels(instanceGauge, callerIp),
+                    CommonHandler.convertInsGaugeToLabels(instanceGauge, sdkIP),
                     MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY);
         }
     }
@@ -177,7 +177,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     public void handleCircuitBreakGauge(CircuitBreakGauge circuitBreakGauge) {
         if (null != container && null != container.getCircuitBreakerCollector()) {
             container.getCircuitBreakerCollector().collectStatInfo(circuitBreakGauge,
-                    CommonHandler.convertCircuitBreakToLabels(circuitBreakGauge, callerIp),
+                    CommonHandler.convertCircuitBreakToLabels(circuitBreakGauge, sdkIP),
                     MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY);
         }
     }
@@ -378,11 +378,11 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         this.pushGateway = pushGateway;
     }
 
-    public String getCallerIp() {
-        return callerIp;
+    String getSdkIP() {
+        return sdkIP;
     }
 
-    public void setCallerIp(String callerIp) {
-        this.callerIp = callerIp;
+    void setSdkIP(String sdkIP) {
+        this.sdkIP = sdkIP;
     }
 }

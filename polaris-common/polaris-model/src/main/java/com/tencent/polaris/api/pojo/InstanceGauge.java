@@ -128,4 +128,18 @@ public interface InstanceGauge extends Service {
      */
     String getProtocol();
 
+    /**
+     * 获取主调节点的IP信息
+     *
+     * @return callerIp
+     */
+    String getCallerIp();
+
+    /**
+     * 当 RetStatus 为 flow_control 或者 reject 时，需要设置生效的规则名称
+     *
+     * @return ruleName
+     */
+    String getRuleName();
+
 }

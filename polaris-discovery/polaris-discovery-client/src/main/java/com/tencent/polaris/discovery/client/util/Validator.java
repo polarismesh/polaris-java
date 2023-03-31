@@ -20,6 +20,7 @@ package com.tencent.polaris.discovery.client.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.*;
@@ -140,12 +141,14 @@ public class Validator {
      */
     public static void validateServiceCallResult(ServiceCallResult serviceCallResult) throws PolarisException {
         CommonValidator.validateNamespaceService(serviceCallResult.getNamespace(), serviceCallResult.getService());
-        validateHostPort(serviceCallResult.getHost(), serviceCallResult.getPort());
         if (null == serviceCallResult.getRetStatus()) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "retStatus can not be blank");
         }
         if (null != serviceCallResult.getDelay() && serviceCallResult.getDelay() < 0) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "delay can not be less than 0");
+        }
+        if (!RetStatus.RetReject.equals(serviceCallResult.getRetStatus())) {
+            validateHostPort(serviceCallResult.getHost(), serviceCallResult.getPort());
         }
     }
 
