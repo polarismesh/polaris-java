@@ -69,13 +69,12 @@ public class InstanceResource extends AbstractResource {
             return false;
         }
         InstanceResource that = (InstanceResource) o;
-        return Objects.equals(node, that.node) &&
-                Objects.equals(protocol, that.protocol);
+        return Objects.equals(node, that.node);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), node, protocol);
+        return Objects.hash(super.hashCode(), node);
     }
 
     @Override
