@@ -3,24 +3,9 @@ global:
   serverConnector:
     # target server address
     addresses:
-      - 9.134.5.52:8091
-  #  serverConnectors:
-  #    - id: polaris
-  #      protocol: grpc
-  #      addresses:
-  #        - 127.0.0.1:8091
-  #    - id: consul
-  #      protocol: consul
-  #      addresses:
-  #        - 127.0.0.1:8500
+      - 127.0.0.1:8091
   statReporter:
     enable: true
     plugin:
       prometheus:
         port: 28081
-#consumer:
-#  discoveries:
-#    - serverConnectorId: polaris
-#      enable: true
-#    - serverConnectorId: consul
-#      enable: false
