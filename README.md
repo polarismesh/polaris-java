@@ -61,7 +61,7 @@ A polaris-examples module is included in our project for you to get started with
 
 ## Frameworks
 
-Developers usually use HTTP or RPC frameworks to develop distributed service. Polaris Java SDK is already integrated into some open source development frameworks. If using these frameworks, you can enable Polaris Service Governance functions without using Polaris Java SDK directly.
+Developers usually use HTTP or RPC frameworks to develop distributed service. Polaris SDK is already integrated into some development frameworks. If using these frameworks, you can enable Polaris Service Governance functions without using Polaris SDK directly.
 
 - Spring Boot
   - [spring-cloud-tencent](https://github.com/Tencent/spring-cloud-tencent)
