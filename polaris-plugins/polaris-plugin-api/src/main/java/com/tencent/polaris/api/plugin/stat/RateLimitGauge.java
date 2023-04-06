@@ -45,4 +45,11 @@ public interface RateLimitGauge extends Service {
      * @return 是否通过
      */
     Result getResult();
+
+    /**
+     * 获取生效的限流规则名称
+     *
+     * @return 限流规则名称
+     */
+    String getRuleName();
 }

@@ -15,24 +15,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.logging;
+package com.tencent.polaris.plugins.outlier.detector.tcp;
 
-/**
- * Constants of Logging.
- *
- * @author Haotian Zhang
- */
-public interface LoggingConsts {
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
 
-    String LOGGING_CONFIG_PROPERTY = "polaris.logging.config";
+public interface NioHandler {
 
-    String LOGGING_PATH_PROPERTY = "polaris.log.home";
+    void handleAccept(SelectionKey key) throws IOException;
 
-    String LOGGING_UPDATE_EVENT = "polaris-update-event";
+    void handleRead(SelectionKey key) throws IOException;
 
-    String LOGGING_UPDATE_EVENT_ASYNC = "polaris-update-event-async";
-
-    String LOGGING_CIRCUITBREAKER_EVENT = "polaris-circuitbreaker-event";
-
-    String LOGGING_HEALTHCHECK_EVENT = "polaris-healthcheck-event";
+    void handleWrite(SelectionKey key) throws IOException;
 }

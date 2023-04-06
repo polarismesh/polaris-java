@@ -81,8 +81,12 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
         return response;
     }
 
+    /**
+     * 限流指标不在保留单独的指标视图，全部合并到 upstream_xxx 的指标视图中
+     */
+    @Deprecated
     private void reportRateLimit(QuotaRequest req, QuotaResponse rsp) {
-        if (null != statPlugins) {
+        if (null != statPlugins && !RateLimitConstants.REASON_DISABLED.equals(rsp.getInfo())) {
             try {
                 DefaultRateLimitResult rateLimitGauge = new DefaultRateLimitResult();
                 rateLimitGauge.setLabels(formatLabelsToStr(req.getLabels()));
@@ -91,6 +95,7 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
                 rateLimitGauge.setService(req.getService());
                 rateLimitGauge.setResult(
                         rsp.getCode() == QuotaResultOk ? RateLimitGauge.Result.PASSED : RateLimitGauge.Result.LIMITED);
+                rateLimitGauge.setRuleName(rsp.getActiveRule() == null ? null : rsp.getActiveRule().getName().getValue());
                 StatInfo statInfo = new StatInfo();
                 statInfo.setRateLimitGauge(rateLimitGauge);
 

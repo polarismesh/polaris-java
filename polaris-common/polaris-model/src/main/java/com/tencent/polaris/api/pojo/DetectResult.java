@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.api.pojo;
 
-import java.util.Date;
-
 /**
  * 健康探测结果
  *
@@ -33,19 +31,24 @@ public class DetectResult {
     private String detectType;
 
     /**
-     * 上一次的探测时间
+     * 探测返回状态码
      */
-    private final Date lastDetectTime;
+    private final int statusCode;
 
+    /**
+     * 探测的时延
+     */
+    private final long delay;
 
     /**
      * 探测返回结果
      */
     private final RetStatus retStatus;
 
-    public DetectResult(RetStatus retStatus) {
+    public DetectResult(int statusCode, long delay, RetStatus retStatus) {
+        this.statusCode = statusCode;
+        this.delay = delay;
         this.retStatus = retStatus;
-        this.lastDetectTime = new Date();
     }
 
     public String getDetectType() {
@@ -60,17 +63,21 @@ public class DetectResult {
         return retStatus;
     }
 
-    public Date getLastDetectTime() {
-        return lastDetectTime;
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    public long getDelay() {
+        return delay;
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "DetectResult{" +
-                "Type=" + detectType +
+                "detectType='" + detectType + '\'' +
+                ", statusCode=" + statusCode +
+                ", delay=" + delay +
                 ", retStatus=" + retStatus +
-                ", lastDetectTime=" + lastDetectTime.getTime() +
                 '}';
     }
 }

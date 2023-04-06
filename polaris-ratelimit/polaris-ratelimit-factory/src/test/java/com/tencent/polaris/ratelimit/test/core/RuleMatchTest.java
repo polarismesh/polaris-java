@@ -96,6 +96,8 @@ public class RuleMatchTest {
         rateLimitBuilder = RateLimit.newBuilder();
         ruleBuilder1 = Rule.newBuilder();
         ruleBuilder1.setType(Type.LOCAL);
+        ruleBuilder1.setNamespace(StringValue.newBuilder().setValue("*").build());
+        ruleBuilder1.setService(StringValue.newBuilder().setValue("*").build());
         ruleBuilder1.setPriority(UInt32Value.newBuilder().setValue(1).build());
         ruleBuilder1.setAction(StringValue.newBuilder().setValue("reject").build());
         ruleBuilder1.setAmountMode(AmountMode.GLOBAL_TOTAL);
@@ -113,6 +115,8 @@ public class RuleMatchTest {
         namingServer.getNamingService().addService(serviceKeyIn);
         rateLimitBuilder = RateLimit.newBuilder();
         ruleBuilder1 = Rule.newBuilder();
+        ruleBuilder1.setNamespace(StringValue.newBuilder().setValue("*").build());
+        ruleBuilder1.setService(StringValue.newBuilder().setValue("*").build());
         ruleBuilder1.setType(Type.LOCAL);
         ruleBuilder1.setPriority(UInt32Value.newBuilder().setValue(1).build());
         ruleBuilder1.setAction(StringValue.newBuilder().setValue("reject").build());
@@ -133,6 +137,8 @@ public class RuleMatchTest {
         namingServer.getNamingService().addService(serviceKeyNotIn);
         rateLimitBuilder = RateLimit.newBuilder();
         ruleBuilder1 = Rule.newBuilder();
+        ruleBuilder1.setNamespace(StringValue.newBuilder().setValue("*").build());
+        ruleBuilder1.setService(StringValue.newBuilder().setValue("*").build());
         ruleBuilder1.setType(Type.LOCAL);
         ruleBuilder1.setPriority(UInt32Value.newBuilder().setValue(1).build());
         ruleBuilder1.setAction(StringValue.newBuilder().setValue("reject").build());

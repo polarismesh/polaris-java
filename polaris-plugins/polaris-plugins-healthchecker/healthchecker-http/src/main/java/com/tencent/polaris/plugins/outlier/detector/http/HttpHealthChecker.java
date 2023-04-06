@@ -83,6 +83,7 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider {
         String body = curConfig.getBody();
         java.net.HttpURLConnection conn = null;
         OutputStream outputStream = null;
+        long startTimeMillis = System.currentTimeMillis();
         String path = String.format("http://%s:%d%s", instance.getHost(), curPort, pathStr);
         try {
             java.net.URL url = new java.net.URL(path);
@@ -101,16 +102,16 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider {
                 byte[] input = body.getBytes(StandardCharsets.UTF_8);
                 outputStream.write(input, 0, input.length);
             }
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
             int responseCode = conn.getResponseCode();
 
-            if (responseCode >= 500) {
-                return new DetectResult(RetStatus.RetFail);
-            }
-            return new DetectResult(RetStatus.RetSuccess);
+            RetStatus retStatus = responseCode >= 200 && responseCode < 400 ? RetStatus.RetSuccess : RetStatus.RetFail;
+            return new DetectResult(responseCode, delayMillis, retStatus);
         } catch (Exception e) {
-            LOG.warn("http detect exception, service:{}, host:{}, port:{}.", instance.getService(),
-                    instance.getHost(), instance.getPort());
-            return new DetectResult(RetStatus.RetFail);
+            LOG.warn("http detect exception, host:{}, port:{}, error {}", instance.getHost(), instance.getPort(),
+                    e.getMessage());
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
+            return new DetectResult(-1, delayMillis, RetStatus.RetFail);
         } finally {
             if (null != outputStream) {
                 try {

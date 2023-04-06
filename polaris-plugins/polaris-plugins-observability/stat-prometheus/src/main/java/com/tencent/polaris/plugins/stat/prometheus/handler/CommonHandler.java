@@ -31,6 +31,7 @@ import io.prometheus.client.Gauge;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricValue.NULL_VALUE;
 
@@ -86,7 +87,7 @@ public class CommonHandler {
         return orderValue;
     }
 
-    public static Map<String, String> convertInsGaugeToLabels(InstanceGauge insGauge, String callerIp) {
+    public static Map<String, String> convertInsGaugeToLabels(InstanceGauge insGauge, String sdkIP) {
         Map<String, String> labels = new HashMap<>();
         for (String labelName : SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER) {
             switch (labelName) {
@@ -129,7 +130,12 @@ public class CommonHandler {
                     addLabel(labelName, serviceName, labels);
                     break;
                 case SystemMetricName.CALLER_IP:
+                    String callerIp = Objects.isNull(insGauge.getCallerIp()) ? sdkIP : insGauge.getCallerIp();
                     addLabel(labelName, callerIp, labels);
+                    break;
+                case SystemMetricName.RULE_NAME:
+                    String ruleName = Objects.isNull(insGauge.getRuleName()) ? null : insGauge.getRuleName();
+                    addLabel(labelName, ruleName, labels);
                     break;
                 default:
             }
@@ -153,6 +159,9 @@ public class CommonHandler {
                     break;
                 case SystemMetricName.CALLER_LABELS:
                     addLabel(labelName, rateLimitGauge.getLabels(), labels);
+                    break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
                     break;
                 default:
             }
@@ -192,6 +201,12 @@ public class CommonHandler {
                     break;
                 case SystemMetricName.CALLER_IP:
                     addLabel(labelName, callerIp, labels);
+                    break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, gauge.getRuleName(), labels);
+                    break;
+                case SystemMetricName.LEVEL:
+                    addLabel(labelName, gauge.getLevel(), labels);
                     break;
                 default:
             }

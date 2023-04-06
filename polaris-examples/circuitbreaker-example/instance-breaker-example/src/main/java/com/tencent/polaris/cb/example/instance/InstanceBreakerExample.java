@@ -20,8 +20,10 @@ package com.tencent.polaris.cb.example.instance;
 import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.cb.example.common.EchoServer;
+import com.tencent.polaris.cb.example.common.HealthServer;
 import com.tencent.polaris.cb.example.common.ServerType;
 import com.tencent.polaris.cb.example.common.Utils;
 import com.tencent.polaris.client.api.SDKContext;
@@ -39,6 +41,8 @@ public class InstanceBreakerExample {
 
     private static final String SERVICE = "instanceCbService";
 
+    private static final String SOURCE_SERVICE = "instanceCbSrcService";
+
     public static void main(String[] args) throws Exception {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
         SDKContext sdkContext = SDKContext.initContextByConfig(configuration);
@@ -52,7 +56,7 @@ public class InstanceBreakerExample {
         HttpServer normalServer = HttpServer.create(new InetSocketAddress(PORT_NORMAL), 0);
         System.out.println("Instance cb normal server listen port is " + PORT_NORMAL);
         normalServer.createContext("/echo", normalEchoServer);
-
+        normalServer.createContext("/health", new HealthServer(true));
         InstanceRegisterRequest abnormalRequest = new InstanceRegisterRequest();
         abnormalRequest.setHost(localHost);
         abnormalRequest.setPort(PORT_ABNORMAL);
@@ -62,6 +66,7 @@ public class InstanceBreakerExample {
         HttpServer abnormalServer = HttpServer.create(new InetSocketAddress(PORT_ABNORMAL), 0);
         System.out.println("Instance cb abnormal server listen port is " + PORT_ABNORMAL);
         abnormalServer.createContext("/echo", abnormalEchoServer);
+        abnormalServer.createContext("/health", new HealthServer(false));
 
         normalEchoServer.register();
         abnormalEchoServer.register();
@@ -92,10 +97,13 @@ public class InstanceBreakerExample {
         }));
 
         ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
-        for (int i = 0; i < 200; i++) {
-            String test = Utils.invokeByNameResolution("/echo", NAMESPACE, SERVICE, "test", consumerAPI);
-            System.out.println("invoke " + i + " times, result " + test);
-            Thread.sleep(10000);
+        ServiceInfo sourceService = new ServiceInfo();
+        sourceService.setNamespace(NAMESPACE);
+        sourceService.setService(SOURCE_SERVICE);
+        for (int i = 0; i < 20000; i++) {
+            String test = Utils.invokeByNameResolution("/echo", NAMESPACE, SERVICE, "test", sourceService, consumerAPI);
+            System.out.println("[InstanceCbTest] invoke " + i + " times, result " + test);
+            Thread.sleep(1000);
         }
 
     }

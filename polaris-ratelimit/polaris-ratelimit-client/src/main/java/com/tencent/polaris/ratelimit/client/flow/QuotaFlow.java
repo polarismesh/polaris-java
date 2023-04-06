@@ -53,6 +53,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -72,12 +73,15 @@ public class QuotaFlow extends Destroyable {
      */
     private String clientId;
 
+    private boolean enabled;
+
     private final Map<ServiceKey, RateLimitWindowSet> svcToWindowSet = new ConcurrentHashMap<>();
 
     public void init(Extensions extensions) throws PolarisException {
         clientId = extensions.getValueContext().getClientId();
         rateLimitExtension = new RateLimitExtension(extensions);
         rateLimitConfig = rateLimitExtension.getExtensions().getConfiguration().getProvider().getRateLimit();
+        enabled = rateLimitConfig.isEnable();
         extensions.getLocalRegistry().registerResourceListener(new RateLimitRuleListener());
     }
 
@@ -86,18 +90,24 @@ public class QuotaFlow extends Destroyable {
     }
 
     public QuotaResponse getQuota(CommonQuotaRequest request) throws PolarisException {
+        if (!enabled) {
+            return new QuotaResponse(
+                    new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.REASON_DISABLED));
+        }
         List<RateLimitWindow> windows = lookupRateLimitWindow(request);
         if (CollectionUtils.isEmpty(windows)) {
-            //没有限流规则，直接放通
+            // 没有限流规则，直接放通
             return new QuotaResponse(
-                    new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.RULE_NOT_EXISTS));
+                    new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.REASON_RULE_NOT_EXISTS));
         }
         long maxWaitMs = 0;
         for (RateLimitWindow rateLimitWindow : windows) {
             rateLimitWindow.init();
             QuotaResponse quotaResponse = new QuotaResponse(rateLimitWindow.allocateQuota(request.getCount()));
             if (quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
-                //一个限流则直接限流
+                // 一个限流则直接限流
+                // 记录这个限流 RateLimitWindow 对应的限流规则信息，放到 QuotaResponse 中返回
+                quotaResponse.setActiveRule(rateLimitWindow.getRule());
                 return quotaResponse;
             }
             if (quotaResponse.getWaitMs() > maxWaitMs) {
@@ -244,16 +254,20 @@ public class QuotaFlow extends Destroyable {
         };
         List<Rule> matchRules = new ArrayList<>();
         for (Rule rule : rulesList) {
-            if (null != rule.getDisable() && rule.getDisable().getValue()) {
+            if (Objects.nonNull(rule.getDisable()) && rule.getDisable().getValue()) {
+                LOG.debug("rule(id={}, name={}, revision={}) disable open, ignore", rule.getId().getValue(),
+                        rule.getName().getValue(), rule.getRevision().getValue());
                 continue;
             }
             if (rule.getAmountsCount() == 0) {
                 //没有amount的规则就忽略
+                LOG.debug("rule(id={}, name={}, revision={}) amounts count is zero, ignore", rule.getId().getValue(),
+                        rule.getName().getValue(), rule.getRevision().getValue());
                 continue;
             }
             //match method
             MatchString methodMatcher = rule.getMethod();
-            if (null != methodMatcher) {
+            if (Objects.nonNull(methodMatcher)) {
                 boolean matchMethod = RuleUtils.matchStringValue(methodMatcher, method, function);
                 if (!matchMethod) {
                     continue;

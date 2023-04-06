@@ -17,13 +17,17 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.SliceWindow;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.TimeRange;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
 
 public class ErrRateCounter extends TriggerCounter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ErrRateCounter.class);
 
     private static final int BUCKET_COUNT = 10;
 
@@ -46,6 +50,7 @@ public class ErrRateCounter extends TriggerCounter {
 
     @Override
     protected void init() {
+        LOG.info("[CircuitBreaker][Counter] errRateCounter {} initialized, resource {}", ruleName, resource);
         int interval = triggerCondition.getInterval();
         metricWindowMs = interval * 1000L;
         errorPercent = triggerCondition.getErrorPercent();
@@ -57,8 +62,10 @@ public class ErrRateCounter extends TriggerCounter {
     @Override
     public void report(boolean success) {
         if (suspended.get()) {
+            LOG.debug("[CircuitBreaker][Counter] errRateCounter {} suspended, skip report", ruleName);
             return;
         }
+        LOG.debug("[CircuitBreaker][Counter] errRateCounter: add requestCount 1, success {}", success);
         sliceWindow.addGauge((bucket -> {
             if (!success) {
                 bucket.addMetric(Dimension.keyFailCount.ordinal(), 1);
@@ -66,6 +73,8 @@ public class ErrRateCounter extends TriggerCounter {
             return bucket.addMetric(Dimension.keyRequestCount.ordinal(), 1);
         }));
         if (!success && scheduled.compareAndSet(false, true)) {
+            LOG.info("[CircuitBreaker][Counter] errRateCounter: trigger error rate callback on failure, name {}",
+                    ruleName);
             executorService.schedule(new StateCheckTask(), metricWindowMs, TimeUnit.MILLISECONDS);
         }
     }
@@ -83,6 +92,8 @@ public class ErrRateCounter extends TriggerCounter {
             long currentTimeMs = System.currentTimeMillis();
             TimeRange timeRange = new TimeRange(currentTimeMs - metricWindowMs, currentTimeMs);
             long requestCount = sliceWindow.calcMetricsBothIncluded(Dimension.keyRequestCount.ordinal(), timeRange);
+            LOG.info("[CircuitBreaker][Counter] errRateCounter: requestCount {}, minimumRequest {}, name {}",
+                    requestCount, minimumRequest, ruleName);
             if (requestCount < minimumRequest) {
                 scheduled.set(false);
                 return;
