@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
 /**
  * @author lepdou 2022-03-08
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ConfigFileManagerTest {
 
     @Mock
