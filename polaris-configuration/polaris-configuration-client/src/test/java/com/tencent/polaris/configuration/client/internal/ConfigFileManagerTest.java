@@ -25,6 +25,7 @@ import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactory;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactoryManager;
 
+import com.tencent.polaris.configuration.client.factory.ConfigFilePublishFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,6 +48,8 @@ public class ConfigFileManagerTest {
 
     @Mock
     private ConfigFileFactory        configFileFactory;
+    @Mock
+    private ConfigFilePublishFactory configFilePublishFactory;
     @Mock
     private ConfigFileFactoryManager configFileFactoryManager;
     @InjectMocks
@@ -133,7 +136,7 @@ public class ConfigFileManagerTest {
     public void testReleaseConfigFile() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
-        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).releaseConfigFile(configFileMetadata);
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).releaseConfigFile(configFileMetadata);
 
         defaultConfigFileManager.releaseConfigFile(configFileMetadata);
     }
