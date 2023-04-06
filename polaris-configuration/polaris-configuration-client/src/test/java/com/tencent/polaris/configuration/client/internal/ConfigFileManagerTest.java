@@ -34,6 +34,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -99,5 +100,41 @@ public class ConfigFileManagerTest {
         verify(configFileFactory).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
         Assert.assertEquals(mockedConfigFile, configFile2);
 
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreateConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).createConfigFile(configFileMetadata, "content");
+
+        defaultConfigFileManager.createConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).updateConfigFile(configFileMetadata, "content");
+
+        defaultConfigFileManager.updateConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpsertConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).upsertConfigFile(configFileMetadata, "content");
+
+        defaultConfigFileManager.upsertConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testReleaseConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).releaseConfigFile(configFileMetadata);
+
+        defaultConfigFileManager.releaseConfigFile(configFileMetadata);
     }
 }
