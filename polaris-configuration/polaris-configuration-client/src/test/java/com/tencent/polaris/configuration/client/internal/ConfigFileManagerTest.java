@@ -109,7 +109,7 @@ public class ConfigFileManagerTest {
     public void testCreateConfigFile() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
-        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).createConfigFile(configFileMetadata, "content");
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).createConfigFile(configFileMetadata, "content");
 
         defaultConfigFileManager.createConfigFile(configFileMetadata, "content");
     }
@@ -118,7 +118,7 @@ public class ConfigFileManagerTest {
     public void testUpdateConfigFile() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
-        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).updateConfigFile(configFileMetadata, "content");
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).updateConfigFile(configFileMetadata, "content");
 
         defaultConfigFileManager.updateConfigFile(configFileMetadata, "content");
     }
@@ -127,7 +127,7 @@ public class ConfigFileManagerTest {
     public void testUpsertConfigFile() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
-        doThrow(new RuntimeException("test")).when(defaultConfigFileManager).upsertConfigFile(configFileMetadata, "content");
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).upsertConfigFile(configFileMetadata, "content");
 
         defaultConfigFileManager.upsertConfigFile(configFileMetadata, "content");
     }

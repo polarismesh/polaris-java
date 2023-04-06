@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.configuration.client;
 
-import com.tencent.polaris.configuration.api.core.ConfigFile;
+import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import org.junit.Test;
@@ -26,11 +26,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.mockito.Mockito.doThrow;
+
 /**
  * @author fabian4 2023-04-06
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ConfigFilePublishServiceTest {
+
+    @Mock
+    private ConfigFileManager configFileManager;
 
     @InjectMocks
     private DefaultConfigFilePublishService defaultConfigFilePublishService;
@@ -153,5 +158,77 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void testReleaseFileNameBlank2() {
         defaultConfigFilePublishService.releaseConfigFile(new DefaultConfigFileMetadata("somenamespace", "somegroup", ""));
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreateConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).createConfigFile(configFileMetadata, "content");
+
+        defaultConfigFilePublishService.createConfigFile("testNamespace", "testGroup", "testFile", "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreateConfigFile2() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).createConfigFile(configFileMetadata, "content");
+
+        defaultConfigFilePublishService.createConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).updateConfigFile(configFileMetadata, "content");
+
+        defaultConfigFilePublishService.updateConfigFile("testNamespace", "testGroup", "testFile", "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateConfigFile2() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).updateConfigFile(configFileMetadata, "content");
+
+        defaultConfigFilePublishService.updateConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpsertConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).upsertConfigFile(configFileMetadata, "content");
+
+        defaultConfigFilePublishService.upsertConfigFile("testNamespace", "testGroup", "testFile", "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpsertConfigFile2() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).upsertConfigFile(configFileMetadata, "content");
+
+        defaultConfigFilePublishService.upsertConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testReleaseConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).releaseConfigFile(configFileMetadata);
+
+        defaultConfigFilePublishService.releaseConfigFile("testNamespace", "testGroup", "testFile");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testReleaseConfigFile2() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileManager).releaseConfigFile(configFileMetadata);
+
+        defaultConfigFilePublishService.releaseConfigFile(configFileMetadata);
     }
 }
