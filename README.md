@@ -6,8 +6,6 @@
 
 English | [简体中文](./README-zh.md)
 
----
-
 README：
 
 - [Introduction](#introduction)
@@ -63,11 +61,9 @@ A polaris-examples module is included in our project for you to get started with
 
 Developers usually use HTTP or RPC frameworks to develop distributed service. Polaris SDK is already integrated into some development frameworks. If using these frameworks, you can enable Polaris Service Governance functions without using Polaris SDK directly.
 
-- Spring Boot
-  - [spring-cloud-tencent](https://github.com/Tencent/spring-cloud-tencent)
-  - [spring-boot-polaris](https://github.com/polarismesh/spring-boot-polaris)
-- Dubbo
+- [spring cloud](https://github.com/Tencent/spring-cloud-tencent)
+- [spring boot](https://github.com/polarismesh/spring-boot-polaris)
+- dubbo-java
   - [registry, discovery and routing](https://github.com/apache/dubbo-spi-extensions/tree/master/dubbo-registry-extensions)
   - [circuit breaker and rate limiter](https://github.com/apache/dubbo-spi-extensions/tree/master/dubbo-filter-extensions)
-- grpc-java
-  - [grpc-java-polaris](https://github.com/polarismesh/grpc-java-polaris)
+- [grpc-java](https://github.com/polarismesh/grpc-java-polaris)
