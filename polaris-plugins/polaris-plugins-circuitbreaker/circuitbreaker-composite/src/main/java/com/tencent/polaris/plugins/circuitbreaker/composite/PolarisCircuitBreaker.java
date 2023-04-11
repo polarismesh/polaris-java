@@ -20,27 +20,22 @@ package com.tencent.polaris.plugins.circuitbreaker.composite;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
-import com.tencent.polaris.api.plugin.stat.StatInfo;
-import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceResourceProvider;
 import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,11 +46,12 @@ import java.util.function.Function;
 
 public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PolarisCircuitBreaker.class);
-
     private final Map<Level, Map<Resource, ResourceCounters>> countersCache = new HashMap<>();
 
-    private final Map<Resource, ResourceHealthChecker> healthCheckCache = new HashMap<>();
+    private final Map<Resource, ResourceHealthChecker> healthCheckCache = new ConcurrentHashMap<>();
+
+    // service and method resource health checkers
+    private final Map<ServiceKey, Map<Resource, ResourceHealthChecker>> serviceHealthCheckCache = new ConcurrentHashMap<>();
 
     private final ScheduledExecutorService stateChangeExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("circuitbreaker-state-worker"));
@@ -75,6 +71,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     private Map<String, HealthChecker> healthCheckers = Collections.emptyMap();
 
+    private long healthCheckInstanceExpireInterval;
+
+    private long checkPeriod;
+
     @Override
     public CircuitBreakerStatus checkResource(Resource resource) {
         ResourceCounters resourceCounters = getResourceCounters(resource);
@@ -91,6 +91,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     @Override
     public void report(ResourceStat resourceStat) {
+        doReport(resourceStat, true);
+    }
+
+    void doReport(ResourceStat resourceStat, boolean record) {
         Resource resource = resourceStat.getResource();
         if (resource.getLevel() == Level.UNKNOWN) {
             return;
@@ -110,6 +114,22 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         } else {
             resourceCounters.report(resourceStat);
         }
+        addInstanceForHealthCheck(resourceStat.getResource(), record);
+    }
+
+    private void addInstanceForHealthCheck(Resource resource, boolean record) {
+        if (!(resource instanceof InstanceResource)) {
+            return;
+        }
+        InstanceResource instanceResource = (InstanceResource) resource;
+        Map<Resource, ResourceHealthChecker> resourceResourceHealthCheckerMap = serviceHealthCheckCache
+                .get(instanceResource.getService());
+        if (null == resourceResourceHealthCheckerMap) {
+            return;
+        }
+        for (ResourceHealthChecker resourceHealthChecker : resourceResourceHealthCheckerMap.values()) {
+            resourceHealthChecker.addInstance(instanceResource, record);
+        }
     }
 
     @Override
@@ -123,6 +143,14 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         countersCache.put(Level.METHOD, new ConcurrentHashMap<>());
         countersCache.put(Level.GROUP, new ConcurrentHashMap<>());
         countersCache.put(Level.INSTANCE, new ConcurrentHashMap<>());
+        checkPeriod = 0;
+        if (null != ctx) {
+            checkPeriod = ctx.getConfig().getConsumer().getCircuitBreaker().getCheckPeriod();
+        }
+        if (checkPeriod == 0) {
+            checkPeriod = HealthCheckUtils.DEFAULT_CHECK_INTERVAL;
+        }
+        healthCheckInstanceExpireInterval = HealthCheckUtils.CHECK_PERIOD_MULTIPLE * checkPeriod;
     }
 
     @Override
@@ -138,6 +166,24 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         this.serviceResourceProvider = serviceResourceProvider;
     }
 
+    public long getHealthCheckInstanceExpireInterval() {
+        return healthCheckInstanceExpireInterval;
+    }
+
+    // for test
+    public void setHealthCheckInstanceExpireInterval(long healthCheckInstanceExpireInterval) {
+        this.healthCheckInstanceExpireInterval = healthCheckInstanceExpireInterval;
+    }
+
+    public long getCheckPeriod() {
+        return checkPeriod;
+    }
+
+    // for test
+    public void setCheckPeriod(long checkPeriod) {
+        this.checkPeriod = checkPeriod;
+    }
+
     @Override
     protected void doDestroy() {
         stateChangeExecutors.shutdown();
@@ -151,6 +197,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     Map<Resource, ResourceHealthChecker> getHealthCheckCache() {
         return healthCheckCache;
+    }
+
+    Map<ServiceKey, Map<Resource, ResourceHealthChecker>> getServiceHealthCheckCache() {
+        return serviceHealthCheckCache;
     }
 
     Extensions getExtensions() {

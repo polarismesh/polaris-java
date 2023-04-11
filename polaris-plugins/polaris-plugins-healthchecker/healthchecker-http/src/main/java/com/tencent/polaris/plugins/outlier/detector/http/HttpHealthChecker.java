@@ -105,7 +105,7 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider {
             long delayMillis = System.currentTimeMillis() - startTimeMillis;
             int responseCode = conn.getResponseCode();
 
-            RetStatus retStatus = responseCode >= 200 && responseCode < 400 ? RetStatus.RetSuccess : RetStatus.RetFail;
+            RetStatus retStatus = responseCode >= 200 && responseCode < 500 ? RetStatus.RetSuccess : RetStatus.RetFail;
             return new DetectResult(responseCode, delayMillis, retStatus);
         } catch (Exception e) {
             LOG.warn("http detect exception, host:{}, port:{}, error {}", instance.getHost(), instance.getPort(),
