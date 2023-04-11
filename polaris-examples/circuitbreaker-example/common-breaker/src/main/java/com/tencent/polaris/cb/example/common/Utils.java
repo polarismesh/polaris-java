@@ -84,7 +84,7 @@ public class Utils {
 
         // 3. report the invoke result to polaris-java, to eliminate the fail address
         InstanceResource instanceResource = new InstanceResource(new ServiceKey(namespace, service),
-                targetInstance.getHost(), targetInstance.getPort(), sourceService.getServiceKey(), "http");
+                targetInstance.getHost(), targetInstance.getPort(), sourceService.getServiceKey());
         circuitBreakAPI.report(new ResourceStat(instanceResource, httpResult.code, delay));
         System.out.println("success to call report stat");
         return httpResult.message;

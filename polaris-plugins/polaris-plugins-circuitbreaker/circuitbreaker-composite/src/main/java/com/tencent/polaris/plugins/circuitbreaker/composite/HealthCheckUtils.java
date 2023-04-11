@@ -46,7 +46,7 @@ public class HealthCheckUtils {
         if (protocol.equals("udp") || protocol.startsWith("udp/") || protocol.endsWith("/udp")) {
             return Protocol.UDP;
         }
-        return Protocol.TCP;
+        return Protocol.UNKNOWN;
     }
 
 }

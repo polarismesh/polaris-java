@@ -101,7 +101,7 @@ public class ServiceBreakerExample {
             } finally {
                 // report to active health check
                 InstanceResource instanceResource = new InstanceResource(
-                        new ServiceKey(NAMESPACE, SERVICE), LOCAL_HOST, ports[i % 2], null, "http");
+                        new ServiceKey(NAMESPACE, SERVICE), LOCAL_HOST, ports[i % 2], null);
                 circuitBreakAPI.report(new ResourceStat(instanceResource, hasError ? 500 : 200, 10));
             }
             try {

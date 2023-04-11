@@ -192,7 +192,8 @@ public class ResourceHealthChecker {
             }
         } else {
             for (Map.Entry<Node, ProtocolInstance> entry : instances.entrySet()) {
-                if (protocol == entry.getValue().getProtocol()) {
+                Protocol currentProtocol = entry.getValue().getProtocol();
+                if (currentProtocol == Protocol.UNKNOWN || protocol == currentProtocol) {
                     InstanceResource instance = entry.getValue().getInstanceResource();
                     doCheck(createDefaultInstance(instance.getHost(), instance.getPort()), protocol, faultDetectRule);
                 }

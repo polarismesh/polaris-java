@@ -130,7 +130,7 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
             sourceService = routeInfo.getSourceService().getServiceKey();
         }
         Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
-                instance.getHost(), instance.getPort(), sourceService, instance.getProtocol());
+                instance.getHost(), instance.getPort(), sourceService);
         CheckResult check = DefaultCircuitBreakAPI.check(resource, extensions);
         return check.isPass();
     }

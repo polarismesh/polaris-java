@@ -29,6 +29,10 @@ public class InstanceResource extends AbstractResource {
 
     private final String protocol;
 
+    public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService) {
+        this(service, host, port, callerService, "");
+    }
+
     public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService, String protocol) {
         super(service, callerService);
         CommonValidator.validateText(host, "host");
