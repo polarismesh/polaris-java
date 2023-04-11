@@ -25,7 +25,7 @@ public class HealthCheckUtils {
     /**
      * instance expire interval = multiple * check expire period
      */
-    public static int CHECK_PERIOD_MULTIPLE = 3;
+    public static int CHECK_PERIOD_MULTIPLE = 20;
 
     /**
      * default check expire period

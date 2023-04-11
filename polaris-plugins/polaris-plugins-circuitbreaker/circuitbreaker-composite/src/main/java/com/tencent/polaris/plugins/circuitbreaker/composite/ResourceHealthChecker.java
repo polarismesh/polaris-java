@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.DefaultInstance;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -184,10 +185,12 @@ public class ResourceHealthChecker {
         int port = faultDetectRule.getPort();
         if (port > 0) {
             Set<String> hosts = new HashSet<>();
-            for (Node instance : instances.keySet()) {
+            for (Map.Entry<Node, ProtocolInstance> entry : instances.entrySet()) {
+                Node instance = entry.getKey();
                 if (!hosts.contains(instance.getHost())) {
                     hosts.add(instance.getHost());
-                    doCheck(createDefaultInstance(instance.getHost(), port), protocol, faultDetectRule);
+                    boolean success = doCheck(createDefaultInstance(instance.getHost(), port), protocol, faultDetectRule);
+                    entry.getValue().checkSuccess.set(success);
                 }
             }
         } else {
@@ -195,7 +198,9 @@ public class ResourceHealthChecker {
                 Protocol currentProtocol = entry.getValue().getProtocol();
                 if (currentProtocol == Protocol.UNKNOWN || protocol == currentProtocol) {
                     InstanceResource instance = entry.getValue().getInstanceResource();
-                    doCheck(createDefaultInstance(instance.getHost(), instance.getPort()), protocol, faultDetectRule);
+                    boolean success = doCheck(
+                            createDefaultInstance(instance.getHost(), instance.getPort()), protocol, faultDetectRule);
+                    entry.getValue().checkSuccess.set(success);
                 }
             }
         }
@@ -229,13 +234,13 @@ public class ResourceHealthChecker {
         }
     }
 
-    private void doCheck(Instance instance, Protocol protocol, FaultDetectRule faultDetectRule) {
+    private boolean doCheck(Instance instance, Protocol protocol, FaultDetectRule faultDetectRule) {
         HealthChecker healthChecker = healthCheckers.get(protocol.name().toLowerCase());
         if (null == healthChecker) {
             HC_EVENT_LOG
                     .info("plugin not found, skip health check for instance {}:{}, resource {}, protocol {}",
                             instance.getHost(), instance.getPort(), resource, protocol);
-            return;
+            return false;
         }
         DetectResult detectResult = healthChecker.detectInstance(instance, faultDetectRule);
         ResourceStat resourceStat = new ResourceStat(resource, detectResult.getStatusCode(), detectResult.getDelay(),
@@ -245,15 +250,17 @@ public class ResourceHealthChecker {
                         instance.getHost(), instance.getPort(), resource, protocol, detectResult.getStatusCode(),
                         detectResult.getDelay(), detectResult.getRetStatus());
         polarisCircuitBreaker.doReport(resourceStat, false);
+        return resourceStat.getRetStatus() == RetStatus.RetSuccess;
     }
 
     public void cleanInstances() {
         long curTimeMilli = System.currentTimeMillis();
         long expireIntervalMilli = polarisCircuitBreaker.getHealthCheckInstanceExpireInterval();
         for (Map.Entry<Node, ProtocolInstance> entry : instances.entrySet()) {
-            long lastReportMilli = entry.getValue().getLastReportMilli().get();
+            ProtocolInstance protocolInstance = entry.getValue();
+            long lastReportMilli = protocolInstance.getLastReportMilli();
             Node node = entry.getKey();
-            if (curTimeMilli - lastReportMilli >= expireIntervalMilli) {
+            if (!protocolInstance.isCheckSuccess() && curTimeMilli - lastReportMilli >= expireIntervalMilli) {
                 instances.remove(node);
                 HC_EVENT_LOG
                         .info("clean instance from health check tasks, resource {}, expired node {}, lastReportMilli {}",
@@ -282,6 +289,8 @@ public class ResourceHealthChecker {
 
         final AtomicLong lastReportMilli = new AtomicLong(0);
 
+        final AtomicBoolean checkSuccess = new AtomicBoolean(true);
+
         ProtocolInstance(
                 Protocol protocol, InstanceResource instanceResource) {
             this.protocol = protocol;
@@ -297,13 +306,15 @@ public class ResourceHealthChecker {
             return instanceResource;
         }
 
-        public AtomicLong getLastReportMilli() {
-            return lastReportMilli;
+        public long getLastReportMilli() {
+            return lastReportMilli.get();
         }
 
         void doReport() {
             lastReportMilli.set(System.currentTimeMillis());
         }
+
+        boolean isCheckSuccess() {return checkSuccess.get();}
     }
 
 }
