@@ -18,27 +18,26 @@
 package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
 import java.util.Objects;
 
 public class InstanceResource extends AbstractResource {
 
-    private final String host;
+    private final Node node;
 
-    private final int port;
-
-    public InstanceResource(ServiceKey service, String host, int port) {
-        this(service, host, port, null);
-    }
+    private final String protocol;
 
     public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService) {
+        this(service, host, port, callerService, "");
+    }
+
+    public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService, String protocol) {
         super(service, callerService);
-        CommonValidator.validateService(service);
-        CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
         CommonValidator.validateText(host, "host");
-        this.host = host;
-        this.port = port;
+        this.node = new Node(host, port);
+        this.protocol = protocol;
     }
 
     @Override
@@ -47,15 +46,19 @@ public class InstanceResource extends AbstractResource {
     }
 
     public String getHost() {
-        return host;
+        return node.getHost();
     }
 
     public int getPort() {
-        return port;
+        return node.getPort();
     }
 
-    public ServiceKey getService() {
-        return service;
+    public Node getNode() {
+        return node;
+    }
+
+    public String getProtocol() {
+        return protocol;
     }
 
     @Override
@@ -70,20 +73,19 @@ public class InstanceResource extends AbstractResource {
             return false;
         }
         InstanceResource that = (InstanceResource) o;
-        return port == that.port &&
-                Objects.equals(host, that.host);
+        return Objects.equals(node, that.node);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), host, port);
+        return Objects.hash(super.hashCode(), node);
     }
 
     @Override
     public String toString() {
         return "InstanceResource{" +
-                "host='" + host + '\'' +
-                ", port=" + port +
+                "node=" + node +
+                ", protocol='" + protocol + '\'' +
                 "} " + super.toString();
     }
 }

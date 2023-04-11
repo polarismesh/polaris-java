@@ -28,13 +28,17 @@ import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
+import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.Client;
 import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
 import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest;
 import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest.DiscoverRequestType;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse.DiscoverResponseType;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.Response;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Instance;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
@@ -61,6 +65,8 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     private final Map<ServiceKey, CircuitBreakerProto.CircuitBreaker> serviceCircuitBreakers = new ConcurrentHashMap<>();
 
+    private final Map<ServiceKey, FaultDetectorProto.FaultDetector> serviceFaultDetectors = new ConcurrentHashMap<>();
+
     private final Map<ServiceKey, RateLimitProto.RateLimit> serviceRateLimits = new ConcurrentHashMap<>();
 
     public void addService(ServiceKey serviceKey) {
@@ -77,6 +83,10 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     public void setRateLimit(ServiceKey serviceKey, RateLimit rateLimit) {
         serviceRateLimits.put(serviceKey, rateLimit);
+    }
+
+    public void setFaultDetector(ServiceKey serviceKey, FaultDetectorProto.FaultDetector faultDetector) {
+        serviceFaultDetectors.put(serviceKey, faultDetector);
     }
 
     public static class InstanceParameter {
@@ -357,6 +367,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
         ResponseProto.DiscoverResponse.Builder builder = ResponseProto.DiscoverResponse.newBuilder();
         builder.setCode(UInt32Value.newBuilder().setValue(code).build());
 
+        FaultDetectorProto.FaultDetector faultDetector;
         CircuitBreakerProto.CircuitBreaker circuitBreaker;
         RateLimitProto.RateLimit rateLimit;
         RoutingProto.Routing routing;
@@ -393,6 +404,14 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                     service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
                 }
                 builder.setType(DiscoverResponseType.CIRCUIT_BREAKER);
+                break;
+            case FAULT_DETECTOR:
+                faultDetector = serviceFaultDetectors.get(serviceKey);
+                if (null != faultDetector) {
+                    builder.setFaultDetector(faultDetector);
+                    service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
+                }
+                builder.setType(DiscoverResponseType.FAULT_DETECTOR);
                 break;
             case RATE_LIMIT:
                 rateLimit = serviceRateLimits.get(serviceKey);
@@ -477,4 +496,9 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
     }
 
 
+    @Override
+    public void reportClient(Client request, StreamObserver<Response> responseObserver) {
+        responseObserver.onNext(Response.newBuilder().setCode(UInt32Value.newBuilder().
+                setValue(ServerCodes.EXECUTE_SUCCESS).build()).build());
+    }
 }
