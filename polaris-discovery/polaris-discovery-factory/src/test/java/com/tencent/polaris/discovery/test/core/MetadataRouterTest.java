@@ -194,6 +194,11 @@ public class MetadataRouterTest {
         try (ConsumerAPI consumer = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             // 该服务下有两个实例，都不健康，且只有一个实例满足metadata路由，
             // 降级策略采用默认返回所有非metadata健康实例，故只返回不满足metadata的那个实例
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (int i = 0; i < 10; i++) {
                 GetOneInstanceRequest getInstances2 = new GetOneInstanceRequest();
                 getInstances2.setNamespace(NAMESPACE_PRODUCTION);
