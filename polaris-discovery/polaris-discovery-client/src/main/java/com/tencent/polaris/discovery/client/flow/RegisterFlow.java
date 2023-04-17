@@ -49,7 +49,7 @@ public class RegisterFlow {
 
     public RegisterFlow(SDKContext sdkContext) {
         this.sdkContext = sdkContext;
-        this.asyncRegisterExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("async-register"));
+        this.asyncRegisterExecutor = new ScheduledThreadPoolExecutor(4, new NamedThreadFactory("async-register"));
     }
 
     public InstanceRegisterResponse registerInstance(InstanceRegisterRequest request, RegisterFunction registerFunction,
