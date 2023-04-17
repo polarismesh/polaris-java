@@ -64,6 +64,7 @@ Developers usually use HTTP or RPC frameworks to develop distributed service. Po
 - [spring cloud](https://github.com/Tencent/spring-cloud-tencent)
 - [spring boot](https://github.com/polarismesh/spring-boot-polaris)
 - dubbo-java
-  - [registry, discovery and routing](https://github.com/apache/dubbo-spi-extensions/tree/master/dubbo-registry-extensions)
+  - [registry and discovery](https://github.com/apache/dubbo-spi-extensions/tree/master/dubbo-registry-extensions)
+  - [routing and load balance](https://github.com/apache/dubbo-spi-extensions/tree/master/dubbo-cluster-extensions)
   - [circuit breaker and rate limiter](https://github.com/apache/dubbo-spi-extensions/tree/master/dubbo-filter-extensions)
 - [grpc-java](https://github.com/polarismesh/grpc-java-polaris)
