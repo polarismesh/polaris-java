@@ -208,7 +208,7 @@ public class ConsumerTest {
                 request.setNamespace(NAMESPACE_TEST);
                 request.setService(validParam.getServiceName());
 
-                InstancesResponse instancesResponse = consumerAPI.getAllInstance(request);
+                InstancesResponse instancesResponse = consumerAPI.getAllInstances(request);
                 Assert.assertEquals(validParam.getCountAll(), instancesResponse.getInstances().length);
                 Assert.assertEquals(validParam.getCountHasWeight() * 100, instancesResponse.getTotalWeight());
             }

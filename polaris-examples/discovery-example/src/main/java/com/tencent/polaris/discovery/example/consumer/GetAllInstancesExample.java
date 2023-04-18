@@ -34,7 +34,7 @@ public class GetAllInstancesExample {
             GetAllInstancesRequest allInstancesRequest = new GetAllInstancesRequest();
             allInstancesRequest.setNamespace(namespace);
             allInstancesRequest.setService(service);
-            InstancesResponse instancesResponse = consumerAPI.getAllInstance(allInstancesRequest);
+            InstancesResponse instancesResponse = consumerAPI.getAllInstances(allInstancesRequest);
             System.out.println("instances count is " + instancesResponse.getInstances().length);
         }
     }
