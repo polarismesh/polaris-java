@@ -121,6 +121,9 @@ public class SystemConfigImpl implements SystemConfig {
         if (null == flowCache) {
             flowCache = new FlowCacheConfigImpl();
         }
+        if (null == flowConfig) {
+            flowConfig = new FlowConfigImpl();
+        }
         if (null != defaultObject) {
             SystemConfig systemConfig = (SystemConfig) defaultObject;
             discoverCluster.setDefault(systemConfig.getDiscoverCluster());
