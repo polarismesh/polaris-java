@@ -20,6 +20,7 @@ package com.tencent.polaris.discovery.client.api;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
@@ -56,8 +57,6 @@ import org.slf4j.Logger;
  */
 public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultConsumerAPI.class);
-
     private final Configuration config;
 
     private final SyncFlow syncFlow = new SyncFlow();
@@ -66,32 +65,34 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
 
     private final WatchFlow watchFlow = new WatchFlow();
 
+    private final DiscoveryFlow discoveryFlow;
+
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
+        discoveryFlow = DiscoveryFlow.loadDiscoveryFlow(config.getGlobal().getSystem().getFlowConfig().getName());
     }
 
     @Override
     protected void subInit() throws PolarisException {
+        discoveryFlow.setSDKContext(sdkContext);
         syncFlow.init(sdkContext.getExtensions());
         asyncFlow.init(syncFlow);
         watchFlow.init(sdkContext.getExtensions(), syncFlow);
     }
 
     @Override
-    public InstancesResponse getAllInstance(GetAllInstancesRequest req) throws PolarisException {
+    public InstancesResponse getAllInstances(GetAllInstancesRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetAllInstancesRequest(req);
-        CommonInstancesRequest allRequest = new CommonInstancesRequest(req, config);
-        return syncFlow.commonSyncGetAllInstances(allRequest);
+        return discoveryFlow.getAllInstances(req);
     }
 
     @Override
     public InstancesResponse getHealthyInstances(GetHealthyInstancesRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetHealthyInstancesRequest(req);
-        CommonInstancesRequest healthyRequest = new CommonInstancesRequest(req, config);
-        return syncFlow.commonSyncGetInstances(healthyRequest);
+        return discoveryFlow.getHealthyInstances(req);
     }
 
     @Override
@@ -130,8 +131,7 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public InstancesFuture asyncGetAllInstances(GetAllInstancesRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetAllInstancesRequest(req);
-        CommonInstancesRequest allRequest = new CommonInstancesRequest(req, config);
-        return asyncFlow.commonAsyncGetAllInstances(allRequest);
+        return discoveryFlow.asyncGetAllInstances(req);
     }
 
     @Override
@@ -145,15 +145,13 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public ServiceRuleResponse getServiceRule(GetServiceRuleRequest request) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetServiceRuleRequest(request);
-        CommonRuleRequest commonRuleRequest = new CommonRuleRequest(request, config);
-        return syncFlow.commonSyncGetServiceRule(commonRuleRequest);
+        return discoveryFlow.getServiceRule(request);
     }
 
     @Override
     public ServicesResponse getServices(GetServicesRequest request) throws PolarisException {
         checkAvailable("ConsumerAPI");
-        CommonServicesRequest commonServicesRequest = new CommonServicesRequest(request, config);
-        return syncFlow.commonSyncGetServices(commonServicesRequest);
+        return discoveryFlow.getServices(request);
     }
 
     @Override

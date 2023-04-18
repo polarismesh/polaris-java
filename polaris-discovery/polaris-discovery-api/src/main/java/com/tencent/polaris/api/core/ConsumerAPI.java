@@ -48,7 +48,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @return 服务实例列表
      * @throws PolarisException 错误码及错误信息
      */
-    InstancesResponse getAllInstance(GetAllInstancesRequest req) throws PolarisException;
+    InstancesResponse getAllInstances(GetAllInstancesRequest req) throws PolarisException;
 
     /**
      * 同步获取健康的服务实例，如果全部实例都不健康，那将会返回全部实例

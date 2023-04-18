@@ -41,7 +41,7 @@ public class GetInstancesExample {
             GetAllInstancesRequest allInstancesRequest = new GetAllInstancesRequest();
             allInstancesRequest.setNamespace(namespace);
             allInstancesRequest.setService(service);
-            InstancesResponse instancesResponse = consumerAPI.getAllInstance(allInstancesRequest);
+            InstancesResponse instancesResponse = consumerAPI.getAllInstances(allInstancesRequest);
             System.out.println("all instances count is " + instancesResponse.getInstances().length);
 
             // Get healthy instance

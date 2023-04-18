@@ -32,6 +32,9 @@ import java.util.Map;
 public class SystemConfigImpl implements SystemConfig {
 
     @JsonProperty
+    private FlowConfigImpl flowConfig;
+
+    @JsonProperty
     private FlowCacheConfigImpl flowCache;
 
     @JsonProperty
@@ -98,6 +101,7 @@ public class SystemConfigImpl implements SystemConfig {
         configCluster.verify();
         healthCheckCluster.verify();
         monitorCluster.verify();
+        flowConfig.verify();
     }
 
     @Override
@@ -124,6 +128,7 @@ public class SystemConfigImpl implements SystemConfig {
             healthCheckCluster.setDefault(systemConfig.getHealthCheckCluster());
             monitorCluster.setDefault(systemConfig.getMonitorCluster());
             flowCache.setDefault(systemConfig.getFlowCache());
+            flowConfig.setDefault(systemConfig.getFlowConfig());
             if (null == variables) {
                 setVariables(systemConfig.getVariables());
             }
@@ -131,10 +136,19 @@ public class SystemConfigImpl implements SystemConfig {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
+    public FlowConfigImpl getFlowConfig() {
+        return flowConfig;
+    }
+
+    public void setFlowConfig(FlowConfigImpl flowConfig) {
+        this.flowConfig = flowConfig;
+    }
+
+    @Override
     public String toString() {
         return "SystemConfigImpl{" +
-                "flowCache=" + flowCache +
+                "flowConfig=" + flowConfig +
+                ", flowCache=" + flowCache +
                 ", discoverCluster=" + discoverCluster +
                 ", configCluster=" + configCluster +
                 ", healthCheckCluster=" + healthCheckCluster +

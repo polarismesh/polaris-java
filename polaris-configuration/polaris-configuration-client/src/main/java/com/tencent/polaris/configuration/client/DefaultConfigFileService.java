@@ -25,6 +25,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
@@ -35,21 +36,17 @@ import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
  */
 public class DefaultConfigFileService extends BaseEngine implements ConfigFileService {
 
-    private ConfigFileManager configFileManager;
+    private final ConfigFileFlow configFileFlow;
 
     public DefaultConfigFileService(SDKContext sdkContext) {
         super(sdkContext);
-    }
-
-    @JustForTest
-    DefaultConfigFileService(SDKContext sdkContext, ConfigFileManager configFileManager) {
-        super(sdkContext);
-        this.configFileManager = configFileManager;
+        this.configFileFlow = ConfigFileFlow.loadConfigFileFlow(
+                sdkContext.getConfig().getGlobal().getSystem().getFlowConfig().getName());
     }
 
     @Override
     protected void subInit() throws PolarisException {
-        configFileManager = DefaultConfigFileManager.getInstance(sdkContext);
+        configFileFlow.setSDKContext(sdkContext);
     }
 
     @Override
@@ -60,7 +57,7 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     @Override
     public ConfigKVFile getConfigPropertiesFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
+        return configFileFlow.getConfigPropertiesFile(configFileMetadata);
     }
 
     @Override
@@ -71,7 +68,7 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     @Override
     public ConfigKVFile getConfigYamlFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Yaml);
+        return configFileFlow.getConfigYamlFile(configFileMetadata);
     }
 
     @Override
@@ -82,7 +79,7 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     @Override
     public ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.getConfigFile(configFileMetadata);
+        return configFileFlow.getConfigTextFile(configFileMetadata);
     }
 
 }

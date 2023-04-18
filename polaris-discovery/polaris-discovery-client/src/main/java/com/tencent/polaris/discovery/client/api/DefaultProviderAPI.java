@@ -4,6 +4,7 @@ import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
+import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
@@ -33,34 +34,25 @@ import org.slf4j.Logger;
  */
 public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultProviderAPI.class);
-    private static final int DEFAULT_INSTANCE_TTL = 5;
-    private final RegisterFlow registerFlow;
-    private ServerConnector serverConnector;
+    private final DiscoveryFlow discoveryFlow;
 
     public DefaultProviderAPI(SDKContext sdkContext) {
         super(sdkContext);
-        registerFlow = new RegisterFlow(sdkContext);
+        discoveryFlow = DiscoveryFlow.loadDiscoveryFlow(
+                sdkContext.getConfig().getGlobal().getSystem().getFlowConfig().getName());
     }
 
     @Override
     protected void subInit() {
-        serverConnector = sdkContext.getExtensions().getServerConnector();
-    }
-
-    private ErrorCode exceptionToErrorCode(Exception exception) {
-        if (exception instanceof PolarisException) {
-            return ((PolarisException) exception).getCode();
-        }
-        return ErrorCode.INTERNAL_ERROR;
+        discoveryFlow.setSDKContext(sdkContext);
     }
 
     @Override
     public InstanceRegisterResponse registerInstance(InstanceRegisterRequest req) throws PolarisException {
-        if (req.getTtl() == null) {
-            req.setTtl(DEFAULT_INSTANCE_TTL);
-        }
-        return registerFlow.registerInstance(req, this::doRegister, this::heartbeat);
+        checkAvailable("ProviderAPI");
+        Validator.validateInstanceRegisterRequest(req);
+        req.setAutoHeartbeat(true);
+        return discoveryFlow.register(req);
     }
 
     @Override
@@ -71,126 +63,23 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
 
     @Override
     public InstanceRegisterResponse register(InstanceRegisterRequest req) throws PolarisException {
-        return doRegister(req, null);
-    }
-
-    private InstanceRegisterResponse doRegister(InstanceRegisterRequest req, Map<String, String> customHeader) {
         checkAvailable("ProviderAPI");
         Validator.validateInstanceRegisterRequest(req);
-
-        enrichInstanceLocation(req);
-
-        long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
-        long timeout = getTimeout(req);
-        while (timeout > 0) {
-            long start = System.currentTimeMillis();
-            ServiceCallResult serviceCallResult = new ServiceCallResult();
-            CommonProviderRequest request = req.getRequest();
-            try {
-                CommonProviderResponse response = serverConnector.registerInstance(request, customHeader);
-                LOG.info("register {}/{} instance {} succ", req.getNamespace(), req.getService(),
-                        response.getInstanceID());
-                serviceCallResult.setRetStatus(RetStatus.RetSuccess);
-                serviceCallResult.setRetCode(ErrorCode.Success.getCode());
-                return new InstanceRegisterResponse(response.getInstanceID(), response.isExists());
-            } catch (PolarisException e) {
-                serviceCallResult.setRetStatus(RetStatus.RetFail);
-                serviceCallResult.setRetCode(exceptionToErrorCode(e).getCode());
-                if (e instanceof RetriableException) {
-                    LOG.warn("instance register request error, retrying.", e);
-                    Utils.sleepUninterrupted(retryInterval);
-                    continue;
-                }
-                throw e;
-            } finally {
-                long delay = System.currentTimeMillis() - start;
-                serviceCallResult.setDelay(delay);
-                reportServerCall(serviceCallResult, request.getTargetServer(), "register");
-                timeout -= delay;
-            }
-        }
-        throw new PolarisException(ErrorCode.API_TIMEOUT, "instance register request timeout.");
+        return discoveryFlow.register(req);
     }
 
     @Override
     public void deRegister(InstanceDeregisterRequest req) throws PolarisException {
         checkAvailable("ProviderAPI");
         Validator.validateInstanceDeregisterRequest(req);
-        RegisterStateManager.removeRegisterState(sdkContext, req);
-        long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
-        long timeout = getTimeout(req);
-        while (timeout > 0) {
-            long start = System.currentTimeMillis();
-            ServiceCallResult serviceCallResult = new ServiceCallResult();
-            CommonProviderRequest request = req.getRequest();
-            try {
-                serverConnector.deregisterInstance(request);
-                serviceCallResult.setRetStatus(RetStatus.RetSuccess);
-                serviceCallResult.setRetCode(ErrorCode.Success.getCode());
-                LOG.info("deregister instance {} succ", req);
-                return;
-            } catch (PolarisException e) {
-                serviceCallResult.setRetStatus(RetStatus.RetFail);
-                serviceCallResult.setRetCode(exceptionToErrorCode(e).getCode());
-                if (e instanceof RetriableException) {
-                    LOG.warn("instance deregister request error, retrying.", e);
-                    Utils.sleepUninterrupted(retryInterval);
-                    continue;
-                }
-                throw e;
-            } finally {
-                long delay = System.currentTimeMillis() - start;
-                serviceCallResult.setDelay(delay);
-                reportServerCall(serviceCallResult, request.getTargetServer(), "deRegister");
-                timeout -= delay;
-            }
-        }
-        throw new PolarisException(ErrorCode.API_TIMEOUT, "instance deregister request timeout.");
+        discoveryFlow.deRegister(req);
     }
 
     @Override
     public void heartbeat(InstanceHeartbeatRequest req) throws PolarisException {
         checkAvailable("ProviderAPI");
         Validator.validateHeartbeatRequest(req);
-
-        long timeout = getTimeout(req);
-        long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
-        while (timeout > 0) {
-            long start = System.currentTimeMillis();
-            ServiceCallResult serviceCallResult = new ServiceCallResult();
-            CommonProviderRequest request = req.getRequest();
-            try {
-                serverConnector.heartbeat(request);
-                serviceCallResult.setRetStatus(RetStatus.RetSuccess);
-                serviceCallResult.setRetCode(ErrorCode.Success.getCode());
-                return;
-            } catch (PolarisException e) {
-                serviceCallResult.setRetStatus(RetStatus.RetFail);
-                serviceCallResult.setRetCode(exceptionToErrorCode(e).getCode());
-                if (e instanceof RetriableException) {
-                    LOG.warn("heartbeat request error, retrying.", e);
-                    Utils.sleepUninterrupted(retryInterval);
-                    continue;
-                }
-                throw e;
-            } finally {
-                long delay = System.currentTimeMillis() - start;
-                serviceCallResult.setDelay(delay);
-                reportServerCall(serviceCallResult, request.getTargetServer(), "heartbeat");
-                timeout -= delay;
-            }
-        }
-        throw new PolarisException(ErrorCode.API_TIMEOUT, "heartbeat request timeout.");
-    }
-
-    private void enrichInstanceLocation(InstanceRegisterRequest request) {
-        if (!StringUtils.isAllEmpty(request.getRegion(), request.getZone(), request.getCampus())) {
-            return;
-        }
-
-        request.setRegion(sdkContext.getValueContext().getValue(LocationLevel.region.name()));
-        request.setZone(sdkContext.getValueContext().getValue(LocationLevel.zone.name()));
-        request.setCampus(sdkContext.getValueContext().getValue(LocationLevel.campus.name()));
+        discoveryFlow.heartbeat(req);
     }
 
 }

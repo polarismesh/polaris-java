@@ -29,6 +29,13 @@ import java.util.Map;
 public interface SystemConfig extends Verifier {
 
     /**
+     * 获取流程名称
+     *
+     * @return flowConfig
+     */
+    FlowConfig getFlowConfig();
+
+    /**
      * 获取流程缓存配置
      *
      * @return flowCacheConfig

@@ -34,6 +34,9 @@ global:
         - metadataRouter
         - nearbyBasedRouter
       lbPolicy: ringHash
+    #描述：流程配置
+    flow:
+      name: default
     #描述: SDK流程数据缓存配置
     flowCache:
       enable: true
