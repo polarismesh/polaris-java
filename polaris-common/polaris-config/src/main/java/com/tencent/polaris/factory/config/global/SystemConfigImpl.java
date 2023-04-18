@@ -32,7 +32,7 @@ import java.util.Map;
 public class SystemConfigImpl implements SystemConfig {
 
     @JsonProperty
-    private FlowConfigImpl flowConfig;
+    private FlowConfigImpl flow;
 
     @JsonProperty
     private FlowCacheConfigImpl flowCache;
@@ -101,7 +101,7 @@ public class SystemConfigImpl implements SystemConfig {
         configCluster.verify();
         healthCheckCluster.verify();
         monitorCluster.verify();
-        flowConfig.verify();
+        flow.verify();
     }
 
     @Override
@@ -121,8 +121,8 @@ public class SystemConfigImpl implements SystemConfig {
         if (null == flowCache) {
             flowCache = new FlowCacheConfigImpl();
         }
-        if (null == flowConfig) {
-            flowConfig = new FlowConfigImpl();
+        if (null == flow) {
+            flow = new FlowConfigImpl();
         }
         if (null != defaultObject) {
             SystemConfig systemConfig = (SystemConfig) defaultObject;
@@ -131,7 +131,7 @@ public class SystemConfigImpl implements SystemConfig {
             healthCheckCluster.setDefault(systemConfig.getHealthCheckCluster());
             monitorCluster.setDefault(systemConfig.getMonitorCluster());
             flowCache.setDefault(systemConfig.getFlowCache());
-            flowConfig.setDefault(systemConfig.getFlowConfig());
+            flow.setDefault(systemConfig.getFlow());
             if (null == variables) {
                 setVariables(systemConfig.getVariables());
             }
@@ -139,18 +139,18 @@ public class SystemConfigImpl implements SystemConfig {
     }
 
     @Override
-    public FlowConfigImpl getFlowConfig() {
-        return flowConfig;
+    public FlowConfigImpl getFlow() {
+        return flow;
     }
 
-    public void setFlowConfig(FlowConfigImpl flowConfig) {
-        this.flowConfig = flowConfig;
+    public void setFlow(FlowConfigImpl flow) {
+        this.flow = flow;
     }
 
     @Override
     public String toString() {
         return "SystemConfigImpl{" +
-                "flowConfig=" + flowConfig +
+                "flow=" + flow +
                 ", flowCache=" + flowCache +
                 ", discoverCluster=" + discoverCluster +
                 ", configCluster=" + configCluster +

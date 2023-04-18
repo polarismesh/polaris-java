@@ -37,7 +37,7 @@ public class DefaultAssemblyAPI extends BaseEngine implements AssemblyAPI {
     public DefaultAssemblyAPI(SDKContext context) {
         super(context);
         assemblyFlow = AssemblyFlow.loadAssemblyFlow(
-                context.getConfig().getGlobal().getSystem().getFlowConfig().getName());
+                context.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override

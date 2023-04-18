@@ -70,7 +70,7 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
-        discoveryFlow = DiscoveryFlow.loadDiscoveryFlow(config.getGlobal().getSystem().getFlowConfig().getName());
+        discoveryFlow = DiscoveryFlow.loadDiscoveryFlow(config.getGlobal().getSystem().getFlow().getName());
     }
 
     @Override

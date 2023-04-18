@@ -37,7 +37,7 @@ public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
 
     public DefaultRouterAPI(SDKContext context) {
         super(context);
-        routerFlow = RouterFlow.loadRouterFlow(context.getConfig().getGlobal().getSystem().getFlowConfig().getName());
+        routerFlow = RouterFlow.loadRouterFlow(context.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override

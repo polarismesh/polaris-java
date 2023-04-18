@@ -37,7 +37,7 @@ public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAP
     public DefaultCircuitBreakAPI(SDKContext sdkContext) {
         super(sdkContext);
         circuitBreakerFlow = CircuitBreakerFlow.loadCircuitBreakerFlow(
-                sdkContext.getConfig().getGlobal().getSystem().getFlowConfig().getName());
+                sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
         sdkContext.getValueContext().setValue(CircuitBreakerFlow.class.getCanonicalName(), circuitBreakerFlow);
     }
 

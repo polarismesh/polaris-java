@@ -39,7 +39,7 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     public DefaultProviderAPI(SDKContext sdkContext) {
         super(sdkContext);
         discoveryFlow = DiscoveryFlow.loadDiscoveryFlow(
-                sdkContext.getConfig().getGlobal().getSystem().getFlowConfig().getName());
+                sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override

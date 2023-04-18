@@ -41,7 +41,7 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     public DefaultConfigFileService(SDKContext sdkContext) {
         super(sdkContext);
         this.configFileFlow = ConfigFileFlow.loadConfigFileFlow(
-                sdkContext.getConfig().getGlobal().getSystem().getFlowConfig().getName());
+                sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override

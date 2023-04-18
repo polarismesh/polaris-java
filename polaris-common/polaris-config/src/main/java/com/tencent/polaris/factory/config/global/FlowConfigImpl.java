@@ -24,8 +24,6 @@ import com.tencent.polaris.factory.util.ConfigUtils;
 
 public class FlowConfigImpl implements FlowConfig {
 
-    String DEFAULT_FLOW_NAME = "default";
-
     @JsonProperty
     private String name;
 
@@ -40,15 +38,15 @@ public class FlowConfigImpl implements FlowConfig {
 
     @Override
     public void verify() {
-        ConfigUtils.validateString(name, "flowCache.name");
+        ConfigUtils.validateString(name, "flow.name");
     }
 
     @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
-            FlowCacheConfig flowCacheConfig = (FlowCacheConfig) defaultObject;
+            FlowConfig flowConfig = (FlowConfig) defaultObject;
             if (null == name) {
-                setName(flowCacheConfig.getName());
+                setName(flowConfig.getName());
             }
         }
     }

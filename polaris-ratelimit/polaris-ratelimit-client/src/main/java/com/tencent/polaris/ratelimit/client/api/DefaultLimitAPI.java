@@ -35,7 +35,7 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
 
     public DefaultLimitAPI(SDKContext sdkContext) {
         super(sdkContext);
-        limitFlow = LimitFlow.loadLimitFlow(sdkContext.getConfig().getGlobal().getSystem().getFlowConfig().getName());
+        limitFlow = LimitFlow.loadLimitFlow(sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override

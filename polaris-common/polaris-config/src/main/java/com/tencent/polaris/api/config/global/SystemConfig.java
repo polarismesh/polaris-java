@@ -33,7 +33,7 @@ public interface SystemConfig extends Verifier {
      *
      * @return flowConfig
      */
-    FlowConfig getFlowConfig();
+    FlowConfig getFlow();
 
     /**
      * 获取流程缓存配置
