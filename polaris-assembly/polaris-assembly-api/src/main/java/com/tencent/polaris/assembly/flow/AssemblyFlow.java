@@ -17,18 +17,14 @@
 
 package com.tencent.polaris.assembly.flow;
 
-import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.assembly.api.pojo.AfterRequest;
 import com.tencent.polaris.assembly.api.pojo.BeforeRequest;
 import com.tencent.polaris.assembly.api.pojo.BeforeResponse;
 import com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest;
 import com.tencent.polaris.assembly.api.pojo.ServiceCallResult;
 import com.tencent.polaris.client.flow.AbstractFlow;
-import java.util.ServiceLoader;
 
 public interface AssemblyFlow extends AbstractFlow {
 
@@ -58,17 +54,6 @@ public interface AssemblyFlow extends AbstractFlow {
 
     default void updateServiceCallResult(ServiceCallResult result) {
 
-    }
-
-    static AssemblyFlow loadAssemblyFlow(String name) {
-        ServiceLoader<AssemblyFlow> discoveryFlows = ServiceLoader.load(AssemblyFlow.class);
-        for (AssemblyFlow discoveryFlow : discoveryFlows) {
-            if (StringUtils.equals(discoveryFlow.getName(), name)) {
-                return discoveryFlow;
-            }
-        }
-        throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                String.format("unknown flow name %s, type is %s", name, AssemblyFlow.class.getCanonicalName()));
     }
 
 }

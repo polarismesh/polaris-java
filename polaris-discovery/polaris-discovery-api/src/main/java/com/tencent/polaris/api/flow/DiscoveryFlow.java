@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.api.flow;
 
-import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
@@ -32,9 +30,7 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.AbstractFlow;
-import java.util.ServiceLoader;
 
 public interface DiscoveryFlow extends AbstractFlow {
 
@@ -78,14 +74,4 @@ public interface DiscoveryFlow extends AbstractFlow {
 
     }
 
-    static DiscoveryFlow loadDiscoveryFlow(String name) {
-        ServiceLoader<DiscoveryFlow> discoveryFlows = ServiceLoader.load(DiscoveryFlow.class);
-        for (DiscoveryFlow discoveryFlow : discoveryFlows) {
-            if (StringUtils.equals(discoveryFlow.getName(), name)) {
-                return discoveryFlow;
-            }
-        }
-       throw new PolarisException(ErrorCode.INVALID_CONFIG,
-               String.format("unknown flow name %s, type %s", name, DiscoveryFlow.class.getCanonicalName()));
-    }
 }

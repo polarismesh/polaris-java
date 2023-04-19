@@ -31,6 +31,7 @@ public class DefaultConfigFileFlow implements ConfigFileFlow {
 
     private ConfigFileManager configFileManager;
 
+
     @Override
     public String getName() {
         return FlowConfig.DEFAULT_FLOW_NAME;
@@ -38,7 +39,11 @@ public class DefaultConfigFileFlow implements ConfigFileFlow {
 
     @Override
     public void setSDKContext(SDKContext sdkContext) {
-        configFileManager = DefaultConfigFileManager.getInstance(sdkContext);
+        setConfigFileManager(DefaultConfigFileManager.getInstance(sdkContext));
+    }
+
+    public void setConfigFileManager(ConfigFileManager configFileManager) {
+        this.configFileManager = configFileManager;
     }
 
     @Override

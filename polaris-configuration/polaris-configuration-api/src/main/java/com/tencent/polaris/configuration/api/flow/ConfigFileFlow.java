@@ -17,14 +17,10 @@
 
 package com.tencent.polaris.configuration.api.flow;
 
-import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.AbstractFlow;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
-import java.util.ServiceLoader;
 
 public interface ConfigFileFlow extends AbstractFlow {
 
@@ -40,14 +36,4 @@ public interface ConfigFileFlow extends AbstractFlow {
         return null;
     }
 
-    static ConfigFileFlow loadConfigFileFlow(String name) {
-        ServiceLoader<ConfigFileFlow> flows = ServiceLoader.load(ConfigFileFlow.class);
-        for (ConfigFileFlow flow : flows) {
-            if (StringUtils.equals(flow.getName(), name)) {
-                return flow;
-            }
-        }
-        throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                String.format("unknown flow name %s, type %s", name, ConfigFileFlow.class.getCanonicalName()));
-    }
 }

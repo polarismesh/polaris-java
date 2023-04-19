@@ -36,6 +36,7 @@ import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.plugin.impl.PluginManager;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.flow.AbstractFlow;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -46,7 +47,6 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -353,5 +353,31 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
     @Override
     public void close() {
         destroy();
+    }
+
+    private static <T extends AbstractFlow> T loadFlow(String name, Class<T> clazz) {
+        ServiceLoader<T> discoveryFlows = ServiceLoader.load(clazz);
+        for (T discoveryFlow : discoveryFlows) {
+            if (StringUtils.equals(discoveryFlow.getName(), name)) {
+                return discoveryFlow;
+            }
+        }
+        throw new PolarisException(ErrorCode.INVALID_CONFIG,
+                String.format("unknown flow name %s, type is %s", name, clazz.getCanonicalName()));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends AbstractFlow> T getOrInitFlow(Class<T> clazz) {
+        synchronized (clazz) {
+            Object flowObject = valueContext.getValue(clazz.getCanonicalName());
+            if (null != flowObject) {
+                return (T)flowObject;
+            }
+            String flowName = configuration.getGlobal().getSystem().getFlow().getName();
+            T flow = loadFlow(flowName, clazz);
+            flow.setSDKContext(this);
+            valueContext.setValue(clazz.getCanonicalName(), flow);
+            return flow;
+        }
     }
 }

@@ -24,4 +24,5 @@ public interface AbstractFlow {
     String getName();
 
     void setSDKContext(SDKContext sdkContext);
+
 }

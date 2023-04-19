@@ -31,16 +31,15 @@ import com.tencent.polaris.ratelimit.client.utils.LimitValidator;
  */
 public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
 
-    private final LimitFlow limitFlow;
+    private LimitFlow limitFlow;
 
     public DefaultLimitAPI(SDKContext sdkContext) {
         super(sdkContext);
-        limitFlow = LimitFlow.loadLimitFlow(sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override
     protected void subInit() {
-        limitFlow.setSDKContext(sdkContext);
+        limitFlow = sdkContext.getOrInitFlow(LimitFlow.class);
     }
 
     @Override

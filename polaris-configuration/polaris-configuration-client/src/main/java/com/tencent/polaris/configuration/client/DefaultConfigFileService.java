@@ -21,13 +21,12 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
-import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
+import com.tencent.polaris.configuration.client.flow.DefaultConfigFileFlow;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
-import com.tencent.polaris.configuration.client.internal.DefaultConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
@@ -36,17 +35,24 @@ import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
  */
 public class DefaultConfigFileService extends BaseEngine implements ConfigFileService {
 
-    private final ConfigFileFlow configFileFlow;
+    private ConfigFileFlow configFileFlow;
 
     public DefaultConfigFileService(SDKContext sdkContext) {
         super(sdkContext);
-        this.configFileFlow = ConfigFileFlow.loadConfigFileFlow(
-                sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
+    }
+
+    @JustForTest
+    DefaultConfigFileService(SDKContext sdkContext, ConfigFileManager configFileManager) {
+        super(sdkContext);
+        this.configFileFlow = new DefaultConfigFileFlow();
+        ((DefaultConfigFileFlow) this.configFileFlow).setConfigFileManager(configFileManager);
     }
 
     @Override
     protected void subInit() throws PolarisException {
-        configFileFlow.setSDKContext(sdkContext);
+        if (null != configFileFlow) {
+            configFileFlow = sdkContext.getOrInitFlow(ConfigFileFlow.class);
+        }
     }
 
     @Override

@@ -32,18 +32,15 @@ import com.tencent.polaris.client.util.CommonValidator;
 
 public class DefaultCircuitBreakAPI extends BaseEngine implements CircuitBreakAPI {
 
-    private final CircuitBreakerFlow circuitBreakerFlow;
+    private CircuitBreakerFlow circuitBreakerFlow;
 
     public DefaultCircuitBreakAPI(SDKContext sdkContext) {
         super(sdkContext);
-        circuitBreakerFlow = CircuitBreakerFlow.loadCircuitBreakerFlow(
-                sdkContext.getConfig().getGlobal().getSystem().getFlow().getName());
-        sdkContext.getValueContext().setValue(CircuitBreakerFlow.class.getCanonicalName(), circuitBreakerFlow);
     }
 
     @Override
     protected void subInit() {
-        circuitBreakerFlow.setSDKContext(sdkContext);
+        circuitBreakerFlow = sdkContext.getOrInitFlow(CircuitBreakerFlow.class);
     }
 
     @Override

@@ -19,59 +19,40 @@ package com.tencent.polaris.assembly.api.pojo;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
-import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
-import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import com.tencent.polaris.api.utils.CollectionUtils;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BeforeResponse extends AttachmentBaseEntity {
 
     private final RetStatus retStatus;
 
-    private final CheckResult checkResult;
-
-    private final InstancesResponse instancesResponse;
-
-    private final ProcessRoutersResponse processRoutersResponse;
-
     private final Instance selectedInstance;
+    
+    private final Map<Capability, Object> capabilityResponses = new HashMap<>();
 
-    private final QuotaResponse quotaResponse;
-
-    public BeforeResponse(RetStatus retStatus, CheckResult checkResult,
-            InstancesResponse instancesResponse,
-            ProcessRoutersResponse processRoutersResponse, Instance selectedInstance,
-            QuotaResponse quotaResponse) {
+    public BeforeResponse(RetStatus retStatus, Instance selectedInstance, Map<Capability, Object> capabilityResponses) {
         this.retStatus = retStatus;
-        this.checkResult = checkResult;
-        this.instancesResponse = instancesResponse;
-        this.processRoutersResponse = processRoutersResponse;
         this.selectedInstance = selectedInstance;
-        this.quotaResponse = quotaResponse;
+        if (!CollectionUtils.isEmpty(capabilityResponses)) {
+            this.capabilityResponses.putAll(capabilityResponses);
+        }
     }
 
     public RetStatus getRetStatus() {
         return retStatus;
     }
 
-    public CheckResult getCheckResult() {
-        return checkResult;
-    }
-
-    public InstancesResponse getInstancesResponse() {
-        return instancesResponse;
-    }
-
-    public ProcessRoutersResponse getProcessRoutersResponse() {
-        return processRoutersResponse;
-    }
 
     public Instance getSelectedInstance() {
         return selectedInstance;
     }
-
-    public QuotaResponse getQuotaResponse() {
-        return quotaResponse;
+    @SuppressWarnings("unchecked")
+    public <T> T getCapabilityResponse(Capability capability) {
+        if (capabilityResponses.containsKey(capability)) {
+            return (T)capabilityResponses.get(capability);
+        }
+        return null;
     }
 
     public static Builder builder() {
@@ -82,33 +63,17 @@ public class BeforeResponse extends AttachmentBaseEntity {
 
         private RetStatus retStatus;
 
-        private CheckResult checkResult;
-
-        private InstancesResponse instancesResponse;
-
-        private ProcessRoutersResponse processRoutersResponse;
+        private final Map<Capability, Object> capabilityResponses = new HashMap<>();
 
         private Instance selectedInstance;
-
-        private QuotaResponse quotaResponse;
 
         public Builder setRetStatus(RetStatus retStatus) {
             this.retStatus = retStatus;
             return this;
         }
 
-        public Builder setCheckResult(CheckResult checkResult) {
-            this.checkResult = checkResult;
-            return this;
-        }
-
-        public Builder setInstancesResponse(InstancesResponse instancesResponse) {
-            this.instancesResponse = instancesResponse;
-            return this;
-        }
-
-        public Builder setProcessRoutersResponse(ProcessRoutersResponse processRoutersResponse) {
-            this.processRoutersResponse = processRoutersResponse;
+        public Builder putCapabilityResponse(Capability capability, Object response) {
+            capabilityResponses.put(capability, response);
             return this;
         }
 
@@ -117,14 +82,8 @@ public class BeforeResponse extends AttachmentBaseEntity {
             return this;
         }
 
-        public Builder setQuotaResponse(QuotaResponse quotaResponse) {
-            this.quotaResponse = quotaResponse;
-            return this;
-        }
-
         public BeforeResponse build() {
-            return new BeforeResponse(
-                    retStatus, checkResult, instancesResponse, processRoutersResponse, selectedInstance, quotaResponse);
+            return new BeforeResponse(retStatus, selectedInstance, capabilityResponses);
         }
     }
 }

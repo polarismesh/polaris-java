@@ -33,16 +33,15 @@ import com.tencent.polaris.router.client.util.RouterValidator;
  */
 public class DefaultRouterAPI extends BaseEngine implements RouterAPI {
 
-    private final RouterFlow routerFlow;
+    private RouterFlow routerFlow;
 
     public DefaultRouterAPI(SDKContext context) {
         super(context);
-        routerFlow = RouterFlow.loadRouterFlow(context.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override
     protected void subInit() {
-        routerFlow.setSDKContext(sdkContext);
+        routerFlow = sdkContext.getOrInitFlow(RouterFlow.class);
     }
 
     @Override

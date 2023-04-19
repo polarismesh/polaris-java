@@ -39,15 +39,11 @@ import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.flow.AsyncFlow;
 import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
-import com.tencent.polaris.discovery.client.flow.CommonRuleRequest;
-import com.tencent.polaris.discovery.client.flow.CommonServicesRequest;
 import com.tencent.polaris.discovery.client.flow.CommonUnWatchServiceRequest;
 import com.tencent.polaris.discovery.client.flow.CommonWatchServiceRequest;
 import com.tencent.polaris.discovery.client.flow.SyncFlow;
 import com.tencent.polaris.discovery.client.flow.WatchFlow;
 import com.tencent.polaris.discovery.client.util.Validator;
-import com.tencent.polaris.logging.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * ConsumerAPI的标准实现
@@ -65,17 +61,16 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
 
     private final WatchFlow watchFlow = new WatchFlow();
 
-    private final DiscoveryFlow discoveryFlow;
+    private DiscoveryFlow discoveryFlow;
 
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
         config = context.getConfig();
-        discoveryFlow = DiscoveryFlow.loadDiscoveryFlow(config.getGlobal().getSystem().getFlow().getName());
     }
 
     @Override
     protected void subInit() throws PolarisException {
-        discoveryFlow.setSDKContext(sdkContext);
+        discoveryFlow = sdkContext.getOrInitFlow(DiscoveryFlow.class);
         syncFlow.init(sdkContext.getExtensions());
         asyncFlow.init(syncFlow);
         watchFlow.init(sdkContext.getExtensions(), syncFlow);

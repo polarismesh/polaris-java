@@ -17,14 +17,10 @@
 
 package com.tencent.polaris.circuitbreak.api.flow;
 
-import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.client.flow.AbstractFlow;
-import java.util.ServiceLoader;
 
 public interface CircuitBreakerFlow extends AbstractFlow {
 
@@ -47,14 +43,4 @@ public interface CircuitBreakerFlow extends AbstractFlow {
 
     }
 
-    static CircuitBreakerFlow loadCircuitBreakerFlow(String name) {
-        ServiceLoader<CircuitBreakerFlow> flows = ServiceLoader.load(CircuitBreakerFlow.class);
-        for (CircuitBreakerFlow flow : flows) {
-            if (StringUtils.equals(flow.getName(), name)) {
-                return flow;
-            }
-        }
-        throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                String.format("unknown flow name %s, type is %s", name, CircuitBreakerFlow.class.getCanonicalName()));
-    }
 }

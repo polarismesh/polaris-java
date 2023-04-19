@@ -17,15 +17,12 @@
 
 package com.tencent.polaris.router.api.flow;
 
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.AbstractFlow;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceRequest;
 import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
-import java.util.ServiceLoader;
 
 public interface RouterFlow extends AbstractFlow {
 
@@ -51,14 +48,4 @@ public interface RouterFlow extends AbstractFlow {
         return null;
     }
 
-    static RouterFlow loadRouterFlow(String name) {
-        ServiceLoader<RouterFlow> routerFlows = ServiceLoader.load(RouterFlow.class);
-        for (RouterFlow discoveryFlow : routerFlows) {
-            if (StringUtils.equals(discoveryFlow.getName(), name)) {
-                return discoveryFlow;
-            }
-        }
-        throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                String.format("unknown flow name %s, type %s", name, RouterFlow.class.getCanonicalName()));
-    }
 }

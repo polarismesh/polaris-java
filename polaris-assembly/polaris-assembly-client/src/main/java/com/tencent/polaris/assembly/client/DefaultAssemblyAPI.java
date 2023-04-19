@@ -32,17 +32,15 @@ import com.tencent.polaris.client.api.SDKContext;
 
 public class DefaultAssemblyAPI extends BaseEngine implements AssemblyAPI {
 
-    private final AssemblyFlow assemblyFlow;
+    private AssemblyFlow assemblyFlow;
 
     public DefaultAssemblyAPI(SDKContext context) {
         super(context);
-        assemblyFlow = AssemblyFlow.loadAssemblyFlow(
-                context.getConfig().getGlobal().getSystem().getFlow().getName());
     }
 
     @Override
     protected void subInit() throws PolarisException {
-        assemblyFlow.setSDKContext(sdkContext);
+        assemblyFlow = sdkContext.getOrInitFlow(AssemblyFlow.class);
     }
 
     @Override

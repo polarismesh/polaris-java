@@ -17,13 +17,10 @@
 
 package com.tencent.polaris.ratelimit.api.flow;
 
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.AbstractFlow;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
-import java.util.ServiceLoader;
 
 public interface LimitFlow extends AbstractFlow {
 
@@ -38,14 +35,4 @@ public interface LimitFlow extends AbstractFlow {
         return null;
     }
 
-    static LimitFlow loadLimitFlow(String name) {
-        ServiceLoader<LimitFlow> flows = ServiceLoader.load(LimitFlow.class);
-        for (LimitFlow flow : flows) {
-            if (StringUtils.equals(flow.getName(), name)) {
-                return flow;
-            }
-        }
-        throw new PolarisException(ErrorCode.INVALID_CONFIG,
-                String.format("unknown flow name %s, type %s", name, LimitFlow.class.getCanonicalName()));
-    }
 }
