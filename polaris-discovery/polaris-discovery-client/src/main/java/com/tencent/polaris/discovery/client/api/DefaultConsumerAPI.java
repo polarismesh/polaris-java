@@ -77,6 +77,11 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     }
 
     @Override
+    public InstancesResponse getAllInstance(GetAllInstancesRequest req) throws PolarisException {
+        return getAllInstances(req);
+    }
+
+    @Override
     public InstancesResponse getAllInstances(GetAllInstancesRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateGetAllInstancesRequest(req);

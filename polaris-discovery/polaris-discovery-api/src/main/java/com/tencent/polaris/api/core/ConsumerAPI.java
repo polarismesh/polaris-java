@@ -42,6 +42,17 @@ import java.io.Closeable;
 public interface ConsumerAPI extends AutoCloseable, Closeable {
 
     /**
+     * Deprecated: please use getAllInstances.
+     *
+     * @param req 请求
+     * @return 服务实例列表
+     * @throws PolarisException 错误码及错误信息
+     */
+    @Deprecated
+    InstancesResponse getAllInstance(GetAllInstancesRequest req) throws PolarisException;
+
+
+    /**
      * 同步获取服务下全量服务列表
      *
      * @param req 请求
@@ -128,7 +139,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @return 服务列表
      * @throws PolarisException 错误码及错误信息
      */
-    ServicesResponse getServices(GetServicesRequest req) throws  PolarisException;
+    ServicesResponse getServices(GetServicesRequest req) throws PolarisException;
 
     /**
      * 监听服务下实例变化
