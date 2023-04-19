@@ -356,10 +356,10 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
     }
 
     private static <T extends AbstractFlow> T loadFlow(String name, Class<T> clazz) {
-        ServiceLoader<T> discoveryFlows = ServiceLoader.load(clazz);
-        for (T discoveryFlow : discoveryFlows) {
-            if (StringUtils.equals(discoveryFlow.getName(), name)) {
-                return discoveryFlow;
+        ServiceLoader<T> flows = ServiceLoader.load(clazz);
+        for (T flow : flows) {
+            if (StringUtils.equals(flow.getName(), name)) {
+                return flow;
             }
         }
         throw new PolarisException(ErrorCode.INVALID_CONFIG,
@@ -371,7 +371,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         synchronized (clazz) {
             Object flowObject = valueContext.getValue(clazz.getCanonicalName());
             if (null != flowObject) {
-                return (T)flowObject;
+                return (T) flowObject;
             }
             String flowName = configuration.getGlobal().getSystem().getFlow().getName();
             T flow = loadFlow(flowName, clazz);
