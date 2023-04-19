@@ -48,6 +48,7 @@
 
     <modules>
         <module>polaris-factory</module>
+        <module>polaris-assembly</module>
         <module>polaris-dependencies</module>
         <module>polaris-common</module>
         <module>polaris-plugins</module>
@@ -64,7 +65,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>1.12.0</revision>
+        <revision>1.13.0-SNAPSHOT</revision>
 
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>

@@ -18,6 +18,7 @@
 package com.tencent.polaris.router.api.rpc;
 
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import java.util.Map;
 
 /**
  * 路由请求处理的应答
@@ -26,12 +27,22 @@ public class ProcessRoutersResponse {
 
     private final ServiceInstances serviceInstances;
 
-    public ProcessRoutersResponse(ServiceInstances serviceInstances) {
+    private final Map<String, String> routeLabels;
 
+    public ProcessRoutersResponse(ServiceInstances serviceInstances) {
+        this(serviceInstances, null);
+    }
+
+    public ProcessRoutersResponse(ServiceInstances serviceInstances, Map<String, String> routeLabels) {
         this.serviceInstances = serviceInstances;
+        this.routeLabels = routeLabels;
     }
 
     public ServiceInstances getServiceInstances() {
         return serviceInstances;
+    }
+
+    public Map<String, String> getRouteLabels() {
+        return routeLabels;
     }
 }

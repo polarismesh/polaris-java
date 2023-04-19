@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.client.api;
 
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +71,16 @@ public interface ServiceCallResultListener {
                 listener.init(sdkContext);
                 serviceCallResultListeners.add(listener);
             }
-            sdkContext.getValueContext().setValue(CONTEXT_KEY_RESULT_LISTENERS, serviceCallResultListeners);
+            final List<ServiceCallResultListener> outListeners = serviceCallResultListeners;
+            sdkContext.registerDestroyHook(new Destroyable() {
+                @Override
+                protected void doDestroy() {
+                        for (ServiceCallResultListener listener : outListeners) {
+                            listener.destroy();
+                        }
+                    }
+                });
+            sdkContext.getValueContext().setValue(CONTEXT_KEY_RESULT_LISTENERS, outListeners);
             return serviceCallResultListeners;
         }
     }

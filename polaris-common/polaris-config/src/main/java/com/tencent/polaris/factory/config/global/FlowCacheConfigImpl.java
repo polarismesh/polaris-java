@@ -90,4 +90,13 @@ public class FlowCacheConfigImpl implements FlowCacheConfig {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "FlowCacheConfigImpl{" +
+                "enable=" + enable +
+                ", expireInterval=" + expireInterval +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }
