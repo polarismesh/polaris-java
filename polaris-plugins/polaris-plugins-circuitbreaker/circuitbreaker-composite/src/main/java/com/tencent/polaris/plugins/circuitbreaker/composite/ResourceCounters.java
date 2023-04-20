@@ -171,6 +171,7 @@ public class ResourceCounters implements StatusChangeHandler {
         circuitBreakerStatusReference.set(newStatus);
         CB_EVENT_LOG.info("previous status {}, current status {}, resource {}, rule {}", preStatus.getStatus(),
                 newStatus.getStatus(), resource, circuitBreaker);
+        reportCircuitStatus();
         int sleepWindow = currentActiveRule.getRecoverCondition().getSleepWindow();
         // add callback after timeout
         stateChangeExecutors.schedule(new Runnable() {
@@ -213,8 +214,8 @@ public class ResourceCounters implements StatusChangeHandler {
                 for (TriggerCounter triggerCounter : counters) {
                     triggerCounter.resume();
                 }
+                reportCircuitStatus();
             }
-            reportCircuitStatus();
         }
     }
 
@@ -225,7 +226,6 @@ public class ResourceCounters implements StatusChangeHandler {
             if (circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
                 toOpen(circuitBreakerStatus, circuitBreakerStatus.getCircuitBreaker());
             }
-            reportCircuitStatus();
         }
     }
 
