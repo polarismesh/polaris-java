@@ -59,7 +59,14 @@ public class RegisterFlow {
         RegisterState registerState = RegisterStateManager.putRegisterState(sdkContext, request);
         if (registerState != null) {
             registerState.setTaskFuture(asyncRegisterExecutor.scheduleWithFixedDelay(
-                    () -> doRunHeartbeat(registerState, registerFunction, heartbeatFunction), request.getTtl(),
+                    () -> {
+                        try {
+                            doRunHeartbeat(registerState, registerFunction, heartbeatFunction);
+                        } catch (Throwable e) {
+                            LOG.error("[AsyncHeartbeat]Re-register instance failed, namespace:{}, service:{}, host:{}, port:{}",
+                                    request.getNamespace(), request.getService(), request.getHost(), request.getPort(), e);
+                        }
+                    }, request.getTtl(),
                     request.getTtl(), TimeUnit.SECONDS));
         }
         return instanceRegisterResponse;
@@ -68,7 +75,7 @@ public class RegisterFlow {
     private void doRunHeartbeat(RegisterState registerState, RegisterFunction registerFunction,
             HeartbeatFunction heartbeatFunction) {
         InstanceRegisterRequest registerRequest = registerState.getInstanceRegisterRequest();
-        LOG.info("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
+        LOG.debug("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
                 registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
                 registerRequest.getPort());
         try {
