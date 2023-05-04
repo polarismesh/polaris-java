@@ -219,6 +219,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             long start = System.currentTimeMillis();
             ServiceCallResult serviceCallResult = new ServiceCallResult();
             CommonProviderRequest request = req.getRequest();
+            request.setTimeoutMs(timeout);
             try {
                 serverConnector.heartbeat(request);
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);

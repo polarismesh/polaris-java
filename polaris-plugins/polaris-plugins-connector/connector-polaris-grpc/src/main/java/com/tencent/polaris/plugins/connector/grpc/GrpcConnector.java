@@ -515,6 +515,7 @@ public class GrpcConnector extends DestroyableServerConnector {
         checkDestroyed();
         Connection connection = null;
         ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
+        long startTimestamp = 0L;
         try {
             waitDiscoverReady();
             connection = connectionManager
@@ -522,7 +523,9 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
-            ResponseProto.Response heartbeatResponse = stub.heartbeat(buildHeartbeatRequest(req));
+            startTimestamp = System.currentTimeMillis();
+            LOG.debug("start heartbeat at {} ms.", startTimestamp);
+            ResponseProto.Response heartbeatResponse = stub.withDeadlineAfter(req.getTimeoutMs(), TimeUnit.MILLISECONDS).heartbeat(buildHeartbeatRequest(req));
             GrpcUtil.checkResponse(heartbeatResponse);
             LOG.debug("received heartbeat response {}", heartbeatResponse);
         } catch (Throwable t) {
@@ -537,6 +540,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                     String.format("fail to heartbeat id %s, host %s:%d service %s",
                             req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), t);
         } finally {
+            long endTimestamp = System.currentTimeMillis();
+            LOG.debug("end heartbeat at {} ms. Diff {} ms", endTimestamp, endTimestamp - startTimestamp);
             if (null != connection) {
                 connection.release(GrpcUtil.OP_KEY_INSTANCE_HEARTBEAT);
             }

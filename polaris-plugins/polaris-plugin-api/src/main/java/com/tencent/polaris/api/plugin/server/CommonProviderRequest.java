@@ -53,6 +53,8 @@ public class CommonProviderRequest {
 
     private String campus;
 
+    private long timeoutMs;
+
     public String getInstanceID() {
         return instanceID;
     }
@@ -181,6 +183,14 @@ public class CommonProviderRequest {
         this.campus = campus;
     }
 
+    public long getTimeoutMs() {
+        return timeoutMs;
+    }
+
+    public void setTimeoutMs(long timeoutMs) {
+        this.timeoutMs = timeoutMs;
+    }
+
     @Override
     public String toString() {
         return "CommonProviderRequest{" +
@@ -196,10 +206,11 @@ public class CommonProviderRequest {
                 ", priority=" + priority +
                 ", metadata=" + metadata +
                 ", ttl=" + ttl +
-                ", zone=" + zone +
-                ", region=" + region +
-                ", campus=" + campus +
+                ", targetServer=" + targetServer +
+                ", zone='" + zone + '\'' +
+                ", region='" + region + '\'' +
+                ", campus='" + campus + '\'' +
+                ", timeoutMs=" + timeoutMs +
                 '}';
     }
-
 }
