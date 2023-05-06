@@ -135,6 +135,23 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- polaris-ratelimit-->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-assembly-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-assembly-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-assembly-factory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-plugins-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
