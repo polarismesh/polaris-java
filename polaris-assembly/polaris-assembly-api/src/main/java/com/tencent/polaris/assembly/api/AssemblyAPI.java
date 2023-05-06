@@ -27,18 +27,49 @@ import com.tencent.polaris.assembly.api.pojo.ServiceCallResult;
 
 public interface AssemblyAPI {
 
+    /**
+     * 主调 pre hook
+     * @param beforeRequest beforeRequest
+     * @return BeforeResponse
+     */
     BeforeResponse beforeCallService(BeforeRequest beforeRequest);
 
+    /**
+     * 主调 post hook
+     * @param afterRequest afterRequest
+     */
     void afterCallService(AfterRequest afterRequest);
 
+    /**
+     * 被调 pre hook
+     * @param beforeRequest beforeRequest
+     * @return BeforeResponse
+     */
     BeforeResponse beforeProcess(BeforeRequest beforeRequest);
 
+    /**
+     * 被调 post hook
+     * @param afterRequest afterRequest
+     */
     void afterProcess(AfterRequest afterRequest);
 
+    /**
+     * 注册前hook
+     * @param serviceKey serviceKey
+     */
     void initService(ServiceKey serviceKey);
 
+    /**
+     * 负载均衡 hook
+     * @param request request
+     * @return Instance
+     */
     Instance getOneInstance(GetOneInstanceRequest request);
 
+    /**
+     *
+     * @param result
+     */
     void updateServiceCallResult(ServiceCallResult result);
 
 }

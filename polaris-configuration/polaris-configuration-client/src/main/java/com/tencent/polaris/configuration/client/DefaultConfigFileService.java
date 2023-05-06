@@ -50,7 +50,7 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
 
     @Override
     protected void subInit() throws PolarisException {
-        if (null != configFileFlow) {
+        if (configFileFlow == null) {
             configFileFlow = sdkContext.getOrInitFlow(ConfigFileFlow.class);
         }
     }
