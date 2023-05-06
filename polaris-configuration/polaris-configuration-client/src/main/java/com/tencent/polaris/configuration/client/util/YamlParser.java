@@ -54,7 +54,7 @@ public class YamlParser {
     private Yaml createYaml() {
         LoaderOptions loadingConfig = new LoaderOptions();
         loadingConfig.setAllowDuplicateKeys(false);
-        return new Yaml(new SafeConstructor(), new Representer(), new DumperOptions(), loadingConfig);
+        return new Yaml(new SafeConstructor(new LoaderOptions()), new Representer(new DumperOptions()), new DumperOptions(), loadingConfig);
     }
 
     private boolean process(MatchCallback callback, Yaml yaml, String content) {
