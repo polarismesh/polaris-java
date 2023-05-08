@@ -179,11 +179,18 @@ public class NacosConnector extends DestroyableServerConnector {
 		if (Objects.nonNull(metadata.get(PropertyKeyConst.CONTEXT_PATH))) {
 			properties.put(PropertyKeyConst.CONTEXT_PATH, metadata.get(PropertyKeyConst.CONTEXT_PATH));
 		}
+		if (Objects.nonNull(metadata.get(PropertyKeyConst.NAMESPACE))) {
+			properties.put(PropertyKeyConst.NAMESPACE, metadata.get(PropertyKeyConst.NAMESPACE));
+		}
 		properties.put(PropertyKeyConst.SERVER_ADDR, String.join(",", config.getAddresses()));
 		return properties;
 	}
 
 	private NamingService getOrCreateNamingService(String namespace) {
+		if(StringUtils.isNotEmpty(this.nacosProperties.getProperty(PropertyKeyConst.NAMESPACE))){
+			namespace = this.nacosProperties.getProperty(PropertyKeyConst.NAMESPACE);
+		}
+
 		NamingService namingService = namingServices.get(namespace);
 		if (namingService != null) {
 			return namingService;
@@ -233,7 +240,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
 	@Override
 	public CommonProviderResponse registerInstance(CommonProviderRequest req,
-			Map<String, String> customHeader) throws PolarisException {
+												   Map<String, String> customHeader) throws PolarisException {
 		CommonProviderResponse response = new CommonProviderResponse();
 
 		if (isRegisterEnable()) {
