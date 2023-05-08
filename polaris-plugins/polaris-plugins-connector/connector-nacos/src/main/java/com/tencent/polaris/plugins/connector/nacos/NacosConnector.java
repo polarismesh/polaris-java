@@ -240,7 +240,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
 	@Override
 	public CommonProviderResponse registerInstance(CommonProviderRequest req,
-					Map<String, String> customHeader) throws PolarisException {
+												   Map<String, String> customHeader) throws PolarisException {
 		CommonProviderResponse response = new CommonProviderResponse();
 
 		if (isRegisterEnable()) {
