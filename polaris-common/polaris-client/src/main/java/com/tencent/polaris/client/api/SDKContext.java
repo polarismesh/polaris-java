@@ -26,17 +26,25 @@ import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Manager;
+import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.TypeProvider;
 import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.plugin.impl.PluginManager;
+import com.tencent.polaris.api.plugin.server.ReportClientRequest;
+import com.tencent.polaris.api.plugin.server.ReportClientResponse;
+import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.stat.ReporterMetaInfo;
+import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.AbstractFlow;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -52,10 +60,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
+
+import com.tencent.polaris.version.Version;
 
 /**
  * SDK初始化相关的上下文信息
@@ -83,6 +97,8 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
     private final Object lock = new Object();
     private final List<Destroyable> destroyHooks = new ArrayList<>();
     private final Collection<ServerServiceInfo> serverServices;
+
+    private final ScheduledExecutorService reportClientExecutorService;
 
     /**
      * 构造器
@@ -116,6 +132,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             services.add(new ServerServiceInfo(ClusterType.MONITOR_CLUSTER, monitorCluster));
         }
         this.serverServices = Collections.unmodifiableCollection(services);
+        this.reportClientExecutorService = Executors.newScheduledThreadPool(4, new NamedThreadFactory("report-client"));
     }
 
     private static String generateClientId(String host) {
@@ -298,6 +315,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         }
         extensions.init(configuration, plugins, valueContext);
         plugins.postContextInitPlugins(extensions);
+        reportClient(extensions);
     }
 
     private boolean clusterAvailable(ClusterConfig clusterConfig) {
@@ -311,6 +329,43 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             return false;
         }
         return true;
+    }
+
+    /**
+     * Report prometheus http server metadata periodic
+     *
+     * @param extensions extensions
+     */
+    private void reportClient(Extensions extensions) {
+        if (reportClientExecutorService != null) {
+            reportClientExecutorService.scheduleAtFixedRate(() -> {
+                ServerConnector serverConnector = extensions.getServerConnector();
+                ReportClientRequest reportClientRequest = new ReportClientRequest();
+                reportClientRequest.setClientHost(extensions.getValueContext().getHost());
+                reportClientRequest.setVersion(Version.VERSION);
+                Collection<Plugin> statPlugins = plugins.getPlugins(PluginTypes.STAT_REPORTER.getBaseType());
+                List<ReporterMetaInfo> reporterMetaInfos = new ArrayList<>();
+                if (null != statPlugins) {
+                    try {
+                        for (Plugin statPlugin : statPlugins) {
+                            if (statPlugin instanceof StatReporter) {
+                                reporterMetaInfos.add(((StatReporter) statPlugin).metaInfo());
+                            }
+                        }
+                    } catch (Exception ex) {
+                        LOG.info("circuit breaker report encountered exception, e: {}", ex.getMessage());
+                    }
+                }
+                reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
+
+                try {
+                    ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
+                    LOG.debug("Report client success, response:{}", reportClientResponse);
+                } catch (PolarisException e) {
+                    LOG.error("Report client failed.", e);
+                }
+            }, 0L, 60L, TimeUnit.SECONDS);
+        }
     }
 
     public Extensions getExtensions() {
@@ -333,6 +388,9 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             }
         }
         plugins.destroyPlugins();
+        if (Objects.nonNull(reportClientExecutorService)) {
+            reportClientExecutorService.shutdown();
+        }
     }
 
     public ValueContext getValueContext() {
