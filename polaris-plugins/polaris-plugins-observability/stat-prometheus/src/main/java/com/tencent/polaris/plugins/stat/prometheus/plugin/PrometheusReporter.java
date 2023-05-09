@@ -130,7 +130,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                 startSchedulePushTask();
             } else {
                 startScheduleAggregationTask();
-                reportClient(extensions);
             }
         }
     }
@@ -234,29 +233,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         }
         if (Objects.nonNull(httpServer)) {
             httpServer.stopServer();
-        }
-    }
-
-    /**
-     * Report prometheus http server metadata periodic
-     *
-     * @param extensions extensions
-     */
-    private void reportClient(Extensions extensions) {
-        if (executorService != null) {
-            executorService.scheduleAtFixedRate(() -> {
-                ServerConnector serverConnector = extensions.getServerConnector();
-                ReportClientRequest reportClientRequest = new ReportClientRequest();
-                reportClientRequest.setClientHost(extensions.getValueContext().getHost());
-                reportClientRequest.setVersion(Version.VERSION);
-                reportClientRequest.setReporterMetaInfos(Collections.singletonList(metaInfo()));
-                try {
-                    ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
-                    LOGGER.debug("Report prometheus http server metadata success, response:{}", reportClientResponse);
-                } catch (PolarisException e) {
-                    LOGGER.error("Report prometheus http server info exception.", e);
-                }
-            }, 0L, 60L, TimeUnit.SECONDS);
         }
     }
 
