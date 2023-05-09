@@ -37,6 +37,7 @@ import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
@@ -66,6 +67,7 @@ public class Extensions {
     private Configuration configuration;
     private CircuitBreaker resourceBreaker;
 
+    private List<StatReporter> statReporters = new ArrayList<>();
     private Supplier plugins;
 
     //系统服务的路由链
@@ -161,6 +163,9 @@ public class Extensions {
         serverConnector = (ServerConnector) plugins.getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
                 valueContext.getServerConnectorProtocol());
 
+        // 加载监控上报
+        loadStatReporters(plugins);
+
         initLocation(config, valueContext);
     }
 
@@ -231,6 +236,15 @@ public class Extensions {
         }
     }
 
+    private void loadStatReporters(Supplier plugins) throws PolarisException {
+        Collection<Plugin> reporters = plugins.getPlugins(PluginTypes.STAT_REPORTER.getBaseType());
+        if (CollectionUtils.isNotEmpty(reporters)) {
+            for (Plugin reporter : reporters) {
+                statReporters.add((StatReporter) reporter);
+            }
+        }
+    }
+
     public Supplier getPlugins() {
         return plugins;
     }
@@ -249,6 +263,10 @@ public class Extensions {
 
     public List<InstanceCircuitBreaker> getInstanceCircuitBreakers() {
         return instanceCircuitBreakers;
+    }
+
+    public List<StatReporter> getStatReporters() {
+        return statReporters;
     }
 
     public List<HealthChecker> getHealthCheckers() {

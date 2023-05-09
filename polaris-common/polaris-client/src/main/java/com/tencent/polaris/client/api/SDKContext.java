@@ -337,35 +337,28 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
      * @param extensions extensions
      */
     private void reportClient(Extensions extensions) {
-        if (reportClientExecutorService != null) {
-            reportClientExecutorService.scheduleAtFixedRate(() -> {
-                ServerConnector serverConnector = extensions.getServerConnector();
-                ReportClientRequest reportClientRequest = new ReportClientRequest();
-                reportClientRequest.setClientHost(extensions.getValueContext().getHost());
-                reportClientRequest.setVersion(Version.VERSION);
-                Collection<Plugin> statPlugins = plugins.getPlugins(PluginTypes.STAT_REPORTER.getBaseType());
-                List<ReporterMetaInfo> reporterMetaInfos = new ArrayList<>();
-                if (null != statPlugins) {
-                    try {
-                        for (Plugin statPlugin : statPlugins) {
-                            if (statPlugin instanceof StatReporter) {
-                                reporterMetaInfos.add(((StatReporter) statPlugin).metaInfo());
-                            }
-                        }
-                    } catch (Exception ex) {
-                        LOG.info("circuit breaker report encountered exception, e: {}", ex.getMessage());
-                    }
+        reportClientExecutorService.scheduleAtFixedRate(() -> {
+            ServerConnector serverConnector = extensions.getServerConnector();
+            ReportClientRequest reportClientRequest = new ReportClientRequest();
+            reportClientRequest.setClientHost(extensions.getValueContext().getHost());
+            reportClientRequest.setVersion(Version.VERSION);
+            List<StatReporter> statPlugins = extensions.getStatReporters();
+            List<ReporterMetaInfo> reporterMetaInfos = new ArrayList<>();
+            for (StatReporter statPlugin : statPlugins) {
+                ReporterMetaInfo reporterMetaInfo = statPlugin.metaInfo();
+                if (StringUtils.isNotBlank(reporterMetaInfo.getProtocol())) {
+                    reporterMetaInfos.add(reporterMetaInfo);
                 }
-                reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
+            }
+            reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
 
-                try {
-                    ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
-                    LOG.debug("Report client success, response:{}", reportClientResponse);
-                } catch (PolarisException e) {
-                    LOG.error("Report client failed.", e);
-                }
-            }, 0L, 60L, TimeUnit.SECONDS);
-        }
+            try {
+                ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
+                LOG.debug("Report client success, response:{}", reportClientResponse);
+            } catch (PolarisException e) {
+                LOG.error("Report client failed.", e);
+            }
+        }, 0L, 60L, TimeUnit.SECONDS);
     }
 
     public Extensions getExtensions() {
