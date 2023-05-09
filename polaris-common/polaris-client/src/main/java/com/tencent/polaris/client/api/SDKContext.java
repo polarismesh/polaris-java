@@ -132,7 +132,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             services.add(new ServerServiceInfo(ClusterType.MONITOR_CLUSTER, monitorCluster));
         }
         this.serverServices = Collections.unmodifiableCollection(services);
-        this.reportClientExecutorService = Executors.newScheduledThreadPool(4, new NamedThreadFactory("report-client"));
+        this.reportClientExecutorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("polaris-report-client"));
     }
 
     private static String generateClientId(String host) {
