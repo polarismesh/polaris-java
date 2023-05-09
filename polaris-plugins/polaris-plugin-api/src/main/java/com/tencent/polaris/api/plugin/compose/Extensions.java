@@ -67,7 +67,7 @@ public class Extensions {
     private Configuration configuration;
     private CircuitBreaker resourceBreaker;
 
-    private List<StatReporter> statReporters = new ArrayList<>();
+    private final List<StatReporter> statReporters = new ArrayList<>();
     private Supplier plugins;
 
     //系统服务的路由链
