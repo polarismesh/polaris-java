@@ -128,14 +128,31 @@ public class Connection {
             if (ref.get() <= 0 && !closed) {
                 LOG.info("connection {}: closed", connID);
                 closed = true;
-                ManagedChannel shutdownChan = channel.shutdownNow();
-                if (null == shutdownChan) {
-                    return;
+                // Gracefully shutdown the gRPC managed-channel.
+                if (channel != null && !channel.isShutdown()) {
+                    try {
+                        channel.shutdown();
+                        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+                            LOG.warn("Timed out gracefully shutting down connection: {}. ", connID);
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Unexpected exception while waiting for channel {} gracefully termination", connID, e);
+                    }
                 }
-                try {
-                    shutdownChan.awaitTermination(100, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LOG.error(String.format("interrupted while closing connection %s", connID), e);
+
+                // Forcefully shutdown if still not terminated.
+                if (channel != null && !channel.isTerminated()) {
+                    try {
+                        channel.shutdownNow();
+                        if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                            LOG.warn("Timed out forcefully shutting down connection: {}. ", connID);
+                        }
+                        LOG.debug("Success to forcefully shutdown connection: {}. ", connID);
+                    } catch (Exception e) {
+                        LOG.error("Unexpected exception while waiting for channel {} forcefully termination", connID, e);
+                    }
+                } else {
+                    LOG.debug("Success to gracefully shutdown connection: {}. ", connID);
                 }
             }
         }
