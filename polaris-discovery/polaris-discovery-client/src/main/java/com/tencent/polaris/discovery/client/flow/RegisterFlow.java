@@ -152,4 +152,8 @@ public class RegisterFlow {
          */
         void doHeartbeat(InstanceHeartbeatRequest request);
     }
+
+	public void destroy() {
+		asyncRegisterExecutor.shutdownNow();
+	}
 }
