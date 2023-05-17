@@ -74,4 +74,6 @@ public interface DiscoveryFlow extends AbstractFlow {
 
     }
 
+	void destroy();
+
 }

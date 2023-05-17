@@ -302,4 +302,11 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
         serviceCallResult.setMethod(method);
         reportInvokeStat(serviceCallResult);
     }
+
+	@Override
+	public void destroy() {
+		if (registerFlow != null) {
+			registerFlow.destroy();
+		}
+	}
 }
