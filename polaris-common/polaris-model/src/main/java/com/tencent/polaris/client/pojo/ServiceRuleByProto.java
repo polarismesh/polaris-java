@@ -43,6 +43,8 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
     private final EventType eventType;
 
+    private Object localValue = null;
+
     public ServiceRuleByProto(Message ruleValue, String revision, boolean loadFromFile, EventType eventType) {
         this.ruleValue = ruleValue;
         this.revision = revision;
@@ -90,5 +92,14 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
         return "ServiceRuleByProto [rule=" + (ruleValue == null ? null : TextFormat.shortDebugString(ruleValue))
                 + ", revision=" + revision + ", initialized="
                 + initialized + ", eventType=" + eventType + "]";
+    }
+
+    public void setLocalValue(Object localValue) {
+        this.localValue = localValue;
+    }
+
+    @Override
+    public Object getLocalValue() {
+        return localValue;
     }
 }

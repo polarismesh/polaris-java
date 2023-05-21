@@ -37,11 +37,14 @@ import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
+import com.tencent.polaris.client.pojo.RateLimitRuleContainer;
+import com.tencent.polaris.client.pojo.RateLimitRuleIndex;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument;
@@ -243,61 +246,79 @@ public class QuotaFlow extends Destroyable {
         if (null == serviceRule || null == serviceRule.getRule()) {
             return null;
         }
-        RateLimit rateLimitProto = (RateLimit) serviceRule.getRule();
-        List<Rule> rulesList = rateLimitProto.getRulesList();
-        if (CollectionUtils.isEmpty(rulesList)) {
+        Object localValue = serviceRule.getLocalValue();
+        if (Objects.isNull(localValue)) {
             return null;
         }
+        RateLimitRuleContainer ruleContainer = (RateLimitRuleContainer) localValue;
+        List<Rule> matchRules = new ArrayList<>();
+        // 递归匹配子规则
+        matchRules(matchRules, method, ruleContainer, arguments);
+        return matchRules;
+    }
+
+    private void matchRules(List<Rule> matchedRules, String method, RateLimitRuleContainer ruleContainer,
+            Map<Integer, Map<String, String>> arguments) {
+        if (ruleContainer == null || CollectionUtils.isEmpty(ruleContainer.getRules())) {
+            return;
+        }
+
+        if (ruleContainer.getRuleIndexMap().isEmpty()) {
+            // 没有建立索引, 按优先级顺序匹配
+            for (Rule rule : ruleContainer.getRules()) {
+                if (matchRuleLabels(rule, method, arguments)) {
+                    matchedRules.add(rule);
+                    return;
+                }
+            }
+        } else {
+            // 索引匹配
+            for (Map.Entry<Integer, RateLimitRuleIndex> entry : ruleContainer.getRuleIndexMap().entrySet()) {
+                RateLimitRuleIndex ruleIndex = entry.getValue();
+                Rule rule = ruleIndex.searchOne(arguments, method, this::matchRuleLabels);
+                if (rule != null) {
+                    matchedRules.add(rule);
+                    return;
+                }
+            }
+        }
+    }
+
+    private boolean matchRuleLabels(Rule rule, String method, Map<Integer, Map<String, String>> arguments) {
         Function<String, Pattern> function = regex -> {
             FlowCache flowCache = rateLimitExtension.getExtensions().getFlowCache();
             return flowCache.loadOrStoreCompiledRegex(regex);
         };
-        List<Rule> matchRules = new ArrayList<>();
-        for (Rule rule : rulesList) {
-            if (Objects.nonNull(rule.getDisable()) && rule.getDisable().getValue()) {
-                LOG.debug("rule(id={}, name={}, revision={}) disable open, ignore", rule.getId().getValue(),
-                        rule.getName().getValue(), rule.getRevision().getValue());
-                continue;
-            }
-            if (rule.getAmountsCount() == 0) {
-                //没有amount的规则就忽略
-                LOG.debug("rule(id={}, name={}, revision={}) amounts count is zero, ignore", rule.getId().getValue(),
-                        rule.getName().getValue(), rule.getRevision().getValue());
-                continue;
-            }
-            //match method
-            MatchString methodMatcher = rule.getMethod();
-            if (Objects.nonNull(methodMatcher)) {
-                boolean matchMethod = RuleUtils.matchStringValue(methodMatcher, method, function);
-                if (!matchMethod) {
-                    continue;
-                }
-            }
-            List<MatchArgument> argumentsList = rule.getArgumentsList();
-            boolean matched = true;
-            if (CollectionUtils.isNotEmpty(argumentsList)) {
-                for (MatchArgument matchArgument : argumentsList) {
-                    Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
-                    if (CollectionUtils.isEmpty(stringStringMap)) {
-                        matched = false;
-                        break;
-                    }
-                    String labelValue = getLabelValue(matchArgument, stringStringMap);
-                    if (null == labelValue) {
-                        matched = false;
-                    } else {
-                        matched = RuleUtils.matchStringValue(matchArgument.getValue(), labelValue, function);
-                    }
-                    if (!matched) {
-                        break;
-                    }
-                }
-            }
-            if (matched) {
-                matchRules.add(rule);
+
+        //match method
+        MatchString methodMatcher = rule.getMethod();
+        if (Objects.nonNull(methodMatcher)) {
+            boolean matchMethod = RuleUtils.matchStringValue(methodMatcher, method, function);
+            if (!matchMethod) {
+                return false;
             }
         }
-        return matchRules;
+        List<MatchArgument> argumentsList = rule.getArgumentsList();
+        boolean matched = true;
+        if (CollectionUtils.isNotEmpty(argumentsList)) {
+            for (MatchArgument matchArgument : argumentsList) {
+                Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
+                if (CollectionUtils.isEmpty(stringStringMap)) {
+                    matched = false;
+                    break;
+                }
+                String labelValue = getLabelValue(matchArgument, stringStringMap);
+                if (null == labelValue) {
+                    matched = false;
+                } else {
+                    matched = RuleUtils.matchStringValue(matchArgument.getValue(), labelValue, function);
+                }
+                if (!matched) {
+                    break;
+                }
+            }
+        }
+        return matched;
     }
 
     private static Map<String, Rule> parseRules(RegistryCacheValue oldValue) {

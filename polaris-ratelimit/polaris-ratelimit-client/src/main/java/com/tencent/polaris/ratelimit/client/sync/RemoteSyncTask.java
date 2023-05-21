@@ -38,6 +38,8 @@ import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitRequest.
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitReportRequest;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitRequest;
 import java.util.Map;
+import java.util.Objects;
+
 import org.slf4j.Logger;
 
 /**
@@ -98,14 +100,6 @@ public class RemoteSyncTask implements Runnable {
         }
     }
 
-    private boolean isInitExpired(InitializeRecord initializeRecord) {
-        if (null == initializeRecord || initializeRecord.getInitStartTimeMilli() == 0) {
-            return true;
-        }
-        return System.currentTimeMillis() - initializeRecord.getInitStartTimeMilli() >= window.getRateLimitConfig()
-                .getRemoteSyncTimeoutMilli();
-    }
-
     /**
      * 发送初始化请求
      */
@@ -120,21 +114,12 @@ public class RemoteSyncTask implements Runnable {
                     window.getRemoteCluster(), window.getRemoteAddresses());
             return;
         }
-        StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
-        //调整时间
-        adjustTime(streamResource);
-
-        InitializeRecord initRecord = streamResource.getInitRecord(serviceIdentifier);
-        if (null == initRecord) {
-            initRecord = streamResource.addInitRecord(serviceIdentifier, window);
-        }
-        if (!isInitExpired(initRecord)) {
-            //未超时，先不初始化
+        StreamResource streamResource = streamCounterSet.preCheckAsync(serviceIdentifier, window);
+        if (Objects.isNull(streamResource)) {
             return;
         }
-        LOG.info("[RateLimit] start to init {}, remote server {}", serviceIdentifier,
-                streamResource.getHostIdentifier());
-        initRecord.setInitStartTimeMilli(System.currentTimeMillis());
+        //调整时间
+        adjustTime(streamResource);
         //执行同步操作
         Builder initRequest = RateLimitInitRequest.newBuilder();
         initRequest.setClientId(window.getWindowSet().getClientId());
@@ -180,7 +165,7 @@ public class RemoteSyncTask implements Runnable {
                     window.getRemoteCluster());
             return;
         }
-        StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
+        StreamResource streamResource = streamCounterSet.checkAndCreateResource();
 
         if (!streamResource.hasInit(serviceIdentifier)) {
             LOG.warn("[doRemoteAcquire] has not inited. serviceKey:{}", window.getSvcKey());

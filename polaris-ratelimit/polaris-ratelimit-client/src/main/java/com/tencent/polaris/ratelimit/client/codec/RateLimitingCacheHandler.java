@@ -24,8 +24,9 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.pojo.RateLimitRuleContainer;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.ratelimit.api.rpc.RateLimitConsts;
+import com.tencent.polaris.client.pojo.RateLimitConsts;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument;
@@ -64,7 +65,11 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
         Collections.reverse(sortedRules);
         RateLimit newRateLimit = RateLimit.newBuilder().addAllRules(sortedRules)
                 .setRevision(StringValue.newBuilder().setValue(revision).build()).build();
-        return new ServiceRuleByProto(newRateLimit, revision, isCacheLoaded, getTargetEventType());
+
+        RateLimitRuleContainer container = new RateLimitRuleContainer(newRateLimit.getRulesList());
+        ServiceRuleByProto ruleByProto = new ServiceRuleByProto(newRateLimit, revision, isCacheLoaded, getTargetEventType());
+        ruleByProto.setLocalValue(container);
+        return ruleByProto;
     }
 
     private static final int RULE_SERVICE_LEVEL = 1;

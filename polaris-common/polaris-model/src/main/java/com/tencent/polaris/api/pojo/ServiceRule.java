@@ -42,4 +42,11 @@ public interface ServiceRule {
      * @return revision
      */
     String getRevision();
+
+    /**
+     * 规则的本地数据
+     *
+     * @return localData 本地数据
+     */
+    Object getLocalValue();
 }

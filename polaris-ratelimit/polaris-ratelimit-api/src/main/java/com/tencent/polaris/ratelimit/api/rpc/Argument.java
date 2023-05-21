@@ -18,13 +18,27 @@
 package com.tencent.polaris.ratelimit.api.rpc;
 
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.pojo.RateLimitConsts;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
+
 import java.util.Map;
 import java.util.Objects;
 
 public class Argument {
 
     public enum ArgumentType {
-        CUSTOM, METHOD, HEADER, QUERY, CALLER_SERVICE, CALLER_IP
+        CUSTOM(RateLimitProto.MatchArgument.Type.CUSTOM),
+        METHOD(RateLimitProto.MatchArgument.Type.METHOD),
+        HEADER(RateLimitProto.MatchArgument.Type.HEADER),
+        QUERY(RateLimitProto.MatchArgument.Type.QUERY),
+        CALLER_SERVICE(RateLimitProto.MatchArgument.Type.CALLER_SERVICE),
+        CALLER_IP(RateLimitProto.MatchArgument.Type.CALLER_IP);
+
+        private final RateLimitProto.MatchArgument.Type type;
+
+        ArgumentType(RateLimitProto.MatchArgument.Type type) {
+            this.type = type;
+        }
     }
 
     private final ArgumentType type;
@@ -100,34 +114,8 @@ public class Argument {
     }
 
     public void toLabel(Map<String, String> labels) {
-        switch (type) {
-            case METHOD: {
-                labels.put(RateLimitConsts.LABEL_KEY_METHOD, value);
-                break;
-            }
-            case CALLER_IP: {
-                labels.put(RateLimitConsts.LABEL_KEY_CALLER_IP, value);
-                break;
-            }
-            case HEADER: {
-                labels.put(RateLimitConsts.LABEL_KEY_HEADER + key, value);
-                break;
-            }
-            case QUERY: {
-                labels.put(RateLimitConsts.LABEL_KEY_QUERY + key, value);
-                break;
-            }
-            case CALLER_SERVICE: {
-                labels.put(RateLimitConsts.LABEL_KEY_CALLER_SERVICE + key, value);
-                break;
-            }
-            case CUSTOM: {
-                labels.put(key, value);
-                break;
-            }
-            default:
-                break;
-        }
+        String key = RateLimitConsts.toLabelKey(type.type, getKey());
+        labels.put(key, value);
     }
 
     @Override

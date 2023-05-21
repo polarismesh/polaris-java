@@ -83,7 +83,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     /**
      * 初始化记录
      */
-    private final Map<ServiceIdentifier, InitializeRecord> initRecord = new ConcurrentHashMap<>();
+    private final Map<ServiceIdentifier, InitializeRecord> initRecords;
 
 
     /**
@@ -113,7 +113,8 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     private final AtomicLong syncInterval = new AtomicLong(RateLimitConstants.TIME_ADJUST_INTERVAL_MS);
 
-    public StreamResource(HostIdentifier identifier) {
+    public StreamResource(HostIdentifier identifier, Map<ServiceIdentifier, InitializeRecord> initRecords) {
+        this.initRecords = initRecords;
         channel = createConnection(identifier);
         hostIdentifier = identifier;
         RateLimitGRPCV2Stub rateLimitGRPCV2Stub = RateLimitGRPCV2Grpc.newStub(channel);
@@ -178,16 +179,23 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     public InitializeRecord addInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
-        if (!initRecord.containsKey(serviceIdentifier)) {
+        if (!initRecords.containsKey(serviceIdentifier)) {
             LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
-            initRecord.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
+            initRecords.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
+        } else {
+            InitializeRecord record = initRecords.get(serviceIdentifier);
+            if (record.getRateLimitWindow() != rateLimitWindow) {  // 存在旧窗口映射关系，说明已经淘汰
+                initRecords.put(serviceIdentifier, new InitializeRecord(rateLimitWindow));
+                RateLimitWindow oldWindow = record.getRateLimitWindow();
+                LOG.warn("remove init record for window {} {}", oldWindow.getUniqueKey(), oldWindow.getStatus());
+            }
         }
-        return initRecord.get(serviceIdentifier);
+        return initRecords.get(serviceIdentifier);
     }
 
     public void deleteInitRecord(ServiceIdentifier serviceIdentifier) {
         LOG.info("[RateLimit] delete init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
-        initRecord.remove(serviceIdentifier);
+        initRecords.remove(serviceIdentifier);
     }
 
     /**
@@ -205,7 +213,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         LimitTarget target = rateLimitInitResponse.getTarget();
         ServiceIdentifier serviceIdentifier = new ServiceIdentifier(target.getService(), target.getNamespace(),
                 target.getLabels());
-        InitializeRecord initializeRecord = initRecord.get(serviceIdentifier);
+        InitializeRecord initializeRecord = initRecords.get(serviceIdentifier);
         if (initializeRecord == null) {
             LOG.error("[handleRateLimitInitResponse] can not find init record:{}", serviceIdentifier);
             return;
@@ -226,8 +234,17 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         RateLimitWindow rateLimitWindow = initializeRecord.getRateLimitWindow();
         countersList.forEach(counter -> {
             initializeRecord.getDurationRecord().putIfAbsent(counter.getDuration(), counter.getCounterKey());
-            counters.putIfAbsent(counter.getCounterKey(),
-                    new DurationBaseCallback(counter.getDuration(), rateLimitWindow));
+//            counters.putIfAbsent(counter.getCounterKey(),
+//                    new DurationBaseCallback(counter.getDuration(), rateLimitWindow));
+            DurationBaseCallback callback =
+                    new DurationBaseCallback(counter.getDuration(), initializeRecord.getRateLimitWindow());
+            DurationBaseCallback pre = getCounters().putIfAbsent(counter.getCounterKey(), callback);
+            if (pre != null && pre.getRateLimitWindow() != initializeRecord.getRateLimitWindow()) {
+                getCounters().put(counter.getCounterKey(), callback);
+                LOG.warn("[handleRateLimitInitResponse] remove counter for window {}, new window {} {}",
+                        pre.getRateLimitWindow().getUniqueKey(), initializeRecord.getRateLimitWindow().getUniqueKey(),
+                        counter.getCounterKey());
+            }
             RemoteQuotaInfo remoteQuotaInfo = new RemoteQuotaInfo(counter.getLeft(), counter.getClientCount(),
                     localQuotaTimeMilli, counter.getDuration() * 1000);
             rateLimitWindow.getAllocatingBucket().onRemoteUpdate(remoteQuotaInfo);
@@ -260,6 +277,11 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
                     localQuotaTimeMilli, callback.getDuration() * 1000);
             callback.getRateLimitWindow().getAllocatingBucket().onRemoteUpdate(remoteQuotaInfo);
         });
+    }
+
+
+    public Map<Integer, DurationBaseCallback> getCounters() {
+        return counters;
     }
 
     public int getClientKey() {
@@ -334,15 +356,15 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     public boolean hasInit(ServiceIdentifier serviceIdentifier) {
-        return initRecord.containsKey(serviceIdentifier);
+        return initRecords.containsKey(serviceIdentifier);
     }
 
     public InitializeRecord getInitRecord(ServiceIdentifier serviceIdentifier) {
-        return initRecord.get(serviceIdentifier);
+        return initRecords.get(serviceIdentifier);
     }
 
     public Integer getCounterKey(ServiceIdentifier serviceIdentifier, Integer duration) {
-        InitializeRecord initializeRecord = initRecord.get(serviceIdentifier);
+        InitializeRecord initializeRecord = initRecords.get(serviceIdentifier);
         if (null == initializeRecord) {
             return null;
         }
