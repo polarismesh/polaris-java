@@ -2,6 +2,9 @@
 
 <Configuration status="WARN">
     <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </Console>
         <RollingFile name="POLARIS_LOG_FILE" fileName="${sys:polaris.log.home}/polaris.log"
                 filePattern="${sys:polaris.log.home}/polaris.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
@@ -65,6 +68,9 @@
     </Appenders>
 
     <Loggers>
+        <Root level="error">
+            <AppenderRef ref="Console"/>
+        </Root>
         <Logger name="com.tencent.polaris"
                 level="${sys:polaris.log.level:-info}"
                 additivity="false">
