@@ -257,9 +257,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                             @Override
                             public void onError(Throwable t) {
                                 countDownLatch.countDown();
-                                LOG.error("[ServerConnector] fail to acquire check event type {}", eventType, t);
-                                throw new PolarisException(ErrorCode.NETWORK_ERROR,
-                                        "[ServerConnector] fail to acquire check event type " + eventType, t);
+                                LOG.warn("[ServerConnector] fail to acquire check event type {}, cause: {}", eventType, t.getMessage());
                             }
 
                             @Override
