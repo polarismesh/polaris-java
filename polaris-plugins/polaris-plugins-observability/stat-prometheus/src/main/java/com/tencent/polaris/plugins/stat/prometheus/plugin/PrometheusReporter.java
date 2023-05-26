@@ -97,6 +97,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     private Extensions extensions;
 
+    private boolean enable;
+
     public PrometheusReporter() {
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
@@ -120,10 +122,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                 .getPluginConfig(getName(), PrometheusHandlerConfig.class);
         this.instanceID = extensions.getValueContext().getClientId();
         this.sdkIP = extensions.getValueContext().getHost();
+        this.enable = extensions.getConfiguration().getGlobal().getStatReporter().isEnable();
         this.initHandle();
     }
 
     void initHandle() {
+        if (!enable) {
+            return;
+        }
         this.executorService = Executors.newScheduledThreadPool(4, new NamedThreadFactory(getName()));
         if (firstHandle.compareAndSet(false, true)) {
             if (Objects.equals(config.getType(), "push")) {
@@ -136,6 +142,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     @Override
     public void reportStat(StatInfo statInfo) {
+        if (!enable) {
+            return;
+        }
         if (Objects.isNull(statInfo)) {
             return;
         }
@@ -195,6 +204,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     @Override
     public ReporterMetaInfo metaInfo() {
+        if (!enable) {
+            return ReporterMetaInfo.builder().build();
+        }
         if (Objects.equals(config.getType(), "push")) {
             return ReporterMetaInfo.builder().
                     build();
@@ -360,5 +372,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
     void setSdkIP(String sdkIP) {
         this.sdkIP = sdkIP;
+    }
+
+    void setEnable(boolean enable) {
+        this.enable = enable;
     }
 }
