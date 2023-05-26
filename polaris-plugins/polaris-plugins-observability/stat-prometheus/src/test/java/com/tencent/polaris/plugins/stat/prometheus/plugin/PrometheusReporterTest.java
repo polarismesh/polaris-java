@@ -75,6 +75,7 @@ public class PrometheusReporterTest {
         config.setAddress(PUSH_DEFAULT_ADDRESS);
         MockPushGateway pgw = new MockPushGateway(PUSH_DEFAULT_ADDRESS);
         handler = new PrometheusReporter();
+        handler.setEnable(true);
         handler.setSdkIP("127.0.0.1");
         handler.setConfig(config);
         handler.setPushGateway(pgw);
