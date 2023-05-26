@@ -373,4 +373,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     void setSdkIP(String sdkIP) {
         this.sdkIP = sdkIP;
     }
+
+    void setEnable(boolean enable) {
+        this.enable = enable;
+    }
 }
