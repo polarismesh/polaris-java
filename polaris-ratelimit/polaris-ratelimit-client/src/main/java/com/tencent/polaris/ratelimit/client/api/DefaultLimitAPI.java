@@ -77,7 +77,7 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
         LimitValidator.validateQuotaRequest(request);
         CommonQuotaRequest commonQuotaRequest = new CommonQuotaRequest(request, sdkContext.getConfig());
         QuotaResponse response = quotaFlow.getQuota(commonQuotaRequest);
-        reportRateLimit(request, response);
+        // reportRateLimit(request, response);
         return response;
     }
 
