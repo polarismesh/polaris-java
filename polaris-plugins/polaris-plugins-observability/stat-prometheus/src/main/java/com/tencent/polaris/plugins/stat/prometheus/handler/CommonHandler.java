@@ -100,9 +100,6 @@ public class CommonHandler {
                 case SystemMetricName.CALLEE_METHOD:
                     addLabel(labelName, insGauge.getMethod(), labels);
                     break;
-                case SystemMetricName.CALLEE_SUBSET:
-                    addLabel(labelName, insGauge.getSubset(), labels);
-                    break;
                 case SystemMetricModel.SystemMetricName.CALLEE_INSTANCE:
                     addLabel(labelName, buildAddress(insGauge.getHost(), insGauge.getPort()), labels);
                     break;
@@ -132,10 +129,6 @@ public class CommonHandler {
                 case SystemMetricName.CALLER_IP:
                     String callerIp = Objects.isNull(insGauge.getCallerIp()) ? sdkIP : insGauge.getCallerIp();
                     addLabel(labelName, callerIp, labels);
-                    break;
-                case SystemMetricName.RULE_NAME:
-                    String ruleName = Objects.isNull(insGauge.getRuleName()) ? null : insGauge.getRuleName();
-                    addLabel(labelName, ruleName, labels);
                     break;
                 default:
             }
