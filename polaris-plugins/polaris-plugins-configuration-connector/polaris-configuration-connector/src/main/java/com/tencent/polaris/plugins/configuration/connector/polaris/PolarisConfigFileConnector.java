@@ -35,6 +35,9 @@ import java.util.concurrent.CompletableFuture;
 public class PolarisConfigFileConnector implements ConfigFileConnector {
 
     private static final String OP_KEY_GET_CONFIG_FILE = "GetConfigFile";
+    private static final String OP_KEY_CREATE_CONFIG_FILE = "CreateConfigFile";
+    private static final String OP_KEY_UPDATE_CONFIG_FILE = "UpdateConfigFile";
+    private static final String OP_KEY_RELEASE_CONFIG_FILE = "ReleaseConfigFile";
 
     private ConnectionManager connectionManager;
 
@@ -44,7 +47,6 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_CONFIG_CLUSTER, readyFuture);
         connectionManager = new ConnectionManager(ctx, ctx.getConfig().getConfigFile().getServerConnector(), futures);
-        OpenapiService.initInstance(ctx);
     }
 
     @Override
@@ -117,18 +119,102 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
     }
 
     @Override
-    public void createConfigFile(ConfigFile configFile) {
-        OpenapiService.INSTANCE.createConfigFile(configFile);
+    public ConfigFileResponse createConfigFile(ConfigFile configFile) {
+        Connection connection = null;
+
+        try {
+            connection = connectionManager.getConnection(OP_KEY_CREATE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
+
+            //grpc 调用
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
+                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            //附加通用 header
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            //执行调用
+            ConfigFileResponseProto.ConfigClientResponse response = stub.createConfigFile(transfer2ConfigFile(configFile));
+
+            return handleResponse(response);
+        } catch (Throwable t) {
+            // 网络访问异常
+            if (connection != null) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+            }
+            throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                    String.format(
+                            "failed to create config file. namespace = %s, group = %s, file = %s, content = %s",
+                            configFile.getNamespace(), configFile.getFileGroup(),
+                            configFile.getFileName(), configFile.getContent()), t);
+        } finally {
+            if (connection != null) {
+                connection.release(OP_KEY_CREATE_CONFIG_FILE);
+            }
+        }
     }
 
     @Override
-    public void updateConfigFile(ConfigFile configFile) {
-        OpenapiService.INSTANCE.updateConfigFile(configFile);
+    public ConfigFileResponse updateConfigFile(ConfigFile configFile) {
+        Connection connection = null;
+
+        try {
+            connection = connectionManager.getConnection(OP_KEY_UPDATE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
+
+            //grpc 调用
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
+                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            //附加通用 header
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            //执行调用
+            ConfigFileResponseProto.ConfigClientResponse response = stub.updateConfigFile(transfer2ConfigFile(configFile));
+
+            return handleResponse(response);
+        } catch (Throwable t) {
+            // 网络访问异常
+            if (connection != null) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+            }
+            throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                    String.format(
+                            "failed to update config file. namespace = %s, group = %s, file = %s, content = %s",
+                            configFile.getNamespace(), configFile.getFileGroup(),
+                            configFile.getFileName(), configFile.getContent()), t);
+        } finally {
+            if (connection != null) {
+                connection.release(OP_KEY_UPDATE_CONFIG_FILE);
+            }
+        }
     }
 
     @Override
-    public void releaseConfigFile(ConfigFile configFile) {
-        OpenapiService.INSTANCE.releaseConfigFile(configFile);
+    public ConfigFileResponse releaseConfigFile(ConfigFile configFile) {
+        Connection connection = null;
+
+        try {
+            connection = connectionManager.getConnection(OP_KEY_RELEASE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
+
+            //grpc 调用
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
+                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            //附加通用 header
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            //执行调用
+            ConfigFileResponseProto.ConfigClientResponse response = stub.publishConfigFile(transfer2ConfigFileRelease(configFile));
+
+            return handleResponse(response);
+        } catch (Throwable t) {
+            // 网络访问异常
+            if (connection != null) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+            }
+            throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                    String.format(
+                            "failed to release config file. namespace = %s, group = %s, file = %s",
+                            configFile.getNamespace(), configFile.getFileGroup(),
+                            configFile.getFileName()), t);
+        } finally {
+            if (connection != null) {
+                connection.release(OP_KEY_RELEASE_CONFIG_FILE);
+            }
+        }
     }
 
     @Override
@@ -178,6 +264,27 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         configFile.setVersion(configFileDTO.getVersion().getValue());
 
         return configFile;
+    }
+
+    private ConfigFileProto.ConfigFile transfer2ConfigFile(ConfigFile configFile) {
+        ConfigFileProto.ConfigFile.Builder builder = ConfigFileProto.ConfigFile.newBuilder();
+
+        builder.setNamespace(StringValue.newBuilder().setValue(configFile.getNamespace()).build());
+        builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
+        builder.setName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
+        builder.setContent(StringValue.newBuilder().setValue(configFile.getContent()).build());
+
+        return builder.build();
+    }
+
+    private ConfigFileProto.ConfigFileRelease transfer2ConfigFileRelease(ConfigFile configFile) {
+        ConfigFileProto.ConfigFileRelease.Builder builder = ConfigFileProto.ConfigFileRelease.newBuilder();
+
+        builder.setNamespace(StringValue.newBuilder().setValue(configFile.getNamespace()).build());
+        builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
+        builder.setName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
+
+        return builder.build();
     }
 
     private ConfigFileResponse handleResponse(ConfigFileResponseProto.ConfigClientResponse response) {

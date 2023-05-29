@@ -76,7 +76,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <jackson.version>2.14.2</jackson.version>
-        <specification.version>1.1.0</specification.version>
+        <specification.version>1.3.2-SNAPSHOT</specification.version>
         <consul.version>1.4.5</consul.version>
         <nacos.version>2.1.1</nacos.version>
         <javax.annotation.version>1.3.2</javax.annotation.version>
