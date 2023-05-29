@@ -73,7 +73,7 @@ public class DefaultLimitFlow implements LimitFlow {
     public QuotaResponse getQuota(QuotaRequest request) {
         CommonQuotaRequest commonQuotaRequest = new CommonQuotaRequest(request, sdkContext.getConfig());
         QuotaResponse response = quotaFlow.getQuota(commonQuotaRequest);
-        reportRateLimit(request, response);
+        // reportRateLimit(request, response);
         return response;
     }
 
