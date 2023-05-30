@@ -356,4 +356,5 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     void setEnable(boolean enable) {
         this.enable = enable;
     }
+
 }
