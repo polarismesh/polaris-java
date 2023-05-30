@@ -291,8 +291,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 					LOGGER.info("init push-gateway {} ", config.getAddress());
 					pushGateway = new PushGateway(config.getAddress());
 				}
-				pushGateway.pushAdd(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
-						Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID), config.isOpenGzip());
+				if (config.isOpenGzip()) {
+					pushGateway.pushAddByGzip(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
+							Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID));
+				} else {
+					pushGateway.pushAdd(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
+							Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID));
+				}
+
 				LOGGER.info("push result to push-gateway {} success, open gzip {}", config.getAddress(), config.isOpenGzip());
 			} catch (IOException exception) {
 				LOGGER.error("push result to push-gateway {} open gzip {} encountered exception, exception:{}",
