@@ -430,7 +430,28 @@ public class PrometheusReporterTest {
             super(address);
         }
 
-        public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey, boolean openGzip) {
+        public void pushAddByGzip(CollectorRegistry registry, String job, Map<String, String> groupingKey) {
+            LOG.info("mock push-gateway push with groupKey...");
+            Enumeration<MetricFamilySamples> enumeration = registry.metricFamilySamples();
+            if (null == enumeration) {
+                return;
+            }
+
+            if (enumeration.hasMoreElements()) {
+                while (enumeration.hasMoreElements()) {
+                    Collector.MetricFamilySamples samples = enumeration.nextElement();
+                    if (samples.samples.isEmpty()) {
+                        LOG.info("mock pgw-{} metric name {} no sample.", super.gatewayBaseURL, samples.name);
+                        continue;
+                    }
+                    for (Collector.MetricFamilySamples.Sample sample : samples.samples) {
+                        LOG.info("mock pgw-{} exposed sample: {}", super.gatewayBaseURL, sample);
+                    }
+                }
+            }
+        }
+
+        public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey) {
             LOG.info("mock push-gateway push with groupKey...");
             Enumeration<MetricFamilySamples> enumeration = registry.metricFamilySamples();
             if (null == enumeration) {
