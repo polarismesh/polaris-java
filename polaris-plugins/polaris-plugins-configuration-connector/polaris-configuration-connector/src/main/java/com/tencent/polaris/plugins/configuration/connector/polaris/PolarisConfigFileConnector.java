@@ -282,7 +282,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
 
         builder.setNamespace(StringValue.newBuilder().setValue(configFile.getNamespace()).build());
         builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
-        builder.setName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
+        builder.setFileName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
 
         return builder.build();
     }
