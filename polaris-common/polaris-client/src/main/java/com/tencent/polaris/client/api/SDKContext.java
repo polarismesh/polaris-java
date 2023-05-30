@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.client.api;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterConfig;
 import com.tencent.polaris.api.config.global.ClusterType;
@@ -180,9 +183,11 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         try {
             ((ConfigurationImpl) config).setDefault();
             config.verify();
-            LOG.info("SDKContext config{}:\n" + new Yaml().dump(config));
+            ObjectMapper mapper = new JsonMapper();
+            LOG.info("SDKContext config {} ", mapper.writeValueAsString(config));
         } catch (IllegalArgumentException e) {
             throw new PolarisException(ErrorCode.INVALID_CONFIG, "fail to verify configuration", e);
+        } catch (JsonProcessingException ignore) {
         }
         ServiceLoader<TypeProvider> providers = ServiceLoader.load(TypeProvider.class);
         List<PluginType> types = new ArrayList<>();
