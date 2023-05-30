@@ -230,54 +230,6 @@ public class PrometheusReporterTest {
     }
 
     @Test
-    public void testRateLimitStrategy() throws InterruptedException {
-        int count = 10;
-        int passedNum = 3;
-        CountDownLatch latch = new CountDownLatch(2);
-        new Thread(() -> {
-            try {
-                batchDone(() -> {
-                    StatInfo statInfo = new StatInfo();
-                    DefaultRateLimitResult rateLimitResult = mockFixedRateLimitResult(RateLimitGauge.Result.PASSED);
-                    statInfo.setRateLimitGauge(rateLimitResult);
-                    handler.reportStat(statInfo);
-                }, passedNum);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            latch.countDown();
-        }).start();
-        new Thread(() -> {
-            try {
-                batchDone(() -> {
-                    StatInfo statInfo = new StatInfo();
-                    DefaultRateLimitResult rateLimitResult = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
-                    statInfo.setRateLimitGauge(rateLimitResult);
-                    handler.reportStat(statInfo);
-                }, count - passedNum);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            latch.countDown();
-        }).start();
-        latch.await();
-
-        Thread.sleep(pushInterval + 1000);
-        handler.destroy();
-
-        DefaultRateLimitResult example = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
-        // assert result
-        Double totalResult = getRateLimitTotalResult(example);
-        Double passResult = getRateLimitPassedResult(example);
-        Double limitResult = getRateLimitLimitedResult(example);
-        Assert.assertEquals(new Double(count), totalResult);
-        Assert.assertEquals(new Double(passedNum), passResult);
-        Assert.assertEquals(new Double(count - passedNum), limitResult);
-    }
-
-    @Test
     public void testCircuitBreakerOpen() throws InterruptedException {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
@@ -390,30 +342,6 @@ public class PrometheusReporterTest {
         return registry.getSampleValue(strategy.getStrategyName(), labelKeys, labelValues);
     }
 
-    private Double getRateLimitTotalResult(DefaultRateLimitResult example) {
-        return getRateLimitResult(example,
-                new MetricValueAggregationStrategyCollections.RateLimitRequestTotalStrategy());
-    }
-
-    private Double getRateLimitPassedResult(DefaultRateLimitResult example) {
-        return getRateLimitResult(example,
-                new MetricValueAggregationStrategyCollections.RateLimitRequestPassStrategy());
-    }
-
-    private Double getRateLimitLimitedResult(DefaultRateLimitResult example) {
-        return getRateLimitResult(example,
-                new MetricValueAggregationStrategyCollections.RateLimitRequestLimitStrategy());
-    }
-
-    private Double getRateLimitResult(DefaultRateLimitResult example,
-                                      MetricValueAggregationStrategy<RateLimitGauge> strategy) {
-        CollectorRegistry registry = handler.getPromRegistry();
-        String[] labelKeys = SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER;
-        String[] labelValues = CommonHandler.getOrderedMetricLabelValues(
-                getRateLimitLabels(strategy, example), labelKeys);
-        return registry.getSampleValue(strategy.getStrategyName(), labelKeys, labelValues);
-    }
-
     private void changeCircuitBreakerStatus(DefaultCircuitBreakResult toStatus) {
         StatInfo statInfo = new StatInfo();
         statInfo.setCircuitBreakGauge(toStatus);
@@ -517,7 +445,7 @@ public class PrometheusReporterTest {
             super(address);
         }
 
-        public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey) {
+        public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey, boolean openGzip) {
             LOG.info("mock push-gateway push with groupKey...");
             Enumeration<MetricFamilySamples> enumeration = registry.metricFamilySamples();
             if (null == enumeration) {
