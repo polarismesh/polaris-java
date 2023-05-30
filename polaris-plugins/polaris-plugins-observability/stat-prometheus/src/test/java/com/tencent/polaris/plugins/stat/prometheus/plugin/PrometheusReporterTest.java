@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -79,6 +80,7 @@ public class PrometheusReporterTest {
         handler.setSdkIP("127.0.0.1");
         handler.setConfig(config);
         handler.setPushGateway(pgw);
+        handler.setExecutorService(Executors.newScheduledThreadPool(4));
         handler.initHandle();
     }
 
@@ -395,16 +397,6 @@ public class PrometheusReporterTest {
                 "mockCB", status, System.currentTimeMillis());
         circuitBreakResult.setCircuitBreakStatus(circuitBreakerStatus);
         return circuitBreakResult;
-    }
-
-    private DefaultRateLimitResult mockFixedRateLimitResult(RateLimitGauge.Result result) {
-        DefaultRateLimitResult rateLimitResult = new DefaultRateLimitResult();
-        rateLimitResult.setMethod("GET");
-        rateLimitResult.setLabels("a:b|c:d");
-        rateLimitResult.setService("callService");
-        rateLimitResult.setNamespace("callNamespace");
-        rateLimitResult.setResult(result);
-        return rateLimitResult;
     }
 
     private ServiceCallResult mockServiceCallResult() {

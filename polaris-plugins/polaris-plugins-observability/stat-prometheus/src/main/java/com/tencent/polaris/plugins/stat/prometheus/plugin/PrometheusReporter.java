@@ -146,9 +146,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 	}
 
 	public void handle(StatInfo statInfo) {
-		if (Objects.isNull(statInfo)) {
-			return;
-		}
 		if (null != statInfo.getRouterGauge()) {
 			handleRouterGauge(statInfo.getRouterGauge());
 		}
@@ -351,5 +348,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
 	void setEnable(boolean enable) {
 		this.enable = enable;
+	}
+
+	void setExecutorService(ScheduledExecutorService executorService) {
+		this.executorService = executorService;
 	}
 }
