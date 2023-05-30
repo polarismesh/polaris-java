@@ -32,6 +32,7 @@ import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrat
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
+import com.tencent.polaris.plugins.stat.prometheus.exporter.PushGateway;
 import com.tencent.polaris.plugins.stat.prometheus.handler.CommonHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import io.prometheus.client.Collector;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
-import io.prometheus.client.exporter.PushGateway;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -230,54 +230,6 @@ public class PrometheusReporterTest {
     }
 
     @Test
-    public void testRateLimitStrategy() throws InterruptedException {
-        int count = 10;
-        int passedNum = 3;
-        CountDownLatch latch = new CountDownLatch(2);
-        new Thread(() -> {
-            try {
-                batchDone(() -> {
-                    StatInfo statInfo = new StatInfo();
-                    DefaultRateLimitResult rateLimitResult = mockFixedRateLimitResult(RateLimitGauge.Result.PASSED);
-                    statInfo.setRateLimitGauge(rateLimitResult);
-                    handler.reportStat(statInfo);
-                }, passedNum);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            latch.countDown();
-        }).start();
-        new Thread(() -> {
-            try {
-                batchDone(() -> {
-                    StatInfo statInfo = new StatInfo();
-                    DefaultRateLimitResult rateLimitResult = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
-                    statInfo.setRateLimitGauge(rateLimitResult);
-                    handler.reportStat(statInfo);
-                }, count - passedNum);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            latch.countDown();
-        }).start();
-        latch.await();
-
-        Thread.sleep(pushInterval + 1000);
-        handler.destroy();
-
-        DefaultRateLimitResult example = mockFixedRateLimitResult(RateLimitGauge.Result.LIMITED);
-        // assert result
-        Double totalResult = getRateLimitTotalResult(example);
-        Double passResult = getRateLimitPassedResult(example);
-        Double limitResult = getRateLimitLimitedResult(example);
-        Assert.assertEquals(new Double(count), totalResult);
-        Assert.assertEquals(new Double(passedNum), passResult);
-        Assert.assertEquals(new Double(count - passedNum), limitResult);
-    }
-
-    @Test
     public void testCircuitBreakerOpen() throws InterruptedException {
         changeCircuitBreakerStatus(mockFixedCircuitResult(CircuitBreakerStatus.Status.OPEN));
 
@@ -390,30 +342,6 @@ public class PrometheusReporterTest {
         return registry.getSampleValue(strategy.getStrategyName(), labelKeys, labelValues);
     }
 
-    private Double getRateLimitTotalResult(DefaultRateLimitResult example) {
-        return getRateLimitResult(example,
-                new MetricValueAggregationStrategyCollections.RateLimitRequestTotalStrategy());
-    }
-
-    private Double getRateLimitPassedResult(DefaultRateLimitResult example) {
-        return getRateLimitResult(example,
-                new MetricValueAggregationStrategyCollections.RateLimitRequestPassStrategy());
-    }
-
-    private Double getRateLimitLimitedResult(DefaultRateLimitResult example) {
-        return getRateLimitResult(example,
-                new MetricValueAggregationStrategyCollections.RateLimitRequestLimitStrategy());
-    }
-
-    private Double getRateLimitResult(DefaultRateLimitResult example,
-                                      MetricValueAggregationStrategy<RateLimitGauge> strategy) {
-        CollectorRegistry registry = handler.getPromRegistry();
-        String[] labelKeys = SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER;
-        String[] labelValues = CommonHandler.getOrderedMetricLabelValues(
-                getRateLimitLabels(strategy, example), labelKeys);
-        return registry.getSampleValue(strategy.getStrategyName(), labelKeys, labelValues);
-    }
-
     private void changeCircuitBreakerStatus(DefaultCircuitBreakResult toStatus) {
         StatInfo statInfo = new StatInfo();
         statInfo.setCircuitBreakGauge(toStatus);
@@ -446,13 +374,6 @@ public class PrometheusReporterTest {
         return labels;
     }
 
-    private Map<String, String> getRateLimitLabels(MetricValueAggregationStrategy<RateLimitGauge> strategy,
-                                                   RateLimitGauge gauge) {
-        Map<String, String> labels = CommonHandler.convertRateLimitGaugeToLabels(gauge);
-        labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
-        return labels;
-    }
-
     private Map<String, String> getCircuitBreakerLabels(MetricValueAggregationStrategy<CircuitBreakGauge> strategy,
                                                         CircuitBreakGauge gauge) {
         Map<String, String> labels = CommonHandler.convertCircuitBreakToLabels(gauge, handler.getSdkIP());
@@ -474,16 +395,6 @@ public class PrometheusReporterTest {
                 "mockCB", status, System.currentTimeMillis());
         circuitBreakResult.setCircuitBreakStatus(circuitBreakerStatus);
         return circuitBreakResult;
-    }
-
-    private DefaultRateLimitResult mockFixedRateLimitResult(RateLimitGauge.Result result) {
-        DefaultRateLimitResult rateLimitResult = new DefaultRateLimitResult();
-        rateLimitResult.setMethod("GET");
-        rateLimitResult.setLabels("a:b|c:d");
-        rateLimitResult.setService("callService");
-        rateLimitResult.setNamespace("callNamespace");
-        rateLimitResult.setResult(result);
-        return rateLimitResult;
     }
 
     private ServiceCallResult mockServiceCallResult() {
@@ -515,6 +426,27 @@ public class PrometheusReporterTest {
 
         public MockPushGateway(String address) {
             super(address);
+        }
+
+        public void pushAddByGzip(CollectorRegistry registry, String job, Map<String, String> groupingKey) {
+            LOG.info("mock push-gateway push with groupKey...");
+            Enumeration<MetricFamilySamples> enumeration = registry.metricFamilySamples();
+            if (null == enumeration) {
+                return;
+            }
+
+            if (enumeration.hasMoreElements()) {
+                while (enumeration.hasMoreElements()) {
+                    Collector.MetricFamilySamples samples = enumeration.nextElement();
+                    if (samples.samples.isEmpty()) {
+                        LOG.info("mock pgw-{} metric name {} no sample.", super.gatewayBaseURL, samples.name);
+                        continue;
+                    }
+                    for (Collector.MetricFamilySamples.Sample sample : samples.samples) {
+                        LOG.info("mock pgw-{} exposed sample: {}", super.gatewayBaseURL, sample);
+                    }
+                }
+            }
         }
 
         public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey) {

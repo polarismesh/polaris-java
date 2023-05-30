@@ -31,6 +31,7 @@ import java.io.OutputStreamWriter;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
@@ -71,12 +72,10 @@ public class HttpMetricHandler implements HttpHandler {
         if (shouldUseCompression(exchange)) {
             exchange.getResponseHeaders().set("Content-Encoding", "gzip");
             exchange.sendResponseHeaders(200, 0L);
-            GZIPOutputStream os = new GZIPOutputStream(exchange.getResponseBody());
-
-            try {
-                response.writeTo(os);
-            } finally {
-                os.close();
+            try (GZIPOutputStream os = new GZIPOutputStream(exchange.getResponseBody())) {
+                os.write(response.toByteArray());
+                os.finish();
+                os.flush();
             }
         } else {
             exchange.getResponseHeaders().set("Content-Length", String.valueOf(response.size()));
@@ -88,17 +87,17 @@ public class HttpMetricHandler implements HttpHandler {
     }
 
     private boolean shouldUseCompression(HttpExchange exchange) {
-//        List<String> encodingHeaders = exchange.getRequestHeaders().get("Accept-Encoding");
-//        if (encodingHeaders != null) {
-//            for (String encodingHeader : encodingHeaders) {
-//                String[] encodings = encodingHeader.split(",");
-//                for (String encoding : encodings) {
-//                    if ("gzip".equalsIgnoreCase(encoding.trim())) {
-//                        return true;
-//                    }
-//                }
-//            }
-//        }
+        List<String> encodingHeaders = exchange.getRequestHeaders().get("Accept-Encoding");
+        if (encodingHeaders != null) {
+            for (String encodingHeader : encodingHeaders) {
+                String[] encodings = encodingHeader.split(",");
+                for (String encoding : encodings) {
+                    if ("gzip".equalsIgnoreCase(encoding.trim())) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 

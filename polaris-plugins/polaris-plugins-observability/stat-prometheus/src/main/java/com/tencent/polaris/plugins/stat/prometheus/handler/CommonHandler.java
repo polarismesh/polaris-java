@@ -137,32 +137,6 @@ public class CommonHandler {
         return labels;
     }
 
-    public static Map<String, String> convertRateLimitGaugeToLabels(RateLimitGauge rateLimitGauge) {
-        Map<String, String> labels = new HashMap<>();
-        for (String labelName : SystemMetricModel.SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER) {
-            switch (labelName) {
-                case SystemMetricName.CALLEE_NAMESPACE:
-                    addLabel(labelName, rateLimitGauge.getNamespace(), labels);
-                    break;
-                case SystemMetricName.CALLEE_SERVICE:
-                    addLabel(labelName, rateLimitGauge.getService(), labels);
-                    break;
-                case SystemMetricName.CALLEE_METHOD:
-                    addLabel(labelName, rateLimitGauge.getMethod(), labels);
-                    break;
-                case SystemMetricName.CALLER_LABELS:
-                    addLabel(labelName, rateLimitGauge.getLabels(), labels);
-                    break;
-                case SystemMetricName.RULE_NAME:
-                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
-                    break;
-                default:
-            }
-        }
-
-        return labels;
-    }
-
     public static Map<String, String> convertCircuitBreakToLabels(CircuitBreakGauge gauge, String callerIp) {
         Map<String, String> labels = new HashMap<>();
         for (String labelName : SystemMetricModel.SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER) {

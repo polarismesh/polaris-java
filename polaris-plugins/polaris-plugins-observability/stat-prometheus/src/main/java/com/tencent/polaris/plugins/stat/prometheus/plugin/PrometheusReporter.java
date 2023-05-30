@@ -25,9 +25,6 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.server.ReportClientRequest;
-import com.tencent.polaris.api.plugin.server.ReportClientResponse;
-import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.plugin.stat.ReporterMetaInfo;
@@ -45,10 +42,10 @@ import com.tencent.polaris.plugins.stat.common.model.StatInfoCollectorContainer;
 import com.tencent.polaris.plugins.stat.common.model.StatInfoRevisionCollector;
 import com.tencent.polaris.plugins.stat.common.model.StatMetric;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
+import com.tencent.polaris.plugins.stat.prometheus.exporter.PushGateway;
 import com.tencent.polaris.plugins.stat.prometheus.handler.CommonHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHttpServer;
-import com.tencent.polaris.version.Version;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -63,7 +60,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
-import io.prometheus.client.exporter.PushGateway;
 import org.slf4j.Logger;
 
 /**
@@ -105,8 +101,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         this.promRegistry = new CollectorRegistry(true);
         initSampleMapping(MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY,
                 SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
-        initSampleMapping(MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY,
-                SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
         initSampleMapping(MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY,
                 SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
     }
@@ -161,9 +155,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         if (null != statInfo.getCircuitBreakGauge()) {
             handleCircuitBreakGauge(statInfo.getCircuitBreakGauge());
         }
-        if (null != statInfo.getRateLimitGauge()) {
-            handleRateLimitGauge(statInfo.getRateLimitGauge());
-        }
     }
 
     public void handleRouterGauge(InstanceGauge instanceGauge) {
@@ -171,14 +162,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             container.getInsCollector().collectStatInfo(instanceGauge,
                     CommonHandler.convertInsGaugeToLabels(instanceGauge, sdkIP),
                     MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY);
-        }
-    }
-
-    public void handleRateLimitGauge(RateLimitGauge rateLimitGauge) {
-        if (null != container && null != container.getRateLimitCollector()) {
-            container.getRateLimitCollector().collectStatInfo(rateLimitGauge,
-                    CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge),
-                    MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY);
         }
     }
 
@@ -251,7 +234,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     private void startScheduleAggregationTask() {
         // If port is -1, then disable prometheus http server
         if (config.getPort() == -1) {
-            LOGGER.info("[Metrics][Prometheus] port == -1, disable run prometheus http-server");
+            // 如果启用了 pull 模式，但是没有对外暴露 prometheus http-server，则效果还是 disable 状态
+            enable = false;
+            LOGGER.info("[Metrics][Prometheus] port == -1, disable run prometheus http-server and metrics report");
             return;
         }
         httpServer = new PrometheusHttpServer(config.getHost(), config.getPort(), promRegistry);
@@ -268,9 +253,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getInsCollector(),
                 container.getInsCollector().getCurrentRevision(),
                 SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
-        CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getRateLimitCollector(),
-                container.getRateLimitCollector().getCurrentRevision(),
-                SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
         CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getCircuitBreakerCollector(),
                 0,
                 SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
@@ -307,9 +289,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getInsCollector(),
                     container.getInsCollector().getCurrentRevision(),
                     SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
-            CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getRateLimitCollector(),
-                    container.getRateLimitCollector().getCurrentRevision(),
-                    SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
             CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getCircuitBreakerCollector(),
                     0,
                     SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
@@ -320,8 +299,13 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                     pushGateway = new PushGateway(config.getAddress());
                 }
 
-                pushGateway.pushAdd(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
-                        Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID));
+                if (config.isOpenGzip()) {
+                    pushGateway.pushAddByGzip(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
+                            Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID));
+                } else {
+                    pushGateway.pushAdd(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
+                            Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID));
+                }
                 LOGGER.info("push result to push-gateway {} success", config.getAddress());
             } catch (IOException exception) {
                 LOGGER.error("push result to push-gateway {} encountered exception, exception:{}", config.getAddress(),
@@ -377,4 +361,5 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
     void setEnable(boolean enable) {
         this.enable = enable;
     }
+
 }
