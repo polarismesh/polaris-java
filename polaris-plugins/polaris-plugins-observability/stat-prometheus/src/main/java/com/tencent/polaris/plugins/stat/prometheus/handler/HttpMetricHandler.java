@@ -73,7 +73,7 @@ public class HttpMetricHandler implements HttpHandler {
             exchange.getResponseHeaders().set("Content-Encoding", "gzip");
             exchange.sendResponseHeaders(200, 0L);
             try (GZIPOutputStream os = new GZIPOutputStream(exchange.getResponseBody())) {
-                response.writeTo(os);
+                os.write(response.toByteArray());
                 os.finish();
                 os.flush();
             }
