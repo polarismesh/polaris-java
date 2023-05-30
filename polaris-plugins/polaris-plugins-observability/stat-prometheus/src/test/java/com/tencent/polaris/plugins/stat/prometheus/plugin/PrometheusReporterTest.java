@@ -32,6 +32,7 @@ import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrat
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
+import com.tencent.polaris.plugins.stat.prometheus.exporter.PushGateway;
 import com.tencent.polaris.plugins.stat.prometheus.handler.CommonHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import io.prometheus.client.Collector;
@@ -46,7 +47,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
-import io.prometheus.client.exporter.PushGateway;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
