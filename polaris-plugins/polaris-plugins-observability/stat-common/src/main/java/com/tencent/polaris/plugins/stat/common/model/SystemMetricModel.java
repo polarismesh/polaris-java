@@ -34,14 +34,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLER_IP,
                 SystemMetricName.METRIC_NAME_LABEL,
         };
-        public static final String[] RATELIMIT_GAUGE_LABEL_ORDER = new String[]{
-                SystemMetricName.CALLEE_NAMESPACE,
-                SystemMetricName.CALLEE_SERVICE,
-                SystemMetricName.CALLEE_METHOD,
-                SystemMetricName.CALLER_LABELS,
-                SystemMetricName.METRIC_NAME_LABEL,
-                SystemMetricName.RULE_NAME,
-        };
+
         public static final String[] CIRCUIT_BREAKER_LABEL_ORDER = new String[]{
                 SystemMetricName.CALLEE_NAMESPACE,
                 SystemMetricName.CALLEE_SERVICE,

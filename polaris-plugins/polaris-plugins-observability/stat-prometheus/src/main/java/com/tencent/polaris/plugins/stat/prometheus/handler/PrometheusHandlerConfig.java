@@ -53,7 +53,10 @@ public class PrometheusHandlerConfig implements Verifier {
 
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
-    private Long pushInterval;
+    private Long pushInterval = 10000L;
+
+    @JsonProperty
+    private Boolean openGzip = false;
 
     public PrometheusHandlerConfig() {
     }
@@ -91,7 +94,18 @@ public class PrometheusHandlerConfig implements Verifier {
                 setAddress(config.getAddress());
             }
             if (null == pushInterval) {
-                setPushInterval(config.getPushInterval());
+                if (config.getPushInterval() != null) {
+                    setPushInterval(config.getPushInterval());
+                } else {
+                    setPushInterval(10000L);
+                }
+            }
+            if (null == openGzip) {
+                if (config.isOpenGzip() != null) {
+                    setOpenGzip(config.isOpenGzip());
+                } else {
+                    setOpenGzip(false);
+                }
             }
         }
     }
@@ -142,5 +156,13 @@ public class PrometheusHandlerConfig implements Verifier {
 
     public void setPushInterval(Long pushInterval) {
         this.pushInterval = pushInterval;
+    }
+
+    public Boolean isOpenGzip() {
+        return openGzip;
+    }
+
+    public void setOpenGzip(Boolean openGzip) {
+        this.openGzip = openGzip;
     }
 }
