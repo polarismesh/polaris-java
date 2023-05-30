@@ -155,9 +155,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         if (null != statInfo.getCircuitBreakGauge()) {
             handleCircuitBreakGauge(statInfo.getCircuitBreakGauge());
         }
-        if (null != statInfo.getRateLimitGauge()) {
-            handleRateLimitGauge(statInfo.getRateLimitGauge());
-        }
     }
 
     public void handleRouterGauge(InstanceGauge instanceGauge) {
@@ -165,14 +162,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             container.getInsCollector().collectStatInfo(instanceGauge,
                     CommonHandler.convertInsGaugeToLabels(instanceGauge, sdkIP),
                     MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY);
-        }
-    }
-
-    public void handleRateLimitGauge(RateLimitGauge rateLimitGauge) {
-        if (null != container && null != container.getRateLimitCollector()) {
-            container.getRateLimitCollector().collectStatInfo(rateLimitGauge,
-                    CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge),
-                    MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY);
         }
     }
 
