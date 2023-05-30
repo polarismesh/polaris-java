@@ -165,14 +165,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 		}
 	}
 
-	public void handleRateLimitGauge(RateLimitGauge rateLimitGauge) {
-		if (null != container && null != container.getRateLimitCollector()) {
-			container.getRateLimitCollector().collectStatInfo(rateLimitGauge,
-					CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge),
-					MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY);
-		}
-	}
-
 	public void handleCircuitBreakGauge(CircuitBreakGauge circuitBreakGauge) {
 		if (null != container && null != container.getCircuitBreakerCollector()) {
 			container.getCircuitBreakerCollector().collectStatInfo(circuitBreakGauge,

@@ -374,13 +374,6 @@ public class PrometheusReporterTest {
         return labels;
     }
 
-    private Map<String, String> getRateLimitLabels(MetricValueAggregationStrategy<RateLimitGauge> strategy,
-                                                   RateLimitGauge gauge) {
-        Map<String, String> labels = CommonHandler.convertRateLimitGaugeToLabels(gauge);
-        labels.put(SystemMetricModel.SystemMetricName.METRIC_NAME_LABEL, strategy.getStrategyName());
-        return labels;
-    }
-
     private Map<String, String> getCircuitBreakerLabels(MetricValueAggregationStrategy<CircuitBreakGauge> strategy,
                                                         CircuitBreakGauge gauge) {
         Map<String, String> labels = CommonHandler.convertCircuitBreakToLabels(gauge, handler.getSdkIP());
