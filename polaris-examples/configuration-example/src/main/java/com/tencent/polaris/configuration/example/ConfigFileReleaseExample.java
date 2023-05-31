@@ -18,7 +18,7 @@ public class ConfigFileReleaseExample {
         String fileGroup = "test";
         String fileName = "test/aapi.json";
 
-        String content = "redis.cache.age=10";
+        String content = "redis.cache.age=100";
 
         // 创建配置文件元信息
         DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);
@@ -27,11 +27,11 @@ public class ConfigFileReleaseExample {
         ConfigFilePublishService configFilePublishService = Utils.createConfigFilePublishService(initResult.getConfig());
 
         // 创建配置
-        configFilePublishService.createConfigFile(fileMetadata, content);
+//        configFilePublishService.createConfigFile(fileMetadata, content);
 //        configFileService.createConfigFile(namespace, fileGroup, fileName, content);
 
         // 更新配置
-//        configFilePublishService.updateConfigFile(fileMetadata, content);
+        configFilePublishService.updateConfigFile(fileMetadata, content);
 //        configFileService.updateConfigFile(namespace, fileGroup, fileName, content);
 
         // 发布配置
