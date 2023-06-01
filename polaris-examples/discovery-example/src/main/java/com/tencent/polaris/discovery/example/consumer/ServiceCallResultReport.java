@@ -36,13 +36,15 @@ public class ServiceCallResultReport {
 
     private static final int TOTAL_SERVICE = 20;
 
+    private static final int PER_INSTANCES = 1000;
+
     public static void main(String[] args) throws Exception {
         InitResult initResult = ExampleUtils.initConsumerConfiguration(args, true);
         SDKContext context = ExampleUtils.createSDKContext(initResult.getConfig());
         ProviderAPI providerAPI = DiscoveryAPIFactory.createProviderAPIByContext(context);
         ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(context);
 
-        mockService(providerAPI);
+//        mockService(providerAPI);
 
         TimeUnit.SECONDS.sleep(5);
         System.out.println("start mock report metrics");
@@ -58,7 +60,7 @@ public class ServiceCallResultReport {
         for (int i = 0; i < TOTAL_SERVICE; i++) {
             String service = servicePrefix + i;
             String namespace = "MOCK_NAMESPACE_" + random.nextInt(3);
-            for (int j = 0; j < 2; j++) {
+            for (int j = 0; j < PER_INSTANCES; j++) {
                 InstanceRegisterRequest request = new InstanceRegisterRequest();
                 request.setNamespace(namespace);
                 request.setService(service);
@@ -85,10 +87,7 @@ public class ServiceCallResultReport {
                     "/api/v1/dog/" + namespace + "/" + service,
                     "/api/v1/cloud/" + namespace + "/" + service,
             });
-            for (int j = 0; j < 2; j++) {
-                if (random.nextBoolean()) {
-                    continue;
-                }
+            for (int j = 0; j < PER_INSTANCES; j++) {
                 String[] methodList = methods.get(namespace + "." + service);
                 ServiceCallResult result = new ServiceCallResult();
                 result.setNamespace(namespace);

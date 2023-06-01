@@ -22,8 +22,8 @@ global:
     enable: true
     plugin:
       prometheus:
-        type: pull
-        port: 28080
+        type: push
+        openGzip: true
 
 #描述:主调端配置
 consumer:

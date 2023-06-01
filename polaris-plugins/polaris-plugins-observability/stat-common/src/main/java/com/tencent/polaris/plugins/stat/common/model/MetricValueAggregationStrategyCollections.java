@@ -28,7 +28,6 @@ import com.tencent.polaris.api.pojo.RetStatus;
 public class MetricValueAggregationStrategyCollections {
 
     public static MetricValueAggregationStrategy<InstanceGauge>[] SERVICE_CALL_STRATEGY;
-    public static MetricValueAggregationStrategy<RateLimitGauge>[] RATE_LIMIT_STRATEGY;
     public static MetricValueAggregationStrategy<CircuitBreakGauge>[] CIRCUIT_BREAK_STRATEGY;
 
     static {
@@ -37,12 +36,6 @@ public class MetricValueAggregationStrategyCollections {
                 new UpstreamRequestSuccessStrategy(),
                 new UpstreamRequestTimeoutStrategy(),
                 new UpstreamRequestMaxTimeoutStrategy(),
-        };
-
-        RATE_LIMIT_STRATEGY = new MetricValueAggregationStrategy[]{
-                new RateLimitRequestTotalStrategy(),
-                new RateLimitRequestPassStrategy(),
-                new RateLimitRequestLimitStrategy(),
         };
 
         CIRCUIT_BREAK_STRATEGY = new MetricValueAggregationStrategy[]{
@@ -177,88 +170,6 @@ public class MetricValueAggregationStrategyCollections {
             }
 
             return dataSource.getDelay();
-        }
-    }
-
-    /**
-     * 限流调用总请求数
-     */
-    public static class RateLimitRequestTotalStrategy implements MetricValueAggregationStrategy<RateLimitGauge> {
-
-        @Override
-        public String getStrategyDescription() {
-            return "total of rate limit per period";
-        }
-
-        @Override
-        public String getStrategyName() {
-            return "ratelimit_rq_total";
-        }
-
-        @Override
-        public void updateMetricValue(StatMetric targetValue, RateLimitGauge dataSource) {
-            targetValue.incValue();
-        }
-
-        @Override
-        public double initMetricValue(RateLimitGauge dataSource) {
-            return 1.0;
-        }
-    }
-
-    /**
-     * 限流调用总成功数
-     */
-    public static class RateLimitRequestPassStrategy implements MetricValueAggregationStrategy<RateLimitGauge> {
-
-        @Override
-        public String getStrategyDescription() {
-            return "total of passed request per period";
-        }
-
-        @Override
-        public String getStrategyName() {
-            return "ratelimit_rq_pass";
-        }
-
-        @Override
-        public void updateMetricValue(StatMetric targetValue, RateLimitGauge dataSource) {
-            if (RateLimitGauge.Result.PASSED == dataSource.getResult()) {
-                targetValue.incValue();
-            }
-        }
-
-        @Override
-        public double initMetricValue(RateLimitGauge dataSource) {
-            return RateLimitGauge.Result.PASSED == dataSource.getResult() ? 1.0 : 0.0;
-        }
-    }
-
-    /**
-     * 限流调用总限流数
-     */
-    public static class RateLimitRequestLimitStrategy implements MetricValueAggregationStrategy<RateLimitGauge> {
-
-        @Override
-        public String getStrategyDescription() {
-            return "total of limited request per period";
-        }
-
-        @Override
-        public String getStrategyName() {
-            return "ratelimit_rq_limit";
-        }
-
-        @Override
-        public void updateMetricValue(StatMetric targetValue, RateLimitGauge dataSource) {
-            if (RateLimitGauge.Result.LIMITED == dataSource.getResult()) {
-                targetValue.incValue();
-            }
-        }
-
-        @Override
-        public double initMetricValue(RateLimitGauge dataSource) {
-            return RateLimitGauge.Result.LIMITED == dataSource.getResult() ? 1.0 : 0.0;
         }
     }
 
