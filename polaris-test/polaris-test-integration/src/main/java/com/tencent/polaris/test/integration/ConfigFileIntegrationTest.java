@@ -1,4 +1,4 @@
-package com.tencent.polaris.configuration.example;
+package com.tencent.polaris.test.integration;
 
 /**
  * 运行前请修改 polaris.yml 中的北极星服务地址
