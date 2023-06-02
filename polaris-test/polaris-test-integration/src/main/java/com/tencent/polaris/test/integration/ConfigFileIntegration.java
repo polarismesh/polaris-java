@@ -5,8 +5,7 @@ package com.tencent.polaris.test.integration;
  *
  * @author fabian 2023-06-02
  */
-public class ConfigFileIntegrationTest {
-
+public class ConfigFileIntegration {
 
 	public static void main(String[] args) throws Exception {
 
