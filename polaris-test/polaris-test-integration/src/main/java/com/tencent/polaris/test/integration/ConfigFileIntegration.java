@@ -8,7 +8,7 @@ package com.tencent.polaris.test.integration;
 public class ConfigFileIntegration {
 
 	public static void main(String[] args) throws Exception {
-
+		System.out.println("Integration test is running...");
 	}
 
 }
