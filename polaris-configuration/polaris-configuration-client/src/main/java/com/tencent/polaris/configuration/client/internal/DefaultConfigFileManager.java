@@ -19,6 +19,7 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Maps;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
@@ -100,21 +101,21 @@ public class DefaultConfigFileManager implements ConfigFileManager {
     }
 
     @Override
-    public void createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
-        configFilePublishFactory.createConfigFile(configFileMetadata, content);
+        return configFilePublishFactory.createConfigFile(configFileMetadata, content);
     }
 
     @Override
-    public void updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
-        configFilePublishFactory.updateConfigFile(configFileMetadata, content);
+        return configFilePublishFactory.updateConfigFile(configFileMetadata, content);
     }
 
     @Override
-    public void releaseConfigFile(ConfigFileMetadata configFileMetadata) {
+    public ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFilePublishFactory configFilePublishFactory = configFileFactoryManager.getConfigFilePublishFactory(configFileMetadata);
-        configFilePublishFactory.releaseConfigFile(configFileMetadata);
+        return configFilePublishFactory.releaseConfigFile(configFileMetadata);
     }
 
     void setConfigFileFactoryManager(ConfigFileFactoryManager configFileFactoryManager) {
