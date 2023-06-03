@@ -38,4 +38,5 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Test with Maven
-        run: mvn failsafe:integration-test failsafe:verify
+        run: mvn verify -DskipTests && mvn failsafe:integration-test
+

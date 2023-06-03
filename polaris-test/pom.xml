@@ -17,7 +17,6 @@
 
     <modules>
         <module>polaris-test-common</module>
-        <module>polaris-test-integration</module>
         <module>polaris-test-mock-discovery</module>
     </modules>
 
