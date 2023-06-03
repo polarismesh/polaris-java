@@ -38,4 +38,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
       - name: Test with Maven
-        run: cd ./polaris-test/polaris-test-integration && mvn exec:java -Dexec.mainClass="com.tencent.polaris.test.integration.ConfigFileIntegration"
+        run: mvn failsafe:integration-test failsafe:verify

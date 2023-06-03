@@ -5,7 +5,7 @@ package com.tencent.polaris.test.integration;
  *
  * @author fabian 2023-06-02
  */
-public class ConfigFileIntegration {
+public class ConfigFileIntegrationTest {
 
 	public static void main(String[] args) throws Exception {
 		System.out.println("Integration test is running...");
