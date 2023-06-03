@@ -37,6 +37,8 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - name: Test with Maven
+      - name: Build with Maven
         run: mvn verify -DskipTests -U -Psonatype&& mvn failsafe:integration-test
+      - name: Integration test with Maven
+        run: mvn failsafe:integration-test
 
