@@ -40,5 +40,5 @@ jobs:
       - name: Build with Maven
         run: mvn clean verify -DskipTests -B -U -Psonatype --file pom.xml
       - name: Integration test with Maven
-        run: mvn failsafe:integration-test
+        run: mvn failsafe:integration-test -B -U -Psonatype --file pom.xml
 
