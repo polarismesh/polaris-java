@@ -78,11 +78,10 @@ public class DefaultLimitFlow implements LimitFlow {
 		return response;
 	}
 
-	/**
-	 * 限流指标不在保留单独的指标视图，全部合并到 upstream_xxx 的指标视图中
-	 */
-	@Deprecated
 	private void reportRateLimit(QuotaRequest req, QuotaResponse rsp) {
+		if (!sdkContext.getConfig().getProvider().getRateLimit().isReportMetrics()) {
+			return;
+		}
 		if (null != statPlugins && !RateLimitConstants.REASON_DISABLED.equals(rsp.getInfo())) {
 			try {
 				DefaultRateLimitResult rateLimitGauge = new DefaultRateLimitResult();
