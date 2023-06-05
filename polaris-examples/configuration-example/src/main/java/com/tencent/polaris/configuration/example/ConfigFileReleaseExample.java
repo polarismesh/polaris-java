@@ -18,7 +18,7 @@ public class ConfigFileReleaseExample {
         String fileGroup = "test";
         String fileName = "test/aapi.json";
 
-        String content = "redis.cache.age=10";
+        String content = "redis.cache.age=100";
 
         // 创建配置文件元信息
         DefaultConfigFileMetadata fileMetadata = new DefaultConfigFileMetadata(namespace, fileGroup, fileName);

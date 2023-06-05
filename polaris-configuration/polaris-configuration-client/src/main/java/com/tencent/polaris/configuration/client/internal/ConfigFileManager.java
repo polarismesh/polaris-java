@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -31,9 +32,9 @@ public interface ConfigFileManager {
 
     ConfigKVFile getConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat fileFormat);
 
-    void createConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
+    ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }

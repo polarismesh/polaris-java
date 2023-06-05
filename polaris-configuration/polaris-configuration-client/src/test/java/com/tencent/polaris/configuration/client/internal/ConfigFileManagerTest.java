@@ -25,6 +25,7 @@ import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactory;
 import com.tencent.polaris.configuration.client.factory.ConfigFileFactoryManager;
 
+import com.tencent.polaris.configuration.client.factory.ConfigFilePublishFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -41,11 +43,13 @@ import static org.mockito.Mockito.when;
 /**
  * @author lepdou 2022-03-08
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ConfigFileManagerTest {
 
     @Mock
     private ConfigFileFactory        configFileFactory;
+    @Mock
+    private ConfigFilePublishFactory configFilePublishFactory;
     @Mock
     private ConfigFileFactoryManager configFileFactoryManager;
     @InjectMocks
@@ -99,5 +103,32 @@ public class ConfigFileManagerTest {
         verify(configFileFactory).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
         Assert.assertEquals(mockedConfigFile, configFile2);
 
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreateConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).createConfigFile(configFileMetadata, "content");
+
+        defaultConfigFileManager.createConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).updateConfigFile(configFileMetadata, "content");
+
+        defaultConfigFileManager.updateConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testReleaseConfigFile() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+
+        doThrow(new RuntimeException("test")).when(configFilePublishFactory).releaseConfigFile(configFileMetadata);
+
+        defaultConfigFileManager.releaseConfigFile(configFileMetadata);
     }
 }

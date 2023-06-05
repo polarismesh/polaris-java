@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.factory;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 
 /**
@@ -24,9 +25,9 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
  */
 public interface ConfigFilePublishFactory {
 
-    void createConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
+    ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }
