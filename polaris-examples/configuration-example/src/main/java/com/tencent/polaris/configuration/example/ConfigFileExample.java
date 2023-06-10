@@ -17,7 +17,7 @@ public class ConfigFileExample {
 		Utils.InitResult initResult = Utils.initConfiguration(args);
 		String namespace = "default";
 		String fileGroup = "test";
-		String fileName = "conf/config.json";
+		String fileName = "conf/config.text";
 
 		//创建配置中心服务类，一般情况下只需要单例对象
 		ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());

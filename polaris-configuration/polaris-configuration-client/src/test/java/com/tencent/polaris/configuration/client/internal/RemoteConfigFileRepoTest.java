@@ -55,7 +55,7 @@ public class RemoteConfigFileRepoTest {
     @Mock
     private ConfigFileConnector          configFileConnector;
     @Mock
-    private ConfigFileLongPollingService configFileLongPollingService;
+    private ConfigFileLongPullService configFileLongPollingService;
     @Mock
     private SDKContext                   sdkContext;
 	@Mock

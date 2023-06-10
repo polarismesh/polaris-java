@@ -19,9 +19,7 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
@@ -29,68 +27,63 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
 
 /**
  * @author lepdou 2022-03-02
  */
-public class DefaultConfigFileLongPollingService implements ConfigFileLongPollingService {
+public class ConfigFileLongPullService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultConfigFileLongPollingService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileLongPullService.class);
 
-    private static ConfigFileLongPollingService instance;
+    /**
+     *
+     */
+    private final ConfigFileConnector connector;
 
-    private final ConfigFileConnector configFileConnector;
-
+    /**
+     *
+     */
     private final ExecutorService longPollingService;
 
+    /**
+     *
+     */
     private final Map<ConfigFileMetadata, RemoteConfigFileRepo> configFilePool;
-    //此处只缓存所有配置文件对应通知的版本号，跟远端拉取的配置文件返回的版本号没有关系
+
+    /**
+     * 此处只缓存所有配置文件对应通知的版本号，跟远端拉取的配置文件返回的版本号没有关系
+     */
     private final Map<ConfigFileMetadata, Long> notifiedVersion;
+
+    /**
+     *
+     */
     private final AtomicReference<Boolean> started;
+
+    /**
+     *
+     */
     private final RetryPolicy retryPolicy;
 
-    DefaultConfigFileLongPollingService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
-
-        started = new AtomicReference<>(false);
-        configFilePool = Maps.newConcurrentMap();
-        notifiedVersion = Maps.newConcurrentMap();
-        retryPolicy = new ExponentialRetryPolicy(1, 120);
-
-        if (configFileConnector != null) {
-            this.configFileConnector = configFileConnector;
-        } else {
-            //获取远程调用插件实现类
-            String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
-                    .getConnectorType();
-            this.configFileConnector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
-                    .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
-        }
-
+    public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
+        this.started = new AtomicReference<>(false);
+        this.configFilePool = Maps.newConcurrentMap();
+        this.notifiedVersion = Maps.newConcurrentMap();
+        this. retryPolicy = new ExponentialRetryPolicy(1, 120);
+        this.connector = configFileConnector;
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");
-        longPollingService = Executors.newSingleThreadExecutor(threadFactory);
+        this.longPollingService = Executors.newSingleThreadExecutor(threadFactory);
     }
 
-    public static ConfigFileLongPollingService getInstance(SDKContext sdkContext) {
-        if (instance == null) {
-            synchronized (DefaultConfigFileLongPollingService.class) {
-                if (instance == null) {
-                    instance = new DefaultConfigFileLongPollingService(sdkContext, null);
-                }
-            }
-        }
-        return instance;
-    }
-
-    @Override
     public void addConfigFile(RemoteConfigFileRepo remoteConfigFileRepo) {
         ConfigFileMetadata configFileMetadata = remoteConfigFileRepo.getConfigFileMetadata();
         long version = remoteConfigFileRepo.getConfigFileVersion();
@@ -136,7 +129,7 @@ public class DefaultConfigFileLongPollingService implements ConfigFileLongPollin
                 LOGGER.debug("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
                         retryPolicy.getCurrentDelayTime());
 
-                ConfigFileResponse response = configFileConnector.watchConfigFiles(watchConfigFiles);
+                ConfigFileResponse response = connector.watchConfigFiles(watchConfigFiles);
 
                 retryPolicy.success();
 

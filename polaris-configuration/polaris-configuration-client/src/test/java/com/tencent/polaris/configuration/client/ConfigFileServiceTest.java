@@ -17,11 +17,14 @@
 
 package com.tencent.polaris.configuration.client;
 
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
+import com.tencent.polaris.configuration.client.flow.DefaultConfigFileFlow;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -29,8 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author lepdou 2022-03-08
@@ -42,8 +44,15 @@ public class ConfigFileServiceTest {
     private ConfigFileManager configFileManager;
     @Mock
     private ConfigFile        configFile;
-    @InjectMocks
+
     private DefaultConfigFileService defaultConfigFileService;
+
+    @Before
+    public void before() {
+        SDKContext context = mock(SDKContext.class);
+        defaultConfigFileService = new DefaultConfigFileService(context);
+        defaultConfigFileService.setConfigFileFlow(new DefaultConfigFileFlow(configFileManager));
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNamespaceBlank() {

@@ -24,13 +24,17 @@ import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
+import com.tencent.polaris.configuration.client.JustForTest;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
-import com.tencent.polaris.configuration.client.internal.DefaultConfigFileManager;
 
 public class DefaultConfigFileFlow implements ConfigFileFlow {
 
     private ConfigFileManager configFileManager;
 
+    @JustForTest
+    public DefaultConfigFileFlow(ConfigFileManager fileManager) {
+        configFileManager = fileManager;
+    }
 
     @Override
     public String getName() {
@@ -39,11 +43,7 @@ public class DefaultConfigFileFlow implements ConfigFileFlow {
 
     @Override
     public void setSDKContext(SDKContext sdkContext) {
-        setConfigFileManager(DefaultConfigFileManager.getInstance(sdkContext));
-    }
-
-    public void setConfigFileManager(ConfigFileManager configFileManager) {
-        this.configFileManager = configFileManager;
+        this.configFileManager = new ConfigFileManager(sdkContext);
     }
 
     @Override
