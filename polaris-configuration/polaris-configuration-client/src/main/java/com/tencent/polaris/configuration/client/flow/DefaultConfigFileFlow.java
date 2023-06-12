@@ -36,7 +36,6 @@ public class DefaultConfigFileFlow implements ConfigFileFlow {
         configFileManager = fileManager;
     }
 
-
     @Override
     public String getName() {
         return FlowConfig.DEFAULT_FLOW_NAME;
