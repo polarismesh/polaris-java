@@ -53,7 +53,6 @@ public class CircuitBreakAPIFactory {
         SDKContext context = SDKContext.initContextByConfig(config);
         return createCircuitBreakAPIByContext(context);
     }
-
     /**
      * 通过注册地址创建CircuitBreakAPI
      *
