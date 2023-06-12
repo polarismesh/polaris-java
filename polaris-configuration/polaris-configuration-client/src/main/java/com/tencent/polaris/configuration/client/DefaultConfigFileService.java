@@ -25,8 +25,6 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileService;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
-import com.tencent.polaris.configuration.client.flow.DefaultConfigFileFlow;
-import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
@@ -39,13 +37,6 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
 
     public DefaultConfigFileService(SDKContext sdkContext) {
         super(sdkContext);
-    }
-
-    @JustForTest
-    DefaultConfigFileService(SDKContext sdkContext, ConfigFileManager configFileManager) {
-        super(sdkContext);
-        this.configFileFlow = new DefaultConfigFileFlow();
-        ((DefaultConfigFileFlow) this.configFileFlow).setConfigFileManager(configFileManager);
     }
 
     @Override
@@ -88,4 +79,8 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
         return configFileFlow.getConfigTextFile(configFileMetadata);
     }
 
+    @JustForTest
+    void setConfigFileFlow(ConfigFileFlow configFileFlow) {
+        this.configFileFlow = configFileFlow;
+    }
 }

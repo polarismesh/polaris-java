@@ -29,8 +29,6 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
  */
 public class ConfigFileServiceFactory {
 
-    private static DefaultConfigFileService configFileService;
-
     public static ConfigFileService createConfigFileService() throws PolarisException {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
         return createConfigFileService(configuration);
@@ -42,14 +40,8 @@ public class ConfigFileServiceFactory {
     }
 
     public static ConfigFileService createConfigFileService(SDKContext sdkContext) throws PolarisException {
-        if (configFileService == null) {
-            synchronized (ConfigFileServiceFactory.class) {
-                if (configFileService == null) {
-                    configFileService = new DefaultConfigFileService(sdkContext);
-                    configFileService.init();
-                }
-            }
-        }
+        DefaultConfigFileService configFileService = new DefaultConfigFileService(sdkContext);
+        configFileService.init();
         return configFileService;
     }
 

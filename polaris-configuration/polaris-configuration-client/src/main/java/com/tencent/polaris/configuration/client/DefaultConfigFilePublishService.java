@@ -24,14 +24,13 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
-import com.tencent.polaris.configuration.client.internal.DefaultConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
 /**
  * @author fabian4 2022-03-08
  */
-public class DefaultConfigFilePublishService  extends BaseEngine implements ConfigFilePublishService {
+public class DefaultConfigFilePublishService extends BaseEngine implements ConfigFilePublishService {
 
     private ConfigFileManager configFileManager;
 
@@ -41,7 +40,7 @@ public class DefaultConfigFilePublishService  extends BaseEngine implements Conf
 
     @Override
     protected void subInit() throws PolarisException {
-        configFileManager = DefaultConfigFileManager.getInstance(sdkContext);
+        configFileManager = new ConfigFileManager(sdkContext);
     }
 
     @Override
