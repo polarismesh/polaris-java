@@ -19,7 +19,7 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-config</artifactId>
+            <artifactId>polaris-client</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

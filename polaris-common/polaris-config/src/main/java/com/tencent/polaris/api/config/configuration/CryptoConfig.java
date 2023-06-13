@@ -15,11 +15,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configfilter.crypto;
+package com.tencent.polaris.api.config.configuration;
+
+import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
  * @author fabian4
  * @date 2023/1/13
  */
-public class AESCrypto {
+public class CryptoConfig implements Verifier {
+
+    private String type;
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    @Override
+    public void verify() {
+
+    }
+
+    @Override
+    public void setDefault(Object defaultObject) {
+
+    }
 }

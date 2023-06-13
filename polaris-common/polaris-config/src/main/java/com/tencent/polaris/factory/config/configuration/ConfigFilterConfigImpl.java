@@ -67,6 +67,6 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public void setDefault(Object defaultObject) {
-        super.getPluginConfigs()
+
     }
 }
