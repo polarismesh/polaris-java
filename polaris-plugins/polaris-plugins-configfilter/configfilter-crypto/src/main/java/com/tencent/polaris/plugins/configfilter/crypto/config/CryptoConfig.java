@@ -17,11 +17,13 @@
 
 package com.tencent.polaris.plugins.configfilter.crypto.config;
 
+import com.tencent.polaris.api.config.verify.Verifier;
+
 /**
  * @author fabian4
  * @date 2023/1/13
  */
-public class CryptoConfig  implements Verifier{
+public class CryptoConfig implements Verifier {
 
     private String type;
 
@@ -31,5 +33,15 @@ public class CryptoConfig  implements Verifier{
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public void verify() {
+
+    }
+
+    @Override
+    public void setDefault(Object defaultObject) {
+
     }
 }
