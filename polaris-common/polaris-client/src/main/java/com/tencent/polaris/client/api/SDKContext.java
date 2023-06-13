@@ -69,7 +69,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 
-import com.tencent.polaris.version.Version;
+//import com.tencent.polaris.version.Version;
 
 /**
  * SDK初始化相关的上下文信息
@@ -343,7 +343,8 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
             ServerConnector serverConnector = extensions.getServerConnector();
             ReportClientRequest reportClientRequest = new ReportClientRequest();
             reportClientRequest.setClientHost(extensions.getValueContext().getHost());
-            reportClientRequest.setVersion(Version.VERSION);
+            reportClientRequest.setVersion("1.13.0-SNAPSHOT");
+//            reportClientRequest.setVersion(Version.VERSION);
             List<StatReporter> statPlugins = extensions.getStatReporters();
             List<ReporterMetaInfo> reporterMetaInfos = new ArrayList<>();
             for (StatReporter statPlugin : statPlugins) {

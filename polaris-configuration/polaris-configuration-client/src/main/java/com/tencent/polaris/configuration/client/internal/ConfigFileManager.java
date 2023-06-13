@@ -20,6 +20,7 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
@@ -39,6 +40,8 @@ import static com.tencent.polaris.configuration.client.internal.AbstractConfigFi
 public class ConfigFileManager {
 
     private SDKContext context;
+
+    private ConfigFilterCrypto crypto;
 
     private ConfigFileConnector connector;
 
@@ -64,6 +67,8 @@ public class ConfigFileManager {
         String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
                 .getConnectorType();
         this.context = sdkContext;
+        this.crypto = (ConfigFilterCrypto) sdkContext.getExtensions().getPlugins()
+                .getPlugin(PluginTypes.CONFIG_FILTER_CRYPTO.getBaseType(), configFileConnectorType);
         this.connector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         this.longPullService = new ConfigFileLongPullService(context, connector);
