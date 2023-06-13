@@ -21,7 +21,7 @@ config:
     connectorType: polaris
     #描述：默认服务端埋点接入地址
     addresses:
-      - 127.0.0.1:8093
+      - 119.91.66.223:8091
   # 配置过滤器
   configFilter:
     enable: true
@@ -31,5 +31,4 @@ config:
     plugin:
       crypto:
         # 配置解密插件的算法插件类型
-        entries:
-          - name: AES
+        type: AES

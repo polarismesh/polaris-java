@@ -66,9 +66,10 @@ public class ConfigFileManager {
     public ConfigFileManager(SDKContext sdkContext) {
         String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
                 .getConnectorType();
+        String cryptoType = sdkContext.getConfig().getConfigFile().getConfigFilterConfig().getChain().get(0);
         this.context = sdkContext;
         this.crypto = (ConfigFilterCrypto) sdkContext.getExtensions().getPlugins()
-                .getPlugin(PluginTypes.CONFIG_FILTER_CRYPTO.getBaseType(), configFileConnectorType);
+                .getPlugin(PluginTypes.CONFIG_FILTER_CRYPTO.getBaseType(), cryptoType);
         this.connector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         this.longPullService = new ConfigFileLongPullService(context, connector);

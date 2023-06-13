@@ -40,9 +40,6 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
     @JsonProperty
     private List<String> chain;
 
-    @JsonProperty
-    private List<String> plugins;
-
     @Override
     public boolean isEnable() {
         return false;
@@ -50,9 +47,18 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public List<String> getChain() {
-        return null;
+        return this.chain;
     }
 
+    @Override
+    public <T extends Verifier> T getPluginConfig(String pluginName, Class<T> clazz) throws PolarisException {
+        return super.getPluginConfig(pluginName, clazz);
+    }
+
+    @Override
+    public Map<String, Verifier> getPluginConfigs() throws PolarisException {
+        return super.getPluginConfigs();
+    }
 
     @Override
     public void verify() {
@@ -61,6 +67,6 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public void setDefault(Object defaultObject) {
-
+        super.getPluginConfigs()
     }
 }

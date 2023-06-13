@@ -16,4 +16,13 @@
     <description>Configfilter Crypto POM</description>
     <packaging>pom</packaging>
 
+
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
 </project>
