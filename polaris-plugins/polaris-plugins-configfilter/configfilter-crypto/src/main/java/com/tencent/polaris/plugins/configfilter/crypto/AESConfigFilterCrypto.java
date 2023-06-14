@@ -26,7 +26,7 @@ import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
 
 /**
  * @author fabian4
- * @date 2023/1/13
+ * @date 2023/6/14
  */
 public class AESConfigFilterCrypto implements ConfigFilterCrypto {
     @Override
