@@ -32,8 +32,8 @@ public class AESUtilTest {
     public void testAes() {
         byte[] aesKey = AESUtil.generateAesKey();
         byte[] content = "test content".getBytes();
-        byte[] encrypted = AESUtil.aesEncrypt(content, aesKey);
-        byte[] decrypted = AESUtil.aesDecrypt(encrypted, aesKey);
+        byte[] encrypted = AESUtil.encrypt(content, aesKey);
+        byte[] decrypted = AESUtil.decrypt(encrypted, aesKey);
         assertArrayEquals(content, decrypted);
     }
 }

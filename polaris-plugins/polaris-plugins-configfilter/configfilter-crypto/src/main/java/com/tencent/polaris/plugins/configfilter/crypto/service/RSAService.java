@@ -23,6 +23,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * @author fabian4
@@ -44,7 +45,7 @@ public class RSAService {
         return RSAUtil.decrypt(context.getBytes(), this.privateKey);
     }
 
-    public PublicKey getPublicKey() {
-        return publicKey;
+    public String getPublicKey() {
+        return Base64.getEncoder().encodeToString(publicKey.getEncoded());
     }
 }

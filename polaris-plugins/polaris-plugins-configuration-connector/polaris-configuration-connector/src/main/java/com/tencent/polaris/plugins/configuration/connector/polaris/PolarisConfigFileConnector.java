@@ -1,6 +1,7 @@
 package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.google.common.collect.Lists;
+import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt64Value;
 
@@ -247,6 +248,8 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
         builder.setFileName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
         builder.setVersion(UInt64Value.newBuilder().setValue(configFile.getVersion()).build());
+        builder.setEncrypted(BoolValue.newBuilder().setValue(configFile.isEncrypted()).buildPartial());
+        builder.setPublicKey(StringValue.newBuilder().setValue(configFile.getPublicKey()).build());
 
         return builder.build();
     }

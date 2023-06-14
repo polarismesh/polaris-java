@@ -17,7 +17,7 @@ public class ConfigFileExample {
 		Utils.InitResult initResult = Utils.initConfiguration(args);
 		String namespace = "default";
 		String fileGroup = "test";
-		String fileName = "conf/config.text";
+		String fileName = "conf/a.txt";
 
 		//创建配置中心服务类，一般情况下只需要单例对象
 		ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
@@ -28,18 +28,18 @@ public class ConfigFileExample {
 		//打印配置文件内容
 		Utils.print(configFile.getContent());
 
-		//添加变更监听器
-		configFile.addChangeListener(new ConfigFileChangeListener() {
-			@Override
-			public void onChange(ConfigFileChangeEvent event) {
-				System.out
-						.printf("Received config file change event. old value = %s, new value = %s, change type = %s%n",
-								event.getOldValue(), event.getNewValue(), event.getChangeType());
-
-				//获取配置文件最新内容
-				Utils.print(configFile.getContent());
-			}
-		});
+//		//添加变更监听器
+//		configFile.addChangeListener(new ConfigFileChangeListener() {
+//			@Override
+//			public void onChange(ConfigFileChangeEvent event) {
+//				System.out
+//						.printf("Received config file change event. old value = %s, new value = %s, change type = %s%n",
+//								event.getOldValue(), event.getNewValue(), event.getChangeType());
+//
+//				//获取配置文件最新内容
+//				Utils.print(configFile.getContent());
+//			}
+//		});
 
 		//更多 API 用法
 		//User user = configFile.asJson(User.class, null);  自动反序列化配置文件成 JSON 对象

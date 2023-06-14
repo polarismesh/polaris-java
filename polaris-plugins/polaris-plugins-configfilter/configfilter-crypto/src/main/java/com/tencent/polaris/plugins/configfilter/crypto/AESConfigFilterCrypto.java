@@ -55,7 +55,8 @@ public class AESConfigFilterCrypto implements ConfigFilterCrypto {
 
     @Override
     public ConfigFile doBefore(ConfigFile configFile) {
-//        configFile
+        configFile.setEncrypted(Boolean.TRUE);
+        configFile.setPublicKey(rsaService.getPublicKey());
         return configFile;
     }
 

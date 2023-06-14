@@ -13,6 +13,8 @@ public class ConfigFile {
     private String content;
     private long   version;
     private String md5;
+    private String publicKey;
+    private boolean encrypted = Boolean.FALSE;
 
     public ConfigFile(String namespace, String fileGroup, String fileName) {
         this.namespace = namespace;
@@ -66,6 +68,22 @@ public class ConfigFile {
 
     public void setMd5(String md5) {
         this.md5 = md5;
+    }
+
+    public String getPublicKey() {
+        return publicKey;
+    }
+
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
+    }
+
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(boolean encrypted) {
+        this.encrypted = encrypted;
     }
 
     @Override
