@@ -17,11 +17,14 @@
 
 package com.tencent.polaris.plugins.configfilter.crypto.util;
 
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
+
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.security.*;
 
 /**
  * @author fabian4
@@ -32,8 +35,13 @@ public class RSAUtil {
     /**
      * 生成RSA密钥对
      */
-    public static KeyPair generateRsaKeyPair() throws Exception {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    public static KeyPair generateRsaKeyPair() {
+        KeyPairGenerator keyPairGenerator;
+        try {
+            keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+        } catch (NoSuchAlgorithmException e) {
+            throw new PolarisException(ErrorCode.RSA_KEY_GENERATE_ERROR, e.getMessage());
+        }
         keyPairGenerator.initialize(1024);
         return keyPairGenerator.generateKeyPair();
     }
@@ -44,10 +52,15 @@ public class RSAUtil {
      * @param content   需要加密的内容
      * @param publicKey 公钥
      */
-    public static byte[] rsaEncrypt(byte[] content, PublicKey publicKey) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-        return cipher.doFinal(content);
+    public static byte[] encrypt(byte[] content, PublicKey publicKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            return cipher.doFinal(content);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            throw new PolarisException(ErrorCode.RSA_ENCRYPT_ERROR, e.getMessage());
+        }
     }
 
     /**
@@ -56,9 +69,15 @@ public class RSAUtil {
      * @param content    待解密内容
      * @param privateKey 私钥
      */
-    public static byte[] rsaDecrypt(byte[] content, PrivateKey privateKey) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.DECRYPT_MODE, privateKey);
-        return cipher.doFinal(content);
+    public static byte[] decrypt(byte[] content, PrivateKey privateKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            return cipher.doFinal(content);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | IllegalBlockSizeException |
+                 BadPaddingException e) {
+            throw new PolarisException(ErrorCode.RSA_DECRYPT_ERROR, e.getMessage());
+        }
+
     }
 }

@@ -17,10 +17,13 @@
 
 package com.tencent.polaris.plugins.configfilter.crypto.util;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
+
+import javax.crypto.*;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 /**
@@ -32,8 +35,13 @@ public class AESUtil {
     /**
      * 生成AES密钥
      */
-    public static byte[] generateAesKey() throws Exception {
-        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+    public static byte[] generateAesKey() {
+        KeyGenerator keyGenerator;
+        try {
+            keyGenerator = KeyGenerator.getInstance("AES");
+        } catch (NoSuchAlgorithmException e) {
+            throw new PolarisException(ErrorCode.AES_KEY_GENERATE_ERROR, e.getMessage());
+        }
         SecureRandom secureRandom = new SecureRandom();
         keyGenerator.init(128, secureRandom);
         SecretKey secretKey = keyGenerator.generateKey();
@@ -46,11 +54,16 @@ public class AESUtil {
      * @param content  需要加密的内容
      * @param password 加密密码
      */
-    public static byte[] aesEncrypt(byte[] content, byte[] password) throws Exception {
+    public static byte[] encrypt(byte[] content, byte[] password) {
         SecretKeySpec key = new SecretKeySpec(password, "AES");
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher.init(Cipher.ENCRYPT_MODE, key);
-        return cipher.doFinal(content);
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            return cipher.doFinal(content);
+        } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
+                 InvalidKeyException e) {
+            throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage());
+        }
     }
 
     /**
@@ -59,10 +72,15 @@ public class AESUtil {
      * @param content  待解密内容
      * @param password 解密密钥
      */
-    public static byte[] aesDecrypt(byte[] content, byte[] password) throws Exception {
+    public static byte[] decrypt(byte[] content, byte[] password) {
         SecretKeySpec key = new SecretKeySpec(password, "AES");
-        Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-        cipher.init(Cipher.DECRYPT_MODE, key);
-        return cipher.doFinal(content);
+        try {
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            return cipher.doFinal(content);
+        } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
+                 InvalidKeyException e) {
+            throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage());
+        }
     }
 }

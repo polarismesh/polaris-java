@@ -23,6 +23,7 @@ import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
@@ -52,6 +53,8 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class RemoteConfigFileRepoTest {
 
+    @Mock
+    private ConfigFilterCrypto crypto;
     @Mock
     private ConfigFileConnector          configFileConnector;
     @Mock
@@ -87,7 +90,7 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
 					configFileMetadata, configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
@@ -108,7 +111,7 @@ public class RemoteConfigFileRepoTest {
 		doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
@@ -127,7 +130,7 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         //重试三次
@@ -145,7 +148,7 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         //重试三次
@@ -171,7 +174,7 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         AtomicInteger cbCnt = new AtomicInteger();

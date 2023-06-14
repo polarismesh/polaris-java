@@ -15,31 +15,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configfilter.crypto;
+package com.tencent.polaris.plugins.configfilter.crypto.service;
 
 import com.tencent.polaris.plugins.configfilter.crypto.util.RSAUtil;
-import org.junit.Test;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-
-import static org.junit.Assert.assertArrayEquals;
+import java.util.Arrays;
 
 /**
  * @author fabian4
  * @date 2023/6/14
  */
-public class RSAUtilTest {
+public class RSAService {
 
-    @Test
-    public void testRsa() {
+    private final PublicKey publicKey;
+
+    private final PrivateKey privateKey;
+
+    public RSAService() {
         KeyPair keyPair = RSAUtil.generateRsaKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
-        byte[] content = "test content".getBytes();
-        byte[] encrypted = RSAUtil.encrypt(content, publicKey);
-        byte[] decrypted = RSAUtil.decrypt(encrypted, privateKey);
-        assertArrayEquals(content, decrypted);
+        this.publicKey = keyPair.getPublic();
+        this.privateKey = keyPair.getPrivate();
+    }
+
+    public byte[] decrypt(String context) {
+        return RSAUtil.decrypt(context.getBytes(), this.privateKey);
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 }

@@ -22,13 +22,22 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
+import com.tencent.polaris.plugins.configfilter.crypto.service.RSAService;
+import com.tencent.polaris.plugins.configfilter.crypto.util.AESUtil;
+
+import java.util.Arrays;
 
 /**
  * @author fabian4
  * @date 2023/6/14
  */
 public class AESConfigFilterCrypto implements ConfigFilterCrypto {
+
+    private RSAService rsaService;
+
     @Override
     public String getName() {
         return "AES";
@@ -41,7 +50,22 @@ public class AESConfigFilterCrypto implements ConfigFilterCrypto {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        System.out.println("=======================");
+        rsaService = new RSAService();
+    }
+
+    @Override
+    public ConfigFile doBefore(ConfigFile configFile) {
+//        configFile
+        return configFile;
+    }
+
+    @Override
+    public ConfigFileResponse doAfter(ConfigFileResponse configFileResponse) {
+        byte[] password = rsaService.decrypt("");
+        ConfigFile configFile = configFileResponse.getConfigFile();
+        byte[] result = AESUtil.decrypt(configFile.getContent().getBytes(),password);
+        configFile.setContent(Arrays.toString(result));
+        return configFileResponse;
     }
 
     @Override

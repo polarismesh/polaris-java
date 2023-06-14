@@ -139,7 +139,7 @@ public class ConfigFileManager {
 
     public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
 
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, crypto, connector, configFileMetadata, persistentHandler);
 
         return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName(), configFileRepo,
@@ -147,7 +147,7 @@ public class ConfigFileManager {
     }
 
     public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, crypto, connector, configFileMetadata, persistentHandler);
         switch (format) {
             case Properties: {
                 return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),

@@ -177,7 +177,37 @@ public enum ErrorCode {
     /**
      * 内部错误：暂不支持
      */
-    NOT_SUPPORT(20010);
+    NOT_SUPPORT(20010),
+
+    /**
+     * 内部错误：RSA key 生成失败
+     */
+    RSA_KEY_GENERATE_ERROR(20011),
+
+    /**
+     * 内部错误：RSA 加密失败
+     */
+    RSA_ENCRYPT_ERROR(20012),
+
+    /**
+     * 内部错误：RSA 解密失败
+     */
+    RSA_DECRYPT_ERROR(20013),
+
+    /**
+     * 内部错误：AES key 生成失败
+     */
+    AES_KEY_GENERATE_ERROR(20014),
+
+    /**
+     * 内部错误：AES 加密失败
+     */
+    AES_ENCRYPT_ERROR(20015),
+
+    /**
+     * 内部错误：AES 解密失败
+     */
+    AES_DECRYPT_ERROR(20016);
 
     private final int code;
 

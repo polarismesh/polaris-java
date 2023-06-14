@@ -29,7 +29,7 @@ import static org.junit.Assert.assertArrayEquals;
 public class AESUtilTest {
 
     @Test
-    public void testAes() throws Exception {
+    public void testAes() {
         byte[] aesKey = AESUtil.generateAesKey();
         byte[] content = "test content".getBytes();
         byte[] encrypted = AESUtil.aesEncrypt(content, aesKey);
