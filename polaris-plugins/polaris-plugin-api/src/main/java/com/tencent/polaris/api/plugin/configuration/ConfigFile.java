@@ -14,6 +14,7 @@ public class ConfigFile {
     private long   version;
     private String md5;
     private String publicKey;
+    private String dataKey;
     private boolean encrypted = Boolean.FALSE;
 
     public ConfigFile(String namespace, String fileGroup, String fileName) {
@@ -84,6 +85,14 @@ public class ConfigFile {
 
     public void setEncrypted(boolean encrypted) {
         this.encrypted = encrypted;
+    }
+
+    public String getDataKey() {
+        return dataKey;
+    }
+
+    public void setDataKey(String dataKey) {
+        this.dataKey = dataKey;
     }
 
     @Override

@@ -62,10 +62,10 @@ public class AESConfigFilterCrypto implements ConfigFilterCrypto {
 
     @Override
     public ConfigFileResponse doAfter(ConfigFileResponse configFileResponse) {
-        byte[] password = rsaService.decrypt("");
         ConfigFile configFile = configFileResponse.getConfigFile();
-        byte[] result = AESUtil.decrypt(configFile.getContent().getBytes(),password);
-        configFile.setContent(Arrays.toString(result));
+        byte[] password = rsaService.decrypt(configFile.getDataKey());
+        String result = AESUtil.decrypt(configFile.getContent(),password);
+        configFile.setContent(result);
         return configFileResponse;
     }
 

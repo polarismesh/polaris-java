@@ -21,10 +21,14 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 
 import javax.crypto.*;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.Base64;
 
 /**
  * @author fabian4
@@ -54,14 +58,18 @@ public class AESUtil {
      * @param content  需要加密的内容
      * @param password 加密密码
      */
-    public static byte[] encrypt(byte[] content, byte[] password) {
+    public static String encrypt(String content, byte[] password) {
         SecretKeySpec key = new SecretKeySpec(password, "AES");
         try {
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, key);
-            return cipher.doFinal(content);
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            byte[] iv = new byte[cipher.getBlockSize()];
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+            cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
+            byte[] paddingPlaintext = pkcs7Padding(content.getBytes(), cipher.getBlockSize());
+            byte[] bytes = cipher.doFinal(paddingPlaintext);
+            return Base64.getEncoder().encodeToString(bytes);
         } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
-                 InvalidKeyException e) {
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage());
         }
     }
@@ -72,15 +80,50 @@ public class AESUtil {
      * @param content  待解密内容
      * @param password 解密密钥
      */
-    public static byte[] decrypt(byte[] content, byte[] password) {
+    public static String decrypt(String content, byte[] password) {
         SecretKeySpec key = new SecretKeySpec(password, "AES");
         try {
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-            cipher.init(Cipher.DECRYPT_MODE, key);
-            return cipher.doFinal(content);
+            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            byte[] iv = new byte[cipher.getBlockSize()];
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+            cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
+            byte[] paddingPlaintext = cipher.doFinal(Base64.getDecoder().decode(content));
+            return Arrays.toString(pkcs7UnPadding(paddingPlaintext));
         } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
-                 InvalidKeyException e) {
+                 InvalidKeyException | InvalidAlgorithmParameterException e) {
             throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage());
         }
     }
+
+    private static byte[] pkcs7Padding(byte[] data, int blockSize) {
+        int paddingLength = blockSize - (data.length % blockSize);
+        byte[] paddingData = new byte[data.length + paddingLength];
+        System.arraycopy(data, 0, paddingData, 0, data.length);
+        for (int i = data.length; i < paddingData.length; i++) {
+            paddingData[i] = (byte) paddingLength;
+        }
+        return paddingData;
+    }
+
+    private static byte[] pkcs7UnPadding(byte[] data) {
+        int paddingLength = data[data.length - 1];
+        return paddingLength == 0 ? data : subBytes(data, 0, data.length - paddingLength);
+    }
+
+    private static byte[] subBytes(byte[] data, int offset, int length) {
+        byte[] result = new byte[length];
+        System.arraycopy(data, offset, result, 0, length);
+        return result;
+    }
+
+    public static void main(String[] args) {
+        String content = "hello world";
+        byte[] password = generateAesKey();
+        String encrypt = encrypt(content, password);
+        System.out.println(encrypt);
+        String decrypt = decrypt(encrypt, password);
+        System.out.println(decrypt);
+    }
+
+
 }

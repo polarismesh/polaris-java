@@ -20,7 +20,7 @@ package com.tencent.polaris.plugins.configfilter.crypto;
 import com.tencent.polaris.plugins.configfilter.crypto.util.AESUtil;
 import org.junit.Test;
 
-import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author fabian4
@@ -31,9 +31,9 @@ public class AESUtilTest {
     @Test
     public void testAes() {
         byte[] aesKey = AESUtil.generateAesKey();
-        byte[] content = "test content".getBytes();
-        byte[] encrypted = AESUtil.encrypt(content, aesKey);
-        byte[] decrypted = AESUtil.decrypt(encrypted, aesKey);
-        assertArrayEquals(content, decrypted);
+        String content = "test content";
+        String encrypted = AESUtil.encrypt(content, aesKey);
+        String decrypted = AESUtil.decrypt(encrypted, aesKey);
+        assertEquals(content, decrypted);
     }
 }

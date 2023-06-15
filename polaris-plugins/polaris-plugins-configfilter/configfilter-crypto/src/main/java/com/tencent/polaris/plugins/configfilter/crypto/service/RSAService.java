@@ -17,8 +17,13 @@
 
 package com.tencent.polaris.plugins.configfilter.crypto.service;
 
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.plugins.configfilter.crypto.util.RSAUtil;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -42,10 +47,18 @@ public class RSAService {
     }
 
     public byte[] decrypt(String context) {
-        return RSAUtil.decrypt(context.getBytes(), this.privateKey);
+        return RSAUtil.decrypt(Base64.getDecoder().decode(context), this.privateKey);
     }
 
     public String getPublicKey() {
-        return Base64.getEncoder().encodeToString(publicKey.getEncoded());
+        SubjectPublicKeyInfo spkInfo = SubjectPublicKeyInfo.getInstance(this.publicKey.getEncoded());
+        ASN1Primitive primitive;
+        try {
+            primitive = spkInfo.parsePublicKey();
+            byte[] publicKeyPKCS1 = primitive.getEncoded();
+            return  Base64.getEncoder().encodeToString(publicKeyPKCS1);
+        } catch (IOException e) {
+            throw new PolarisException(ErrorCode.RSA_KEY_GENERATE_ERROR, e.getMessage());
+        }
     }
 }

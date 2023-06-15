@@ -19,7 +19,8 @@ package com.tencent.polaris.plugins.configfilter.crypto.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -31,7 +32,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Security;
 import java.util.Base64;
 
 /**
@@ -89,13 +89,13 @@ public class RSAUtil {
     }
 
     public static void main(String[] args) throws Exception {
-        Security.addProvider(new BouncyCastleProvider());
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-        keyPairGenerator.initialize(1024);
-        KeyPair keyPair = keyPairGenerator.generateKeyPair();
-        PublicKey publicKey = keyPair.getPublic();
-        System.out.println(Base64.getEncoder().encodeToString(publicKey.getEncoded()));
-
-
+        KeyPair keyPair = RSAUtil.generateRsaKeyPair();
+        System.out.println(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+        PublicKey pub = keyPair.getPublic();
+        byte[] pubBytes = pub.getEncoded();
+        SubjectPublicKeyInfo spkInfo = SubjectPublicKeyInfo.getInstance(pubBytes);
+        ASN1Primitive primitive = spkInfo.parsePublicKey();
+        byte[] publicKeyPKCS1 = primitive.getEncoded();
+        System.out.println(Base64.getEncoder().encodeToString(publicKeyPKCS1));
     }
 }
