@@ -12,11 +12,17 @@
 
     <artifactId>polaris-plugins-configfilter</artifactId>
 
-    <name>Polaris Plugins Configfilter</name>
-    <description>Polaris Plugins Configfilter POM</description>
-    <packaging>pom</packaging>
-    <modules>
-        <module>configfilter-crypto</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.68</version>
+        </dependency>
+    </dependencies>
 
 </project>

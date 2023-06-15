@@ -15,11 +15,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configfilter.crypto.service;
+package com.tencent.polaris.plugins.configfilter.service;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.plugins.configfilter.crypto.util.RSAUtil;
+import com.tencent.polaris.plugins.configfilter.util.RSAUtil;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
 import java.util.Base64;
 
 /**

@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configfilter.crypto;
+package com.tencent.polaris.plugins.configfilter;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -25,16 +25,14 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
-import com.tencent.polaris.plugins.configfilter.crypto.service.RSAService;
-import com.tencent.polaris.plugins.configfilter.crypto.util.AESUtil;
-
-import java.util.Arrays;
+import com.tencent.polaris.plugins.configfilter.service.RSAService;
+import com.tencent.polaris.plugins.configfilter.util.AESUtil;
 
 /**
  * @author fabian4
  * @date 2023/6/14
  */
-public class AESConfigFilterCrypto implements ConfigFilterCrypto {
+public class ConfigFileFilter implements ConfigFilterCrypto {
 
     private RSAService rsaService;
 
