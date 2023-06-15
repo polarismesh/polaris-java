@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.configfilter.crypto.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
@@ -27,6 +28,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -91,7 +93,7 @@ public class AESUtil {
             return Arrays.toString(pkcs7UnPadding(paddingPlaintext));
         } catch (IllegalBlockSizeException | BadPaddingException | NoSuchPaddingException | NoSuchAlgorithmException |
                  InvalidKeyException | InvalidAlgorithmParameterException e) {
-            throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage());
+            throw new PolarisException(ErrorCode.AES_DECRYPT_ERROR, e.getMessage());
         }
     }
 
@@ -116,13 +118,19 @@ public class AESUtil {
         return result;
     }
 
-    public static void main(String[] args) {
-        String content = "hello world";
-        byte[] password = generateAesKey();
-        String encrypt = encrypt(content, password);
-        System.out.println(encrypt);
-        String decrypt = decrypt(encrypt, password);
-        System.out.println(decrypt);
+    public static void main(String[] args) throws Exception {
+
+        String dataKey = "UAKx/VOOOHPunAOCTxsh4A==";
+        String text = "XMzmtqRuLRr3naTKWbuJXA==";
+
+        Security.addProvider(new BouncyCastleProvider());
+        SecretKeySpec key = new SecretKeySpec(Base64.getDecoder().decode(dataKey), "AES");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        byte[] iv = new byte[cipher.getBlockSize()];
+        IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+        cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
+        byte[] paddingPlaintext = cipher.doFinal(Base64.getDecoder().decode(text));
+        System.out.println(Arrays.toString(pkcs7UnPadding(paddingPlaintext)));
     }
 
 

@@ -64,7 +64,7 @@ public class AESConfigFilterCrypto implements ConfigFilterCrypto {
     public ConfigFileResponse doAfter(ConfigFileResponse configFileResponse) {
         ConfigFile configFile = configFileResponse.getConfigFile();
         byte[] password = rsaService.decrypt(configFile.getDataKey());
-        String result = AESUtil.decrypt(configFile.getContent(),password);
+        String result = AESUtil.decrypt(configFile.getContent(), password);
         configFile.setContent(result);
         return configFileResponse;
     }
