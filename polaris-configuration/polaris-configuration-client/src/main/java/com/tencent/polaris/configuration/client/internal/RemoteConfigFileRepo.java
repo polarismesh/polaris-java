@@ -18,11 +18,10 @@
 package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -48,7 +47,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
     private final AtomicLong notifiedVersion;
-    private ConfigFilterCrypto crypto;
+    private ConfigFileFilter crypto;
     private final ConfigFileConnector configFileConnector;
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
@@ -60,7 +59,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     public RemoteConfigFileRepo(SDKContext sdkContext,
                                 ConfigFileLongPullService pullService,
-                                ConfigFilterCrypto crypto,
+                                ConfigFileFilter crypto,
                                 ConfigFileConnector connector,
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {

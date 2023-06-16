@@ -112,7 +112,7 @@
         <!--配置加密插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-plugins-configfilter</artifactId>
+            <artifactId>configfilefilter-crypto</artifactId>
             <version>${project.version}</version>
         </dependency>
 

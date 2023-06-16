@@ -23,7 +23,7 @@ import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.api.plugin.crypto.ConfigFilterCrypto;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
 public class RemoteConfigFileRepoTest {
 
     @Mock
-    private ConfigFilterCrypto crypto;
+    private ConfigFileFilter crypto;
     @Mock
     private ConfigFileConnector          configFileConnector;
     @Mock
