@@ -88,6 +88,7 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
+        when(crypto.doAfter(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
             new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
@@ -107,7 +108,7 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-
+        when(crypto.doAfter(any())).thenReturn(configFileResponse);
 		doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
@@ -172,6 +173,7 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
+        when(crypto.doAfter(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
             new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,

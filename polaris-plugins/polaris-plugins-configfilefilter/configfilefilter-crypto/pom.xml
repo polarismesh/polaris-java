@@ -9,12 +9,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>configfilefilter-crypto</artifactId>
-
-    <name>Configfilter Crypto</name>
+    <name>configfilefilter Crypto</name>
     <description>Config filter Crypto POM</description>
-
 
     <dependencies>
         <dependency>
