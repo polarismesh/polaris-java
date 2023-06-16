@@ -31,6 +31,9 @@ public class DefaultConfigFileFlow implements ConfigFileFlow {
 
     private ConfigFileManager configFileManager;
 
+    public DefaultConfigFileFlow() {
+    }
+
     @JustForTest
     public DefaultConfigFileFlow(ConfigFileManager fileManager) {
         configFileManager = fileManager;
