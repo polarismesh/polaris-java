@@ -19,6 +19,7 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
@@ -45,14 +46,16 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ConfigFileManagerTest {
 
-
     private ConfigFileManager fileManager;
+
+    private ConfigFileFilter configFileFilter;
 
     private ConfigFileConnector configFileConnector;
 
     @Before
     public void before() {
         fileManager = spy(new ConfigFileManager());
+        configFileFilter = spy(ConfigFileFilter.class);
         configFileConnector = spy(ConfigFileConnector.class);
     }
 
@@ -127,6 +130,7 @@ public class ConfigFileManagerTest {
                 configFileMetadata.getFileName());
         configFile.setContent("content");
 
+        doThrow(new RuntimeException("test")).when(configFileFilter).doBefore(configFile);
         doThrow(new RuntimeException("test")).when(configFileConnector).createConfigFile(configFile);
 
         ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
@@ -142,6 +146,7 @@ public class ConfigFileManagerTest {
                 configFileMetadata.getFileName());
         configFile.setContent("content");
 
+        doThrow(new RuntimeException("test")).when(configFileFilter).doBefore(configFile);
         doThrow(new RuntimeException("test")).when(configFileConnector).updateConfigFile(configFile);
 
         ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
@@ -152,6 +157,8 @@ public class ConfigFileManagerTest {
     @Test(expected = RuntimeException.class)
     public void testReleaseConfigFile() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        doThrow(new RuntimeException("test")).when(configFileFilter).doBefore(Mockito.any());
         doThrow(new RuntimeException("test")).when(configFileConnector).releaseConfigFile(Mockito.any());
 
         ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);

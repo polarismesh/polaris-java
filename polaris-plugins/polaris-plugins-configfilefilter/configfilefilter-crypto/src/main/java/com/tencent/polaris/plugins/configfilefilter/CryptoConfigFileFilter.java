@@ -36,6 +36,10 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
 
     private RSAService rsaService;
 
+    public RSAService getRsaService() {
+        return rsaService;
+    }
+
     @Override
     public String getName() {
         return "AES";
@@ -54,7 +58,7 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     @Override
     public ConfigFile doBefore(ConfigFile configFile) {
         configFile.setEncrypted(Boolean.TRUE);
-        configFile.setPublicKey(rsaService.getPublicKey());
+        configFile.setPublicKey(rsaService.getPKCS1PublicKey());
         return configFile;
     }
 

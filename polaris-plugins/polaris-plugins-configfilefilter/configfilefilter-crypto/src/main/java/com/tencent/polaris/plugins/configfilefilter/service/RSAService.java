@@ -49,7 +49,11 @@ public class RSAService {
         return RSAUtil.decrypt(Base64.getDecoder().decode(context), this.privateKey);
     }
 
-    public String getPublicKey() {
+    public PublicKey getPublicKey() {
+        return this.publicKey;
+    }
+
+    public String getPKCS1PublicKey() {
         SubjectPublicKeyInfo spkInfo = SubjectPublicKeyInfo.getInstance(this.publicKey.getEncoded());
         ASN1Primitive primitive;
         try {
@@ -60,4 +64,5 @@ public class RSAService {
             throw new PolarisException(ErrorCode.RSA_KEY_GENERATE_ERROR, e.getMessage());
         }
     }
+
 }

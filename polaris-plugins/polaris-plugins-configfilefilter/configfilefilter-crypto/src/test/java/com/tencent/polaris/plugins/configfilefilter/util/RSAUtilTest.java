@@ -15,25 +15,30 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configfilefilter;
+package com.tencent.polaris.plugins.configfilefilter.util;
 
-import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
+import static org.junit.Assert.assertArrayEquals;
 
 /**
  * @author fabian4
  * @date 2023/6/14
  */
-public class AESUtilTest {
+public class RSAUtilTest {
 
     @Test
-    public void testAes() {
-        byte[] aesKey = AESUtil.generateAesKey();
-        String content = "test content";
-        String encrypted = AESUtil.encrypt(content, aesKey);
-        String decrypted = AESUtil.decrypt(encrypted, aesKey);
-        assertEquals(content, decrypted);
+    public void testRsa() {
+        KeyPair keyPair = RSAUtil.generateRsaKeyPair();
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+        byte[] content = "test content".getBytes();
+        byte[] encrypted = RSAUtil.encrypt(content, publicKey);
+        byte[] decrypted = RSAUtil.decrypt(encrypted, privateKey);
+        assertArrayEquals(content, decrypted);
     }
 }

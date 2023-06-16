@@ -22,6 +22,7 @@ import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
+import com.tencent.polaris.factory.util.ConfigUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public boolean isEnable() {
-        return false;
+        return enable;
     }
 
     @Override
@@ -62,11 +63,17 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public void verify() {
-
+        ConfigUtils.validateNull(chain, "chain");
     }
 
     @Override
     public void setDefault(Object defaultObject) {
-
+        ConfigFilterConfigImpl defaultConfig = (ConfigFilterConfigImpl) defaultObject;
+        if (this.enable == null) {
+            this.enable = defaultConfig.enable;
+        }
+        if (this.chain == null) {
+            this.chain = defaultConfig.chain;
+        }
     }
 }
