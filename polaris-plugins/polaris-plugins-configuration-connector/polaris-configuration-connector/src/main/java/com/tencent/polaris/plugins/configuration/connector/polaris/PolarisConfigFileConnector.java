@@ -249,8 +249,10 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
         builder.setFileName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
         builder.setVersion(UInt64Value.newBuilder().setValue(configFile.getVersion()).build());
-        builder.setEncrypted(BoolValue.newBuilder().setValue(configFile.isEncrypted()).buildPartial());
-        builder.setPublicKey(StringValue.newBuilder().setValue(configFile.getPublicKey()).build());
+        if (configFile.isEncrypted()) {
+            builder.setEncrypted(BoolValue.newBuilder().setValue(configFile.isEncrypted()).buildPartial());
+            builder.setPublicKey(StringValue.newBuilder().setValue(configFile.getPublicKey()).build());
+        }
 
         return builder.build();
     }
