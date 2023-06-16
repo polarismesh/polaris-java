@@ -67,13 +67,5 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
     }
 
     @Override
-    public void setDefault(Object defaultObject) {
-        ConfigFilterConfigImpl defaultConfig = (ConfigFilterConfigImpl) defaultObject;
-        if (this.enable == null) {
-            this.enable = defaultConfig.enable;
-        }
-        if (this.chain == null) {
-            this.chain = defaultConfig.chain;
-        }
-    }
+    public void setDefault(Object defaultObject) {}
 }

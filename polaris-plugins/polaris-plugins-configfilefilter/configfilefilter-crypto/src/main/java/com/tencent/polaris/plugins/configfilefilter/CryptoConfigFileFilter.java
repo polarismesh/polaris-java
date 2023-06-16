@@ -65,9 +65,11 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     @Override
     public ConfigFileResponse doAfter(ConfigFileResponse configFileResponse) {
         ConfigFile configFile = configFileResponse.getConfigFile();
-        byte[] password = rsaService.decrypt(configFile.getDataKey());
-        String result = AESUtil.decrypt(configFile.getContent(), password);
-        configFile.setContent(result);
+        if (configFile.isEncrypted()) {
+            byte[] password = rsaService.decrypt(configFile.getDataKey());
+            String result = AESUtil.decrypt(configFile.getContent(), password);
+            configFile.setContent(result);
+        }
         return configFileResponse;
     }
 
