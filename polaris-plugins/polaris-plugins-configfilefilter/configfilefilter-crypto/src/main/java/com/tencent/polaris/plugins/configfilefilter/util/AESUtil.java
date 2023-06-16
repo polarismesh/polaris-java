@@ -62,16 +62,15 @@ public class AESUtil {
      * @param password 加密密码
      */
     public static String encrypt(String content, byte[] password) {
-        SecretKeySpec key = new SecretKeySpec(password, "AES");
         try {
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
             byte[] iv = new byte[cipher.getBlockSize()];
-            IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-            cipher.init(Cipher.DECRYPT_MODE, key, ivParameterSpec);
+            System.arraycopy(password, 0, iv, 0, cipher.getBlockSize());
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(password, "AES"), new IvParameterSpec(iv));
             byte[] bytes = cipher.doFinal(content.getBytes());
             return Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
-            throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage());
+            throw new PolarisException(ErrorCode.AES_ENCRYPT_ERROR, e.getMessage(), e);
         }
     }
 
@@ -90,7 +89,7 @@ public class AESUtil {
             byte[] paddingPlaintext = cipher.doFinal(Base64.getDecoder().decode(content));
             return new String(paddingPlaintext);
         } catch (Exception e) {
-            throw new PolarisException(ErrorCode.AES_DECRYPT_ERROR, "", e);
+            throw new PolarisException(ErrorCode.AES_DECRYPT_ERROR, e.getMessage(), e);
         }
     }
 
