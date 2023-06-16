@@ -87,15 +87,4 @@ public class RSAUtil {
             throw new PolarisException(ErrorCode.RSA_DECRYPT_ERROR, e.getMessage());
         }
     }
-
-    public static void main(String[] args) throws Exception {
-        KeyPair keyPair = RSAUtil.generateRsaKeyPair();
-        System.out.println(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
-        PublicKey pub = keyPair.getPublic();
-        byte[] pubBytes = pub.getEncoded();
-        SubjectPublicKeyInfo spkInfo = SubjectPublicKeyInfo.getInstance(pubBytes);
-        ASN1Primitive primitive = spkInfo.parsePublicKey();
-        byte[] publicKeyPKCS1 = primitive.getEncoded();
-        System.out.println(Base64.getEncoder().encodeToString(publicKeyPKCS1));
-    }
 }

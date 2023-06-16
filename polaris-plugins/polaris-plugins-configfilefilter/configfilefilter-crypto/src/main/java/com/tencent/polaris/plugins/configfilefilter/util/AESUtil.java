@@ -94,14 +94,4 @@ public class AESUtil {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-
-        String dataKey = "vFbsBUbsWKIm16Iy0a7fFw==";
-        String text = "tsEnaHHkb9OeeaVr4J+cl4rxMxqn0TAAB2MYnvWTbEs=";
-
-        System.out.println(AESUtil.encrypt(text, Base64.getDecoder().decode(dataKey)));
-
-    }
-
-
 }
