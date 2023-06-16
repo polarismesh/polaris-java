@@ -76,11 +76,12 @@ public class CryptoConfigFileFilterTest {
 
         String content = "content";
         configFile.setContent(AESUtil.encrypt(content, dataKey));
+        configFile.setEncrypted(Boolean.TRUE);
 
         when(configFileResponse.getConfigFile()).thenReturn(configFile);
 
-
         cryptoConfigFileFilter.doAfter(configFileResponse);
-        assertEquals(configFileResponse.getConfigFile().getContent(), content);
+
+        assertEquals(content, configFileResponse.getConfigFile().getContent());
     }
 }
