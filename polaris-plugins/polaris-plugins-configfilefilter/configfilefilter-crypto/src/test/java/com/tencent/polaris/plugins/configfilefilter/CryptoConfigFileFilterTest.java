@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugins.configfilefilter;
 
-import com.fasterxml.jackson.databind.ser.Serializers;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
@@ -28,7 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Base64;
 
