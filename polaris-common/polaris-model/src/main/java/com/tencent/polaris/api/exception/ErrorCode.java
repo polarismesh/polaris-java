@@ -182,32 +182,32 @@ public enum ErrorCode {
     /**
      * 内部错误：RSA key 生成失败
      */
-    RSA_KEY_GENERATE_ERROR(20011),
+    RSA_KEY_GENERATE_ERROR(30001),
 
     /**
      * 内部错误：RSA 加密失败
      */
-    RSA_ENCRYPT_ERROR(20012),
+    RSA_ENCRYPT_ERROR(30002),
 
     /**
      * 内部错误：RSA 解密失败
      */
-    RSA_DECRYPT_ERROR(20013),
+    RSA_DECRYPT_ERROR(30003),
 
     /**
      * 内部错误：AES key 生成失败
      */
-    AES_KEY_GENERATE_ERROR(20014),
+    AES_KEY_GENERATE_ERROR(30004),
 
     /**
      * 内部错误：AES 加密失败
      */
-    AES_ENCRYPT_ERROR(20015),
+    AES_ENCRYPT_ERROR(30005),
 
     /**
      * 内部错误：AES 解密失败
      */
-    AES_DECRYPT_ERROR(20016);
+    AES_DECRYPT_ERROR(30006);
 
     private final int code;
 

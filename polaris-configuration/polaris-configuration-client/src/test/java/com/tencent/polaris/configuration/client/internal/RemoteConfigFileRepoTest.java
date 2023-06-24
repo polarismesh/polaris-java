@@ -27,7 +27,6 @@ import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
-
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
@@ -38,6 +37,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -88,10 +88,9 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-        when(crypto.doAfter(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
 					configFileMetadata, configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
@@ -108,11 +107,10 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-        when(crypto.doAfter(any())).thenReturn(configFileResponse);
 		doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
@@ -131,7 +129,7 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         //重试三次
@@ -149,7 +147,7 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         //重试三次
@@ -173,10 +171,9 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-        when(crypto.doAfter(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, crypto, configFileConnector,
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
 					configFileMetadata,configFilePersistHandler);
 
         AtomicInteger cbCnt = new AtomicInteger();

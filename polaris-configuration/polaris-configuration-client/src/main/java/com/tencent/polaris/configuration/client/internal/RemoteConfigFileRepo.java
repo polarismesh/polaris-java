@@ -26,6 +26,7 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +48,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
     private final AtomicLong notifiedVersion;
-    private ConfigFileFilter crypto;
+    private List<ConfigFileFilter> configFileFilters;
     private final ConfigFileConnector configFileConnector;
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
@@ -59,7 +60,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     public RemoteConfigFileRepo(SDKContext sdkContext,
                                 ConfigFileLongPullService pullService,
-                                ConfigFileFilter crypto,
+                                List<ConfigFileFilter> configFileFilters,
                                 ConfigFileConnector connector,
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {
@@ -69,7 +70,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
-        this.crypto = crypto;
+        this.configFileFilters = configFileFilters;
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
@@ -122,10 +123,12 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         while (retryTimes < PULL_CONFIG_RETRY_TIMES) {
             try {
 
-                ConfigFileResponse response = configFileConnector.getConfigFile(crypto.doBefore(pullConfigFileReq));
+                configFileFilters.forEach(configFileFilter -> configFileFilter.doBefore(pullConfigFileReq));
+
+                ConfigFileResponse response = configFileConnector.getConfigFile(pullConfigFileReq);
                 retryPolicy.success();
 
-                response = crypto.doAfter(response);
+                configFileFilters.forEach(configFileFilter -> configFileFilter.doAfter(response));
                 //打印请求信息
                 long pulledConfigFileVersion =
                         response.getConfigFile() != null ? response.getConfigFile().getVersion() : -1;

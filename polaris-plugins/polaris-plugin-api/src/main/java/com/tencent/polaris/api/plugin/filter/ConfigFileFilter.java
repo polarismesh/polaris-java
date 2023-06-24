@@ -12,7 +12,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
  */
 public interface ConfigFileFilter extends Plugin {
 
-    ConfigFile doBefore(ConfigFile configFile);
+    void doBefore(ConfigFile configFile);
 
-    ConfigFileResponse doAfter(ConfigFileResponse configFileResponse);
+    void doAfter(ConfigFileResponse configFileResponse);
 }

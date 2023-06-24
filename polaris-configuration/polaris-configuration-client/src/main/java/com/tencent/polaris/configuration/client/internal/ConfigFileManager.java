@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
-import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
@@ -30,6 +29,8 @@ import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.client.JustForTest;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -42,9 +43,9 @@ public class ConfigFileManager {
 
     private SDKContext context;
 
-    private ConfigFileFilter crypto;
-
     private ConfigFileConnector connector;
+
+    private List<ConfigFileFilter> configFileFilters;
 
     private final Map<ConfigFileMetadata, ConfigFile> configFileCache = new ConcurrentHashMap<>();
 
@@ -67,11 +68,8 @@ public class ConfigFileManager {
     public ConfigFileManager(SDKContext sdkContext) {
         String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
                 .getConnectorType();
-        String cryptoType = sdkContext.getConfig().getConfigFile().getConfigFilterConfig().getChain().get(0);
-        CryptoConfig pluginConfig = sdkContext.getConfig().getConfigFile().getConfigFilterConfig().getPluginConfig(cryptoType, CryptoConfig.class);
         this.context = sdkContext;
-        this.crypto = (ConfigFileFilter) sdkContext.getExtensions().getPlugins()
-                .getPlugin(PluginTypes.CONFIG_FILTER_CRYPTO.getBaseType(), pluginConfig.getType());
+        this.configFileFilters = Collections.singletonList((ConfigFileFilter) sdkContext.getExtensions().getPlugins().getPlugins(PluginTypes.CONFIG_FILTER_CRYPTO.getBaseType()));
         this.connector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         this.longPullService = new ConfigFileLongPullService(context, connector);
@@ -139,7 +137,7 @@ public class ConfigFileManager {
 
     public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
 
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, crypto, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilters, connector, configFileMetadata, persistentHandler);
 
         return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName(), configFileRepo,
@@ -147,7 +145,7 @@ public class ConfigFileManager {
     }
 
     public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, crypto, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilters, connector, configFileMetadata, persistentHandler);
         switch (format) {
             case Properties: {
                 return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
