@@ -100,7 +100,7 @@ public enum PluginTypes {
     /**
      * 配置加密扩展点
      */
-    CONFIG_FILTER_CRYPTO(new PluginType(ConfigFileFilter.class, 2)),
+    CONFIG_FILTER(new PluginType(ConfigFileFilter.class, 2)),
 
     /**
      * 配置文件加载器扩展点

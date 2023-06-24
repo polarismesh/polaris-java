@@ -47,7 +47,7 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
 
     @Override
     public PluginType getType() {
-        return PluginTypes.CONFIG_FILTER_CRYPTO.getBaseType();
+        return PluginTypes.CONFIG_FILTER.getBaseType();
     }
 
     @Override
