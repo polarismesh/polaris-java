@@ -102,6 +102,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 				SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
 		initSampleMapping(MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY,
 				SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
+		initSampleMapping(MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY,
+				SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
 	}
 
 	@Override
@@ -152,6 +154,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 		if (null != statInfo.getCircuitBreakGauge()) {
 			handleCircuitBreakGauge(statInfo.getCircuitBreakGauge());
 		}
+		if (null != statInfo.getRateLimitGauge()) {
+			handleRateLimitGauge(statInfo.getRateLimitGauge());
+		}
 	}
 
 	public void handleRouterGauge(InstanceGauge instanceGauge) {
@@ -167,6 +172,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 			container.getCircuitBreakerCollector().collectStatInfo(circuitBreakGauge,
 					CommonHandler.convertCircuitBreakToLabels(circuitBreakGauge, sdkIP),
 					MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY);
+		}
+	}
+
+	public void handleRateLimitGauge(RateLimitGauge rateLimitGauge) {
+		if (null != container && null != container.getRateLimitCollector()) {
+			container.getRateLimitCollector().collectStatInfo(rateLimitGauge,
+					CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge),
+					MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY);
 		}
 	}
 
@@ -249,7 +262,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 		CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getCircuitBreakerCollector(),
 				0,
 				SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
-
+		CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getRateLimitCollector(),
+				container.getRateLimitCollector().getCurrentRevision(),
+				SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
 		for (StatInfoCollector<?, ? extends StatMetric> s : container.getCollectors()) {
 			if (s instanceof StatInfoRevisionCollector<?>) {
 				long currentRevision = ((StatInfoRevisionCollector<?>) s).incRevision();
@@ -285,7 +300,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 			CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getCircuitBreakerCollector(),
 					0,
 					SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
-
+			CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getRateLimitCollector(),
+					container.getRateLimitCollector().getCurrentRevision(),
+					SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
 			try {
 				if (Objects.isNull(pushGateway)) {
 					LOGGER.info("init push-gateway {} ", config.getAddress());
