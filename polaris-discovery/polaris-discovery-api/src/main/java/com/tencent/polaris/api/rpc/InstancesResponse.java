@@ -79,6 +79,13 @@ public class InstancesResponse extends BaseEntity {
         return instances;
     }
 
+    public Instance getInstance() {
+        if (null != instances && instances.length > 0) {
+            return instances[0];
+        }
+        return null;
+    }
+
     public ServiceInstances toServiceInstances() {
         return new ServiceInstancesWrap(serviceInstances, Arrays.asList(getInstances()), totalWeight);
     }

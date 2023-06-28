@@ -64,7 +64,7 @@ public class UdpHealthChecker implements HealthChecker, PluginConfigProvider {
         UdpProtocolConfig curConfig = config;
 
         int timeoutMs = DEFAULT_TIMEOUT_MILLI;
-        if (null != faultDetectRule && faultDetectRule.getProtocol() == Protocol.TCP) {
+        if (null != faultDetectRule && faultDetectRule.getProtocol() == Protocol.UDP) {
             if (faultDetectRule.getTimeout() > 0) {
                 timeoutMs = faultDetectRule.getTimeout();
             }

@@ -34,6 +34,9 @@ global:
         - metadataRouter
         - nearbyBasedRouter
       lbPolicy: ringHash
+    #描述：流程配置
+    flow:
+      name: default
     #描述: SDK流程数据缓存配置
     flowCache:
       enable: true
@@ -271,6 +274,8 @@ provider:
     limiterService: polaris.limiter
     # 匀速排队最大排队时间，ms
     maxQueuingTime: 1000
+    # 是否上报限流监控视图, 该开关默认关闭，如果需要使用限流的老监控视图，则需要开启此监控数据上报开关
+    reportMetrics: false
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量

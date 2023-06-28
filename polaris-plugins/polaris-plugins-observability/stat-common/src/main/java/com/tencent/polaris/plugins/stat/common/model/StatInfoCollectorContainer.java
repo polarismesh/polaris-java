@@ -51,4 +51,3 @@ public class StatInfoCollectorContainer {
         return Arrays.asList(insCollector, rateLimitCollector, circuitBreakerCollector);
     }
 }
-

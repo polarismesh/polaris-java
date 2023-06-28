@@ -72,6 +72,9 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
             SpecStreamClient specStreamClient = streamClientAtomicReference.get();
             boolean available = checkStreamClientAvailable(specStreamClient, serviceUpdateTask);
             if (!available) {
+                if (null != specStreamClient) {
+                    specStreamClient.closeStream(true);
+                }
                 LOG.debug("[ServerConnector]start to get connection for task {}", serviceUpdateTask);
                 Connection connection = null;
                 try {

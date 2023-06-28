@@ -100,9 +100,6 @@ public class CommonHandler {
                 case SystemMetricName.CALLEE_METHOD:
                     addLabel(labelName, insGauge.getMethod(), labels);
                     break;
-                case SystemMetricName.CALLEE_SUBSET:
-                    addLabel(labelName, insGauge.getSubset(), labels);
-                    break;
                 case SystemMetricModel.SystemMetricName.CALLEE_INSTANCE:
                     addLabel(labelName, buildAddress(insGauge.getHost(), insGauge.getPort()), labels);
                     break;
@@ -132,36 +129,6 @@ public class CommonHandler {
                 case SystemMetricName.CALLER_IP:
                     String callerIp = Objects.isNull(insGauge.getCallerIp()) ? sdkIP : insGauge.getCallerIp();
                     addLabel(labelName, callerIp, labels);
-                    break;
-                case SystemMetricName.RULE_NAME:
-                    String ruleName = Objects.isNull(insGauge.getRuleName()) ? null : insGauge.getRuleName();
-                    addLabel(labelName, ruleName, labels);
-                    break;
-                default:
-            }
-        }
-
-        return labels;
-    }
-
-    public static Map<String, String> convertRateLimitGaugeToLabels(RateLimitGauge rateLimitGauge) {
-        Map<String, String> labels = new HashMap<>();
-        for (String labelName : SystemMetricModel.SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER) {
-            switch (labelName) {
-                case SystemMetricName.CALLEE_NAMESPACE:
-                    addLabel(labelName, rateLimitGauge.getNamespace(), labels);
-                    break;
-                case SystemMetricName.CALLEE_SERVICE:
-                    addLabel(labelName, rateLimitGauge.getService(), labels);
-                    break;
-                case SystemMetricName.CALLEE_METHOD:
-                    addLabel(labelName, rateLimitGauge.getMethod(), labels);
-                    break;
-                case SystemMetricName.CALLER_LABELS:
-                    addLabel(labelName, rateLimitGauge.getLabels(), labels);
-                    break;
-                case SystemMetricName.RULE_NAME:
-                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
                     break;
                 default:
             }
@@ -207,6 +174,32 @@ public class CommonHandler {
                     break;
                 case SystemMetricName.LEVEL:
                     addLabel(labelName, gauge.getLevel(), labels);
+                    break;
+                default:
+            }
+        }
+
+        return labels;
+    }
+
+    public static Map<String, String> convertRateLimitGaugeToLabels(RateLimitGauge rateLimitGauge) {
+        Map<String, String> labels = new HashMap<>();
+        for (String labelName : SystemMetricModel.SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER) {
+            switch (labelName) {
+                case SystemMetricName.CALLEE_NAMESPACE:
+                    addLabel(labelName, rateLimitGauge.getNamespace(), labels);
+                    break;
+                case SystemMetricName.CALLEE_SERVICE:
+                    addLabel(labelName, rateLimitGauge.getService(), labels);
+                    break;
+                case SystemMetricName.CALLEE_METHOD:
+                    addLabel(labelName, rateLimitGauge.getMethod(), labels);
+                    break;
+                case SystemMetricName.CALLER_LABELS:
+                    addLabel(labelName, rateLimitGauge.getLabels(), labels);
+                    break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
                     break;
                 default:
             }

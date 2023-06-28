@@ -28,6 +28,8 @@ import java.util.Map;
  */
 public class InstanceRegisterRequest extends CommonProviderBaseEntity {
 
+    private boolean autoHeartbeat;
+
     public String getInstanceId() {
         return request.getInstanceID();
     }
@@ -100,6 +102,14 @@ public class InstanceRegisterRequest extends CommonProviderBaseEntity {
         request.setCampus(campus);
     }
 
+    public boolean isAutoHeartbeat() {
+        return autoHeartbeat;
+    }
+
+    public void setAutoHeartbeat(boolean autoHeartbeat) {
+        this.autoHeartbeat = autoHeartbeat;
+    }
+
     /**
      * 心跳上报的TTL，单位秒
      *
@@ -114,11 +124,11 @@ public class InstanceRegisterRequest extends CommonProviderBaseEntity {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "InstanceRegisterRequest{" +
-                "request=" + request +
-                '}';
+                "autoHeartbeat=" + autoHeartbeat +
+                ", request=" + request +
+                "} " + super.toString();
     }
 
     public CommonProviderRequest getRequest() {

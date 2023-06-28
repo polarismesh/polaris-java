@@ -18,10 +18,10 @@
 package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
 
 public class ServiceResource extends AbstractResource {
+
 
     public ServiceResource(ServiceKey service) {
         this(service, null);
@@ -29,16 +29,11 @@ public class ServiceResource extends AbstractResource {
 
     public ServiceResource(ServiceKey service, ServiceKey callerService) {
         super(service, callerService);
-        CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
     }
 
     @Override
     public Level getLevel() {
         return Level.SERVICE;
-    }
-
-    public ServiceKey getService() {
-        return service;
     }
 
     @Override

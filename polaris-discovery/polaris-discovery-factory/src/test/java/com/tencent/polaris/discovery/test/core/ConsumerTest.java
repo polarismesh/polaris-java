@@ -208,7 +208,7 @@ public class ConsumerTest {
                 request.setNamespace(NAMESPACE_TEST);
                 request.setService(validParam.getServiceName());
 
-                InstancesResponse instancesResponse = consumerAPI.getAllInstance(request);
+                InstancesResponse instancesResponse = consumerAPI.getAllInstances(request);
                 Assert.assertEquals(validParam.getCountAll(), instancesResponse.getInstances().length);
                 Assert.assertEquals(validParam.getCountHasWeight() * 100, instancesResponse.getTotalWeight());
             }
@@ -219,6 +219,11 @@ public class ConsumerTest {
         ValidParam validParam = validParams.get(operation);
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (int i = 0; i < ITERATE_COUNT; i++) {
                 GetInstancesRequest request = new GetInstancesRequest();
                 request.setNamespace(NAMESPACE_TEST);
@@ -266,6 +271,11 @@ public class ConsumerTest {
         ValidParam validParam = validParams.get(operation);
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (int i = 0; i < ITERATE_COUNT; i++) {
                 GetOneInstanceRequest request = new GetOneInstanceRequest();
                 request.setNamespace(NAMESPACE_TEST);

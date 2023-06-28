@@ -107,6 +107,11 @@ public class ServiceDynamicRuleTest {
         getInstancesRequest.setServiceInfo(serviceInfo);
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             InstancesResponse oneInstance = consumerAPI.getInstances(getInstancesRequest);
             Assert.assertEquals(MATCH_META_COUNT, oneInstance.getInstances().length);
         }

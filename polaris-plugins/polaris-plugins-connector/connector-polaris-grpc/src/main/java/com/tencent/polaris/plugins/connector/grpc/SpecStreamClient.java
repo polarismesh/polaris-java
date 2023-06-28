@@ -260,13 +260,13 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             updateTask = pendingTask.remove(serviceEventKey);
         }
         if (null == updateTask) {
-            LOG.error("[ServerConnector]callback not found for:{}", TextFormat.shortDebugString(service));
+            LOG.warn("[ServerConnector]callback not found for:{}", TextFormat.shortDebugString(service));
             return;
         }
         if (updateTask.getTaskType() == Type.FIRST) {
-            LOG.info("[ServerConnector]receive response for {}", serviceEventKey);
+            LOG.info("[ServerConnector]request(id={}) receive response for {}", getReqId(), serviceEventKey);
         } else {
-            LOG.debug("[ServerConnector]receive response for {}", serviceEventKey);
+            LOG.debug("[ServerConnector]request(id={}) receive response for {}", getReqId(), serviceEventKey);
         }
         boolean svcDeleted = updateTask.notifyServerEvent(new ServerEvent(serviceEventKey, response, null));
         if (!svcDeleted) {

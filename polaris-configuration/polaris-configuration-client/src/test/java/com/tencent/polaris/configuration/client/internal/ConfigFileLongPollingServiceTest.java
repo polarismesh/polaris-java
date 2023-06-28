@@ -56,8 +56,8 @@ public class ConfigFileLongPollingServiceTest {
     @Test
     public void testNotReceivedPushEvent() throws InterruptedException {
         //初始化 LongPollingService
-        DefaultConfigFileLongPollingService longPollingService =
-            new DefaultConfigFileLongPollingService(sdkContext, configFileConnector);
+        ConfigFileLongPullService longPollingService =
+            new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -87,8 +87,8 @@ public class ConfigFileLongPollingServiceTest {
     @Test
     public void testReceivedPushEvent() throws InterruptedException {
         //初始化 LongPollingService
-        DefaultConfigFileLongPollingService longPollingService =
-            new DefaultConfigFileLongPollingService(sdkContext, configFileConnector);
+        ConfigFileLongPullService longPollingService =
+            new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -123,8 +123,8 @@ public class ConfigFileLongPollingServiceTest {
     @Test
     public void testThrowRetryException() throws InterruptedException {
         //初始化 LongPollingService
-        DefaultConfigFileLongPollingService longPollingService =
-            new DefaultConfigFileLongPollingService(sdkContext, configFileConnector);
+        ConfigFileLongPullService longPollingService =
+            new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -148,8 +148,8 @@ public class ConfigFileLongPollingServiceTest {
     @Test
     public void testSecondReceivedVersionLessThanFirstReceived() throws InterruptedException {
         //初始化 LongPollingService
-        DefaultConfigFileLongPollingService longPollingService =
-            new DefaultConfigFileLongPollingService(sdkContext, configFileConnector);
+        ConfigFileLongPullService longPollingService =
+            new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();

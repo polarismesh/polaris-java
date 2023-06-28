@@ -48,6 +48,7 @@
 
     <modules>
         <module>polaris-factory</module>
+        <module>polaris-assembly</module>
         <module>polaris-dependencies</module>
         <module>polaris-common</module>
         <module>polaris-plugins</module>
@@ -64,7 +65,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>1.12.0-SNAPSHOT</revision>
+        <revision>1.13.0-SNAPSHOT</revision>
 
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
@@ -75,7 +76,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <jackson.version>2.14.2</jackson.version>
-        <specification.version>1.1.0</specification.version>
+        <specification.version>1.3.2-SNAPSHOT</specification.version>
         <consul.version>1.4.5</consul.version>
         <nacos.version>2.1.1</nacos.version>
         <javax.annotation.version>1.3.2</javax.annotation.version>
@@ -100,6 +101,7 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.shaded.plugin.version>3.2.4</maven.shaded.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M5</maven.failsafe.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
         <httpclient.version>4.5.14</httpclient.version>
@@ -177,6 +179,24 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.12.4</version>
+                <configuration>
+                    <excludes>
+                        <exclude>**/integration/*</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${maven.failsafe.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -240,6 +260,32 @@
     </build>
 
     <profiles>
+        <profile>
+             <id>sonatype</id>
+	    <repositories>
+	         <repository>
+	             <id>nexus-snapshots</id>
+	             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		    <releases>
+		         <enabled>false</enabled>
+		    </releases>
+		    <snapshots>
+		         <enabled>true</enabled>
+		         <updatePolicy>always</updatePolicy>
+	             </snapshots>
+		</repository>
+		<repository>
+		    <id>nexus-releases</id>
+		    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+		    <releases>
+			<enabled>true</enabled>
+		    </releases>
+		    <snapshots>
+			<enabled>false</enabled>
+		    </snapshots>
+		</repository>
+	    </repositories>
+         </profile>
         <profile>
             <id>javadoc-lint</id>
             <activation>

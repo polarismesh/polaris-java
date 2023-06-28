@@ -17,63 +17,62 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
-import com.tencent.polaris.configuration.client.factory.ConfigFileFactory;
-import com.tencent.polaris.configuration.client.factory.ConfigFileFactoryManager;
 
+import com.tencent.polaris.factory.ConfigAPIFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author lepdou 2022-03-08
  */
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class ConfigFileManagerTest {
 
-    @Mock
-    private ConfigFileFactory        configFileFactory;
-    @Mock
-    private ConfigFileFactoryManager configFileFactoryManager;
-    @InjectMocks
-    private DefaultConfigFileManager defaultConfigFileManager;
+
+    private ConfigFileManager fileManager;
+
+    private ConfigFileConnector configFileConnector;
 
     @Before
     public void before() {
-        defaultConfigFileManager.setConfigFileFactoryManager(configFileFactoryManager);
+        fileManager = spy(new ConfigFileManager());
+        configFileConnector = spy(ConfigFileConnector.class);
     }
+
     @Test
     public void testGetConfigFile() {
+
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
         ConfigFile mockedConfigFile = mock(ConfigFile.class);
 
-        when(configFileFactoryManager.getConfigFileFactory(any())).thenReturn(configFileFactory);
-        when(configFileFactory.createConfigFile(configFileMetadata)).thenReturn(mockedConfigFile);
+        doReturn(mockedConfigFile).when(fileManager).createConfigFile(configFileMetadata);
 
         //第一次获取
-        ConfigFile configFile = defaultConfigFileManager.getConfigFile(configFileMetadata);
+        ConfigFile configFile = fileManager.getConfigFile(configFileMetadata);
 
-        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
-        verify(configFileFactory).createConfigFile(configFileMetadata);
+        verify(fileManager).createConfigFile(configFileMetadata);
         Assert.assertEquals(mockedConfigFile, configFile);
 
         //第二次获取，经过缓存
-        ConfigFile configFile2 = defaultConfigFileManager.getConfigFile(configFileMetadata);
-        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
-        verify(configFileFactory).createConfigFile(configFileMetadata);
+        ConfigFile configFile2 = fileManager.getConfigFile(configFileMetadata);
+        verify(fileManager).createConfigFile(configFileMetadata);
         Assert.assertEquals(mockedConfigFile, configFile2);
 
     }
@@ -83,21 +82,80 @@ public class ConfigFileManagerTest {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
         ConfigKVFile mockedConfigFile = mock(ConfigKVFile.class);
 
-        when(configFileFactoryManager.getConfigFileFactory(any())).thenReturn(configFileFactory);
-        when(configFileFactory.createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties)).thenReturn(mockedConfigFile);
+        doReturn(mockedConfigFile).when(fileManager).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
 
         //第一次获取
-        ConfigKVFile configFile = defaultConfigFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
+        ConfigKVFile configFile = fileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
 
-        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
-        verify(configFileFactory).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
+        verify(fileManager).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
         Assert.assertEquals(mockedConfigFile, configFile);
 
         //第二次获取，经过缓存
-        ConfigKVFile configFile2 = defaultConfigFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
-        verify(configFileFactoryManager).getConfigFileFactory(configFileMetadata);
-        verify(configFileFactory).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
+        ConfigKVFile configFile2 = fileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
+        verify(fileManager).createConfigKVFile(configFileMetadata, ConfigFileFormat.Properties);
         Assert.assertEquals(mockedConfigFile, configFile2);
 
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreateConfigFileOnFail() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        doThrow(new RuntimeException("test")).when(fileManager).createConfigFile(configFileMetadata, "content");
+        fileManager.createConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateConfigFileOnFail() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        doThrow(new RuntimeException("test")).when(fileManager).updateConfigFile(configFileMetadata, "content");
+        fileManager.updateConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testReleaseConfigFileOnFail() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        doThrow(new RuntimeException("test")).when(fileManager).releaseConfigFile(configFileMetadata);
+        fileManager.releaseConfigFile(configFileMetadata);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testCreateConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                configFileMetadata.getFileGroup(),
+                configFileMetadata.getFileName());
+        configFile.setContent("content");
+
+        doThrow(new RuntimeException("test")).when(configFileConnector).createConfigFile(configFile);
+
+        ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
+        fileManager.createConfigFile(configFileMetadata, "content");
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testUpdateConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                configFileMetadata.getFileGroup(),
+                configFileMetadata.getFileName());
+        configFile.setContent("content");
+
+        doThrow(new RuntimeException("test")).when(configFileConnector).updateConfigFile(configFile);
+
+        ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
+        fileManager.updateConfigFile(configFileMetadata, "content");
+    }
+
+
+    @Test(expected = RuntimeException.class)
+    public void testReleaseConfigFile() {
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+        doThrow(new RuntimeException("test")).when(configFileConnector).releaseConfigFile(Mockito.any());
+
+        ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
+        ConfigFileResponse response = fileManager.releaseConfigFile(configFileMetadata);
+        System.out.println(response);
     }
 }

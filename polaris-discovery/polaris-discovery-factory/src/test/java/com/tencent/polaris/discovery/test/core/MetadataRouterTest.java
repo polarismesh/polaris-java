@@ -88,6 +88,11 @@ public class MetadataRouterTest {
     public void testNormalScene() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumer = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             // 该服务下有四个实例，其中有两个满足metadata路由(分别为port70，100),80 90端口不满足
             for (int i = 0; i < 10; i++) {
                 GetOneInstanceRequest getInstances2 = new GetOneInstanceRequest();
@@ -113,6 +118,11 @@ public class MetadataRouterTest {
     public void testFailoverNoneScene() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumer = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             // 该服务下有四个实例，只有一个80端口实例满足metadata路由，但是不健康，降级策略采用默认不降级
             for (int i = 0; i < 10; i++) {
                 GetOneInstanceRequest getInstances2 = new GetOneInstanceRequest();
@@ -135,6 +145,11 @@ public class MetadataRouterTest {
     public void testFailoverAllScene() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumer = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             // 该服务下有四个实例，只有一个80端口实例满足metadata路由，
             // 但是不健康，降级策略采用默认返回所有健康实例，其中80端口实例为不健康，故80端口的实例不会返回
             for (int i = 0; i < 10; i++) {
@@ -161,6 +176,11 @@ public class MetadataRouterTest {
         // 传入Env-set:1-1 ,应该返回第4个实例，因为前三个都包含Env-set这个key
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (ConsumerAPI consumer = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (int i = 0; i < 10; i++) {
                 GetOneInstanceRequest getInstances2 = new GetOneInstanceRequest();
                 getInstances2.setNamespace("Production");
@@ -168,7 +188,7 @@ public class MetadataRouterTest {
                 Map<String, String> map = new HashMap<>();
                 map.put("Env-set", "1-1");
                 getInstances2.setMetadata(map);
-                //TODO: 通过配置文件来设置该配置
+                //TODO: 通过配置文件来设置该配置testFailoverAllScene
                 getInstances2.setMetadataFailoverType(MetadataFailoverType.METADATAFAILOVERNOTKEY);
                 InstancesResponse ins = null;
                 try {
@@ -189,6 +209,11 @@ public class MetadataRouterTest {
         try (ConsumerAPI consumer = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
             // 该服务下有两个实例，都不健康，且只有一个实例满足metadata路由，
             // 降级策略采用默认返回所有非metadata健康实例，故只返回不满足metadata的那个实例
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (int i = 0; i < 10; i++) {
                 GetOneInstanceRequest getInstances2 = new GetOneInstanceRequest();
                 getInstances2.setNamespace(NAMESPACE_PRODUCTION);

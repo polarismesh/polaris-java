@@ -126,11 +126,11 @@ public class ConnectionManager extends Destroyable {
         }
         if (null == configService) {
             serverAddresses.put(ClusterType.SERVICE_CONFIG_CLUSTER,
-                                new ServerAddressList(addresses, ClusterType.SERVICE_CONFIG_CLUSTER));
+                    new ServerAddressList(addresses, ClusterType.SERVICE_CONFIG_CLUSTER));
         } else {
             serverAddresses
-                .put(ClusterType.SERVICE_CONFIG_CLUSTER,
-                     new ServerAddressList(configService, ClusterType.SERVICE_CONFIG_CLUSTER));
+                    .put(ClusterType.SERVICE_CONFIG_CLUSTER,
+                            new ServerAddressList(configService, ClusterType.SERVICE_CONFIG_CLUSTER));
         }
         if (null == healthCheckService) {
             serverAddresses.put(ClusterType.HEALTH_CHECK_CLUSTER,
@@ -200,7 +200,7 @@ public class ConnectionManager extends Destroyable {
                 LOG.error("fail to get connection, opKey is {}, cluster {}", opKey, clusterType, e);
                 throw e;
             }
-            if (connection.acquire()) {
+            if (connection.acquire(opKey)) {
                 LOG.debug("connection id={} acquired", connection.getConnID());
                 return connection;
             }
@@ -370,6 +370,7 @@ public class ConnectionManager extends Destroyable {
                 ConnID connID = new ConnID(svcKey, clusterType, servAddress.getHost(),
                         servAddress.getPort(), protocol);
                 Connection connection = connectTarget(connID);
+                LOG.info("connection {} created", connID);
                 if (null != curConnection) {
                     curConnection.lazyClose();
                 }

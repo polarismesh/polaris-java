@@ -1,9 +1,5 @@
 global:
   system:
-    configCluster:
-      namespace: Polaris
-      service: polaris.config
-      sameAsBuiltin: true
     discoverCluster:
       sameAsBuiltin: true
     healthCheckCluster:
@@ -12,20 +8,17 @@ global:
   serverConnector:
     # target server address
     addresses:
-      - 127.0.0.1:8091
-#描述:主调端配置
-consumer:
-  #描述:节点熔断相关配置
-  circuitBreaker:
-    #描述:是否启用节点熔断功能
-    enable: false
+      - 119.91.66.223:8091
+# 配置中心默认配置
 config:
+  # 类型转化缓存的key数量
+  propertiesValueCacheSize: 100
+  # 类型转化缓存的过期时间，默认为1分钟
+  propertiesValueExpireTime: 60000
+  # 连接器配置，默认为北极星服务端
   serverConnector:
+    id: polaris-config
     connectorType: polaris
-    #connectorType: localFile
-    #persistEnable: true
-    #fallbackToLocalCache: true
-    #persistDir: test/custom/config
+    #描述：默认服务端埋点接入地址
     addresses:
-      - 127.0.0.1:8093
-    token: nu/0WRA4EqSR1FagrjRj0fZwPXuGlMpX+zCuWu4uMqy8xr1vRjisSbA25aAC3mtU8MeeRsKhQiDAynUR09I=
+      - 119.91.66.223:8093

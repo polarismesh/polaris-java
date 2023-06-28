@@ -26,6 +26,8 @@ import com.tencent.polaris.cb.example.common.EchoServer;
 import com.tencent.polaris.cb.example.common.HealthServer;
 import com.tencent.polaris.cb.example.common.ServerType;
 import com.tencent.polaris.cb.example.common.Utils;
+import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
@@ -97,11 +99,13 @@ public class InstanceBreakerExample {
         }));
 
         ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
+        CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByContext(sdkContext);
         ServiceInfo sourceService = new ServiceInfo();
         sourceService.setNamespace(NAMESPACE);
         sourceService.setService(SOURCE_SERVICE);
         for (int i = 0; i < 20000; i++) {
-            String test = Utils.invokeByNameResolution("/echo", NAMESPACE, SERVICE, "test", sourceService, consumerAPI);
+            String test = Utils.invokeByNameResolution(
+                    "/echo", NAMESPACE, SERVICE, "test", sourceService, consumerAPI, circuitBreakAPI);
             System.out.println("[InstanceCbTest] invoke " + i + " times, result " + test);
             Thread.sleep(1000);
         }

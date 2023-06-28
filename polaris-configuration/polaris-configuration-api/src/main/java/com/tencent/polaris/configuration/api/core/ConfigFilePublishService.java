@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.configuration.api.core;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+
 /**
  * @author fabian4 2023-03-08
  */
@@ -29,14 +31,14 @@ public interface ConfigFilePublishService {
      * @param fileGroup file group of config file
      * @param fileName file name
      */
-    void createConfigFile(String namespace, String fileGroup, String fileName, String content);
+    ConfigFileResponse createConfigFile(String namespace, String fileGroup, String fileName, String content);
 
     /**
      * Create the configuration file
      *
      * @param configFileMetadata config file metadata
      */
-    void createConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
     /**
      * Update the configuration file
@@ -45,14 +47,14 @@ public interface ConfigFilePublishService {
      * @param fileGroup file group of config file
      * @param fileName file name
      */
-    void updateConfigFile(String namespace, String fileGroup, String fileName, String content);
+    ConfigFileResponse updateConfigFile(String namespace, String fileGroup, String fileName, String content);
 
     /**
      * Update the configuration file
      *
      * @param configFileMetadata config file metadata
      */
-    void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
 
     /**
      * Release the configuration file
@@ -61,12 +63,12 @@ public interface ConfigFilePublishService {
      * @param fileGroup file group of config file
      * @param fileName file name
      */
-    void releaseConfigFile(String namespace, String fileGroup, String fileName);
+    ConfigFileResponse releaseConfigFile(String namespace, String fileGroup, String fileName);
 
     /**
      * Release the configuration file
      *
      * @param configFileMetadata config file metadata
      */
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
+    ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata);
 }

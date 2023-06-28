@@ -17,20 +17,47 @@
 
 package com.tencent.polaris.cb.example.method;
 
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.cb.example.common.Utils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
+import com.tencent.polaris.circuitbreak.api.pojo.ResultToErrorCode;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import java.util.function.Consumer;
 
 public class MethodBreakerExample {
 
-    public static void main(String[] args) {
+    private static final int PORT_NORMAL = 10885;
 
+    private static final int PORT_ABNORMAL = 10886;
+
+    private static final String NAMESPACE = "test";
+
+    private static final String SERVICE = "methodCbService";
+
+    private static final String LOCAL_HOST = "127.0.0.1";
+
+    public static void main(String[] args) throws Exception {
+        Utils.createHttpServers(PORT_NORMAL, PORT_ABNORMAL);
+        int[] ports = new int[]{PORT_NORMAL, PORT_ABNORMAL};
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPI();
-        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(new ServiceKey("default", "testSvc2"), "foo");
+        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
+                new ServiceKey(NAMESPACE, SERVICE), "echo");
+//        makeDecoratorRequest.setResultToErrorCode(new ResultToErrorCode() {
+//            @Override
+//            public int onSuccess(Object value) {
+//                return 200;
+//            }
+//
+//            @Override
+//            public int onError(Throwable throwable) {
+//                return 500;
+//            }
+//        });
         FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
         Consumer<Boolean> integerConsumer = decorator.decorateConsumer(new Consumer<Boolean>() {
             @Override
@@ -45,6 +72,7 @@ public class MethodBreakerExample {
         boolean success = false;
         int afterCount = 20;
         for (int i = 0; i < 500; i++) {
+            boolean hasError = false;
             try {
                 integerConsumer.accept(success);
                 afterCount--;
@@ -52,11 +80,17 @@ public class MethodBreakerExample {
                     success = false;
                 }
             } catch (Exception e) {
+                hasError = true;
                 System.out.println(e.getMessage());
                 if (e instanceof CallAbortedException) {
                     success = true;
                     afterCount = 20;
                 }
+            } finally {
+                // report to active health check
+                InstanceResource instanceResource = new InstanceResource(
+                        new ServiceKey(NAMESPACE, SERVICE), LOCAL_HOST, ports[i % 2], null);
+                circuitBreakAPI.report(new ResourceStat(instanceResource, hasError ? 500 : 200, 10));
             }
             try {
                 Thread.sleep(1000);

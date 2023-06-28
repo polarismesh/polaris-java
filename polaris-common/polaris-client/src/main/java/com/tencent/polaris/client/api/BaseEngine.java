@@ -48,16 +48,6 @@ public abstract class BaseEngine extends Destroyable {
         sdkContext.init();
         subInit();
         serviceCallResultListeners = ServiceCallResultListener.getServiceCallResultListeners(sdkContext);
-        sdkContext.registerDestroyHook(new Destroyable() {
-            @Override
-            protected void doDestroy() {
-                if (null != serviceCallResultListeners) {
-                    for (ServiceCallResultListener listener : serviceCallResultListeners) {
-                        listener.destroy();
-                    }
-                }
-            }
-        });
         sdkContext.getValueContext().setValue(CTX_KEY_ENGINE, this);
     }
 

@@ -33,7 +33,7 @@ import java.io.Closeable;
 public interface ProviderAPI extends AutoCloseable, Closeable {
 
     /**
-     * Register instance, minimum supported version of polaris-server is v1.10.0
+     * 注册服务实例，同时根据用户设置的 heartbeat ttl 维护心跳任务
      *
      * @param req register request
      * @return service register response

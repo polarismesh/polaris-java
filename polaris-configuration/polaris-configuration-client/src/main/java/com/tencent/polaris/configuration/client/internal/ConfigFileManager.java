@@ -17,23 +17,143 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.client.JustForTest;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.tencent.polaris.configuration.client.internal.AbstractConfigFileRepo.LOGGER;
 
 /**
- * @author lepdou 2022-03-02
+ * @author lepdou 2022-03-01
  */
-public interface ConfigFileManager {
+public class ConfigFileManager {
 
-    ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata);
+    private SDKContext context;
 
-    ConfigKVFile getConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat fileFormat);
+    private ConfigFileConnector connector;
 
-    void createConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    private final Map<ConfigFileMetadata, ConfigFile> configFileCache = new ConcurrentHashMap<>();
 
-    void updateConfigFile(ConfigFileMetadata configFileMetadata, String content);
+    private final Map<ConfigFileMetadata, ConfigKVFile> configPropertiesFileCache = new ConcurrentHashMap<>();
 
-    void releaseConfigFile(ConfigFileMetadata configFileMetadata);
+    private ConfigFileLongPullService longPullService;
+
+    private ConfigFilePersistentHandler persistentHandler;
+
+    @JustForTest
+    public ConfigFileManager() {
+
+    }
+
+    @JustForTest
+    public ConfigFileManager(ConfigFileConnector connector) {
+        this.connector = connector;
+    }
+
+    public ConfigFileManager(SDKContext sdkContext) {
+        String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
+                .getConnectorType();
+        this.context = sdkContext;
+        this.connector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
+                .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
+        this.longPullService = new ConfigFileLongPullService(context, connector);
+        try {
+            this.persistentHandler = new ConfigFilePersistentHandler(sdkContext);
+        } catch (IOException e) {
+            LOGGER.warn("config file persist handler init fail:" + e.getMessage(), e);
+        }
+    }
+
+    public ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata) {
+        ConfigFile configFile = configFileCache.get(configFileMetadata);
+        if (configFile == null) {
+            synchronized (this) {
+                configFile = configFileCache.get(configFileMetadata);
+                if (configFile == null) {
+                    configFile = createConfigFile(configFileMetadata);
+                    configFileCache.put(configFileMetadata, configFile);
+                }
+            }
+        }
+        return configFile;
+    }
+
+    public ConfigKVFile getConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat fileFormat) {
+        ConfigKVFile configFile = configPropertiesFileCache.get(configFileMetadata);
+        if (configFile == null) {
+            synchronized (this) {
+                configFile = configPropertiesFileCache.get(configFileMetadata);
+                if (configFile == null) {
+                    configFile = createConfigKVFile(configFileMetadata, fileFormat);
+                    configPropertiesFileCache.put(configFileMetadata, configFile);
+                }
+            }
+        }
+
+        return configFile;
+    }
+
+    public ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
+                new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                        configFileMetadata.getFileGroup(),
+                        configFileMetadata.getFileName());
+        configFile.setContent(content);
+        return connector.createConfigFile(configFile);
+    }
+
+    public ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
+                new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                        configFileMetadata.getFileGroup(),
+                        configFileMetadata.getFileName());
+        configFile.setContent(content);
+        return connector.updateConfigFile(configFile);
+    }
+
+    public ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata) {
+        com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
+                new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
+                        configFileMetadata.getFileGroup(),
+                        configFileMetadata.getFileName());
+        return connector.releaseConfigFile(configFile);
+    }
+
+    public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
+
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, connector, configFileMetadata, persistentHandler);
+
+        return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
+                configFileMetadata.getFileName(), configFileRepo,
+                context.getConfig().getConfigFile());
+    }
+
+    public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, connector, configFileMetadata, persistentHandler);
+        switch (format) {
+            case Properties: {
+                return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
+                        configFileMetadata.getFileName(), configFileRepo,
+                        context.getConfig().getConfigFile());
+            }
+            case Yaml: {
+                return new ConfigYamlFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
+                        configFileMetadata.getFileName(), configFileRepo,
+                        context.getConfig().getConfigFile());
+            }
+            default:
+                throw new IllegalArgumentException("KV file only support properties and yaml file.");
+        }
+    }
+
 }

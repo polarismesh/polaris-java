@@ -32,6 +32,9 @@ import java.util.Map;
 public class SystemConfigImpl implements SystemConfig {
 
     @JsonProperty
+    private FlowConfigImpl flow;
+
+    @JsonProperty
     private FlowCacheConfigImpl flowCache;
 
     @JsonProperty
@@ -98,6 +101,7 @@ public class SystemConfigImpl implements SystemConfig {
         configCluster.verify();
         healthCheckCluster.verify();
         monitorCluster.verify();
+        flow.verify();
     }
 
     @Override
@@ -117,6 +121,9 @@ public class SystemConfigImpl implements SystemConfig {
         if (null == flowCache) {
             flowCache = new FlowCacheConfigImpl();
         }
+        if (null == flow) {
+            flow = new FlowConfigImpl();
+        }
         if (null != defaultObject) {
             SystemConfig systemConfig = (SystemConfig) defaultObject;
             discoverCluster.setDefault(systemConfig.getDiscoverCluster());
@@ -124,6 +131,7 @@ public class SystemConfigImpl implements SystemConfig {
             healthCheckCluster.setDefault(systemConfig.getHealthCheckCluster());
             monitorCluster.setDefault(systemConfig.getMonitorCluster());
             flowCache.setDefault(systemConfig.getFlowCache());
+            flow.setDefault(systemConfig.getFlow());
             if (null == variables) {
                 setVariables(systemConfig.getVariables());
             }
@@ -131,10 +139,19 @@ public class SystemConfigImpl implements SystemConfig {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
+    public FlowConfigImpl getFlow() {
+        return flow;
+    }
+
+    public void setFlow(FlowConfigImpl flow) {
+        this.flow = flow;
+    }
+
+    @Override
     public String toString() {
         return "SystemConfigImpl{" +
-                "flowCache=" + flowCache +
+                "flow=" + flow +
+                ", flowCache=" + flowCache +
                 ", discoverCluster=" + discoverCluster +
                 ", configCluster=" + configCluster +
                 ", healthCheckCluster=" + healthCheckCluster +

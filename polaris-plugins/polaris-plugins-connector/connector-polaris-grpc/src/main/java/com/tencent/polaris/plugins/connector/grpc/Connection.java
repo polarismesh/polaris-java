@@ -106,7 +106,7 @@ public class Connection {
      *
      * @return 占据成功返回true，否则返回false
      */
-    public boolean acquire() {
+    public boolean acquire(String opKey) {
         if (lazyDestroy.get()) {
             return false;
         }
@@ -115,7 +115,7 @@ public class Connection {
                 return false;
             }
             int curRef = ref.incrementAndGet();
-            LOG.trace("connection {}: acquired, curRef is {}", connID, curRef);
+            LOG.debug("connection {}: acquired for op {}, curRef is {}", connID, opKey, curRef);
             return true;
         }
     }
@@ -126,15 +126,33 @@ public class Connection {
     public void closeConnection() {
         synchronized (lock) {
             if (ref.get() <= 0 && !closed) {
+                LOG.info("connection {}: closed", connID);
                 closed = true;
-                ManagedChannel shutdownChan = channel.shutdown();
-                if (null == shutdownChan) {
-                    return;
+                // Gracefully shutdown the gRPC managed-channel.
+                if (channel != null && !channel.isShutdown()) {
+                    try {
+                        channel.shutdown();
+                        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+                            LOG.warn("Timed out gracefully shutting down connection: {}. ", connID);
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Unexpected exception while waiting for channel {} gracefully termination", connID, e);
+                    }
                 }
-                try {
-                    shutdownChan.awaitTermination(100, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LOG.error(String.format("interrupted while closing connection %s", connID), e);
+
+                // Forcefully shutdown if still not terminated.
+                if (channel != null && !channel.isTerminated()) {
+                    try {
+                        channel.shutdownNow();
+                        if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                            LOG.warn("Timed out forcefully shutting down connection: {}. ", connID);
+                        }
+                        LOG.debug("Success to forcefully shutdown connection: {}. ", connID);
+                    } catch (Exception e) {
+                        LOG.error("Unexpected exception while waiting for channel {} forcefully termination", connID, e);
+                    }
+                } else {
+                    LOG.debug("Success to gracefully shutdown connection: {}. ", connID);
                 }
             }
         }
@@ -147,7 +165,7 @@ public class Connection {
         //设置状态，不允许该连接再继续分配
         lazyDestroy.set(true);
         int curRef = ref.get();
-        LOG.trace("connection {}: lazyClose, curRef is {}", connID, curRef);
+        LOG.info("connection {}: lazyClose, curRef is {}", connID, curRef);
         if (curRef <= 0) {
             closeConnection();
         }
@@ -160,7 +178,7 @@ public class Connection {
      */
     public void release(String opKey) {
         int nextValue = ref.decrementAndGet();
-        LOG.trace("connection {}: pending to release for op {}, curRef is {}", connID, opKey, nextValue);
+        LOG.debug("connection {}: pending to release for op {}, curRef is {}", connID, opKey, nextValue);
         if (nextValue == 0 && lazyDestroy.get()) {
             closeConnection();
         }
@@ -280,11 +298,10 @@ public class Connection {
         @Override
         public String toString() {
             return "ConnID{" +
-                    "serviceKey=" + serviceKey +
+                    "id='" + id + '\'' +
                     ", clusterType=" + clusterType +
                     ", host='" + host + '\'' +
                     ", port=" + port +
-                    ", protocol='" + protocol + '\'' +
                     '}';
         }
     }

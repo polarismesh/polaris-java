@@ -33,6 +33,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.client.util.Utils;
@@ -131,7 +132,12 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
         }
         Resource resource = new InstanceResource(new ServiceKey(instance.getNamespace(), instance.getService()),
                 instance.getHost(), instance.getPort(), sourceService);
-        CheckResult check = DefaultCircuitBreakAPI.check(resource, extensions);
-        return check.isPass();
+        CircuitBreakerFlow circuitBreakerFlow = extensions.getValueContext().getValue(
+                CircuitBreakerFlow.class.getCanonicalName());
+        if (null != circuitBreakerFlow) {
+            CheckResult check = circuitBreakerFlow.check(resource);
+            return check.isPass();
+        }
+        return true;
     }
 }

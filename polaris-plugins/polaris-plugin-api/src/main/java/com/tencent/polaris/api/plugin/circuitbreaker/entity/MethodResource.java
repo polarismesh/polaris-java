@@ -32,7 +32,6 @@ public class MethodResource extends AbstractResource {
 
     public MethodResource(ServiceKey service, String methodName, ServiceKey callerService) {
         super(service, callerService);
-        CommonValidator.validateService(service);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
         CommonValidator.validateText(methodName, "method");
         this.method = methodName;
@@ -41,10 +40,6 @@ public class MethodResource extends AbstractResource {
     @Override
     public Level getLevel() {
         return Level.METHOD;
-    }
-
-    public ServiceKey getService() {
-        return service;
     }
 
     public String getMethod() {
