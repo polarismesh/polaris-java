@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.configfilefilter;
 
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -27,6 +28,8 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
+
+import java.util.function.Function;
 
 /**
  * @author fabian4
@@ -56,20 +59,28 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     }
 
     @Override
-    public void doBefore(ConfigFile configFile) {
-        configFile.setEncrypted(Boolean.TRUE);
-        configFile.setPublicKey(rsaService.getPKCS1PublicKey());
+    public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
+        return new Function<ConfigFile, ConfigFileResponse>() {
+            @Override
+            public ConfigFileResponse apply(ConfigFile configFile) {
+                // do before
+                configFile.setEncrypted(Boolean.TRUE);
+                configFile.setPublicKey(rsaService.getPKCS1PublicKey());
+
+                ConfigFileResponse response = next.apply(configFile);
+
+                // do after
+                ConfigFile configFileResponse = response.getConfigFile();
+                if (response.getCode() == ServerCodes.EXECUTE_SUCCESS && configFileResponse.isEncrypted()) {
+                    byte[] password = rsaService.decrypt(configFileResponse.getDataKey());
+                    String result = AESUtil.decrypt(configFileResponse.getContent(), password);
+                    configFileResponse.setContent(result);
+                }
+                return response;
+            }
+        };
     }
 
-    @Override
-    public void doAfter(ConfigFileResponse configFileResponse) {
-        ConfigFile configFile = configFileResponse.getConfigFile();
-        if (configFile.isEncrypted()) {
-            byte[] password = rsaService.decrypt(configFile.getDataKey());
-            String result = AESUtil.decrypt(configFile.getContent(), password);
-            configFile.setContent(result);
-        }
-    }
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {

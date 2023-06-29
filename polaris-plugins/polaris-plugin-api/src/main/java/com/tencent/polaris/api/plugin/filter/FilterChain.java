@@ -18,19 +18,37 @@
 package com.tencent.polaris.api.plugin.filter;
 
 import com.tencent.polaris.api.plugin.Plugin;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.function.Function;
 
 /**
- * ConfigFileFilter 插件接口
+ * FilterChain 过滤器链
  *
  * @author fabian4
  * @date 2023/6/13
  */
-public interface ConfigFileFilter extends Plugin {
+public class FilterChain {
 
-    Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next);
+    private ArrayList<ConfigFileFilter> chain = new ArrayList<>();
 
+    public ConfigFileResponse excute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
+        for (ConfigFileFilter configFileFilter : chain) {
+            Function<ConfigFile, ConfigFileResponse> curr = next;
+            next = configFileFilter.doFilter(configFile, curr);
+        }
+        return next.apply(configFile);
+    }
+
+    public FilterChain(Collection<Plugin> plugins) {
+        plugins.forEach(plugin -> {
+            if (plugin.getType() == PluginTypes.CONFIG_FILTER.getBaseType()) {
+                chain.add((ConfigFileFilter) plugin);
+            }
+        });
+    }
 }

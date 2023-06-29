@@ -21,12 +21,11 @@ import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
+import com.tencent.polaris.api.plugin.filter.FilterChain;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +47,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
     private final AtomicLong notifiedVersion;
-    private List<ConfigFileFilter> configFileFilters;
+    private FilterChain filterChain;
     private final ConfigFileConnector configFileConnector;
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
@@ -60,7 +59,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     public RemoteConfigFileRepo(SDKContext sdkContext,
                                 ConfigFileLongPullService pullService,
-                                List<ConfigFileFilter> configFileFilters,
+                                FilterChain filterChain,
                                 ConfigFileConnector connector,
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {
@@ -70,7 +69,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
-        this.configFileFilters = configFileFilters;
+        this.filterChain = filterChain;
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
@@ -123,12 +122,10 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         while (retryTimes < PULL_CONFIG_RETRY_TIMES) {
             try {
 
-                configFileFilters.forEach(configFileFilter -> configFileFilter.doBefore(pullConfigFileReq));
+                ConfigFileResponse response = filterChain.excute(pullConfigFileReq, configFile -> configFileConnector.getConfigFile(pullConfigFileReq));
 
-                ConfigFileResponse response = configFileConnector.getConfigFile(pullConfigFileReq);
                 retryPolicy.success();
 
-                configFileFilters.forEach(configFileFilter -> configFileFilter.doAfter(response));
                 //打印请求信息
                 long pulledConfigFileVersion =
                         response.getConfigFile() != null ? response.getConfigFile().getVersion() : -1;
