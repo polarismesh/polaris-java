@@ -1,1 +1,1 @@
-com.tencent.polaris.plugins.configfilefilter.CryptoConfigFileFilter
+com.tencent.polaris.plugins.configfilefilter.AESCryptoConfigFileFilter
