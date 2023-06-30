@@ -24,6 +24,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
+import com.tencent.polaris.api.plugin.filter.FilterChain;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
@@ -54,28 +55,28 @@ import static org.mockito.Mockito.when;
 public class RemoteConfigFileRepoTest {
 
     @Mock
-    private ConfigFileFilter crypto;
+    private ConfigFileFilter cryptoFilter;
     @Mock
     private ConfigFileConnector          configFileConnector;
     @Mock
     private ConfigFileLongPullService configFileLongPollingService;
     @Mock
     private SDKContext                   sdkContext;
-	@Mock
+    @Mock
     private ConfigFilePersistentHandler configFilePersistHandler;
 
-	@Before
-	public void before() {
-		ConfigurationImpl configuration = new ConfigurationImpl();
-		ConfigFileConfigImpl configFileConfig = new ConfigFileConfigImpl();
-		ConnectorConfigImpl connectorConfig = new ConnectorConfigImpl();
-		connectorConfig.setFallbackToLocalCache(true);
-		configFileConfig.setServerConnector(connectorConfig);
-		configuration.setConfigFile(configFileConfig);
-		when(sdkContext.getConfig()).thenReturn(configuration);
-	}
+    @Before
+    public void before() {
+        ConfigurationImpl configuration = new ConfigurationImpl();
+        ConfigFileConfigImpl configFileConfig = new ConfigFileConfigImpl();
+        ConnectorConfigImpl connectorConfig = new ConnectorConfigImpl();
+        connectorConfig.setFallbackToLocalCache(true);
+        configFileConfig.setServerConnector(connectorConfig);
+        configuration.setConfigFile(configFileConfig);
+        when(sdkContext.getConfig()).thenReturn(configuration);
+    }
 
-	@Test
+    @Test
     public void testPullSuccess() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
@@ -90,8 +91,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
-					configFileMetadata, configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, new FilterChain(Collections.singleton(cryptoFilter)), configFileConnector,
+                    configFileMetadata, configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
@@ -107,11 +108,11 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null);
 
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-		doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
+        doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, new FilterChain(Collections.singleton(cryptoFilter)), configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         verify(configFileConnector).getConfigFile(any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
@@ -129,8 +130,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, new FilterChain(Collections.singleton(cryptoFilter)), configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         //重试三次
         verify(configFileConnector, times(3)).getConfigFile(any());
@@ -147,8 +148,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, new FilterChain(Collections.singleton(cryptoFilter)), configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         //重试三次
         verify(configFileConnector, times(3)).getConfigFile(any());
@@ -173,8 +174,8 @@ public class RemoteConfigFileRepoTest {
         when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, Collections.singletonList(crypto), configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, new FilterChain(Collections.singleton(cryptoFilter)), configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         AtomicInteger cbCnt = new AtomicInteger();
         //增加两个listener

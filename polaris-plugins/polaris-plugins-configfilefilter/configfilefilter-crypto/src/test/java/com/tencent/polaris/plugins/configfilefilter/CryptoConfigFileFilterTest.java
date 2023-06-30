@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.configfilefilter;
 
+import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
@@ -29,6 +30,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.security.PublicKey;
 import java.util.Base64;
+import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -47,39 +49,44 @@ public class CryptoConfigFileFilterTest {
 
     private ConfigFileResponse configFileResponse;
 
-    private CryptoConfigFileFilter cryptoConfigFileFilter;
+    private AESCryptoConfigFileFilter aesCryptoConfigFileFilter;
 
     @Before
     public void Before() {
         configFile = new ConfigFile("namespace",  "group", "fileName");
         configFile.setDataKey("dataKey");
         configFileResponse = mock(ConfigFileResponse.class);
-        cryptoConfigFileFilter = new CryptoConfigFileFilter();
-        cryptoConfigFileFilter.init(mock(InitContext.class));
+        aesCryptoConfigFileFilter = new AESCryptoConfigFileFilter();
+        aesCryptoConfigFileFilter.init(mock(InitContext.class));
     }
 
     @Test
-    public void testDoBefore() {
-        cryptoConfigFileFilter.doBefore(configFile);
-        assertTrue(configFile.isEncrypted());
-        assertNotNull(configFile.getPublicKey());
-    }
-
-    @Test
-    public void testDoAfter() {
-        byte[] dataKey = AESUtil.generateAesKey();
-        PublicKey publicKey = cryptoConfigFileFilter.getRsaService().getPublicKey();
-        byte[] encryptDateKey = RSAUtil.encrypt(dataKey, publicKey);
-        configFile.setDataKey(Base64.getEncoder().encodeToString(encryptDateKey));
-
+    public void testDoFilter() {
         String content = "content";
-        configFile.setContent(AESUtil.encrypt(content, dataKey));
-        configFile.setEncrypted(Boolean.TRUE);
 
-        when(configFileResponse.getConfigFile()).thenReturn(configFile);
+        ConfigFileResponse response = aesCryptoConfigFileFilter.doFilter(configFile, new Function<ConfigFile, ConfigFileResponse>() {
+            @Override
+            public ConfigFileResponse apply(ConfigFile configFile) {
 
-        cryptoConfigFileFilter.doAfter(configFileResponse);
+                assertTrue(configFile.isEncrypted());
+                assertNotNull(configFile.getPublicKey());
 
-        assertEquals(content, configFileResponse.getConfigFile().getContent());
+                byte[] dataKey = AESUtil.generateAesKey();
+                PublicKey publicKey = aesCryptoConfigFileFilter.getRsaService().getPublicKey();
+                byte[] encryptDateKey = RSAUtil.encrypt(dataKey, publicKey);
+                configFile.setDataKey(Base64.getEncoder().encodeToString(encryptDateKey));
+
+
+                configFile.setContent(AESUtil.encrypt(content, dataKey));
+                configFile.setEncrypted(Boolean.TRUE);
+                when(configFileResponse.getCode()).thenReturn(ServerCodes.EXECUTE_SUCCESS);
+                when(configFileResponse.getConfigFile()).thenReturn(configFile);
+
+                return configFileResponse;
+            }
+        }).apply(configFile);
+
+        assertEquals(content, response.getConfigFile().getContent());
     }
+
 }

@@ -35,7 +35,7 @@ import java.util.function.Function;
  * @author fabian4
  * @date 2023/6/14
  */
-public class CryptoConfigFileFilter implements ConfigFileFilter {
+public class AESCryptoConfigFileFilter implements ConfigFileFilter {
 
     private RSAService rsaService;
 
