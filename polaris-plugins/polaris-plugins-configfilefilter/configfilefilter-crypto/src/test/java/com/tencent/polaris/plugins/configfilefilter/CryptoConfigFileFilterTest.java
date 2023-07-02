@@ -45,14 +45,6 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class CryptoConfigFileFilterTest {
 
-    private CryptoConfigFileFilter cryptoConfigFileFilter;
-
-    @Before
-    public void Before() {
-        cryptoConfigFileFilter = new CryptoConfigFileFilter();
-        cryptoConfigFileFilter.init(mock(InitContext.class));
-    }
-
     @Test
     public void testDoFilter() {
         String content = "content";
