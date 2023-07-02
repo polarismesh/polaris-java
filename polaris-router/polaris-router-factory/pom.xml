@@ -20,10 +20,5 @@
             <artifactId>polaris-router-client</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>loadbalancer-random</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 </project>
