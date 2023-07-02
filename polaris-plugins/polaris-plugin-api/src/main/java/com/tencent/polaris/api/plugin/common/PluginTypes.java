@@ -24,6 +24,7 @@ import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
+import com.tencent.polaris.api.plugin.filter.CryptoChain;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.location.LocationProvider;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
@@ -101,6 +102,11 @@ public enum PluginTypes {
      * 配置加密扩展点
      */
     CONFIG_FILTER(new PluginType(ConfigFileFilter.class, 2)),
+
+    /**
+     * 加密
+     */
+    CRYPTO_CHAIN(new PluginType(CryptoChain.class, 2)),
 
     /**
      * 配置文件加载器扩展点

@@ -31,6 +31,6 @@ import java.util.function.Function;
  */
 public interface ConfigFileFilter extends Plugin {
 
-    Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next);
+    ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next);
 
 }

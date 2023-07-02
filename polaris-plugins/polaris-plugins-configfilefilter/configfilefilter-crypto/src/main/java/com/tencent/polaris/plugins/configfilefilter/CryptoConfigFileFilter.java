@@ -18,7 +18,7 @@
 package com.tencent.polaris.plugins.configfilefilter;
 
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -26,26 +26,32 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
-import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
-import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
+import com.tencent.polaris.api.plugin.filter.CryptoChain;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.function.Function;
 
 /**
  * @author fabian4
  * @date 2023/6/14
  */
-public class AESCryptoConfigFileFilter implements ConfigFileFilter {
+public class CryptoConfigFileFilter implements ConfigFileFilter {
 
-    private RSAService rsaService;
+    private final ArrayList<CryptoChain> chain = new ArrayList<>();
 
-    public RSAService getRsaService() {
-        return rsaService;
+    @Override
+    public ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
+        for (CryptoChain cryptoChain : chain) {
+            Function<ConfigFile, ConfigFileResponse> curr = next;
+            next = cryptoChain.doFilter(configFile, curr);
+        }
+        return next.apply(configFile);
     }
 
     @Override
     public String getName() {
-        return "AES";
+        return "crypto";
     }
 
     @Override
@@ -55,31 +61,11 @@ public class AESCryptoConfigFileFilter implements ConfigFileFilter {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        rsaService = new RSAService();
+        ctx.getPlugins().getPlugins(PluginTypes.CRYPTO_CHAIN.getBaseType()).forEach(plugin -> {
+            chain.add((CryptoChain) plugin);
+        });
     }
 
-    @Override
-    public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
-        return new Function<ConfigFile, ConfigFileResponse>() {
-            @Override
-            public ConfigFileResponse apply(ConfigFile configFile) {
-                // do before
-                configFile.setEncrypted(Boolean.TRUE);
-                configFile.setPublicKey(rsaService.getPKCS1PublicKey());
-
-                ConfigFileResponse response = next.apply(configFile);
-
-                // do after
-                ConfigFile configFileResponse = response.getConfigFile();
-                if (response.getCode() == ServerCodes.EXECUTE_SUCCESS && configFileResponse.isEncrypted()) {
-                    byte[] password = rsaService.decrypt(configFileResponse.getDataKey());
-                    String result = AESUtil.decrypt(configFileResponse.getContent(), password);
-                    configFileResponse.setContent(result);
-                }
-                return response;
-            }
-        };
-    }
 
 
     @Override
