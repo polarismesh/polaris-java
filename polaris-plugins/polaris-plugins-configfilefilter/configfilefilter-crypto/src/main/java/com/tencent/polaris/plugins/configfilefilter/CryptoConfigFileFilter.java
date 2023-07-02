@@ -38,7 +38,15 @@ import java.util.function.Function;
  */
 public class CryptoConfigFileFilter implements ConfigFileFilter {
 
-    private final ArrayList<CryptoChain> chain = new ArrayList<>();
+    private ArrayList<CryptoChain> chain = new ArrayList<>();
+
+    public ArrayList<CryptoChain> getChain() {
+        return chain;
+    }
+
+    public void setChain(ArrayList<CryptoChain> chain) {
+        this.chain = chain;
+    }
 
     @Override
     public ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
