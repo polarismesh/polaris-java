@@ -67,9 +67,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
 
 import com.tencent.polaris.version.Version;
-import org.slf4j.Logger;
 
 /**
  * SDK初始化相关的上下文信息
