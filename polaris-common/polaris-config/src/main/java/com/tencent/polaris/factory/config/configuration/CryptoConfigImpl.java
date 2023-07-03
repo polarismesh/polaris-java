@@ -15,22 +15,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.config.configuration;
+package com.tencent.polaris.factory.config.configuration;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
- * CryptoConfig 配置
- *
  * @author fabian4
- * @date 2023/7/3
+ * @date 2023/6/13
  */
-public interface CryptoConfig extends Verifier {
+public class CryptoConfigImpl implements CryptoConfig, Verifier {
 
-    /**
-     * 加密类型
-     *
-     * @return 加密类型
-     */
-    String getType();
+    @JsonProperty
+    private String type;
+
+    @Override
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    @Override
+    public void verify() {
+    }
+
+    @Override
+    public void setDefault(Object defaultObject) {
+
+    }
 }

@@ -17,12 +17,15 @@
 
 package com.tencent.polaris.api.plugin.filter;
 
-import com.tencent.polaris.api.plugin.Plugin;
+import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
+import com.tencent.polaris.api.plugin.Supplier;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -33,17 +36,25 @@ import java.util.function.Function;
  */
 public class ConfigFileFilterChain {
 
-    private final Collection<Plugin> chain;
+    private final Boolean enable;
+
+    private final Map<String, ConfigFileFilter> pluginChain = new HashMap<>();
 
     public ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
-        for (Plugin plugin : chain) {
+        if(!enable) {
+            return next.apply(configFile);
+        }
+        for (String plugin : pluginChain.keySet()) {
             Function<ConfigFile, ConfigFileResponse> curr = next;
-            next = ((ConfigFileFilter) plugin).doFilter(configFile, curr);
+            next = pluginChain.get(plugin).doFilter(configFile, curr);
         }
         return next.apply(configFile);
     }
 
-    public ConfigFileFilterChain(Collection<Plugin> plugins) {
-        this.chain = plugins;
+    public ConfigFileFilterChain(Supplier supplier, ConfigFilterConfig config) {
+        this.enable = config.isEnable();
+        config.getChain().forEach(chain ->
+                pluginChain.put(chain, (ConfigFileFilter) supplier.getPlugin(PluginTypes.CONFIG_FILTER.getBaseType(), chain))
+        );
     }
 }

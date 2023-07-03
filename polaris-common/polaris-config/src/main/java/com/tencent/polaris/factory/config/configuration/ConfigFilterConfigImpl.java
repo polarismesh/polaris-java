@@ -19,11 +19,13 @@ package com.tencent.polaris.factory.config.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
+import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,7 +38,7 @@ import java.util.Map;
 public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFilterConfig {
 
     @JsonProperty
-    private Boolean enable = true;
+    private Boolean enable;
 
     @JsonProperty
     private List<String> chain;
@@ -52,13 +54,13 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
     }
 
     @Override
-    public <T extends Verifier> T getPluginConfig(String pluginName, Class<T> clazz) throws PolarisException {
-        return super.getPluginConfig(pluginName, clazz);
-    }
-
-    @Override
     public Map<String, Verifier> getPluginConfigs() throws PolarisException {
-        return super.getPluginConfigs();
+        Map<String, Verifier> values = new HashMap<>();
+        chain.forEach(chain -> {
+            CryptoConfig cryptoConfig = super.getPluginConfig(chain, CryptoConfig.class);
+            values.put(chain, cryptoConfig);
+        });
+        return values;
     }
 
     @Override
