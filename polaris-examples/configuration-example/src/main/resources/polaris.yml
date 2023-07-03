@@ -25,10 +25,10 @@ config:
   # 配置过滤器
   configFilter:
     enable: true
-    chain:
-      # 启用配置解密插件
-      - crypto
-    plugin:
-      crypto:
-        # 配置解密插件的算法插件类型
-        type: AES
+#    chain:
+#      # 启用配置解密插件
+#      - crypto
+#    plugin:
+#      crypto:
+#        # 配置解密插件的算法插件类型
+#        type: AES

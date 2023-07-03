@@ -76,7 +76,10 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     @Override
     public void init(InitContext ctx) throws PolarisException {
         ConfigFilterConfig configFilterConfig = ctx.getConfig().getConfigFile().getConfigFilterConfig();
-        this.cryptoConfig= configFilterConfig.getPluginConfig(getName(), CryptoConfigImpl.class);
+        if (configFilterConfig == null || !configFilterConfig.isEnable()) {
+            return;
+        }
+        this.cryptoConfig = configFilterConfig.getPluginConfig(getName(), CryptoConfigImpl.class);
         this.crypto = (Crypto) ctx.getPlugins().getPlugin(PluginTypes.CRYPTO.getBaseType(), cryptoConfig.getType());
     }
 

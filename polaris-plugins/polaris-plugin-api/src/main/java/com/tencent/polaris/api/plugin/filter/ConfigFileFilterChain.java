@@ -23,7 +23,6 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -41,7 +40,7 @@ public class ConfigFileFilterChain {
     private final Map<String, ConfigFileFilter> pluginChain = new HashMap<>();
 
     public ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
-        if(!enable) {
+        if (!enable) {
             return next.apply(configFile);
         }
         for (String plugin : pluginChain.keySet()) {
@@ -53,6 +52,9 @@ public class ConfigFileFilterChain {
 
     public ConfigFileFilterChain(Supplier supplier, ConfigFilterConfig config) {
         this.enable = config.isEnable();
+        if (!config.isEnable()) {
+            return;
+        }
         config.getChain().forEach(chain ->
                 pluginChain.put(chain, (ConfigFileFilter) supplier.getPlugin(PluginTypes.CONFIG_FILTER.getBaseType(), chain))
         );

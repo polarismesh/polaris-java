@@ -45,7 +45,7 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public boolean isEnable() {
-        return enable;
+        return enable != null && enable;
     }
 
     @Override
