@@ -15,21 +15,35 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin.filter;
+package com.tencent.polaris.api.plugin.chain;
 
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 
+import java.util.Collection;
 import java.util.function.Function;
 
 /**
- * Crypto 加密接口
+ * FilterChain 过滤器链
  *
  * @author fabian4
  * @date 2023/7/1
  */
-public interface CryptoChain extends Plugin {
+public class ConfigFileFilterChain {
 
-    Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next);
+    private final Collection<Plugin> chain;
+
+    public ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
+        for (Plugin plugin : chain) {
+            Function<ConfigFile, ConfigFileResponse> curr = next;
+            next = ((ConfigFileFilter) plugin).doFilter(configFile, curr);
+        }
+        return next.apply(configFile);
+    }
+
+    public ConfigFileFilterChain(Collection<Plugin> plugins) {
+        this.chain = plugins;
+    }
 }

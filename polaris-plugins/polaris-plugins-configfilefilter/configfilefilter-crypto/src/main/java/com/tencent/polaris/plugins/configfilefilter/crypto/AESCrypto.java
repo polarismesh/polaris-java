@@ -17,19 +17,9 @@
 
 package com.tencent.polaris.plugins.configfilefilter.crypto;
 
-import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.PluginType;
-import com.tencent.polaris.api.plugin.common.InitContext;
-import com.tencent.polaris.api.plugin.common.PluginTypes;
-import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.api.plugin.filter.CryptoChain;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
-
-import java.util.function.Function;
 
 /**
  * AES Crypto 加密
@@ -37,59 +27,20 @@ import java.util.function.Function;
  * @author fabian4
  * @date 2023/7/1
  */
-public class AESCrypto implements CryptoChain {
+public class AESCrypto implements Crypto {
 
-    private RSAService rsaService;
+    private final RSAService rsaService = new RSAService();
 
-    public RSAService getRsaService() {
-        return rsaService;
+    @Override
+    public void doBefore(ConfigFile configFile) {
+        configFile.setEncrypted(Boolean.TRUE);
+        configFile.setPublicKey(rsaService.getPKCS1PublicKey());
     }
 
     @Override
-    public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
-        return new Function<ConfigFile, ConfigFileResponse>() {
-            @Override
-            public ConfigFileResponse apply(ConfigFile configFile) {
-                // do before
-                configFile.setEncrypted(Boolean.TRUE);
-                configFile.setPublicKey(rsaService.getPKCS1PublicKey());
-
-                ConfigFileResponse response = next.apply(configFile);
-
-                // do after
-                ConfigFile configFileResponse = response.getConfigFile();
-                if (response.getCode() == ServerCodes.EXECUTE_SUCCESS && configFileResponse.isEncrypted()) {
-                    byte[] password = rsaService.decrypt(configFileResponse.getDataKey());
-                    String result = AESUtil.decrypt(configFileResponse.getContent(), password);
-                    configFileResponse.setContent(result);
-                }
-                return response;
-            }
-        };
-    }
-
-    @Override
-    public String getName() {
-        return "AES";
-    }
-
-    @Override
-    public PluginType getType() {
-        return PluginTypes.CRYPTO_CHAIN.getBaseType();
-    }
-
-    @Override
-    public void init(InitContext ctx) throws PolarisException {
-        this.rsaService = new RSAService();
-    }
-
-    @Override
-    public void postContextInit(Extensions ctx) throws PolarisException {
-
-    }
-
-    @Override
-    public void destroy() {
-
+    public void doAfter(ConfigFile configFile) {
+        byte[] password = rsaService.decrypt(configFile.getDataKey());
+        String result = AESUtil.decrypt(configFile.getContent(), password);
+        configFile.setContent(result);
     }
 }

@@ -15,22 +15,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin.filter;
+package com.tencent.polaris.plugins.configfilefilter.crypto;
 
-import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-
-import java.util.function.Function;
 
 /**
- * ConfigFileFilter 插件接口
+ * Crypto 接口
  *
  * @author fabian4
- * @date 2023/6/13
+ * @date 2023/7/3
  */
-public interface ConfigFileFilter extends Plugin {
+public interface Crypto {
 
-    Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next);
+    void doBefore(ConfigFile configFile);
 
+    void doAfter(ConfigFile configFile);
 }

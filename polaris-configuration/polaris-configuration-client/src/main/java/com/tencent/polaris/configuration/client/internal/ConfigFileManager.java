@@ -17,10 +17,10 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.plugin.chain.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
-import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
@@ -43,7 +43,7 @@ public class ConfigFileManager {
 
     private ConfigFileConnector connector;
 
-    private ConfigFileFilter configFileFilter;
+    private ConfigFileFilterChain configFileFilterChain;
 
     private final Map<ConfigFileMetadata, ConfigFile> configFileCache = new ConcurrentHashMap<>();
 
@@ -67,7 +67,7 @@ public class ConfigFileManager {
         String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
                 .getConnectorType();
         this.context = sdkContext;
-        this.configFileFilter = (ConfigFileFilter) sdkContext.getExtensions().getPlugins().getPlugin(PluginTypes.CONFIG_FILTER.getBaseType(), "crypto");
+        this.configFileFilterChain = new ConfigFileFilterChain(sdkContext.getExtensions().getPlugins().getPlugins(PluginTypes.CONFIG_FILTER.getBaseType()));
         this.connector = (ConfigFileConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType(), configFileConnectorType);
         this.longPullService = new ConfigFileLongPullService(context, connector);
@@ -135,7 +135,7 @@ public class ConfigFileManager {
 
     public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
 
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilter, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain, connector, configFileMetadata, persistentHandler);
 
         return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName(), configFileRepo,
@@ -143,7 +143,7 @@ public class ConfigFileManager {
     }
 
     public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilter, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain, connector, configFileMetadata, persistentHandler);
         switch (format) {
             case Properties: {
                 return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
