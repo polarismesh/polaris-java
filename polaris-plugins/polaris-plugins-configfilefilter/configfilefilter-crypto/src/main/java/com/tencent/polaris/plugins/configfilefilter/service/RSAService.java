@@ -19,7 +19,6 @@ package com.tencent.polaris.plugins.configfilefilter.service;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.plugins.configfilefilter.crypto.Crypto;
 import com.tencent.polaris.plugins.configfilefilter.util.RSAUtil;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;

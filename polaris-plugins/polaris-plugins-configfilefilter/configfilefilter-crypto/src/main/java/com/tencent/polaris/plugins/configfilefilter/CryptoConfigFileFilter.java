@@ -28,9 +28,8 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
+import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
-import com.tencent.polaris.plugins.configfilefilter.crypto.AESCrypto;
-import com.tencent.polaris.plugins.configfilefilter.crypto.Crypto;
 
 import java.util.function.Function;
 
@@ -78,7 +77,7 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     public void init(InitContext ctx) throws PolarisException {
         ConfigFilterConfig configFilterConfig = ctx.getConfig().getConfigFile().getConfigFilterConfig();
         this.cryptoConfig= configFilterConfig.getPluginConfig(getName(), CryptoConfigImpl.class);
-        this.crypto = new AESCrypto();
+        this.crypto = (Crypto) ctx.getPlugins().getPlugin(PluginTypes.CRYPTO.getBaseType(), cryptoConfig.getType());
     }
 
     @Override

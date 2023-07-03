@@ -17,7 +17,13 @@
 
 package com.tencent.polaris.plugins.configfilefilter.crypto;
 
+import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 
@@ -29,7 +35,7 @@ import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
  */
 public class AESCrypto implements Crypto {
 
-    private final RSAService rsaService = new RSAService();
+    private RSAService rsaService;
 
     @Override
     public void doBefore(ConfigFile configFile) {
@@ -42,5 +48,30 @@ public class AESCrypto implements Crypto {
         byte[] password = rsaService.decrypt(configFile.getDataKey());
         String result = AESUtil.decrypt(configFile.getContent(), password);
         configFile.setContent(result);
+    }
+
+    @Override
+    public String getName() {
+        return "AES";
+    }
+
+    @Override
+    public PluginType getType() {
+        return PluginTypes.CRYPTO.getBaseType();
+    }
+
+    @Override
+    public void init(InitContext ctx) throws PolarisException {
+        this.rsaService = new RSAService();
+    }
+
+    @Override
+    public void postContextInit(Extensions ctx) throws PolarisException {
+
+    }
+
+    @Override
+    public void destroy() {
+
     }
 }

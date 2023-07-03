@@ -15,8 +15,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.configfilefilter.crypto;
+package com.tencent.polaris.api.plugin.filter;
 
+import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 
 /**
@@ -25,7 +26,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
  * @author fabian4
  * @date 2023/7/3
  */
-public interface Crypto {
+public interface Crypto extends Plugin {
 
     void doBefore(ConfigFile configFile);
 
