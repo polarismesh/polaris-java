@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
-import com.tencent.polaris.api.plugin.chain.ConfigFileFilterChain;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;

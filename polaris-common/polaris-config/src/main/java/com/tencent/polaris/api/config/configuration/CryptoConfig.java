@@ -37,7 +37,6 @@ public class CryptoConfig implements Verifier {
 
     @Override
     public void verify() {
-
     }
 
     @Override

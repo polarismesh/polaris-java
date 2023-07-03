@@ -20,7 +20,7 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.RetriableException;
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.chain.ConfigFileFilterChain;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;

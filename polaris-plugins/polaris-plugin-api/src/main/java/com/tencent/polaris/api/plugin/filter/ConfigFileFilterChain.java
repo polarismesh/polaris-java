@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin.chain;
+package com.tencent.polaris.api.plugin.filter;
 
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
