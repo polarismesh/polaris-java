@@ -28,7 +28,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
  */
 public interface Crypto extends Plugin {
 
-    void doBefore(ConfigFile configFile);
+    void doEncrypt(ConfigFile configFile);
 
-    void doAfter(ConfigFile configFile);
+    void doDecrypt(ConfigFile configFile);
 }

@@ -38,13 +38,12 @@ public class AESCrypto implements Crypto {
     private RSAService rsaService;
 
     @Override
-    public void doBefore(ConfigFile configFile) {
-        configFile.setEncrypted(Boolean.TRUE);
-        configFile.setPublicKey(rsaService.getPKCS1PublicKey());
+    public void doEncrypt(ConfigFile configFile) {
+
     }
 
     @Override
-    public void doAfter(ConfigFile configFile) {
+    public void doDecrypt(ConfigFile configFile) {
         byte[] password = rsaService.decrypt(configFile.getDataKey());
         String result = AESUtil.decrypt(configFile.getContent(), password);
         configFile.setContent(result);
