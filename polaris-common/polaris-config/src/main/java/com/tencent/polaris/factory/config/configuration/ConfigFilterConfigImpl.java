@@ -66,6 +66,9 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
     @Override
     public void verify() {
         ConfigUtils.validateNull(chain, "chain");
+//        verifyPluginConfig();
+//        chain.forEach(chain ->
+//                ConfigUtils.validateNull(getPluginConfigs(), "pluginConfig"));
     }
 
     @Override
