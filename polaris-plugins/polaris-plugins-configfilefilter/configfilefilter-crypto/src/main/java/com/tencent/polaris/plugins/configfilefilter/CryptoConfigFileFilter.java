@@ -77,6 +77,9 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
         };
     }
 
+    public CryptoConfigFileFilter() {
+    }
+
     public CryptoConfigFileFilter(Crypto crypto, RSAService rsaService, CryptoConfig cryptoConfig, Map<String, Crypto> cryptoMap) {
         this.crypto = crypto;
         this.rsaService = rsaService;
