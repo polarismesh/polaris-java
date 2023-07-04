@@ -20,6 +20,9 @@ package com.tencent.polaris.factory.config.configuration;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.factory.util.ConfigUtils;
+
+import java.util.Objects;
 
 /**
  * @author fabian4
@@ -41,6 +44,9 @@ public class CryptoConfigImpl implements CryptoConfig, Verifier {
 
     @Override
     public void verify() {
+        if(!Objects.equals(type, "AES")) {
+            throw new IllegalArgumentException("only support AES");
+        }
     }
 
     @Override

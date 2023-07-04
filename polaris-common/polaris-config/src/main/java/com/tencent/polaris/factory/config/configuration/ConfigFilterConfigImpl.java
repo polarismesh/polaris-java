@@ -21,7 +21,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
@@ -57,7 +59,7 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
     public Map<String, Verifier> getPluginConfigs() throws PolarisException {
         Map<String, Verifier> values = new HashMap<>();
         chain.forEach(chain -> {
-            CryptoConfig cryptoConfig = super.getPluginConfig(chain, CryptoConfig.class);
+            CryptoConfig cryptoConfig = super.getPluginConfig(chain, CryptoConfigImpl.class);
             values.put(chain, cryptoConfig);
         });
         return values;
@@ -65,12 +67,21 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
 
     @Override
     public void verify() {
-        ConfigUtils.validateNull(chain, "chain");
-//        verifyPluginConfig();
-//        chain.forEach(chain ->
-//                ConfigUtils.validateNull(getPluginConfigs(), "pluginConfig"));
+        if (!isEnable()) {
+            return;
+        }
+        ConfigUtils.validateNull(chain, "ConfigFilterConfig Chain");
+        ConfigUtils.validateNull(getPlugin(), "ConfigFilterConfig Plugin");
+        if (getPlugin().size() != chain.size()) {
+            throw new PolarisException(ErrorCode.INVALID_CONFIG, "ConfigFilterConfig plugin config does not match chain");
+        }
+        chain.forEach(chain ->
+                ConfigUtils.validateNull(getPlugin().get(chain), "ConfigFilter plugin config for chain " + chain));
+
+        verifyPluginConfig();
     }
 
     @Override
-    public void setDefault(Object defaultObject) {}
+    public void setDefault(Object defaultObject) {
+    }
 }

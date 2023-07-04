@@ -67,6 +67,10 @@ public class PluginConfigImpl implements PluginConfig {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
     }
 
+    public Map<String, Map<?, ?>> getPlugin() {
+        return plugin;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Verifier> T getPluginConfig(String pluginName, Class<T> clazz) throws PolarisException {
