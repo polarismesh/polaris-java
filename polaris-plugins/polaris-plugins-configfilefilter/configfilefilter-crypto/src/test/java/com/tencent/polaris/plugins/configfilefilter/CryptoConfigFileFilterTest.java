@@ -17,11 +17,28 @@
 
 package com.tencent.polaris.plugins.configfilefilter;
 
+import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.filter.Crypto;
+import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
+import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.HashMap;
+import java.util.function.Function;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * @author fabian4
@@ -30,10 +47,53 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class CryptoConfigFileFilterTest {
 
+    @Mock
+    private Crypto crypto;
+
+    @Mock
+    private RSAService rsaService;
 
     @Before
     public void setUp() {
+        crypto = new Crypto() {
+            @Override
+            public void doEncrypt(ConfigFile configFile) {
 
+            }
+
+            @Override
+            public void doDecrypt(ConfigFile configFile, byte[] password) {
+                configFile.setContent(configFile.getContent() + "-doCrypto");
+            }
+
+            @Override
+            public String getName() {
+                return null;
+            }
+
+            @Override
+            public PluginType getType() {
+                return null;
+            }
+
+            @Override
+            public void init(InitContext ctx) throws PolarisException {
+
+            }
+
+            @Override
+            public void postContextInit(Extensions ctx) throws PolarisException {
+
+            }
+
+            @Override
+            public void destroy() {
+
+            }
+        };
+
+        when(rsaService.getPKCS1PublicKey()).thenReturn("RSAPublicKey");
+        when(rsaService.decrypt(any())).thenReturn(null);
     }
 
     @Test
@@ -42,19 +102,20 @@ public class CryptoConfigFileFilterTest {
         ConfigFile configFile = new ConfigFile("namespace",  "group", "fileName");
         configFile.setContent(content);
 
-        CryptoConfigFileFilter cryptoConfigFileFilter = new CryptoConfigFileFilter();
+        CryptoConfigFileFilter cryptoConfigFileFilter = new CryptoConfigFileFilter(crypto, rsaService, new CryptoConfigImpl(), new HashMap<>());
 
-//
-//        ConfigFileResponse response = cryptoConfigFileFilter.execute(configFile, new Function<ConfigFile, ConfigFileResponse>() {
-//            @Override
-//            public ConfigFileResponse apply(ConfigFile configFile) {
-//                configFile.setContent(configFile.getContent() + " apply");
-//                return new ConfigFileResponse(1, "OK", configFile);
-//            }
-//        });
+        ConfigFileResponse response = cryptoConfigFileFilter.doFilter(configFile, new Function<ConfigFile, ConfigFileResponse>() {
+            @Override
+            public ConfigFileResponse apply(ConfigFile configFile) {
+                configFile.setContent(configFile.getContent() + "-apply");
+                configFile.setDataKey(configFile.getPublicKey());
+                return new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "OK", configFile);
+            }
+        }).apply(configFile);
 
-        String res = content + " beforeCrypto2" + " beforeCrypto1" + " apply" + " afterCrypto1" + " afterCrypto2";
-//        assertEquals(res, response.getConfigFile().getContent());
+        String res = content + "-apply" + "-doCrypto";
+        assertEquals(res, response.getConfigFile().getContent());
+        assertEquals("RSAPublicKey", configFile.getDataKey());
     }
 
 }

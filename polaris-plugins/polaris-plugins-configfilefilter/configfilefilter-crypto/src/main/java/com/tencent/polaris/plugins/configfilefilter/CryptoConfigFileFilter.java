@@ -31,12 +31,9 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
-import com.tencent.polaris.plugins.configfilefilter.crypto.AESCrypto;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
-import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -53,7 +50,6 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     private CryptoConfig cryptoConfig;
 
     private Map<String, Crypto> cryptoMap;
-
 
     @Override
     public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
@@ -79,6 +75,13 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
                 return response;
             }
         };
+    }
+
+    public CryptoConfigFileFilter(Crypto crypto, RSAService rsaService, CryptoConfig cryptoConfig, Map<String, Crypto> cryptoMap) {
+        this.crypto = crypto;
+        this.rsaService = rsaService;
+        this.cryptoConfig = cryptoConfig;
+        this.cryptoMap = cryptoMap;
     }
 
     @Override
