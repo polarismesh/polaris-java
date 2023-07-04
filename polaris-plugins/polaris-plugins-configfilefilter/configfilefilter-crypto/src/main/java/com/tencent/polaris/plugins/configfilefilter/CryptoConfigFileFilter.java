@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.configfilefilter;
 
 import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.api.config.configuration.CryptoConfig;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -30,9 +31,13 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
+import com.tencent.polaris.plugins.configfilefilter.crypto.AESCrypto;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -47,13 +52,15 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
 
     private CryptoConfig cryptoConfig;
 
+    private Map<String, Crypto> cryptoMap;
+
+
     @Override
     public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
         return new Function<ConfigFile, ConfigFileResponse>() {
             @Override
             public ConfigFileResponse apply(ConfigFile configFile) {
                 // do before
-
                 configFile.setEncrypted(Boolean.TRUE);
                 configFile.setPublicKey(rsaService.getPKCS1PublicKey());
 
@@ -62,9 +69,12 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
                 // do after
                 ConfigFile configFileResponse = response.getConfigFile();
                 if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
-                    byte[] password = rsaService.decrypt(configFileResponse.getDataKey());
-                    String result = AESUtil.decrypt(configFileResponse.getContent(), password);
-                    configFileResponse.setContent(result);
+                    String dataKey = configFileResponse.getDataKey();
+                    if (dataKey == null) {
+                        throw new PolarisException(ErrorCode.RSA_DECRYPT_ERROR, "dataKey is null");
+                    }
+                    byte[] password = rsaService.decrypt(dataKey);
+                    crypto.doDecrypt(configFileResponse, password);
                 }
                 return response;
             }
@@ -87,9 +97,12 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
         if (configFilterConfig == null || !configFilterConfig.isEnable()) {
             return;
         }
+        this.cryptoMap = new HashMap<>();
         this.rsaService = new RSAService();
         this.cryptoConfig = configFilterConfig.getPluginConfig(getName(), CryptoConfigImpl.class);
-        this.crypto = (Crypto) ctx.getPlugins().getPlugin(PluginTypes.CRYPTO.getBaseType(), cryptoConfig.getType());
+        ctx.getPlugins().getPlugins(PluginTypes.CRYPTO.getBaseType()).forEach(plugin ->
+                cryptoMap.put(plugin.getName(), (Crypto) plugin));
+        this.crypto = cryptoMap.get(cryptoConfig.getType());
     }
 
     @Override

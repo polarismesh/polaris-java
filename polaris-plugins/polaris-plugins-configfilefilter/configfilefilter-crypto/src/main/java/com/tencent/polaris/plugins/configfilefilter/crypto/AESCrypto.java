@@ -24,6 +24,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.filter.Crypto;
+import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 
 /**
  * AES Crypto 加密
@@ -39,9 +40,11 @@ public class AESCrypto implements Crypto {
     }
 
     @Override
-    public void doDecrypt(ConfigFile configFile) {
-
+    public void doDecrypt(ConfigFile configFile, byte[] password) {
+        String result = AESUtil.decrypt(configFile.getContent(), password);
+        configFile.setContent(result);
     }
+
 
     @Override
     public String getName() {

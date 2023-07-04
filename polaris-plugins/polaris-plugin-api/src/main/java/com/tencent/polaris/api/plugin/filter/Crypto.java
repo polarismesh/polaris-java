@@ -30,5 +30,5 @@ public interface Crypto extends Plugin {
 
     void doEncrypt(ConfigFile configFile);
 
-    void doDecrypt(ConfigFile configFile);
+    void doDecrypt(ConfigFile configFile, byte[] password);
 }
