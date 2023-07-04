@@ -30,6 +30,8 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
+import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
+import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 
 import java.util.function.Function;
 
@@ -41,6 +43,8 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
 
     private Crypto crypto;
 
+    private RSAService rsaService;
+
     private CryptoConfig cryptoConfig;
 
     @Override
@@ -49,14 +53,18 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
             @Override
             public ConfigFileResponse apply(ConfigFile configFile) {
                 // do before
-                crypto.doBefore(configFile);
+
+                configFile.setEncrypted(Boolean.TRUE);
+                configFile.setPublicKey(rsaService.getPKCS1PublicKey());
 
                 ConfigFileResponse response = next.apply(configFile);
 
                 // do after
                 ConfigFile configFileResponse = response.getConfigFile();
                 if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
-                    crypto.doAfter(configFileResponse);
+                    byte[] password = rsaService.decrypt(configFileResponse.getDataKey());
+                    String result = AESUtil.decrypt(configFileResponse.getContent(), password);
+                    configFileResponse.setContent(result);
                 }
                 return response;
             }
@@ -76,7 +84,11 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     @Override
     public void init(InitContext ctx) throws PolarisException {
         ConfigFilterConfig configFilterConfig = ctx.getConfig().getConfigFile().getConfigFilterConfig();
-        this.cryptoConfig= configFilterConfig.getPluginConfig(getName(), CryptoConfigImpl.class);
+        if (configFilterConfig == null || !configFilterConfig.isEnable()) {
+            return;
+        }
+        this.rsaService = new RSAService();
+        this.cryptoConfig = configFilterConfig.getPluginConfig(getName(), CryptoConfigImpl.class);
         this.crypto = (Crypto) ctx.getPlugins().getPlugin(PluginTypes.CRYPTO.getBaseType(), cryptoConfig.getType());
     }
 

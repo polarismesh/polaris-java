@@ -24,8 +24,6 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.filter.Crypto;
-import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
-import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
 
 /**
  * AES Crypto 加密
@@ -35,19 +33,14 @@ import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
  */
 public class AESCrypto implements Crypto {
 
-    private RSAService rsaService;
-
     @Override
-    public void doBefore(ConfigFile configFile) {
-        configFile.setEncrypted(Boolean.TRUE);
-        configFile.setPublicKey(rsaService.getPKCS1PublicKey());
+    public void doEncrypt(ConfigFile configFile) {
+
     }
 
     @Override
-    public void doAfter(ConfigFile configFile) {
-        byte[] password = rsaService.decrypt(configFile.getDataKey());
-        String result = AESUtil.decrypt(configFile.getContent(), password);
-        configFile.setContent(result);
+    public void doDecrypt(ConfigFile configFile) {
+
     }
 
     @Override
@@ -62,7 +55,6 @@ public class AESCrypto implements Crypto {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-        this.rsaService = new RSAService();
     }
 
     @Override
