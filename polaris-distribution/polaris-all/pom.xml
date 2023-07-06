@@ -112,6 +112,10 @@
                                     <shadedPattern>shade.polaris.com.squareup.okhttp</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>okhttp3</pattern>
+                                    <shadedPattern>shade.polaris.okhttp3</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.checkerframework</pattern>
                                     <shadedPattern>shade.polaris.org.checkerframework
                                     </shadedPattern>
