@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.loadbalancer.ringhash;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
