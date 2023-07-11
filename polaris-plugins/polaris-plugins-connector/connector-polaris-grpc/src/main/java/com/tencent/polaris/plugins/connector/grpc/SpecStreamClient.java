@@ -99,7 +99,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
         GrpcUtil.attachRequestHeader(namingStub, reqId);
         discoverClient = namingStub.discover(this);
-        pendingTask.put(serviceUpdateTask.getServiceEventKey(), serviceUpdateTask);
+        putPendingTask(serviceUpdateTask);
     }
 
     /**
@@ -222,7 +222,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
                     pendingTask.clear();
                 }
             } else {
-                ServiceUpdateTask task = pendingTask.remove(serviceEventKey);
+                ServiceUpdateTask task = removePendingTask(serviceEventKey);
                 if (null != task) {
                     notifyTasks.add(task);
                     PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
@@ -257,7 +257,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, eventType);
         ServiceUpdateTask updateTask;
         synchronized (clientLock) {
-            updateTask = pendingTask.remove(serviceEventKey);
+            updateTask = removePendingTask(serviceEventKey);
         }
         if (null == updateTask) {
             LOG.warn("[ServerConnector]callback not found for:{}", TextFormat.shortDebugString(service));
@@ -340,9 +340,19 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             if (null != lastUpdateTask) {
                 LOG.warn("[ServerConnector]pending task {} has been overwritten", lastUpdateTask);
             }
-            pendingTask.put(serviceEventKey, serviceUpdateTask);
+            putPendingTask(serviceUpdateTask);
         }
         return true;
+    }
+
+    public void putPendingTask(ServiceUpdateTask serviceUpdateTask) {
+        LOG.debug("Put " + serviceUpdateTask.getServiceEventKey() + "to pending task map. reqId: " + reqId);
+        pendingTask.put(serviceUpdateTask.getServiceEventKey(), serviceUpdateTask);
+    }
+
+    public ServiceUpdateTask removePendingTask(ServiceEventKey serviceEventKey) {
+        LOG.debug("Remove " + serviceEventKey + "from pending task map. reqId: " + reqId);
+        return pendingTask.remove(serviceEventKey);
     }
 
     private static class ValidResult {
