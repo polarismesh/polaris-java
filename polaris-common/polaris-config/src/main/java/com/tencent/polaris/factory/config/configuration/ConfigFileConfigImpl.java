@@ -23,6 +23,7 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     public void verify() {
         ConfigUtils.validateNull(serverConnector, "config server connector");
         serverConnector.verify();
+        configFilter.verify();
     }
 
     @Override
