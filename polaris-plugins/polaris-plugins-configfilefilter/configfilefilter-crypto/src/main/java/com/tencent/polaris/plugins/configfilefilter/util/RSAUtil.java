@@ -19,8 +19,6 @@ package com.tencent.polaris.plugins.configfilefilter.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -32,7 +30,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Base64;
 
 /**
  * @author fabian4

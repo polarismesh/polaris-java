@@ -57,6 +57,7 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
             @Override
             public ConfigFileResponse apply(ConfigFile configFile) {
                 // do before
+                // Design doc: https://github.com/polarismesh/polaris/issues/966
                 configFile.setEncrypted(Boolean.TRUE);
                 configFile.setPublicKey(rsaService.getPKCS1PublicKey());
 
