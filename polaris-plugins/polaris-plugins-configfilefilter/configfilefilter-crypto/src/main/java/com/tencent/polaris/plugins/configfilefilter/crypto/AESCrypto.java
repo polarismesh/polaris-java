@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.configfilefilter.crypto;
 
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -36,7 +37,7 @@ public class AESCrypto implements Crypto {
 
     @Override
     public void doEncrypt(ConfigFile configFile) {
-
+        throw new PolarisException(ErrorCode.NOT_SUPPORT);
     }
 
     @Override

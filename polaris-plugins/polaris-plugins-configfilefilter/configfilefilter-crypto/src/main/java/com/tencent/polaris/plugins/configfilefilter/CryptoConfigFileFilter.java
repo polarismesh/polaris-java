@@ -30,6 +30,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
+import com.tencent.polaris.configuration.client.JustForTest;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 
@@ -81,6 +82,7 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     public CryptoConfigFileFilter() {
     }
 
+    @JustForTest
     public CryptoConfigFileFilter(Crypto crypto, RSAService rsaService, CryptoConfig cryptoConfig, Map<String, Crypto> cryptoMap) {
         this.crypto = crypto;
         this.rsaService = rsaService;

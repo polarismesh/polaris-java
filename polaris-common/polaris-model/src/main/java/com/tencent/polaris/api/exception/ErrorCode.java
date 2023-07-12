@@ -207,7 +207,12 @@ public enum ErrorCode {
     /**
      * 内部错误：AES 解密失败
      */
-    AES_DECRYPT_ERROR(30006);
+    AES_DECRYPT_ERROR(30006),
+
+    /**
+     * 内部错误：参数错误
+     */
+    PARAMETER_ERROR(40000);
 
     private final int code;
 

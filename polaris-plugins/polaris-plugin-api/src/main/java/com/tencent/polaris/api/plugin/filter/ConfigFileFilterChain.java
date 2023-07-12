@@ -18,6 +18,8 @@
 package com.tencent.polaris.api.plugin.filter;
 
 import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
+import com.tencent.polaris.api.exception.ErrorCode;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
@@ -40,6 +42,9 @@ public class ConfigFileFilterChain {
     private final Map<String, ConfigFileFilter> pluginChain = new HashMap<>();
 
     public ConfigFileResponse execute(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
+        if (next == null) {
+            throw new PolarisException(ErrorCode.PARAMETER_ERROR, "Exit Function is null");
+        }
         if (!enable) {
             return next.apply(configFile);
         }
