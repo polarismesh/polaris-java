@@ -28,9 +28,7 @@ import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.Criteria;
-import com.tencent.polaris.api.utils.CollectionUtils;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,7 +41,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class WeightedRoundRobinBalance extends Destroyable implements LoadBalancer {
 
-    private static final int RECYCLE_PERIOD = 60000;
+    private static final int RECYCLE_PERIOD = 60000; // 1分钟
 
     private final ConcurrentMap<String, ConcurrentMap<String, WeightedRoundRobin>> methodWeightMap = new ConcurrentHashMap<>();
 
@@ -97,7 +95,6 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
             });
 
             if (weight != weightedRoundRobin.getWeight()) {
-                //weight changed
                 weightedRoundRobin.setWeight(weight);
             }
             long cur = weightedRoundRobin.increaseCurrent();
@@ -109,6 +106,7 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
             }
             totalWeight += weight;
         }
+        // 如果实例有变化，超过1分钟后淘汰出缓存中
         if (svcInstances.getInstances().size() != map.size()) {
             map.entrySet().removeIf(item -> now - item.getValue().getLastUpdate() > RECYCLE_PERIOD);
         }
@@ -117,17 +115,6 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
             return selectedInstance;
         }
         return svcInstances.getInstances().get(0);
-    }
-
-    private int sumTotalWeight(ServiceInstances svcInstances) {
-        List<Instance> instances = svcInstances.getInstances();
-        int totalWeight = 0;
-        if (CollectionUtils.isNotEmpty(instances)) {
-            for (Instance instance : instances) {
-                totalWeight += instance.getWeight();
-            }
-        }
-        return totalWeight;
     }
 
     @Override
