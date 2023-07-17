@@ -33,8 +33,7 @@
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-configuration-client</artifactId>
-            <version>1.13.0-SNAPSHOT</version>
-            <scope>compile</scope>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
