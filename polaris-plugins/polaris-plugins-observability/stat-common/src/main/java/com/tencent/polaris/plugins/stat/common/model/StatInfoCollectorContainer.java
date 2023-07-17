@@ -26,10 +26,12 @@ import java.util.List;
 
 public class StatInfoCollectorContainer {
     private final StatInfoRevisionCollector<InstanceGauge> insCollector;
+    private final StatInfoRevisionCollector<RateLimitGauge> rateLimitCollector;
     private final StatInfoStatefulCollector<CircuitBreakGauge> circuitBreakerCollector;
 
     public StatInfoCollectorContainer() {
         this.insCollector = new StatInfoRevisionCollector<InstanceGauge>();
+        this.rateLimitCollector = new StatInfoRevisionCollector<RateLimitGauge>();
         this.circuitBreakerCollector = new StatInfoStatefulCollector<CircuitBreakGauge>();
     }
 
@@ -37,12 +39,16 @@ public class StatInfoCollectorContainer {
         return insCollector;
     }
 
+    public StatInfoRevisionCollector<RateLimitGauge> getRateLimitCollector() {
+        return rateLimitCollector;
+    }
+
     public StatInfoStatefulCollector<CircuitBreakGauge> getCircuitBreakerCollector() {
         return circuitBreakerCollector;
     }
 
     public List<StatInfoCollector<?, ? extends StatMetric>> getCollectors() {
-        return Arrays.asList(insCollector, circuitBreakerCollector);
+        return Arrays.asList(insCollector, rateLimitCollector, circuitBreakerCollector);
     }
 }
 

@@ -63,7 +63,8 @@ public class CommonHandler {
                     } else if (rs.getRevision() < currentRevision) {
                         // 如果版本为老版本，则清零数据
                         gauge.remove(CommonHandler.getOrderedMetricLabelValues(s.getLabels(), order));
-                        Gauge.Child child = gauge.labels(CommonHandler.getOrderedMetricLabelValues(s.getLabels(), order));
+                        Gauge.Child child = gauge.labels(CommonHandler.getOrderedMetricLabelValues(s.getLabels(),
+                                order));
                         if (null != child) {
                             child.set(0);
                         }
@@ -174,6 +175,32 @@ public class CommonHandler {
                     break;
                 case SystemMetricName.LEVEL:
                     addLabel(labelName, gauge.getLevel(), labels);
+                    break;
+                default:
+            }
+        }
+
+        return labels;
+    }
+
+    public static Map<String, String> convertRateLimitGaugeToLabels(RateLimitGauge rateLimitGauge) {
+        Map<String, String> labels = new HashMap<>();
+        for (String labelName : SystemMetricModel.SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER) {
+            switch (labelName) {
+                case SystemMetricName.CALLEE_NAMESPACE:
+                    addLabel(labelName, rateLimitGauge.getNamespace(), labels);
+                    break;
+                case SystemMetricName.CALLEE_SERVICE:
+                    addLabel(labelName, rateLimitGauge.getService(), labels);
+                    break;
+                case SystemMetricName.CALLEE_METHOD:
+                    addLabel(labelName, rateLimitGauge.getMethod(), labels);
+                    break;
+                case SystemMetricName.CALLER_LABELS:
+                    addLabel(labelName, rateLimitGauge.getLabels(), labels);
+                    break;
+                case SystemMetricName.RULE_NAME:
+                    addLabel(labelName, rateLimitGauge.getRuleName(), labels);
                     break;
                 default:
             }

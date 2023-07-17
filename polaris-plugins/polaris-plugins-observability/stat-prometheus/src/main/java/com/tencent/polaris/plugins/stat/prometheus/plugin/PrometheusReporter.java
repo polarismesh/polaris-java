@@ -46,6 +46,9 @@ import com.tencent.polaris.plugins.stat.prometheus.exporter.PushGateway;
 import com.tencent.polaris.plugins.stat.prometheus.handler.CommonHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHttpServer;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.Gauge;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -57,10 +60,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.Gauge;
-import org.slf4j.Logger;
 
 /**
  * PrometheusReporter plugin
@@ -103,6 +102,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                 SystemMetricLabelOrder.INSTANCE_GAUGE_LABEL_ORDER);
         initSampleMapping(MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY,
                 SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
+        initSampleMapping(MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY,
+                SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
     }
 
     @Override
@@ -155,6 +156,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         if (null != statInfo.getCircuitBreakGauge()) {
             handleCircuitBreakGauge(statInfo.getCircuitBreakGauge());
         }
+        if (null != statInfo.getRateLimitGauge()) {
+            handleRateLimitGauge(statInfo.getRateLimitGauge());
+        }
     }
 
     public void handleRouterGauge(InstanceGauge instanceGauge) {
@@ -170,6 +174,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             container.getCircuitBreakerCollector().collectStatInfo(circuitBreakGauge,
                     CommonHandler.convertCircuitBreakToLabels(circuitBreakGauge, sdkIP),
                     MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY);
+        }
+    }
+
+    public void handleRateLimitGauge(RateLimitGauge rateLimitGauge) {
+        if (null != container && null != container.getRateLimitCollector()) {
+            container.getRateLimitCollector().collectStatInfo(rateLimitGauge,
+                    CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge),
+                    MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY);
         }
     }
 
@@ -245,7 +257,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
                     CommonHandler.DEFAULT_INTERVAL_MILLI,
                     CommonHandler.DEFAULT_INTERVAL_MILLI,
                     TimeUnit.MILLISECONDS);
-            LOGGER.info("start schedule metric aggregation task, task interval {}", CommonHandler.DEFAULT_INTERVAL_MILLI);
+            LOGGER.info("start schedule metric aggregation task, task interval {}",
+                    CommonHandler.DEFAULT_INTERVAL_MILLI);
         }
     }
 
@@ -256,6 +269,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
         CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getCircuitBreakerCollector(),
                 0,
                 SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
+        CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getRateLimitCollector(),
+                container.getRateLimitCollector().getCurrentRevision(),
+                SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
 
         for (StatInfoCollector<?, ? extends StatMetric> s : container.getCollectors()) {
             if (s instanceof StatInfoRevisionCollector<?>) {
@@ -292,6 +308,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
             CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getCircuitBreakerCollector(),
                     0,
                     SystemMetricLabelOrder.CIRCUIT_BREAKER_LABEL_ORDER);
+            CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getRateLimitCollector(),
+                    container.getRateLimitCollector().getCurrentRevision(),
+                    SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
 
             try {
                 if (Objects.isNull(pushGateway)) {

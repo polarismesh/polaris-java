@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
+
 import java.util.List;
 
 public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitConfig {
@@ -48,6 +49,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
 
     @JsonProperty
     private Long maxQueuingTime;
+
+    @JsonProperty
+    private Boolean reportMetrics;
 
     public boolean isEnable() {
         if (null == enable) {
@@ -136,6 +140,18 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
+    public boolean isReportMetrics() {
+        if (null == reportMetrics) {
+            return false;
+        }
+        return reportMetrics;
+    }
+
+    public void setReportMetrics(boolean reportMetrics) {
+        this.reportMetrics = reportMetrics;
+    }
+
+    @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             RateLimitConfig rateLimitConfig = (RateLimitConfig) defaultObject;
@@ -162,6 +178,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             }
             if (null == maxQueuingTime) {
                 setMaxQueuingTime(rateLimitConfig.getMaxQueuingTime());
+            }
+            if (null == reportMetrics) {
+                setReportMetrics(rateLimitConfig.isReportMetrics());
             }
             setDefaultPluginConfig(rateLimitConfig);
         }

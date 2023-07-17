@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.ratelimit.client.api;
 
-import static com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode.QuotaResultOk;
-
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
@@ -37,12 +35,15 @@ import com.tencent.polaris.ratelimit.client.flow.QuotaFlow;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.ratelimit.client.utils.LimitValidator;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
+
+import static com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode.QuotaResultOk;
 
 /**
  * 默认的限流API实现
@@ -77,15 +78,14 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
         LimitValidator.validateQuotaRequest(request);
         CommonQuotaRequest commonQuotaRequest = new CommonQuotaRequest(request, sdkContext.getConfig());
         QuotaResponse response = quotaFlow.getQuota(commonQuotaRequest);
-        // reportRateLimit(request, response);
+        reportRateLimit(request, response);
         return response;
     }
 
-    /**
-     * 限流指标不在保留单独的指标视图，全部合并到 upstream_xxx 的指标视图中
-     */
-    @Deprecated
     private void reportRateLimit(QuotaRequest req, QuotaResponse rsp) {
+        if (!sdkContext.getConfig().getProvider().getRateLimit().isReportMetrics()) {
+            return;
+        }
         if (null != statPlugins && !RateLimitConstants.REASON_DISABLED.equals(rsp.getInfo())) {
             try {
                 DefaultRateLimitResult rateLimitGauge = new DefaultRateLimitResult();
@@ -95,7 +95,8 @@ public class DefaultLimitAPI extends BaseEngine implements LimitAPI {
                 rateLimitGauge.setService(req.getService());
                 rateLimitGauge.setResult(
                         rsp.getCode() == QuotaResultOk ? RateLimitGauge.Result.PASSED : RateLimitGauge.Result.LIMITED);
-                rateLimitGauge.setRuleName(rsp.getActiveRule() == null ? null : rsp.getActiveRule().getName().getValue());
+                rateLimitGauge.setRuleName(rsp.getActiveRule() == null ? null :
+                        rsp.getActiveRule().getName().getValue());
                 StatInfo statInfo = new StatInfo();
                 statInfo.setRateLimitGauge(rateLimitGauge);
 
