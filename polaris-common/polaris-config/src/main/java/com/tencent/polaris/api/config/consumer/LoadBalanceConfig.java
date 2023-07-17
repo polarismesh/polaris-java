@@ -39,6 +39,11 @@ public interface LoadBalanceConfig extends PluginConfig, Verifier {
     String LOAD_BALANCE_RING_HASH = "ringHash";
 
     /**
+     * 权重轮训负载均衡插件名
+     */
+    String LOAD_BALANCE_WEIGHTED_ROUND_ROBIN = "weightedRoundRobin";
+
+    /**
      * 负载均衡类型
      *
      * @return String
