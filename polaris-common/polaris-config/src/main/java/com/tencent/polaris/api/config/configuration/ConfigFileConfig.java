@@ -18,6 +18,13 @@ public interface ConfigFileConfig extends Verifier {
     ConnectorConfigImpl getServerConnector();
 
     /**
+     * 配置文件过滤器
+     *
+     * @return 过滤器配置对象
+     */
+    ConfigFilterConfig getConfigFilterConfig();
+
+    /**
      * 值缓存的最大数量
      *
      * @return 最大数量

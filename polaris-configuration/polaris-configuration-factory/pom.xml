@@ -109,6 +109,12 @@
             <artifactId>stat-prometheus</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--配置加密插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>configfilefilter-crypto</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!--测试依赖插件-->
         <dependency>
