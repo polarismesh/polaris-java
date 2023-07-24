@@ -18,7 +18,7 @@
 package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
@@ -48,6 +48,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     //服务端通知的版本号，此版本号有可能落后于服务端
     private final AtomicLong notifiedVersion;
     private final ConfigFileConnector configFileConnector;
+    private final ConfigFileFilterChain configFileFilterChain;
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
     private final boolean fallbackToLocalCache;
@@ -58,6 +59,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     public RemoteConfigFileRepo(SDKContext sdkContext,
                                 ConfigFileLongPullService pullService,
+                                ConfigFileFilterChain configFileFilterChain,
                                 ConfigFileConnector connector,
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {
@@ -67,6 +69,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
+        this.configFileFilterChain = configFileFilterChain;
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
@@ -119,7 +122,9 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         while (retryTimes < PULL_CONFIG_RETRY_TIMES) {
             try {
 
-                ConfigFileResponse response = configFileConnector.getConfigFile(pullConfigFileReq);
+                ConfigFileResponse response = configFileFilterChain
+                        .execute(pullConfigFileReq, configFile -> configFileConnector.getConfigFile(pullConfigFileReq));
+
                 retryPolicy.success();
 
                 //打印请求信息

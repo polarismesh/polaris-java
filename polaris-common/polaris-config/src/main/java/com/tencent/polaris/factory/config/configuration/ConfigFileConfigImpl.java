@@ -2,6 +2,7 @@ package com.tencent.polaris.factory.config.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
+import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
 /**
@@ -12,6 +13,8 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     @JsonProperty
     private ConnectorConfigImpl serverConnector;
     @JsonProperty
+    private ConfigFilterConfigImpl configFilter;
+    @JsonProperty
     private int propertiesValueCacheSize;
     @JsonProperty
     private long propertiesValueExpireTime;
@@ -20,6 +23,7 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     public void verify() {
         ConfigUtils.validateNull(serverConnector, "config server connector");
         serverConnector.verify();
+        configFilter.verify();
     }
 
     @Override
@@ -29,7 +33,11 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
             if (serverConnector == null) {
                 serverConnector = new ConnectorConfigImpl();
             }
+            if (configFilter == null) {
+                configFilter = new ConfigFilterConfigImpl();
+            }
             serverConnector.setDefault(sourceConfig.getServerConnector());
+            configFilter.setDefault(sourceConfig.getConfigFilterConfig());
             propertiesValueCacheSize = sourceConfig.getPropertiesValueCacheSize();
             propertiesValueExpireTime = sourceConfig.getPropertiesValueExpireTime();
         }
@@ -38,6 +46,11 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     @Override
     public ConnectorConfigImpl getServerConnector() {
         return serverConnector;
+    }
+
+    @Override
+    public ConfigFilterConfig getConfigFilterConfig() {
+        return configFilter;
     }
 
     @Override

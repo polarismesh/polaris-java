@@ -359,6 +359,13 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- polaris-plugins-configfilter-->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>configfilefilter-crypto</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- test -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

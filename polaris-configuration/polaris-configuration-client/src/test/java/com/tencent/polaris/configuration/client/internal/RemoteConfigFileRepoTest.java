@@ -20,13 +20,13 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.RetriableException;
 import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
-
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
@@ -53,26 +53,28 @@ import static org.mockito.Mockito.when;
 public class RemoteConfigFileRepoTest {
 
     @Mock
-    private ConfigFileConnector          configFileConnector;
+    private SDKContext sdkContext;
+    @Mock
+    private ConfigFileConnector configFileConnector;
+    @Mock
+    private ConfigFileFilterChain configFileFilterChain;
+    @Mock
+    private ConfigFilePersistentHandler configFilePersistHandler;
     @Mock
     private ConfigFileLongPullService configFileLongPollingService;
-    @Mock
-    private SDKContext                   sdkContext;
-	@Mock
-    private ConfigFilePersistentHandler configFilePersistHandler;
 
-	@Before
-	public void before() {
-		ConfigurationImpl configuration = new ConfigurationImpl();
-		ConfigFileConfigImpl configFileConfig = new ConfigFileConfigImpl();
-		ConnectorConfigImpl connectorConfig = new ConnectorConfigImpl();
-		connectorConfig.setFallbackToLocalCache(true);
-		configFileConfig.setServerConnector(connectorConfig);
-		configuration.setConfigFile(configFileConfig);
-		when(sdkContext.getConfig()).thenReturn(configuration);
-	}
+    @Before
+    public void before() {
+        ConfigurationImpl configuration = new ConfigurationImpl();
+        ConfigFileConfigImpl configFileConfig = new ConfigFileConfigImpl();
+        ConnectorConfigImpl connectorConfig = new ConnectorConfigImpl();
+        connectorConfig.setFallbackToLocalCache(true);
+        configFileConfig.setServerConnector(connectorConfig);
+        configuration.setConfigFile(configFileConfig);
+        when(sdkContext.getConfig()).thenReturn(configuration);
+    }
 
-	@Test
+    @Test
     public void testPullSuccess() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
@@ -84,13 +86,13 @@ public class RemoteConfigFileRepoTest {
         configFile.setVersion(version);
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
-        when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
+        when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
-					configFileMetadata, configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                    configFileMetadata, configFilePersistHandler);
 
-        verify(configFileConnector).getConfigFile(any());
+        verify(configFileFilterChain).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertEquals(content, remoteConfigFileRepo.getContent());
@@ -103,15 +105,14 @@ public class RemoteConfigFileRepoTest {
 
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null);
 
-        when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
-
-		doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
+        when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
+        doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
-        verify(configFileConnector).getConfigFile(any());
+        verify(configFileFilterChain).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertNull(remoteConfigFileRepo.getContent());
@@ -124,14 +125,14 @@ public class RemoteConfigFileRepoTest {
 
         ConfigFileResponse configFileResponse = new ConfigFileResponse(50000, "", null);
 
-        when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
+        when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         //重试三次
-        verify(configFileConnector, times(3)).getConfigFile(any());
+        verify(configFileFilterChain, times(3)).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertNull(remoteConfigFileRepo.getContent());
@@ -142,14 +143,14 @@ public class RemoteConfigFileRepoTest {
     public void testPullWithRetryException() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
 
-        when(configFileConnector.getConfigFile(any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
+        when(configFileFilterChain.execute(any(), any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         //重试三次
-        verify(configFileConnector, times(3)).getConfigFile(any());
+        verify(configFileFilterChain, times(3)).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertNull(remoteConfigFileRepo.getContent());
@@ -168,11 +169,11 @@ public class RemoteConfigFileRepoTest {
         configFile.setVersion(version);
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
-        when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse);
+        when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
 
         RemoteConfigFileRepo remoteConfigFileRepo =
-            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileConnector,
-					configFileMetadata,configFilePersistHandler);
+            new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                    configFileMetadata,configFilePersistHandler);
 
         AtomicInteger cbCnt = new AtomicInteger();
         //增加两个listener
@@ -186,7 +187,7 @@ public class RemoteConfigFileRepoTest {
         TimeUnit.MILLISECONDS.sleep(500);
 
         //第一次初始化拉取配置
-        verify(configFileConnector).getConfigFile(any());
+        verify(configFileFilterChain).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertEquals(0, cbCnt.get());
@@ -201,7 +202,7 @@ public class RemoteConfigFileRepoTest {
 
         ConfigFileResponse configFileResponse2 = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
-        when(configFileConnector.getConfigFile(any())).thenReturn(configFileResponse2);
+        when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse2);
 
         remoteConfigFileRepo.onLongPollNotified(newVersion);
 
@@ -211,7 +212,7 @@ public class RemoteConfigFileRepoTest {
             //ignore
         }
 
-        verify(configFileConnector, times(2)).getConfigFile(any());
+        verify(configFileFilterChain, times(2)).execute(any(),any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertEquals(2, cbCnt.get()); //触发回调
@@ -228,7 +229,7 @@ public class RemoteConfigFileRepoTest {
             //ignore
         }
 
-        verify(configFileConnector, times(2)).getConfigFile(any());
+        verify(configFileFilterChain, times(2)).execute(any(),any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
 
         Assert.assertEquals(2, cbCnt.get()); //不触发回调，所以还是2次

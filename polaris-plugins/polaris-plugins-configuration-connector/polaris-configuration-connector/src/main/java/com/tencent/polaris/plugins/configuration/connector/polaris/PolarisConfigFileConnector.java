@@ -1,6 +1,7 @@
 package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.google.common.collect.Lists;
+import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt64Value;
 
@@ -24,6 +25,7 @@ import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileResponseProto;
 import com.tencent.polaris.specification.api.v1.config.manage.PolarisConfigGRPCGrpc;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +60,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
 
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             //执行调用
@@ -71,10 +73,10 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                                         String.format(
-                                             "failed to load config file. namespace = %s, group = %s, file = %s",
-                                             configFile.getNamespace(), configFile.getFileGroup(),
-                                             configFile.getFileName()), t);
+                    String.format(
+                            "failed to load config file. namespace = %s, group = %s, file = %s",
+                            configFile.getNamespace(), configFile.getFileGroup(),
+                            configFile.getFileName()), t);
         } finally {
             if (connection != null) {
                 connection.release(OP_KEY_GET_CONFIG_FILE);
@@ -91,7 +93,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
 
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             //执行调用
@@ -100,7 +102,7 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
                 dtos.add(transfer2DTO(configFile));
             }
             ConfigFileProto.ClientWatchConfigFileRequest request =
-                ConfigFileProto.ClientWatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
+                    ConfigFileProto.ClientWatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
 
             ConfigFileResponseProto.ConfigClientResponse response = stub.watchConfigFiles(request);
 
@@ -247,6 +249,10 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
         builder.setFileName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
         builder.setVersion(UInt64Value.newBuilder().setValue(configFile.getVersion()).build());
+        if (configFile.isEncrypted()) {
+            builder.setEncrypted(BoolValue.newBuilder().setValue(configFile.isEncrypted()).buildPartial());
+            builder.setPublicKey(StringValue.newBuilder().setValue(configFile.getPublicKey()).build());
+        }
 
         return builder.build();
     }
@@ -257,11 +263,18 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         }
 
         ConfigFile configFile = new ConfigFile(configFileDTO.getNamespace().getValue(),
-                                               configFileDTO.getGroup().getValue(),
-                                               configFileDTO.getFileName().getValue());
+                configFileDTO.getGroup().getValue(),
+                configFileDTO.getFileName().getValue());
         configFile.setContent(configFileDTO.getContent().getValue());
         configFile.setMd5(configFileDTO.getMd5().getValue());
         configFile.setVersion(configFileDTO.getVersion().getValue());
+        if (configFileDTO.getEncrypted().getValue()) {
+            configFileDTO.getTagsList().forEach(tag -> {
+                if (tag.getKey().getValue().equals("internal-datakey")) {
+                    configFile.setDataKey(tag.getValue().getValue());
+                }
+            });
+        }
 
         return configFile;
     }
@@ -291,8 +304,8 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
         int code = response.getCode().getValue();
         //预期code，正常响应
         if (code == ServerCodes.EXECUTE_SUCCESS ||
-            code == ServerCodes.NOT_FOUND_RESOURCE ||
-            code == ServerCodes.DATA_NO_CHANGE) {
+                code == ServerCodes.NOT_FOUND_RESOURCE ||
+                code == ServerCodes.DATA_NO_CHANGE) {
             ConfigFile loadedConfigFile = transferFromDTO(response.getConfigFile());
             return new ConfigFileResponse(code, response.getInfo().getValue(), loadedConfigFile);
         }

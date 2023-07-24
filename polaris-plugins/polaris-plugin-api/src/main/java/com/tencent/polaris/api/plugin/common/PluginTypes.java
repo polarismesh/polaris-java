@@ -23,6 +23,8 @@ import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
+import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.location.LocationProvider;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
@@ -95,6 +97,16 @@ public enum PluginTypes {
      * 限流器扩展点
      */
     SERVICE_LIMITER(new PluginType(ServiceRateLimiter.class, 2)),
+
+    /**
+     * 配置扩展点
+     */
+    CONFIG_FILTER(new PluginType(ConfigFileFilter.class, 2)),
+
+    /**
+     * 加密扩展点
+     */
+    CRYPTO(new PluginType(Crypto.class, 2)),
 
     /**
      * 配置文件加载器扩展点
