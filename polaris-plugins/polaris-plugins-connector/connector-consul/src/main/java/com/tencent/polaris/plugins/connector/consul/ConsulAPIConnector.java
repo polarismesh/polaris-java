@@ -17,14 +17,14 @@
 
 package com.tencent.polaris.plugins.connector.consul;
 
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.INSTANCE_ID_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.IP_ADDRESS_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.PREFER_IP_ADDRESS_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.SERVICE_NAME_KEY;
-
 import com.ecwid.consul.ConsulException;
+import com.ecwid.consul.SingleUrlParameters;
+import com.ecwid.consul.UrlParameters;
+import com.ecwid.consul.transport.HttpResponse;
 import com.ecwid.consul.v1.ConsistencyMode;
 import com.ecwid.consul.v1.ConsulClient;
+import com.ecwid.consul.v1.ConsulRawClient;
+import com.ecwid.consul.v1.OperationException;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.Response;
 import com.ecwid.consul.v1.agent.model.NewService;
@@ -32,6 +32,7 @@ import com.ecwid.consul.v1.agent.model.NewService.Check;
 import com.ecwid.consul.v1.catalog.CatalogServicesRequest;
 import com.ecwid.consul.v1.health.HealthServicesRequest;
 import com.ecwid.consul.v1.health.model.HealthService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.exception.ErrorCode;
@@ -61,10 +62,22 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ConsulConstant;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
+
+import static com.ecwid.consul.json.GsonFactory.getGson;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.CHECK_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.INSTANCE_ID_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.IP_ADDRESS_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.PREFER_IP_ADDRESS_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.SERVICE_NAME_KEY;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.TAGS_KEY;
 
 /**
  * An implement of {@link ServerConnector} to connect to Consul Server.It provides methods to manage resources
@@ -97,7 +110,11 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     private ConsulClient consulClient;
 
+    private ConsulRawClient consulRawClient;
+
     private ConsulContext consulContext;
+
+    private ObjectMapper mapper;
 
     @Override
     public String getName() {
@@ -132,6 +149,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectorConfigs) {
                     if (DefaultPlugins.SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
                         initActually(ctx, serverConnectorConfig);
+                        mapper = new ObjectMapper();
                     }
                 }
             }
@@ -151,10 +169,12 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         int lastIndex = address.lastIndexOf(":");
         String agentHost = address.substring(0, lastIndex);
         int agentPort = Integer.parseInt(address.substring(lastIndex + 1));
-        consulClient = new ConsulClient(agentHost, agentPort);
+        consulRawClient = new ConsulRawClient(agentHost, agentPort);
+        consulClient = new ConsulClient(consulRawClient);
 
         // Init context.
         consulContext = new ConsulContext();
+        consulContext.setConnectorConfig(connectorConfig);
         Map<String, String> metadata = connectorConfig.getMetadata();
         if (metadata.containsKey(SERVICE_NAME_KEY) && StringUtils.isNotBlank(metadata.get(SERVICE_NAME_KEY))) {
             consulContext.setServiceName(metadata.get(SERVICE_NAME_KEY));
@@ -168,6 +188,15 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         if (metadata.containsKey(PREFER_IP_ADDRESS_KEY) && StringUtils.isNotBlank(
                 metadata.get(PREFER_IP_ADDRESS_KEY))) {
             consulContext.setPreferIpAddress(Boolean.parseBoolean(metadata.get(PREFER_IP_ADDRESS_KEY)));
+        }
+        if (metadata.containsKey(TAGS_KEY) && StringUtils.isNotBlank(metadata.get(TAGS_KEY))) {
+            try {
+                String[] tags = mapper.readValue(metadata.get(TAGS_KEY), String[].class);
+                consulContext.setTags(new LinkedList<>(Arrays.asList(tags)));
+            } catch (Exception e) {
+                LOG.warn("Convert tags from metadata failed.", e);
+            }
+
         }
         initialized = true;
     }
@@ -195,7 +224,19 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             try {
                 LOG.info("Registering service to Consul");
                 NewService service = buildRegisterInstanceRequest(req);
-                this.consulClient.agentServiceRegister(service);
+                String json = getGson().toJson(service);
+                HttpResponse rawResponse;
+                if (req.getMetadata().containsKey(ConsulConstant.MetadataMapKey.TOKEN_KEY)) {
+                    String token = req.getMetadata().get(ConsulConstant.MetadataMapKey.TOKEN_KEY);
+                    UrlParameters tokenParam = token != null ? new SingleUrlParameters("token", token) : null;
+                    rawResponse = consulRawClient.makePutRequest("/v1/agent/service/register", json,
+                            tokenParam);
+                } else {
+                    rawResponse = consulRawClient.makePutRequest("/v1/agent/service/register", json);
+                }
+                if (rawResponse.getStatusCode() != 200) {
+                    throw new OperationException(rawResponse);
+                }
                 CommonProviderResponse resp = new CommonProviderResponse();
                 consulContext.setInstanceId(service.getId());
                 resp.setInstanceID(service.getId());
@@ -238,10 +279,21 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         }
         service.setName(consulContext.getServiceName());
         service.setMeta(req.getMetadata());
+        service.setTags(consulContext.getTags());
         if (null != req.getTtl()) {
             Check check = new Check();
             check.setTtl(req.getTtl() * 1.5 + "s");
             service.setCheck(check);
+        }
+        Map<String, String> metadata = consulContext.getConnectorConfig().getMetadata();
+        if (metadata.containsKey(CHECK_KEY) && StringUtils.isNotBlank(metadata.get(CHECK_KEY))) {
+            try {
+                NewService.Check check = mapper.readValue(metadata.get(CHECK_KEY), NewService.Check.class);
+                service.setCheck(check);
+            } catch (Exception e) {
+                LOG.warn("Convert check from metadata failed.", e);
+            }
+
         }
         return service;
     }

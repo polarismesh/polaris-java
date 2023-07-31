@@ -33,6 +33,12 @@ public interface ConsulConstant {
         String IP_ADDRESS_KEY = "IP_ADDRESS_KEY";
 
         String PREFER_IP_ADDRESS_KEY = "PREFER_IP_ADDRESS_KEY";
+
+        String TOKEN_KEY = "TOKEN_KEY";
+
+        String TAGS_KEY = "TAGS_KEY";
+
+        String CHECK_KEY = "CHECK_KEY";
     }
 
 }
