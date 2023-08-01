@@ -1,5 +1,6 @@
 package com.tencent.polaris.api.plugin.configuration;
 
+import java.util.Date;
 import java.util.Objects;
 
 /**
@@ -11,11 +12,12 @@ public class ConfigFile {
     private String fileGroup;
     private String fileName;
     private String content;
-    private long   version;
+    private long version;
     private String md5;
     private String publicKey;
     private String dataKey;
     private boolean encrypted = Boolean.FALSE;
+    private Date releaseTime;
 
     public ConfigFile(String namespace, String fileGroup, String fileName) {
         this.namespace = namespace;
@@ -95,6 +97,14 @@ public class ConfigFile {
         this.dataKey = dataKey;
     }
 
+    public Date getReleaseTime() {
+        return releaseTime;
+    }
+
+    public void setReleaseTime(Date releaseTime) {
+        this.releaseTime = releaseTime;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -109,12 +119,13 @@ public class ConfigFile {
                fileGroup.equals(that.fileGroup) &&
                fileName.equals(that.fileName) &&
                Objects.equals(content, that.content) &&
-               Objects.equals(md5, that.md5);
+               Objects.equals(md5, that.md5) &&
+               Objects.equals(releaseTime, that.releaseTime);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(namespace, fileGroup, fileName, content, version, md5);
+        return Objects.hash(namespace, fileGroup, fileName, content, version, md5, releaseTime);
     }
 
     @Override
@@ -126,6 +137,7 @@ public class ConfigFile {
                ", content='" + content + '\'' +
                ", version=" + version +
                ", md5='" + md5 + '\'' +
+               ", releaseTime=" + releaseTime + '\'' +
                '}';
     }
 }

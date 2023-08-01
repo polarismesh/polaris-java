@@ -15,9 +15,7 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.configuration.ConfigFile;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
-import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.configuration.*;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
@@ -34,22 +32,12 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author lepdou 2022-03-02
  */
-public class PolarisConfigFileConnector implements ConfigFileConnector {
+public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector implements ConfigFileConnector {
 
     private static final String OP_KEY_GET_CONFIG_FILE = "GetConfigFile";
     private static final String OP_KEY_CREATE_CONFIG_FILE = "CreateConfigFile";
     private static final String OP_KEY_UPDATE_CONFIG_FILE = "UpdateConfigFile";
     private static final String OP_KEY_RELEASE_CONFIG_FILE = "ReleaseConfigFile";
-
-    private ConnectionManager connectionManager;
-
-    @Override
-    public void init(InitContext ctx) throws PolarisException {
-        CompletableFuture<String> readyFuture = new CompletableFuture<>();
-        Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
-        futures.put(ClusterType.SERVICE_CONFIG_CLUSTER, readyFuture);
-        connectionManager = new ConnectionManager(ctx, ctx.getConfig().getConfigFile().getServerConnector(), futures);
-    }
 
     @Override
     public ConfigFileResponse getConfigFile(ConfigFile configFile) {
@@ -222,24 +210,6 @@ public class PolarisConfigFileConnector implements ConfigFileConnector {
     @Override
     public String getName() {
         return "polaris";
-    }
-
-    @Override
-    public PluginType getType() {
-        return PluginTypes.CONFIG_FILE_CONNECTOR.getBaseType();
-    }
-
-
-    @Override
-    public void postContextInit(Extensions extensions) throws PolarisException {
-        connectionManager.setExtensions(extensions);
-    }
-
-    @Override
-    public void destroy() {
-        if (connectionManager != null) {
-            connectionManager.destroy();
-        }
     }
 
     private ConfigFileProto.ClientConfigFileInfo transfer2DTO(ConfigFile configFile) {

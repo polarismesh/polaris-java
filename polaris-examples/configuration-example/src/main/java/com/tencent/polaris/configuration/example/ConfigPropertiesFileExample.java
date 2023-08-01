@@ -23,7 +23,7 @@ public class ConfigPropertiesFileExample {
     public static void main(String[] args) throws Exception {
         Utils.InitResult initResult = Utils.initConfiguration(args);
         String namespace = "dev";
-        String fileGroup = "myGroup";
+        String fileGroup = "polaris-config-example";
         String fileName = "application.properties";
 
         //创建配置中心服务类，一般情况下只需要单例对象

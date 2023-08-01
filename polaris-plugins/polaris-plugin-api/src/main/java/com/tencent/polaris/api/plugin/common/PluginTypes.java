@@ -22,6 +22,7 @@ import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileGroupConnector;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
@@ -111,7 +112,9 @@ public enum PluginTypes {
     /**
      * 配置文件加载器扩展点
      */
-    CONFIG_FILE_CONNECTOR(new PluginType(ConfigFileConnector.class, 2));
+    CONFIG_FILE_CONNECTOR(new PluginType(ConfigFileConnector.class, 2)),
+
+    CONFIG_FILE_GROUP_CONNECTOR(new PluginType(ConfigFileGroupConnector.class, 2));
 
     private PluginType baseType;
 

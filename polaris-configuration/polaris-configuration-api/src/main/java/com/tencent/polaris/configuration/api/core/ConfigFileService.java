@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.configuration.api.core;
 
+import java.util.List;
+
 /**
  * The service of config file.
  * <p>
@@ -80,4 +82,20 @@ public interface ConfigFileService {
      */
     ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata);
 
+    /**
+     * Get the configuration file metadata list
+     *
+     * @param namespace namespace of config file
+     * @param fileGroup file group of config file
+     * @return list of config file metadata
+     */
+    List<ConfigFileMetadata> getConfigFileMetadataList(String namespace, String fileGroup);
+
+    /**
+     * Get the configuration file metadata list
+     *
+     * @param configFileGroupMetadata config file group metadata
+     * @return list of config file metadata
+     */
+    List<ConfigFileMetadata> getConfigFileMetadataList(ConfigFileGroupMetadata configFileGroupMetadata);
 }

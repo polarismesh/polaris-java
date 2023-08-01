@@ -20,13 +20,14 @@ package com.tencent.polaris.configuration.client;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.configuration.api.core.ConfigFile;
-import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
-import com.tencent.polaris.configuration.api.core.ConfigFileService;
-import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
+import com.tencent.polaris.configuration.api.flow.ConfigFileGroupFlow;
+import com.tencent.polaris.configuration.client.internal.DefaultConfigFileGroupMetadata;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
+
+import java.util.List;
 
 /**
  * @author lepdou 2022-03-01
@@ -34,6 +35,8 @@ import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 public class DefaultConfigFileService extends BaseEngine implements ConfigFileService {
 
     private ConfigFileFlow configFileFlow;
+
+    private ConfigFileGroupFlow configFileGroupFlow;
 
     public DefaultConfigFileService(SDKContext sdkContext) {
         super(sdkContext);
@@ -43,6 +46,7 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     protected void subInit() throws PolarisException {
         if (configFileFlow == null) {
             configFileFlow = sdkContext.getOrInitFlow(ConfigFileFlow.class);
+            configFileGroupFlow = sdkContext.getOrInitFlow(ConfigFileGroupFlow.class);
         }
     }
 
@@ -77,6 +81,16 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     public ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
         return configFileFlow.getConfigTextFile(configFileMetadata);
+    }
+
+    @Override
+    public List<ConfigFileMetadata> getConfigFileMetadataList(String namespace, String fileGroup) {
+        return getConfigFileMetadataList(new DefaultConfigFileGroupMetadata(namespace, fileGroup));
+    }
+
+    @Override
+    public List<ConfigFileMetadata> getConfigFileMetadataList(ConfigFileGroupMetadata configFileGroupMetadata) {
+        return configFileGroupFlow.getConfigFileMetadataList(configFileGroupMetadata);
     }
 
     @JustForTest
