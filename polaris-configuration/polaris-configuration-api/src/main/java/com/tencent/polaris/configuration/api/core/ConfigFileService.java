@@ -87,15 +87,15 @@ public interface ConfigFileService {
      *
      * @param namespace namespace of config file
      * @param fileGroup file group of config file
-     * @return list of config file metadata
+     * @return config file group with config file metadata list
      */
-    List<ConfigFileMetadata> getConfigFileMetadataList(String namespace, String fileGroup);
+    ConfigFileGroup getConfigFileGroup(String namespace, String fileGroup);
 
     /**
      * Get the configuration file metadata list
      *
      * @param configFileGroupMetadata config file group metadata
-     * @return list of config file metadata
+     * @return config file group with config file metadata list
      */
-    List<ConfigFileMetadata> getConfigFileMetadataList(ConfigFileGroupMetadata configFileGroupMetadata);
+    ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata configFileGroupMetadata);
 }

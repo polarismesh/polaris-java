@@ -5,7 +5,6 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileGroupConnector;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
-import com.tencent.polaris.configuration.api.core.ConfigFileGroup;
 import com.tencent.polaris.configuration.api.core.ConfigFileGroupMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -47,6 +46,7 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
             switch (response.getCode()) {
                 case ServerCodes.DATA_NO_CHANGE:
                 case ServerCodes.EXECUTE_SUCCESS:
+                case ServerCodes.NOT_FOUND_SERVICE:
                     return false;
                 default:
                     return true;
@@ -87,7 +87,8 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
         for (Map.Entry<ConfigFileGroupMetadata, RevisableConfigFileGroup> entry :
                 configFileGroupCache.entrySet()) {
             ConfigFileGroupMetadata metadata = entry.getKey();
-            RevisableConfigFileGroup oldConfigFileGroup = entry.getValue();
+            RevisableConfigFileGroup oldRevisableConfigFileGroup = entry.getValue();
+            String oldRevision = oldRevisableConfigFileGroup.getRevision();
 
             pullExecutorPool.submit(() -> {
                 com.tencent.polaris.api.plugin.configuration.ConfigFileGroupMetadata metadataRPCObj = new
@@ -95,7 +96,7 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
                 metadataRPCObj.setFileGroupName(metadata.getFileGroupName());
                 metadataRPCObj.setNamespace(metadata.getNamespace());
                 com.tencent.polaris.api.plugin.configuration.ConfigFileGroupResponse response =
-                        rpcConnector.GetConfigFileMetadataList(metadataRPCObj, oldConfigFileGroup.getRevision());
+                        rpcConnector.GetConfigFileMetadataList(metadataRPCObj, oldRevision);
                 if (response == null) {
                     return;
                 }
@@ -104,7 +105,7 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
                     case ServerCodes.EXECUTE_SUCCESS:
                         com.tencent.polaris.api.plugin.configuration.ConfigFileGroup configFileGroupObj =
                                 response.getConfigFileGroup();
-                        String newlyRevision = response.getRevision();
+                        String newRevision = response.getRevision();
 
                         List<ConfigFile> configFileList = configFileGroupObj.getConfigFileList();
                         configFileList.sort(Comparator.comparing(ConfigFile::getReleaseTime));
@@ -112,15 +113,20 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
                         for (ConfigFile configFile : configFileList) {
                             configFileMetadataList.add(new ConfigFileGroupManager.InternalConfigFileMetadata(configFile));
                         }
-                        ConfigFileGroup configFileGroup = new DefaultConfigFileGroup(configFileGroupObj.getNamespace(),
-                                configFileGroupObj.getFileGroupName(), configFileMetadataList);
-                        RevisableConfigFileGroup revisableConfigFileGroup = new RevisableConfigFileGroup(configFileGroup, newlyRevision);
-                        configFileGroupCache.put(metadata, revisableConfigFileGroup);
-                        LOGGER.info("[Config] pull result: success. namespace = {}, fileGroupName = {}, oldRevision = {}, newlyRevision = {}",
-                                metadata.getNamespace(), metadata.getFileGroupName(), oldConfigFileGroup.getRevision(), newlyRevision);
+
+                        if (configFileGroupCache.containsKey(metadata)) {
+                            oldRevisableConfigFileGroup.updateConfigFileList(configFileMetadataList, newRevision);
+                        }
+
+                        LOGGER.info("[Config] pull result: success. namespace = {}, fileGroupName = {}, oldRevision = {}, newRevision = {}",
+                                metadata.getNamespace(), metadata.getFileGroupName(), oldRevisableConfigFileGroup.getRevision(), newRevision);
                         return;
                     case ServerCodes.DATA_NO_CHANGE:
                         LOGGER.debug("[Config] pull result: data no change. namespace = {}, fileGroupName = {}",
+                                metadata.getNamespace(), metadata.getFileGroupName());
+                        return;
+                    case ServerCodes.NOT_FOUND_RESOURCE:
+                        LOGGER.warn("[Config] pull result: config file group not found. namespace = {}, fileGroupName = {}",
                                 metadata.getNamespace(), metadata.getFileGroupName());
                         return;
                     default:

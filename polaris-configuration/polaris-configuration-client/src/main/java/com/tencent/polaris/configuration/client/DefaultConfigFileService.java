@@ -27,8 +27,6 @@ import com.tencent.polaris.configuration.client.internal.DefaultConfigFileGroupM
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
-import java.util.List;
-
 /**
  * @author lepdou 2022-03-01
  */
@@ -84,13 +82,13 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     }
 
     @Override
-    public List<ConfigFileMetadata> getConfigFileMetadataList(String namespace, String fileGroup) {
-        return getConfigFileMetadataList(new DefaultConfigFileGroupMetadata(namespace, fileGroup));
+    public ConfigFileGroup getConfigFileGroup(String namespace, String fileGroup) {
+        return getConfigFileGroup(new DefaultConfigFileGroupMetadata(namespace, fileGroup));
     }
 
     @Override
-    public List<ConfigFileMetadata> getConfigFileMetadataList(ConfigFileGroupMetadata configFileGroupMetadata) {
-        return configFileGroupFlow.getConfigFileMetadataList(configFileGroupMetadata);
+    public ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata configFileGroupMetadata) {
+        return configFileGroupFlow.getConfigFileGroup(configFileGroupMetadata);
     }
 
     @JustForTest

@@ -39,9 +39,9 @@ public class PolarisConfigFileGroupConnector extends AbstractPolarisConfigConnec
             if (code == ServerCodes.EXECUTE_SUCCESS ||
                     code == ServerCodes.NOT_FOUND_RESOURCE ||
                     code == ServerCodes.DATA_NO_CHANGE) {
-                String newlyRevision = response.getRevision().getValue();
+                String newRevision = response.getRevision().getValue();
                 ConfigFileGroup configFileGroup = protoToConfigFileGroup(response);
-                return new ConfigFileGroupResponse(code, response.getInfo().getValue(), newlyRevision, configFileGroup);
+                return new ConfigFileGroupResponse(code, response.getInfo().getValue(), newRevision, configFileGroup);
             }
             throw ServerErrorResponseException.build(code, response.getInfo().getValue());
         } catch (Throwable t) {

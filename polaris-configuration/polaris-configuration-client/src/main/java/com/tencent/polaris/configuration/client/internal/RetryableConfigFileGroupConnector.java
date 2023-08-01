@@ -35,8 +35,8 @@ public class RetryableConfigFileGroupConnector {
                     return response;
                 }
 
-                LOGGER.error("[Config] get config file metadata list hits retry strategy. retry times = {}, namespace = {}, fileGroupName = {}",
-                        retryTimes, configFileGroupMetadata.getNamespace(), configFileGroupMetadata.getFileGroupName());
+                LOGGER.error("[Config] get config file metadata list hits retry strategy. retry times = {}, namespace = {}, fileGroupName = {}, responseCod = {}",
+                        retryTimes, configFileGroupMetadata.getNamespace(), configFileGroupMetadata.getFileGroupName(), response.getCode());
                 retryPolicy.fail();
                 retryTimes++;
                 retryPolicy.executeDelay();

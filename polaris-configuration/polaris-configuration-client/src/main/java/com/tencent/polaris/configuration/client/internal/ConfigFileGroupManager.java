@@ -41,7 +41,7 @@ public class ConfigFileGroupManager {
         };
     }
 
-    public List<ConfigFileMetadata> getConfigFileMetadataList(ConfigFileGroupMetadata metadata) {
+    public ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata metadata) {
         RevisableConfigFileGroup configFileGroup = configFileGroupCache.get(metadata);
         if (configFileGroup == null) {
             synchronized (this) {
@@ -54,7 +54,7 @@ public class ConfigFileGroupManager {
                 }
             }
         }
-        return configFileGroup.getConfigFileGroup().getConfigFileMetadataList();
+        return configFileGroup;
     }
 
     private RevisableConfigFileGroup getConfigFileGroupFromRemote(ConfigFileGroupMetadata metadata, String currentRevision) {
@@ -72,7 +72,7 @@ public class ConfigFileGroupManager {
             case ServerCodes.EXECUTE_SUCCESS: {
                 com.tencent.polaris.api.plugin.configuration.ConfigFileGroup configFileGroupObj =
                         rpcResponse.getConfigFileGroup();
-                String newlyRevision = rpcResponse.getRevision();
+                String newRevision = rpcResponse.getRevision();
 
                 List<ConfigFile> configFileList = configFileGroupObj.getConfigFileList();
                 configFileList.sort(Comparator.comparing(ConfigFile::getReleaseTime));
@@ -82,16 +82,14 @@ public class ConfigFileGroupManager {
                 }
                 ConfigFileGroup configFileGroup = new DefaultConfigFileGroup(configFileGroupObj.getNamespace(),
                         configFileGroupObj.getFileGroupName(), configFileMetadataList);
-                RevisableConfigFileGroup revisableConfigFileGroup = new RevisableConfigFileGroup(configFileGroup, newlyRevision);
+                RevisableConfigFileGroup revisableConfigFileGroup = new RevisableConfigFileGroup(configFileGroup, newRevision);
                 cache(metadata, revisableConfigFileGroup);
                 return revisableConfigFileGroup;
             }
             case ServerCodes.NOT_FOUND_RESOURCE: {
                 ConfigFileGroup emptyConfigFileGroup = new DefaultConfigFileGroup(metadata.getNamespace(),
                         metadata.getFileGroupName(), new ArrayList<>());
-                RevisableConfigFileGroup revisableConfigFileGroup = new RevisableConfigFileGroup(emptyConfigFileGroup, "");
-                invalid(metadata);
-                return revisableConfigFileGroup;
+                return new RevisableConfigFileGroup(emptyConfigFileGroup, "");
             }
             default:
                 return null;
