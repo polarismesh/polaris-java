@@ -2,23 +2,27 @@ package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.config.global.ClusterType;
-import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.RetriableException;
-import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.exception.ServerErrorResponseException;
+import com.tencent.polaris.api.exception.*;
 import com.tencent.polaris.api.plugin.configuration.*;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileResponseProto;
 import com.tencent.polaris.specification.api.v1.config.manage.PolarisConfigGRPCGrpc;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import org.slf4j.Logger;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class PolarisConfigFileGroupConnector extends AbstractPolarisConfigConnector implements ConfigFileGroupConnector {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PolarisConfigFileGroupConnector.class);
+
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     private static final String OP_KEY_GET_CONFIG_METADATA_LIST = "GetConfigMetadataList";
 
@@ -34,6 +38,8 @@ public class PolarisConfigFileGroupConnector extends AbstractPolarisConfigConnec
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             ConfigFileResponseProto.ConfigClientListResponse response = stub.getConfigFileMetadataList(configFileGroupToProto(metadata, revision));
+            LOGGER.debug("[Config] get GetConfigFileMetadataList response from remote. response = {}", response);
+
             // 处理响应
             int code = response.getCode().getValue();
             if (code == ServerCodes.EXECUTE_SUCCESS ||
@@ -45,6 +51,13 @@ public class PolarisConfigFileGroupConnector extends AbstractPolarisConfigConnec
             }
             throw ServerErrorResponseException.build(code, response.getInfo().getValue());
         } catch (Throwable t) {
+            if (t instanceof StatusRuntimeException) {
+                StatusRuntimeException ex = (StatusRuntimeException) t;
+                if (ex.getStatus().getCode() == Status.Code.UNIMPLEMENTED) {
+                    throw new UnimplementedException(ex.getStatus().getDescription());
+                }
+            }
+
             ErrorCode errorCode = ErrorCode.NETWORK_ERROR;
             if (t instanceof ParseException) {
                 errorCode = ErrorCode.INTERNAL_ERROR;

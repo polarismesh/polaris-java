@@ -20,8 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class DefaultConfigFileGroupPullService implements RevisableConfigFileGroupPullService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultConfigFileGroupPullService.class);
+public class DefaultRevisableConfigFileGroupPullService implements RevisableConfigFileGroupPullService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultRevisableConfigFileGroupPullService.class);
 
     private final AtomicReference<Boolean> started;
     private final Map<ConfigFileGroupMetadata, RevisableConfigFileGroup> configFileGroupCache;
@@ -29,8 +29,8 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
     private final ExecutorService taskStarter;
     private final RetryableConfigFileGroupConnector rpcConnector;
 
-    public DefaultConfigFileGroupPullService(SDKContext sdkContext,
-                                             Map<ConfigFileGroupMetadata, RevisableConfigFileGroup> configFileGroupCache, ConfigFileGroupConnector connector) {
+    public DefaultRevisableConfigFileGroupPullService(SDKContext sdkContext,
+                                                      Map<ConfigFileGroupMetadata, RevisableConfigFileGroup> configFileGroupCache, ConfigFileGroupConnector connector) {
         this.started = new AtomicReference<>(false);
         this.configFileGroupCache = configFileGroupCache;
         this.rpcConnector = new RetryableConfigFileGroupConnector(connector, getPullFailedRetryStrategy());
@@ -46,7 +46,7 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
             switch (response.getCode()) {
                 case ServerCodes.DATA_NO_CHANGE:
                 case ServerCodes.EXECUTE_SUCCESS:
-                case ServerCodes.NOT_FOUND_SERVICE:
+                case ServerCodes.NOT_FOUND_RESOURCE:
                     return false;
                 default:
                     return true;
@@ -67,6 +67,8 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
 
         try {
             taskStarter.submit(() -> {
+                LOGGER.debug("[Config] config file group pulling task start");
+
                 Random random = new Random();
                 while (!Thread.currentThread().isInterrupted()) {
                     try {
@@ -98,36 +100,44 @@ public class DefaultConfigFileGroupPullService implements RevisableConfigFileGro
                 com.tencent.polaris.api.plugin.configuration.ConfigFileGroupResponse response =
                         rpcConnector.GetConfigFileMetadataList(metadataRPCObj, oldRevision);
                 if (response == null) {
+                    LOGGER.debug("[Config] pull empty response. namespace = {}, fileGroupName = {}, oldRevision = {}",
+                            metadata.getNamespace(), metadata.getFileGroupName(), oldRevision);
                     return;
                 }
 
+                LOGGER.debug("[Config] pull response. namespace = {}, fileGroupName = {}, oldRevision = {}, responseCode = {}",
+                        metadata.getNamespace(), metadata.getFileGroupName(), oldRevision, response.getCode());
                 switch (response.getCode()) {
                     case ServerCodes.EXECUTE_SUCCESS:
                         com.tencent.polaris.api.plugin.configuration.ConfigFileGroup configFileGroupObj =
                                 response.getConfigFileGroup();
                         String newRevision = response.getRevision();
-
-                        List<ConfigFile> configFileList = configFileGroupObj.getConfigFileList();
+                        List<com.tencent.polaris.api.plugin.configuration.ConfigFile> configFileList =
+                                configFileGroupObj.getConfigFileList();
                         configFileList.sort(Comparator.comparing(ConfigFile::getReleaseTime));
+
                         List<ConfigFileMetadata> configFileMetadataList = new ArrayList<>();
                         for (ConfigFile configFile : configFileList) {
-                            configFileMetadataList.add(new ConfigFileGroupManager.InternalConfigFileMetadata(configFile));
+                            ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
+                            configFileMetadataList.add(configFileMetadata);
                         }
-
                         if (configFileGroupCache.containsKey(metadata)) {
                             oldRevisableConfigFileGroup.updateConfigFileList(configFileMetadataList, newRevision);
                         }
 
                         LOGGER.info("[Config] pull result: success. namespace = {}, fileGroupName = {}, oldRevision = {}, newRevision = {}",
-                                metadata.getNamespace(), metadata.getFileGroupName(), oldRevisableConfigFileGroup.getRevision(), newRevision);
+                                metadata.getNamespace(), metadata.getFileGroupName(), oldRevision, newRevision);
                         return;
                     case ServerCodes.DATA_NO_CHANGE:
                         LOGGER.debug("[Config] pull result: data no change. namespace = {}, fileGroupName = {}",
                                 metadata.getNamespace(), metadata.getFileGroupName());
                         return;
                     case ServerCodes.NOT_FOUND_RESOURCE:
-                        LOGGER.warn("[Config] pull result: config file group not found. namespace = {}, fileGroupName = {}",
+                        LOGGER.warn("[Config] pull result: resource is empty. namespace = {}, fileGroupName = {}",
                                 metadata.getNamespace(), metadata.getFileGroupName());
+                        if (configFileGroupCache.containsKey(metadata)) {
+                            oldRevisableConfigFileGroup.updateConfigFileList(new ArrayList<>(), "");
+                        }
                         return;
                     default:
                         // Unreachable

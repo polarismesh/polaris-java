@@ -1,5 +1,7 @@
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.exception.RetriableException;
+import com.tencent.polaris.api.exception.UnimplementedException;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileGroupConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileGroupMetadata;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileGroupResponse;
@@ -41,6 +43,11 @@ public class RetryableConfigFileGroupConnector {
                 retryTimes++;
                 retryPolicy.executeDelay();
             } catch (Throwable t) {
+                if (t instanceof UnimplementedException) {
+                    LOGGER.error("[Config] polaris server does not implement, please upgrade. ", t);
+                    return null;
+                }
+
                 LOGGER.error("[Config] failed to get config file metadata list. retry times = {}, namespace = {}, fileGroupName = {}, exception = {}",
                         retryTimes, configFileGroupMetadata.getNamespace(), configFileGroupMetadata.getFileGroupName(), t);
                 retryPolicy.fail();

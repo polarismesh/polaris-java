@@ -4,10 +4,14 @@ import com.tencent.polaris.configuration.api.core.ConfigFileGroup;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileGroupMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileGroupChangedEvent;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.List;
 
 public class RevisableConfigFileGroup extends DefaultConfigFileGroup {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RevisableConfigFileGroup.class);
+
     private String revision;
 
     public RevisableConfigFileGroup(ConfigFileGroup configFileGroup) {
@@ -30,6 +34,8 @@ public class RevisableConfigFileGroup extends DefaultConfigFileGroup {
     public void updateConfigFileList(List<ConfigFileMetadata> newData, String newRevision) {
         String oldRevision = this.revision;
         if (!oldRevision.equals(newRevision)) {
+            LOGGER.info("[Config] trigger update event, oldRevision = {}, newRevision = {}", oldRevision, newRevision);
+
             this.revision = newRevision;
             this.configFileMetadataList = newData;
             super.trigger(new RevisableConfigFileGroupChangedEvent(this, newData, oldRevision, newRevision));

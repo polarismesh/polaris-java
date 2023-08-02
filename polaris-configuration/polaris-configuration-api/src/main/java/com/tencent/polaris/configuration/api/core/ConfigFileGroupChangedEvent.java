@@ -18,4 +18,12 @@ public class ConfigFileGroupChangedEvent {
     public List<ConfigFileMetadata> getConfigFileMetadataList() {
         return configFileMetadataList;
     }
+
+    @Override
+    public String toString() {
+        return "ConfigFileGroupChangedEvent{" +
+                "configFileGroupMetadata=" + configFileGroupMetadata +
+                ", configFileMetadataList=" + configFileMetadataList +
+                '}';
+    }
 }

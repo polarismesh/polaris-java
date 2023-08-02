@@ -55,4 +55,12 @@ public class DefaultConfigFileGroup extends DefaultConfigFileGroupMetadata imple
             });
         }
     }
+
+    @Override
+    public String toString() {
+        return "DefaultConfigFileGroup{" +
+                "configFileMetadataList=" + configFileMetadataList +
+                ", listeners=" + listeners +
+                "} " + super.toString();
+    }
 }

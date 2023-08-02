@@ -26,7 +26,7 @@ public class ConfigFileGroupManager {
         ConfigFileGroupConnector connector = (ConfigFileGroupConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.CONFIG_FILE_GROUP_CONNECTOR.getBaseType(), configFileConnectorType);
         this.rpcConnector = new RetryableConfigFileGroupConnector(connector, getCacheMissedRetryStrategy());
-        this.configFileGroupPullService = new DefaultConfigFileGroupPullService(sdkContext, configFileGroupCache, connector);
+        this.configFileGroupPullService = new DefaultRevisableConfigFileGroupPullService(sdkContext, configFileGroupCache, connector);
     }
 
     public RetryableConfigFileGroupConnector.RetryableValidator getCacheMissedRetryStrategy() {
@@ -73,12 +73,14 @@ public class ConfigFileGroupManager {
                 com.tencent.polaris.api.plugin.configuration.ConfigFileGroup configFileGroupObj =
                         rpcResponse.getConfigFileGroup();
                 String newRevision = rpcResponse.getRevision();
-
-                List<ConfigFile> configFileList = configFileGroupObj.getConfigFileList();
+                List<com.tencent.polaris.api.plugin.configuration.ConfigFile> configFileList =
+                        configFileGroupObj.getConfigFileList();
                 configFileList.sort(Comparator.comparing(ConfigFile::getReleaseTime));
+
                 List<ConfigFileMetadata> configFileMetadataList = new ArrayList<>();
                 for (ConfigFile configFile : configFileList) {
-                    configFileMetadataList.add(new ConfigFileGroupManager.InternalConfigFileMetadata(configFile));
+                    ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
+                    configFileMetadataList.add(configFileMetadata);
                 }
                 ConfigFileGroup configFileGroup = new DefaultConfigFileGroup(configFileGroupObj.getNamespace(),
                         configFileGroupObj.getFileGroupName(), configFileMetadataList);
@@ -89,6 +91,8 @@ public class ConfigFileGroupManager {
             case ServerCodes.NOT_FOUND_RESOURCE: {
                 ConfigFileGroup emptyConfigFileGroup = new DefaultConfigFileGroup(metadata.getNamespace(),
                         metadata.getFileGroupName(), new ArrayList<>());
+                RevisableConfigFileGroup emptyRevision = new RevisableConfigFileGroup(emptyConfigFileGroup, "");
+                cache(metadata, emptyRevision);
                 return new RevisableConfigFileGroup(emptyConfigFileGroup, "");
             }
             default:
@@ -111,32 +115,5 @@ public class ConfigFileGroupManager {
 
     public void setConfigFileGroupPullService(RevisableConfigFileGroupPullService configFileGroupPullService) {
         this.configFileGroupPullService = configFileGroupPullService;
-    }
-
-    static class InternalConfigFileMetadata implements ConfigFileMetadata {
-        private final String namespace;
-        private final String fileGroup;
-        private final String fileName;
-
-        public InternalConfigFileMetadata(ConfigFile configFile) {
-            this.namespace = configFile.getNamespace();
-            this.fileGroup = configFile.getFileGroup();
-            this.fileName = configFile.getFileName();
-        }
-
-        @Override
-        public String getNamespace() {
-            return namespace;
-        }
-
-        @Override
-        public String getFileGroup() {
-            return fileGroup;
-        }
-
-        @Override
-        public String getFileName() {
-            return fileName;
-        }
     }
 }
