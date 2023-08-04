@@ -49,9 +49,10 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
 
 public class DefaultDiscoveryFlow implements DiscoveryFlow {
 
@@ -151,7 +152,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             CommonProviderRequest request = req.getRequest();
             try {
                 CommonProviderResponse response = serverConnector.registerInstance(request, customHeader);
-                LOG.info("register {}/{} instance {} succ", req.getNamespace(), req.getService(),
+                LOG.info("register {}/{} instance {} successfully", req.getNamespace(), req.getService(),
                         response.getInstanceID());
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);
                 serviceCallResult.setRetCode(ErrorCode.Success.getCode());
@@ -189,7 +190,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
                 serverConnector.deregisterInstance(request);
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);
                 serviceCallResult.setRetCode(ErrorCode.Success.getCode());
-                LOG.info("deregister instance {} succ", req);
+                LOG.info("deregister instance {} successfully", req);
                 return;
             } catch (PolarisException e) {
                 serviceCallResult.setRetStatus(RetStatus.RetFail);
@@ -288,8 +289,8 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
      * 上报内部服务调用结果
      *
      * @param serviceCallResult 服务调用结果
-     * @param targetServer 目标服务端
-     * @param method 方法
+     * @param targetServer      目标服务端
+     * @param method            方法
      */
     public void reportServerCall(ServiceCallResult serviceCallResult, TargetServer targetServer, String method) {
         if (null != targetServer) {
@@ -303,10 +304,10 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
         reportInvokeStat(serviceCallResult);
     }
 
-	@Override
-	public void destroy() {
-		if (registerFlow != null) {
-			registerFlow.destroy();
-		}
-	}
+    @Override
+    public void destroy() {
+        if (registerFlow != null) {
+            registerFlow.destroy();
+        }
+    }
 }

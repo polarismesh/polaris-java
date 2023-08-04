@@ -44,6 +44,8 @@ public class ConsulContext {
 
     private NewService.Check check;
 
+    private String checkId;
+
     public ConsulContext() {
         serviceName = "";
         instanceId = "";
@@ -107,5 +109,13 @@ public class ConsulContext {
 
     public void setCheck(NewService.Check check) {
         this.check = check;
+    }
+
+    public String getCheckId() {
+        return checkId;
+    }
+
+    public void setCheckId(String checkId) {
+        this.checkId = checkId;
     }
 }
