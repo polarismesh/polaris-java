@@ -39,6 +39,7 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -345,19 +346,19 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
         // 计算变更
         for (Map.Entry<Object, Object> entry : newProperties.entrySet()) {
             String key = entry.getKey().toString();
-            String newValue = entry.getValue().toString();
-            String oldValue = oldProperties.getProperty(key);
+            Object newValue = entry.getValue().toString();
+            Object oldValue = oldProperties.getProperty(key);
 
             if (oldValue == null) {
                 changeInfos.put(key, new ConfigPropertyChangeInfo(key, null, newValue, ChangeType.ADDED));
-            } else if (!StringUtils.equals(oldValue, newValue)) {
+            } else if (!Objects.equals(oldValue, newValue)) {
                 changeInfos.put(key, new ConfigPropertyChangeInfo(key, oldValue, newValue, ChangeType.MODIFIED));
             }
         }
 
         for (Map.Entry<Object, Object> entry : oldProperties.entrySet()) {
             String key = entry.getKey().toString();
-            String oldValue = entry.getValue().toString();
+            Object oldValue = entry.getValue();
             if (!newProperties.containsKey(key)) {
                 changeInfos.put(key, new ConfigPropertyChangeInfo(key, oldValue, null, ChangeType.DELETED));
             }

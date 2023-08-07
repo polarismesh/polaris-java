@@ -16,6 +16,7 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.*;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
@@ -23,6 +24,7 @@ import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileResponseProto;
 import com.tencent.polaris.specification.api.v1.config.manage.PolarisConfigGRPCGrpc;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * @author lepdou 2022-03-02
  */
 public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector implements ConfigFileConnector {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PolarisConfigFileConnector.class);
 
     private static final String OP_KEY_GET_CONFIG_FILE = "GetConfigFile";
     private static final String OP_KEY_CREATE_CONFIG_FILE = "CreateConfigFile";
@@ -53,6 +56,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.getConfigFile(transfer2DTO(configFile));
+            LOGGER.debug("[Config] get getConfigFile response from remote. fileName = {}, response = {}", configFile.getFileName(), response);
 
             return handleResponse(response);
         } catch (Throwable t) {

@@ -11,7 +11,7 @@ public class ConfigFileMetadataListExample {
         ConfigFileService configFileService = Utils.createConfigFileService(initResult.getConfig());
         for (int i = 0; i < 10; i++) {
             ConfigFileGroup configFileGroup = configFileService.getConfigFileGroup(namespace, fileGroup);
-            Utils.print(configFileGroup == null? "null": configFileGroup.toString());
+            Utils.print(configFileGroup == null? "loopbackup: null": "loopbackup:" + configFileGroup.toString());
         }
 
         ConfigFileGroup configFileGroup = configFileService.getConfigFileGroup(namespace, fileGroup);
@@ -23,5 +23,8 @@ public class ConfigFileMetadataListExample {
                 }
             });
         }
+
+        ConfigFile configFile = configFileService.getConfigFile(namespace, fileGroup, "application.json");
+        Utils.print(configFile.getContent());
     }
 }

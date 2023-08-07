@@ -26,7 +26,7 @@
         </Async>
     </appenders>
     <loggers>
-        <logger name="com.tencent.polaris" additivity="false" level="INFO">
+        <logger name="com.tencent.polaris" additivity="false" level="DEBUG">
             <AppenderRef ref="Async"/>
         </logger>
         <root level="INFO">

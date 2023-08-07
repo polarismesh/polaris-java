@@ -23,12 +23,12 @@ package com.tencent.polaris.configuration.api.core;
 public class ConfigPropertyChangeInfo {
 
     private final String     propertyName;
-    private final String     oldValue;
-    private final String     newValue;
+    private final Object     oldValue;
+    private final Object     newValue;
     private final ChangeType changeType;
 
     public ConfigPropertyChangeInfo(String propertyName,
-                                    String oldValue, String newValue,
+                                    Object oldValue, Object newValue,
                                     ChangeType changeType) {
         this.propertyName = propertyName;
         this.oldValue = oldValue;
@@ -40,11 +40,11 @@ public class ConfigPropertyChangeInfo {
         return propertyName;
     }
 
-    public String getOldValue() {
+    public Object getOldValue() {
         return oldValue;
     }
 
-    public String getNewValue() {
+    public Object getNewValue() {
         return newValue;
     }
 
