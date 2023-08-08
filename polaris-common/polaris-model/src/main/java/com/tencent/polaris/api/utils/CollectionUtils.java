@@ -37,4 +37,12 @@ public class CollectionUtils {
     public static boolean isNotEmpty(Map<?, ?> map) {
         return !isEmpty(map);
     }
+
+    public static boolean isEmpty(Object[] arr) {
+        return arr == null || arr.length == 0;
+    }
+
+    public static boolean isNotEmpty(Object[] arr) {
+        return !isEmpty(arr);
+    }
 }

@@ -40,19 +40,29 @@ public class ConsulContext {
 
     private boolean preferIpAddress;
 
+    private String aclToken;
+
     private List<String> tags;
 
     private NewService.Check check;
 
     private String checkId;
 
+    private String queryTag;
+
+    private Boolean queryPassing;
+
     public ConsulContext() {
         serviceName = "";
         instanceId = "";
         ipAddress = "";
+        aclToken = "";
         preferIpAddress = false;
         tags = new LinkedList<>();
         check = new NewService.Check();
+        checkId = "";
+        queryTag = "";
+        queryPassing = true;
     }
 
     public ServerConnectorConfig getConnectorConfig() {
@@ -95,6 +105,14 @@ public class ConsulContext {
         this.preferIpAddress = preferIpAddress;
     }
 
+    public String getAclToken() {
+        return aclToken;
+    }
+
+    public void setAclToken(String aclToken) {
+        this.aclToken = aclToken;
+    }
+
     public List<String> getTags() {
         return tags;
     }
@@ -117,5 +135,21 @@ public class ConsulContext {
 
     public void setCheckId(String checkId) {
         this.checkId = checkId;
+    }
+
+    public String getQueryTag() {
+        return queryTag;
+    }
+
+    public void setQueryTag(String queryTag) {
+        this.queryTag = queryTag;
+    }
+
+    public Boolean getQueryPassing() {
+        return queryPassing;
+    }
+
+    public void setQueryPassing(Boolean queryPassing) {
+        this.queryPassing = queryPassing;
     }
 }

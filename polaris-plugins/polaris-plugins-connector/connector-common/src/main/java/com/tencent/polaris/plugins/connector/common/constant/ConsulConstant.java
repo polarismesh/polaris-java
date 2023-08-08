@@ -39,6 +39,10 @@ public interface ConsulConstant {
         String TAGS_KEY = "TAGS_KEY";
 
         String CHECK_KEY = "CHECK_KEY";
+
+        String QUERY_TAG_KEY = "QUERY_TAG_KEY";
+
+        String QUERY_PASSING_KEY = "QUERY_PASSING_KEY";
     }
 
 }
