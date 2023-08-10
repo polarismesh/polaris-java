@@ -20,6 +20,7 @@ package com.tencent.polaris.api.utils;
 
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
@@ -57,7 +58,7 @@ public class RuleUtils {
     }
 
     public static boolean matchStringValue(MatchString matchString, String actualValue,
-            Function<String, Pattern> regexToPattern) {
+                                           Function<String, Pattern> regexToPattern) {
         MatchStringType matchType = matchString.getType();
         String matchValue = matchString.getValue().getValue();
         return matchStringValue(matchType, actualValue, matchValue, regexToPattern);
@@ -68,7 +69,7 @@ public class RuleUtils {
     }
 
     private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
-            Function<String, Pattern> regexToPattern) {
+                                            Function<String, Pattern> regexToPattern) {
         actualValue = StringUtils.defaultString(actualValue);
         matchValue = StringUtils.defaultString(matchValue);
         if (RuleUtils.isMatchAllValue(matchValue)) {
@@ -115,7 +116,8 @@ public class RuleUtils {
 
     // 匹配metadata
     public static boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
-            boolean isMatchSource, Map<String, String> multiEnvRouterParamMap, Map<String, String> variables) {
+                                        boolean isMatchSource, Map<String, String> multiEnvRouterParamMap, Map<String
+            , String> variables) {
         // 如果规则metadata为空, 返回成功
         if (MapUtils.isEmpty(ruleMeta)) {
             return true;
@@ -163,12 +165,17 @@ public class RuleUtils {
             allMetaMatched = false;
         }
 
+        if (matchNum != ruleMeta.entrySet().size()) {
+            allMetaMatched = false;
+        }
+
         return allMetaMatched;
     }
 
     private static boolean isAllMetaMatched(boolean isMatchSource, String ruleMetaKey,
-            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap,
-            Map<String, String> variables) {
+                                            MatchString ruleMetaValue, String destMetaValue,
+                                            Map<String, String> multiEnvRouterParamMap,
+                                            Map<String, String> variables) {
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
@@ -177,8 +184,9 @@ public class RuleUtils {
     }
 
     private static boolean matchValueByValueType(boolean isMatchSource, String ruleMetaKey,
-            MatchString ruleMetaValue, String destMetaValue, Map<String, String> multiEnvRouterParamMap,
-            Map<String, String> variables) {
+                                                 MatchString ruleMetaValue, String destMetaValue,
+                                                 Map<String, String> multiEnvRouterParamMap,
+                                                 Map<String, String> variables) {
         boolean allMetaMatched = true;
 
         switch (ruleMetaValue.getValueType()) {
