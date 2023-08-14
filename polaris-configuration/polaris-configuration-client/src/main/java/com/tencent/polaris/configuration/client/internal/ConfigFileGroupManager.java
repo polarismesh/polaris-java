@@ -93,7 +93,7 @@ public class ConfigFileGroupManager {
                         metadata.getFileGroupName(), new ArrayList<>());
                 RevisableConfigFileGroup emptyRevision = new RevisableConfigFileGroup(emptyConfigFileGroup, "");
                 cache(metadata, emptyRevision);
-                return new RevisableConfigFileGroup(emptyConfigFileGroup, "");
+                return emptyRevision;
             }
             default:
                 return null;
