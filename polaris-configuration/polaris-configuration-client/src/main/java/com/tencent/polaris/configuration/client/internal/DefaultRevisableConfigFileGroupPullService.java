@@ -114,7 +114,6 @@ public class DefaultRevisableConfigFileGroupPullService implements RevisableConf
                         String newRevision = response.getRevision();
                         List<com.tencent.polaris.api.plugin.configuration.ConfigFile> configFileList =
                                 configFileGroupObj.getConfigFileList();
-                        configFileList.sort(Comparator.comparing(ConfigFile::getReleaseTime));
 
                         List<ConfigFileMetadata> configFileMetadataList = new ArrayList<>();
                         for (ConfigFile configFile : configFileList) {
