@@ -21,7 +21,7 @@ config:
     connectorType: polaris
     #描述：默认服务端埋点接入地址
     addresses:
-      - 9.135.35.96:8093
+      - godev:8093
   # 配置过滤器
   configFilter:
     enable: false
