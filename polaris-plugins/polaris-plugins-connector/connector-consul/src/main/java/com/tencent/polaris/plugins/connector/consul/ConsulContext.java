@@ -17,12 +17,20 @@
 
 package com.tencent.polaris.plugins.connector.consul;
 
+import com.ecwid.consul.v1.agent.model.NewService;
+import com.tencent.polaris.api.config.global.ServerConnectorConfig;
+
+import java.util.LinkedList;
+import java.util.List;
+
 /**
  * Context of consul server connector.
  *
  * @author Haotian Zhang
  */
 public class ConsulContext {
+
+    private ServerConnectorConfig connectorConfig;
 
     private String serviceName;
 
@@ -32,11 +40,37 @@ public class ConsulContext {
 
     private boolean preferIpAddress;
 
+    private String aclToken;
+
+    private List<String> tags;
+
+    private NewService.Check check;
+
+    private String checkId;
+
+    private String queryTag;
+
+    private Boolean queryPassing;
+
     public ConsulContext() {
         serviceName = "";
         instanceId = "";
         ipAddress = "";
+        aclToken = "";
         preferIpAddress = false;
+        tags = new LinkedList<>();
+        check = new NewService.Check();
+        checkId = "";
+        queryTag = "";
+        queryPassing = true;
+    }
+
+    public ServerConnectorConfig getConnectorConfig() {
+        return connectorConfig;
+    }
+
+    public void setConnectorConfig(ServerConnectorConfig connectorConfig) {
+        this.connectorConfig = connectorConfig;
     }
 
     public String getServiceName() {
@@ -69,5 +103,53 @@ public class ConsulContext {
 
     public void setPreferIpAddress(boolean preferIpAddress) {
         this.preferIpAddress = preferIpAddress;
+    }
+
+    public String getAclToken() {
+        return aclToken;
+    }
+
+    public void setAclToken(String aclToken) {
+        this.aclToken = aclToken;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    public NewService.Check getCheck() {
+        return check;
+    }
+
+    public void setCheck(NewService.Check check) {
+        this.check = check;
+    }
+
+    public String getCheckId() {
+        return checkId;
+    }
+
+    public void setCheckId(String checkId) {
+        this.checkId = checkId;
+    }
+
+    public String getQueryTag() {
+        return queryTag;
+    }
+
+    public void setQueryTag(String queryTag) {
+        this.queryTag = queryTag;
+    }
+
+    public Boolean getQueryPassing() {
+        return queryPassing;
+    }
+
+    public void setQueryPassing(Boolean queryPassing) {
+        this.queryPassing = queryPassing;
     }
 }
