@@ -8,7 +8,7 @@ global:
   serverConnector:
     # target server address
     addresses:
-      - godev:8091
+      - 119.91.66.223:8091
 # 配置中心默认配置
 config:
   # 类型转化缓存的key数量
@@ -21,10 +21,10 @@ config:
     connectorType: polaris
     #描述：默认服务端埋点接入地址
     addresses:
-      - godev:8093
+      - 127.0.0.1:8093
   # 配置过滤器
   configFilter:
-    enable: false
+    enable: true
     chain:
       # 启用配置解密插件
       - crypto
