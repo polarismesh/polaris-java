@@ -17,7 +17,11 @@
 
 package com.tencent.polaris.configuration.example;
 
-import com.tencent.polaris.configuration.api.core.*;
+import com.tencent.polaris.configuration.api.core.ConfigFileService;
+import com.tencent.polaris.configuration.api.core.ConfigFileGroup;
+import com.tencent.polaris.configuration.api.core.ConfigFileGroupChangeListener;
+import com.tencent.polaris.configuration.api.core.ConfigFileGroupChangedEvent;
+import com.tencent.polaris.configuration.api.core.ConfigFile;
 
 public class ConfigFileMetadataListExample {
     public static void main(String[] args) throws Exception {
