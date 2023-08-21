@@ -36,11 +36,12 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorPro
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.HttpProtocolConfig;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.HttpProtocolConfig.MessageHeader;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.slf4j.Logger;
 
 
 /**
@@ -102,8 +103,8 @@ public class HttpHealthChecker implements HealthChecker, PluginConfigProvider {
                 byte[] input = body.getBytes(StandardCharsets.UTF_8);
                 outputStream.write(input, 0, input.length);
             }
-            long delayMillis = System.currentTimeMillis() - startTimeMillis;
             int responseCode = conn.getResponseCode();
+            long delayMillis = System.currentTimeMillis() - startTimeMillis;
 
             RetStatus retStatus = responseCode >= 200 && responseCode < 500 ? RetStatus.RetSuccess : RetStatus.RetFail;
             return new DetectResult(responseCode, delayMillis, retStatus);
