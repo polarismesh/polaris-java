@@ -443,7 +443,7 @@ public class ConnectionManager extends Destroyable {
 
         public void switchClient() throws PolarisException {
             Connection curConnection = curConnectionValue.get();
-            //只有成功后，才进行切换
+            //只有连接失效，才需要切换
             if (Connection.isAvailableConnection(curConnection)) {
                 return;
             }
