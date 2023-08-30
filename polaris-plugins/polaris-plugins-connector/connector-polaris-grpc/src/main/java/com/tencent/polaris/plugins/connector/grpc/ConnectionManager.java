@@ -444,12 +444,12 @@ public class ConnectionManager extends Destroyable {
         public void switchClient() throws PolarisException {
             Connection curConnection = curConnectionValue.get();
             //只有成功后，才进行切换
-            if (!Connection.isAvailableConnection(curConnection)) {
+            if (Connection.isAvailableConnection(curConnection)) {
                 return;
             }
             synchronized (lock) {
                 curConnection = curConnectionValue.get();
-                if (!Connection.isAvailableConnection(curConnection)) {
+                if (Connection.isAvailableConnection(curConnection)) {
                     return;
                 }
                 doSwitchClient(curConnection);
