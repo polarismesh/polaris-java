@@ -77,7 +77,7 @@ public class ConfigFileLongPullService {
         this.started = new AtomicReference<>(false);
         this.configFilePool = Maps.newConcurrentMap();
         this.notifiedVersion = Maps.newConcurrentMap();
-        this. retryPolicy = new ExponentialRetryPolicy(1, 120);
+        this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.connector = configFileConnector;
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");

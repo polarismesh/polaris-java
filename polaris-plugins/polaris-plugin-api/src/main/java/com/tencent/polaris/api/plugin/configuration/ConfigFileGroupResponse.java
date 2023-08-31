@@ -17,19 +17,17 @@
 
 package com.tencent.polaris.api.plugin.configuration;
 
-/**
- * @author lepdou 2022-03-02
- */
-public class ConfigFileResponse {
+public class ConfigFileGroupResponse {
+    private int code;
+    private String message;
+    private String revision;
+    private ConfigFileGroup configFileGroup;
 
-    private int        code;
-    private String     message;
-    private ConfigFile configFile;
-
-    public ConfigFileResponse(int code, String message, ConfigFile configFile) {
+    public ConfigFileGroupResponse(int code, String message, String revision, ConfigFileGroup configFileGroup) {
         this.code = code;
         this.message = message;
-        this.configFile = configFile;
+        this.revision = revision;
+        this.configFileGroup = configFileGroup;
     }
 
     public int getCode() {
@@ -48,20 +46,19 @@ public class ConfigFileResponse {
         this.message = message;
     }
 
-    public ConfigFile getConfigFile() {
-        return configFile;
+    public String getRevision() {
+        return revision;
     }
 
-    public void setConfigFile(ConfigFile configFile) {
-        this.configFile = configFile;
+    public void setRevision(String revision) {
+        this.revision = revision;
     }
 
-    @Override
-    public String toString() {
-        return "ConfigFileResponse{" +
-               "code=" + code +
-               ", message='" + message + '\'' +
-               ", configFile=" + configFile +
-               '}';
+    public ConfigFileGroup getConfigFileGroup() {
+        return configFileGroup;
+    }
+
+    public void setConfigFileGroup(ConfigFileGroup configFileGroup) {
+        this.configFileGroup = configFileGroup;
     }
 }

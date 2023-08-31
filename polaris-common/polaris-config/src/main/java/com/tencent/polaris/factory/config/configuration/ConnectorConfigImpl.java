@@ -39,6 +39,9 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
 	@JsonDeserialize(using = TimeStrJsonDeserializer.class)
 	private Long persistRetryInterval = 1000L;
 
+	@JsonProperty
+	private Integer configFileGroupThreadNum = 10;
+
 	@Override
 	public void verify() {
 		ConfigUtils.validateString(connectorType, "configConnectorType");
@@ -122,5 +125,13 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
 
 	public void setFallbackToLocalCache(Boolean fallbackToLocalCache) {
 		this.fallbackToLocalCache = fallbackToLocalCache;
+	}
+
+	public Integer getConfigFileGroupThreadNum() {
+		return configFileGroupThreadNum;
+	}
+
+	public void setConfigFileGroupThreadNum(Integer configFileGroupThreadNum) {
+		this.configFileGroupThreadNum = configFileGroupThreadNum;
 	}
 }

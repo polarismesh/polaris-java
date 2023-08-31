@@ -43,7 +43,7 @@ public class ConfigKVFileChangeEvent {
         return propertyChangeInfos.containsKey(propertyKey);
     }
 
-    public String getPropertyOldValue(String propertyKey) {
+    public Object getPropertyOldValue(String propertyKey) {
         ConfigPropertyChangeInfo changeInfo = propertyChangeInfos.get(propertyKey);
         if (changeInfo != null) {
             return changeInfo.getOldValue();
@@ -51,7 +51,7 @@ public class ConfigKVFileChangeEvent {
         return null;
     }
 
-    public String getPropertyNewValue(String propertyKey) {
+    public Object getPropertyNewValue(String propertyKey) {
         ConfigPropertyChangeInfo changeInfo = propertyChangeInfos.get(propertyKey);
         if (changeInfo != null) {
             return changeInfo.getNewValue();
