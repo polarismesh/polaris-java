@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
@@ -77,6 +78,8 @@ public class ConfigFileManager {
         } catch (IOException e) {
             LOGGER.warn("config file persist handler init fail:" + e.getMessage(), e);
         }
+        //deal with the situation when the thread can't exit
+        registerDestroyHook(context);
     }
 
     public ConfigFile getConfigFile(ConfigFileMetadata configFileMetadata) {
@@ -161,4 +164,13 @@ public class ConfigFileManager {
         }
     }
 
+    private void registerDestroyHook(SDKContext context) {
+        context.registerDestroyHook(new Destroyable() {
+            @Override
+            protected void doDestroy() {
+                longPullService.doLongPullingDestroy();
+                persistentHandler.doDestroy();
+            }
+        });
+    }
 }

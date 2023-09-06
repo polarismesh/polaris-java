@@ -17,15 +17,18 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -78,6 +81,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         //加入到长轮询的池子里
         addToLongPollingPool(pullService, configFileMetadata);
         startCheckVersionTask();
+        registerRepoDestroyHook(sdkContext);
     }
 
     private void addToLongPollingPool(ConfigFileLongPullService pullService, ConfigFileMetadata configFileMetadata) {
@@ -246,4 +250,16 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         return configFile;
     }
 
+    private void registerRepoDestroyHook(SDKContext context) {
+        context.registerDestroyHook(new Destroyable() {
+            @Override
+            protected void doDestroy() {
+                destroyPullExecutor();
+            }
+        });
+    }
+
+    protected void destroyPullExecutor() {
+        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{pullExecutorService});
+    }
 }
