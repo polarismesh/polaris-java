@@ -20,13 +20,27 @@ package com.tencent.polaris.discovery.client.util;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.rpc.*;
+import com.tencent.polaris.api.rpc.BaseEntity;
+import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
+import com.tencent.polaris.api.rpc.GetInstancesRequest;
+import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.rpc.GetResourcesRequest;
+import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
+import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
+import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.CommonValidator;
+
 import java.util.Set;
 
 /**
@@ -208,6 +222,16 @@ public class Validator {
         }
         validateHostPort(request.getHost(), request.getPort());
         CommonValidator.validateNamespaceService(request.getNamespace(), request.getService());
+    }
+
+    /**
+     * Validate report service contract request.
+     *
+     * @param request report service contract request
+     * @throws PolarisException exception
+     */
+    public static void validateReportServiceContractRequest(ReportServiceContractRequest request) throws PolarisException {
+        
     }
 
     private static void checkCommon(BaseEntity entity) throws PolarisException {

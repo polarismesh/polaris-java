@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.server;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+
 import java.util.Map;
 
 /**
@@ -49,7 +50,7 @@ public interface ServerConnector extends Plugin {
     /**
      * 同步注册服务
      *
-     * @param req 注册请求
+     * @param req          注册请求
      * @param customHeader 自定义请求头
      * @return 注册应答
      * @throws PolarisException 注册过程出现的错误
@@ -83,6 +84,14 @@ public interface ServerConnector extends Plugin {
     ReportClientResponse reportClient(ReportClientRequest req) throws PolarisException;
 
     /**
+     * Report service contract.
+     *
+     * @throws PolarisException
+     * @since 1.15.0
+     */
+    ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException;
+
+    /**
      * 更新服务端地址
      *
      * @param svcEventKey 新的资源key
@@ -99,16 +108,23 @@ public interface ServerConnector extends Plugin {
 
 
     /**
-     * Get id of server connector.
+     * Check if register enabled.
      *
-     * @return id
+     * @return boolean
      */
     boolean isRegisterEnable();
 
     /**
-     * Get id of server connector.
+     * Check if discovery enabled.
      *
-     * @return id
+     * @return boolean
      */
     boolean isDiscoveryEnable();
+
+    /**
+     * Check if service contract reporting enabled.
+     *
+     * @return boolean
+     */
+    boolean isReportServiceContractEnable();
 }

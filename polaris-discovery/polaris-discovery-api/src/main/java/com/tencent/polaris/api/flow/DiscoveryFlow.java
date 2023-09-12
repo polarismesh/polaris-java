@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.api.flow;
 
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
@@ -74,6 +76,10 @@ public interface DiscoveryFlow extends AbstractFlow {
 
     }
 
-	void destroy();
+    default ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) {
+        return null;
+    }
+
+    void destroy();
 
 }

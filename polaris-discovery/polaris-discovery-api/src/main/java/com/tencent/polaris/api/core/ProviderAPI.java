@@ -18,10 +18,13 @@
 package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
+
 import java.io.Closeable;
 
 /**
@@ -48,7 +51,7 @@ public interface ProviderAPI extends AutoCloseable, Closeable {
      * @return 服务实例ID
      * @throws PolarisException 错误码及异常信息
      * @deprecated Recommend to use #{@link ProviderAPI#registerInstance(InstanceRegisterRequest)} method instead when
-     *         using polaris-server v1.10.0
+     * using polaris-server v1.10.0
      */
     @Deprecated
     InstanceRegisterResponse register(InstanceRegisterRequest req) throws PolarisException;
@@ -67,10 +70,18 @@ public interface ProviderAPI extends AutoCloseable, Closeable {
      * @param req 服务实例ID
      * @throws PolarisException 错误码及异常信息
      * @deprecated Recommend to use #{@link ProviderAPI#registerInstance(InstanceRegisterRequest)} method instead when
-     *         using polaris-server v1.10.0
+     * using polaris-server v1.10.0
      */
     @Deprecated
     void heartbeat(InstanceHeartbeatRequest req) throws PolarisException;
+
+    /**
+     * Report service contract.
+     *
+     * @throws PolarisException
+     * @since 1.15.0
+     */
+    ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException;
 
     /**
      * 清理并释放资源

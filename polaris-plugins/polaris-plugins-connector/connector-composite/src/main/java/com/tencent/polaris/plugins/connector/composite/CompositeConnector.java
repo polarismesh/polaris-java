@@ -28,6 +28,8 @@ import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
@@ -38,13 +40,14 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
 
 /**
  * An implement of {@link ServerConnector} to connect to Multiple Naming Server.It provides methods to manage resources
@@ -95,6 +98,11 @@ public class CompositeConnector extends DestroyableServerConnector {
 
     @Override
     public boolean isDiscoveryEnable() {
+        return true;
+    }
+
+    @Override
+    public boolean isReportServiceContractEnable() {
         return true;
     }
 
@@ -202,6 +210,19 @@ public class CompositeConnector extends DestroyableServerConnector {
         ReportClientResponse response = null;
         for (DestroyableServerConnector sc : serverConnectors) {
             ReportClientResponse temp = sc.reportClient(req);
+            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                response = temp;
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException {
+        checkDestroyed();
+        ReportServiceContractResponse response = null;
+        for (DestroyableServerConnector sc : serverConnectors) {
+            ReportServiceContractResponse temp = sc.reportServiceContract(req);
             if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
                 response = temp;
             }

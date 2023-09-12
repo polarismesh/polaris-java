@@ -12,6 +12,7 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.Dis
 import io.grpc.Metadata;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.MetadataUtils;
+
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,6 +36,8 @@ public class GrpcUtil {
     public static final String OP_KEY_REPORT_CLIENT = "ReportClient";
 
     public static final String OP_KEY_CHECK_COMPATIBLE = "CheckCompatible";
+
+    public static final String OP_KEY_REPORT_SERVICE_CONTRACT = "ReportServiceContract";
 
     /**
      * 请求ID的key
@@ -63,6 +66,11 @@ public class GrpcUtil {
     private static final String REQ_ID_PREFIX_GETINSTANCES = "4";
 
     /**
+     * Prefix of request of reporting service contract.
+     */
+    private static final String REQ_ID_PREFIX_REPORTSERVICECONTRACT = "5";
+
+    /**
      * 实例发现ID发生器
      */
     private static final AtomicLong SEED_INSTANCE_REQ_ID = new AtomicLong();
@@ -81,6 +89,11 @@ public class GrpcUtil {
      * 心跳上报ID发生器
      */
     private static final AtomicLong SEED_HEARTBEAT_REQ_ID = new AtomicLong();
+
+    /**
+     * Request ID generator of reporting service contract.
+     */
+    private static final AtomicLong SEED_REPORT_SERVICE_CONTRACT_REQ_ID = new AtomicLong();
 
     /**
      * 获取下一个实例请求ID
@@ -118,12 +131,22 @@ public class GrpcUtil {
         return String.format("%s%d", REQ_ID_PREFIX_HEARTBEAT, SEED_HEARTBEAT_REQ_ID.incrementAndGet());
     }
 
+    /**
+     * Request ID of reporting service contract.
+     *
+     * @return string
+     */
+    public static String nextReportServiceContractReqId() {
+        return String.format("%s%d", REQ_ID_PREFIX_REPORTSERVICECONTRACT,
+                SEED_REPORT_SERVICE_CONTRACT_REQ_ID.incrementAndGet());
+    }
+
 
     /**
      * 为GRPC请求添加请求头部
      *
-     * @param <T> 桩类型
-     * @param stub 请求桩
+     * @param <T>    桩类型
+     * @param stub   请求桩
      * @param nextID 请求ID
      */
     public static <T extends AbstractStub<T>> void attachRequestHeader(T stub, String nextID) {
@@ -135,9 +158,9 @@ public class GrpcUtil {
     /**
      * 为GRPC请求添加自定义请求头部信息
      *
-     * @param stub 请求桩
+     * @param stub         请求桩
      * @param customHeader 自定义header
-     * @param <T> 桩类型
+     * @param <T>          桩类型
      */
     public static <T extends AbstractStub<T>> void attachRequestHeader(T stub, Map<String, String> customHeader) {
         if (MapUtils.isEmpty(customHeader)) {
