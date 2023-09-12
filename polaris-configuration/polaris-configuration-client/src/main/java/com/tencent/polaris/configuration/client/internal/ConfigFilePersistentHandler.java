@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -42,6 +43,7 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.factory.util.FileUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -308,4 +310,7 @@ public class ConfigFilePersistentHandler {
 		}
 	}
 
+	protected void doDestroy() {
+		ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{persistExecutor});
+    }
 }

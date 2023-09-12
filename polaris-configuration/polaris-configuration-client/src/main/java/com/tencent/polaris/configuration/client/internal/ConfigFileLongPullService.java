@@ -23,6 +23,7 @@ import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -69,11 +71,17 @@ public class ConfigFileLongPullService {
     private final AtomicReference<Boolean> started;
 
     /**
+     * 设置是否继续执行长轮询 flag, 解决主动退出长轮询时候线程退出问题
+     */
+    private final AtomicBoolean isLongPullingStopped;
+
+    /**
      *
      */
     private final RetryPolicy retryPolicy;
 
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
+        isLongPullingStopped = new AtomicBoolean(false);
         this.started = new AtomicReference<>(false);
         this.configFilePool = Maps.newConcurrentMap();
         this.notifiedVersion = Maps.newConcurrentMap();
@@ -122,7 +130,7 @@ public class ConfigFileLongPullService {
     }
 
     private void doLongPolling() {
-        while (!Thread.currentThread().isInterrupted()) {
+        while (!isLongPullingStopped.get() && !Thread.currentThread().isInterrupted()) {
             try {
                 List<ConfigFile> watchConfigFiles = assembleWatchConfigFiles();
 
@@ -191,5 +199,16 @@ public class ConfigFileLongPullService {
             watchConfigFiles.add(configFile);
         }
         return watchConfigFiles;
+    }
+
+    public void stopLongPulling() {
+        this.isLongPullingStopped.compareAndSet(false, true);
+    }
+
+    public void doLongPullingDestroy() {
+        stopLongPulling();
+        if (longPollingService != null) {
+            ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{longPollingService});
+        }
     }
 }
