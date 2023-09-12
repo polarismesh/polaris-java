@@ -32,17 +32,26 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConfigFileGroupManager {
-    private final Map<ConfigFileGroupMetadata, RevisableConfigFileGroup> configFileGroupCache = new ConcurrentHashMap<>();
+    private final Map<ConfigFileGroupMetadata, RevisableConfigFileGroup> configFileGroupCache =
+            new ConcurrentHashMap<>();
     private RetryableConfigFileGroupConnector rpcConnector;
     private RevisableConfigFileGroupPullService configFileGroupPullService;
+
+    private final boolean enabled;
 
     public ConfigFileGroupManager(SDKContext sdkContext) {
         String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
                 .getConnectorType();
-        ConfigFileGroupConnector connector = (ConfigFileGroupConnector) sdkContext.getExtensions().getPlugins()
-                .getPlugin(PluginTypes.CONFIG_FILE_GROUP_CONNECTOR.getBaseType(), configFileConnectorType);
-        this.rpcConnector = new RetryableConfigFileGroupConnector(connector, getCacheMissedRetryStrategy());
-        this.configFileGroupPullService = new DefaultRevisableConfigFileGroupPullService(sdkContext, configFileGroupCache, connector);
+        if (configFileConnectorType.equals("polaris")) {
+            enabled = true;
+            ConfigFileGroupConnector connector = (ConfigFileGroupConnector) sdkContext.getExtensions().getPlugins()
+                    .getPlugin(PluginTypes.CONFIG_FILE_GROUP_CONNECTOR.getBaseType(), configFileConnectorType);
+            this.rpcConnector = new RetryableConfigFileGroupConnector(connector, getCacheMissedRetryStrategy());
+            this.configFileGroupPullService = new DefaultRevisableConfigFileGroupPullService(sdkContext,
+                    configFileGroupCache, connector);
+        } else {
+            enabled = false;
+        }
     }
 
     public RetryableConfigFileGroupConnector.RetryableValidator getCacheMissedRetryStrategy() {
@@ -58,6 +67,9 @@ public class ConfigFileGroupManager {
     }
 
     public ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata metadata) {
+        if (!enabled) {
+            throw new RuntimeException("Config file group manager is disabled.");
+        }
         RevisableConfigFileGroup configFileGroup = configFileGroupCache.get(metadata);
         if (configFileGroup == null) {
             synchronized (this) {
@@ -73,7 +85,8 @@ public class ConfigFileGroupManager {
         return configFileGroup;
     }
 
-    private RevisableConfigFileGroup getConfigFileGroupFromRemote(ConfigFileGroupMetadata metadata, String currentRevision) {
+    private RevisableConfigFileGroup getConfigFileGroupFromRemote(ConfigFileGroupMetadata metadata,
+                                                                  String currentRevision) {
         com.tencent.polaris.api.plugin.configuration.ConfigFileGroupMetadata metadataRPCObj = new
                 com.tencent.polaris.api.plugin.configuration.ConfigFileGroupMetadata();
         metadataRPCObj.setFileGroupName(metadata.getFileGroupName());
@@ -94,12 +107,14 @@ public class ConfigFileGroupManager {
 
                 List<ConfigFileMetadata> configFileMetadataList = new ArrayList<>();
                 for (ConfigFile configFile : configFileList) {
-                    ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
+                    ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(configFile.getNamespace(),
+                            configFile.getFileGroup(), configFile.getFileName());
                     configFileMetadataList.add(configFileMetadata);
                 }
                 ConfigFileGroup configFileGroup = new DefaultConfigFileGroup(configFileGroupObj.getNamespace(),
                         configFileGroupObj.getFileGroupName(), configFileMetadataList);
-                RevisableConfigFileGroup revisableConfigFileGroup = new RevisableConfigFileGroup(configFileGroup, newRevision);
+                RevisableConfigFileGroup revisableConfigFileGroup = new RevisableConfigFileGroup(configFileGroup,
+                        newRevision);
                 cache(metadata, revisableConfigFileGroup);
                 return revisableConfigFileGroup;
             }
