@@ -67,7 +67,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {
         super(sdkContext, configFileMetadata);
-
         this.remoteConfigFile = new AtomicReference<>();
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
@@ -81,7 +80,6 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         //加入到长轮询的池子里
         addToLongPollingPool(pullService, configFileMetadata);
         startCheckVersionTask();
-        registerRepoDestroyHook(sdkContext);
     }
 
     private void addToLongPollingPool(ConfigFileLongPullService pullService, ConfigFileMetadata configFileMetadata) {
@@ -250,7 +248,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         return configFile;
     }
 
-    private void registerRepoDestroyHook(SDKContext context) {
+    public static void registerRepoDestroyHook(SDKContext context) {
         context.registerDestroyHook(new Destroyable() {
             @Override
             protected void doDestroy() {
@@ -259,7 +257,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         });
     }
 
-    protected void destroyPullExecutor() {
+    static void destroyPullExecutor() {
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{pullExecutorService});
     }
 }
