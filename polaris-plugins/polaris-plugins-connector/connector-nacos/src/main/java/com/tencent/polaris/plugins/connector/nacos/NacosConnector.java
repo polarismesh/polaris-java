@@ -180,6 +180,9 @@ public class NacosConnector extends DestroyableServerConnector {
         if (Objects.nonNull(metadata.get(PropertyKeyConst.CONTEXT_PATH))) {
             properties.put(PropertyKeyConst.CONTEXT_PATH, metadata.get(PropertyKeyConst.CONTEXT_PATH));
         }
+        if (StringUtils.isNotEmpty(metadata.get(PropertyKeyConst.NAMESPACE))) {
+            properties.put(PropertyKeyConst.NAMESPACE, metadata.get(PropertyKeyConst.NAMESPACE));
+        }
         properties.put(PropertyKeyConst.SERVER_ADDR, String.join(",", config.getAddresses()));
         return properties;
     }
