@@ -45,7 +45,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     private static final int PULL_CONFIG_RETRY_TIMES = 3;
 
-    private static final ScheduledExecutorService pullExecutorService;
+    private static ScheduledExecutorService pullExecutorService;
 
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
@@ -67,6 +67,11 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {
         super(sdkContext, configFileMetadata);
+
+        if (pullExecutorService == null || pullExecutorService.isShutdown() || pullExecutorService.isTerminated()) {
+            pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
+        }
+
         this.remoteConfigFile = new AtomicReference<>();
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
@@ -75,6 +80,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
+        //注册 destroy hook
+        registerRepoDestroyHook(sdkContext);
         //同步从远程仓库拉取一次
         pull();
         //加入到长轮询的池子里
