@@ -57,7 +57,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final boolean fallbackToLocalCache;
 
     static {
-        pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
+        createPullExecutorService();
     }
 
     public RemoteConfigFileRepo(SDKContext sdkContext,
@@ -67,11 +67,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                                 ConfigFileMetadata configFileMetadata,
                                 ConfigFilePersistentHandler handler) {
         super(sdkContext, configFileMetadata);
-
-        if (pullExecutorService == null || pullExecutorService.isShutdown() || pullExecutorService.isTerminated()) {
-            pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
-        }
-
+        //保证线程池正常初始化
+        createPullExecutorService();
         this.remoteConfigFile = new AtomicReference<>();
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
@@ -87,6 +84,12 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         //加入到长轮询的池子里
         addToLongPollingPool(pullService, configFileMetadata);
         startCheckVersionTask();
+    }
+
+    private static void createPullExecutorService() {
+        if (pullExecutorService == null || pullExecutorService.isShutdown() || pullExecutorService.isTerminated()) {
+            pullExecutorService = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Configuration-Pull"));
+        }
     }
 
     private void addToLongPollingPool(ConfigFileLongPullService pullService, ConfigFileMetadata configFileMetadata) {
