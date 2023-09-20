@@ -3,6 +3,8 @@ package com.tencent.polaris.discovery.client.api;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.flow.DiscoveryFlow;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
@@ -43,9 +45,9 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
     protected void doDestroy() {
         RegisterStateManager.destroy(sdkContext);
         super.doDestroy();
-		if (discoveryFlow != null) {
-			discoveryFlow.destroy();
-		}
+        if (discoveryFlow != null) {
+            discoveryFlow.destroy();
+        }
     }
 
     @Override
@@ -69,4 +71,10 @@ public class DefaultProviderAPI extends BaseEngine implements ProviderAPI {
         discoveryFlow.heartbeat(req);
     }
 
+    @Override
+    public ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException {
+        checkAvailable("ProviderAPI");
+        Validator.validateReportServiceContractRequest(req);
+        return discoveryFlow.reportServiceContract(req);
+    }
 }

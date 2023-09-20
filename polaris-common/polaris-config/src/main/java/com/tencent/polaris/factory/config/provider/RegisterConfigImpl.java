@@ -40,6 +40,9 @@ public class RegisterConfigImpl implements RegisterConfig {
     @JsonProperty
     private Boolean enable;
 
+    @JsonProperty
+    private Boolean reportServiceContractEnable;
+
     @Override
     public String getNamespace() {
         return namespace;
@@ -77,6 +80,15 @@ public class RegisterConfigImpl implements RegisterConfig {
     }
 
     @Override
+    public boolean isReportServiceContractEnable() {
+        return reportServiceContractEnable;
+    }
+
+    public void setReportServiceContractEnable(Boolean reportServiceContractEnable) {
+        this.reportServiceContractEnable = reportServiceContractEnable;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateString(serverConnectorId,
                 "register.serverConnectorId or registers[?].serverConnectorId");
@@ -95,6 +107,9 @@ public class RegisterConfigImpl implements RegisterConfig {
             }
             if (null == enable) {
                 setEnable(registerConfig.isEnable());
+            }
+            if (null == reportServiceContractEnable) {
+                setReportServiceContractEnable(false);
             }
         }
     }

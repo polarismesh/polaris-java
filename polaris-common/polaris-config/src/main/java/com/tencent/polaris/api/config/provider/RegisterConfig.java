@@ -53,4 +53,11 @@ public interface RegisterConfig extends Verifier {
      * @return boolean
      */
     boolean isEnable();
+
+    /**
+     * If service contract reporting is enabled.
+     *
+     * @return boolean
+     */
+    boolean isReportServiceContractEnable();
 }

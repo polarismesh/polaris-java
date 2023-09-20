@@ -17,9 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.grpc;
 
-import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.ExecuteSuccess;
-import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.InvalidDiscoverResource;
-
 import com.google.protobuf.StringValue;
 import com.google.protobuf.TextFormat;
 import com.google.protobuf.UInt32Value;
@@ -36,8 +33,11 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
+import com.tencent.polaris.api.plugin.server.InterfaceDescriptor;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
@@ -59,14 +59,20 @@ import com.tencent.polaris.specification.api.v1.service.manage.ClientProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.Client;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.StatInfo;
 import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
+import com.tencent.polaris.specification.api.v1.service.manage.PolarisServiceContractGRPCGrpc;
 import com.tencent.polaris.specification.api.v1.service.manage.RequestProto;
 import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,7 +86,9 @@ import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
+
+import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.ExecuteSuccess;
+import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.InvalidDiscoverResource;
 
 /**
  * An implement of {@link ServerConnector} to connect to Polaris server.
@@ -105,6 +113,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     private boolean isRegisterEnable = true;
     private boolean isDiscoveryEnable = true;
     private String clientInstanceId;
+    private boolean isReportServiceContractEnable = true;
 
     /**
      * 发送消息的线程池
@@ -164,6 +173,8 @@ public class GrpcConnector extends DestroyableServerConnector {
         id = connectorConfig.getId();
         if (ctx.getConfig().getProvider().getRegisterConfigMap().containsKey(id)) {
             isRegisterEnable = ctx.getConfig().getProvider().getRegisterConfigMap().get(id).isEnable();
+            isReportServiceContractEnable =
+                    ctx.getConfig().getProvider().getRegisterConfigMap().get(id).isReportServiceContractEnable();
         }
         if (ctx.getConfig().getConsumer().getDiscoveryConfigMap().containsKey(id)) {
             isDiscoveryEnable = ctx.getConfig().getConsumer().getDiscoveryConfigMap().get(id).isEnable();
@@ -234,7 +245,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             LOG.info("[ServerConnector] start to check compatible for event type {}", eventType);
             Connection connection = null;
             try {
-                connection = connectionManager.getConnection(GrpcUtil.OP_KEY_CHECK_COMPATIBLE, ClusterType.BUILTIN_CLUSTER);
+                connection = connectionManager.getConnection(GrpcUtil.OP_KEY_CHECK_COMPATIBLE,
+                        ClusterType.BUILTIN_CLUSTER);
                 String reqId = GrpcUtil.nextGetInstanceReqId();
                 PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
                 GrpcUtil.attachRequestHeader(namingStub, reqId);
@@ -257,7 +269,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                             @Override
                             public void onError(Throwable t) {
                                 countDownLatch.countDown();
-                                LOG.warn("[ServerConnector] fail to acquire check event type {}, cause: {}", eventType, t.getMessage());
+                                LOG.warn("[ServerConnector] fail to acquire check event type {}, cause: {}",
+                                        eventType, t.getMessage());
                             }
 
                             @Override
@@ -523,7 +536,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
             startTimestamp = System.currentTimeMillis();
             LOG.debug("start heartbeat at {} ms.", startTimestamp);
-            ResponseProto.Response heartbeatResponse = stub.withDeadlineAfter(req.getTimeoutMs(), TimeUnit.MILLISECONDS).heartbeat(buildHeartbeatRequest(req));
+            ResponseProto.Response heartbeatResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
+                    TimeUnit.MILLISECONDS).heartbeat(buildHeartbeatRequest(req));
             GrpcUtil.checkResponse(heartbeatResponse);
             LOG.debug("received heartbeat response {}", heartbeatResponse);
         } catch (Throwable t) {
@@ -590,6 +604,65 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
     }
 
+    private ServiceContractProto.ServiceContract buildReportServiceContractRequest(ReportServiceContractRequest req) {
+        ServiceContractProto.ServiceContract.Builder serviceContractBuilder =
+                ServiceContractProto.ServiceContract.newBuilder();
+        serviceContractBuilder.setName(req.getName());
+        serviceContractBuilder.setService(req.getService());
+        serviceContractBuilder.setNamespace(req.getNamespace());
+        serviceContractBuilder.setProtocol(req.getProtocol());
+        serviceContractBuilder.setVersion(req.getVersion());
+        List<ServiceContractProto.InterfaceDescriptor> interfaceDescriptorList = new ArrayList<>();
+        for (InterfaceDescriptor i : req.getInterfaceDescriptors()) {
+            ServiceContractProto.InterfaceDescriptor.Builder interfaceDescriptorBuilder =
+                    ServiceContractProto.InterfaceDescriptor.newBuilder();
+            interfaceDescriptorBuilder.setMethod(i.getMethod());
+            interfaceDescriptorBuilder.setPath(i.getPath());
+            interfaceDescriptorBuilder.setContent(i.getContent());
+            interfaceDescriptorList.add(interfaceDescriptorBuilder.build());
+        }
+        serviceContractBuilder.addAllInterfaces(interfaceDescriptorList);
+        return serviceContractBuilder.build();
+    }
+
+
+    @Override
+    public ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException {
+        if (!isReportServiceContractEnable()) {
+            return null;
+        }
+        checkDestroyed();
+        Connection connection = null;
+        ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
+        try {
+            waitDiscoverReady();
+            connection = connectionManager
+                    .getConnection(GrpcUtil.OP_KEY_REPORT_SERVICE_CONTRACT, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            req.setTargetServer(connectionToTargetNode(connection));
+            PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
+                    PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
+            ResponseProto.Response reportServiceContractResponse =
+                    stub.reportServiceContract(buildReportServiceContractRequest(req));
+            GrpcUtil.checkResponse(reportServiceContractResponse);
+            ReportServiceContractResponse resp = new ReportServiceContractResponse();
+            return resp;
+        } catch (Throwable t) {
+            if (t instanceof PolarisException) {
+                throw t;
+            }
+            if (null != connection) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+            }
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("fail to report service contract, "
+                    + "service %s", serviceKey), t);
+        } finally {
+            if (null != connection) {
+                connection.release(GrpcUtil.OP_KEY_REPORT_SERVICE_CONTRACT);
+            }
+        }
+    }
+
     @Override
     public void updateServers(ServiceEventKey svcEventKey) {
         connectionManager.makeReady(svcEventKey);
@@ -618,6 +691,11 @@ public class GrpcConnector extends DestroyableServerConnector {
     @Override
     public boolean isDiscoveryEnable() {
         return isDiscoveryEnable;
+    }
+
+    @Override
+    public boolean isReportServiceContractEnable() {
+        return isReportServiceContractEnable;
     }
 
     @Override

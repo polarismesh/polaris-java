@@ -45,6 +45,8 @@ import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
+import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.DefaultInstance;
@@ -138,6 +140,11 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     @Override
     public boolean isDiscoveryEnable() {
         return isDiscoveryEnable;
+    }
+
+    @Override
+    public boolean isReportServiceContractEnable() {
+        return false;
     }
 
     @Override
@@ -418,7 +425,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 serviceList = new ArrayList<>(consulClient.getCatalogServices(QueryParams.DEFAULT).getValue()
                         .keySet());
             }
-            
+
             for (String s : serviceList) {
                 ServiceInfo serviceInfo = new ServiceInfo();
                 serviceInfo.setService(s);
@@ -434,6 +441,11 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public ReportClientResponse reportClient(ReportClientRequest req) throws PolarisException {
+        return null;
+    }
+
+    @Override
+    public ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException {
         return null;
     }
 
