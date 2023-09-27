@@ -18,9 +18,12 @@
 package com.tencent.polaris.logging.logback;
 
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.util.ContextInitializer;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.LogbackException;
 import com.tencent.polaris.logging.AbstractPolarisLogging;
 import org.slf4j.LoggerFactory;
+
+import java.net.URL;
 
 public class LogbackPolarisLogging extends AbstractPolarisLogging {
 
@@ -35,7 +38,17 @@ public class LogbackPolarisLogging extends AbstractPolarisLogging {
 
         try {
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            new ContextInitializer(loggerContext).configureByResource(getResourceUrl(location));
+            // Fix issue: https://github.com/Tencent/spring-cloud-tencent/issues/1099
+            URL url = getResourceUrl(location);
+            final String urlString = url.toString();
+            if (urlString.endsWith("xml")) {
+                JoranConfigurator configurator = new JoranConfigurator();
+                configurator.setContext(loggerContext);
+                configurator.doConfigure(url);
+            } else {
+                throw new LogbackException("Unexpected filename extension of file [" + url + "]. Should be"
+                        + " either .groovy or .xml");
+            }
         } catch (Exception e) {
             throw new IllegalStateException("could not initialize logback logging from " + location, e);
         }
