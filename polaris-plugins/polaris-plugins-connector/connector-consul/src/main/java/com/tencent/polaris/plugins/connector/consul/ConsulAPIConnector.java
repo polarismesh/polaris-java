@@ -247,8 +247,8 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 NewService service = buildRegisterInstanceRequest(req);
                 String json = getGson().toJson(service);
                 HttpResponse rawResponse;
-                if (StringUtils.isNotBlank(req.getToken())) {
-                    String token = req.getToken();
+                if (StringUtils.isNotBlank(consulContext.getAclToken())) {
+                    String token = consulContext.getAclToken();
                     UrlParameters tokenParam = token != null ? new SingleUrlParameters("token", token) : null;
                     rawResponse = consulRawClient.makePutRequest("/v1/agent/service/register", json,
                             tokenParam);
@@ -335,7 +335,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 LOG.info("Unregistering service to Consul: " + consulContext.getInstanceId());
-                this.consulClient.agentServiceDeregister(consulContext.getInstanceId(), req.getToken());
+                this.consulClient.agentServiceDeregister(consulContext.getInstanceId(), consulContext.getAclToken());
                 LOG.info("Unregistered service to Consul: " + consulContext.getInstanceId());
                 ieRegistered = false;
             } catch (ConsulException e) {
@@ -351,7 +351,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         if (ieRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
-                this.consulClient.agentCheckPass(consulContext.getCheckId(), null, req.getToken());
+                this.consulClient.agentCheckPass(consulContext.getCheckId(), null, consulContext.getAclToken());
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Heartbeat service to Consul: " + consulContext.getCheckId());
                 }
