@@ -30,7 +30,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
-import com.tencent.polaris.configuration.client.JustForTest;
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 

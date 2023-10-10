@@ -112,4 +112,18 @@ public interface LocalRegistry extends Plugin {
      * @param listener 监听器
      */
     void registerResourceListener(ResourceEventListener listener);
+
+    /**
+     * 提示缓存某个服务被 Watch 监听了变化
+     *
+     * @param svcEventKey
+     */
+    void watchResource(ServiceEventKey svcEventKey);
+
+    /**
+     * 提示缓存某个服务取消 Watch 监听了变化
+     *
+     * @param svcEventKey
+     */
+    void unwatchResource(ServiceEventKey svcEventKey);
 }

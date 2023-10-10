@@ -84,6 +84,9 @@ public class CacheObject implements EventHandler {
     //是否已经触发了资源新增回调
     private final AtomicBoolean notifyResourceAdded = new AtomicBoolean(false);
 
+    //是否被 Watch
+    private final AtomicBoolean watched = new AtomicBoolean(false);
+
     public CacheObject(CacheHandler cacheHandler, ServiceEventKey svcEventKey, InMemoryRegistry registry) {
         this.svcEventKey = svcEventKey;
         this.registry = registry;
@@ -325,5 +328,17 @@ public class CacheObject implements EventHandler {
     @Override
     public RegistryCacheValue getValue() {
         return value.get();
+    }
+
+    public boolean isWatched() {
+        return watched.get();
+    }
+
+    public void openWatch() {
+        watched.set(true);
+    }
+
+    public void cancelWatch() {
+        watched.set(false);
     }
 }

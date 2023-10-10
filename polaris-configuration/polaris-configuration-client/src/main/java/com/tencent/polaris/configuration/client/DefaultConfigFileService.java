@@ -18,6 +18,7 @@
 package com.tencent.polaris.configuration.client;
 
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;

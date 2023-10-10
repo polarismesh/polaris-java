@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.configuration.client;
+package com.tencent.polaris.annonation;
 
 /**
  * @author ledou 2022/3/8
