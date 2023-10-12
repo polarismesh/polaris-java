@@ -144,6 +144,10 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
 
     }
 
+    public Status getTaskStatus() {
+        return taskStatus.get();
+    }
+
     @Override
     @SuppressWarnings("checkstyle:all")
     public String toString() {

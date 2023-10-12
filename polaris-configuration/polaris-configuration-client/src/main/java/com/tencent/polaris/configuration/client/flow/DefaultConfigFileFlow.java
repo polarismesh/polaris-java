@@ -24,7 +24,7 @@ import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
-import com.tencent.polaris.configuration.client.JustForTest;
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 
 public class DefaultConfigFileFlow implements ConfigFileFlow {
