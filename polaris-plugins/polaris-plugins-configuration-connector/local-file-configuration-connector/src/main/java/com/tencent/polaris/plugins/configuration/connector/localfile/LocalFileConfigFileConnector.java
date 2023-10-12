@@ -36,6 +36,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -84,6 +85,11 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 
 	@Override
 	public void init(InitContext ctx) throws PolarisException {
+		String connectorType = ctx.getConfig().getConfigFile().getServerConnector().getConnectorType();
+		// 如果目标 Connector 类型不是本地类型, 不需要开启下面的逻辑，快速结束，避免创建无用资源
+		if (!Objects.equals(connectorType, LOCAL_FILE_CONNECTOR_TYPE)) {
+			return;
+		}
 		String dirPath = ctx.getConfig().getConfigFile().getServerConnector().getPersistDir();
 		if (StringUtils.isBlank(dirPath)) {
 			dirPath = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;

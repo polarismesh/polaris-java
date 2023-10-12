@@ -1,7 +1,25 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package com.tencent.polaris.plugins.connector.grpc;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.TextFormat;
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
@@ -12,6 +30,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
@@ -24,8 +43,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 
 /**
@@ -46,7 +72,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
     /**
      * 在流中没有结束的任务
      */
-    private final Map<ServiceEventKey, ServiceUpdateTask> pendingTask = new HashMap<>();
+    private final Map<ServiceEventKey, SpecTask> pendingTask = new HashMap<>();
 
     /**
      * 连接是否可用
@@ -84,6 +110,13 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
     private final long connectionIdleTimeoutMs;
 
     /**
+     * 清理长期处于 pending 状态的任务
+     */
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("clean-expire-pendingtask"));
+
+    private static long PENDING_TASK_EXPIRE_MS = 30_000L;
+
+    /**
      * 构造函数
      *
      * @param connection 连接
@@ -100,6 +133,16 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         GrpcUtil.attachRequestHeader(namingStub, reqId);
         discoverClient = namingStub.discover(this);
         putPendingTask(serviceUpdateTask);
+    }
+
+    @JustForTest
+    public SpecStreamClient(long pendingTaskExpireMs) {
+        this.connection = null;
+        this.connectionIdleTimeoutMs = 0;
+        this.createTimeMs = System.currentTimeMillis();
+        this.discoverClient = null;
+        this.reqId = UUID.randomUUID().toString();
+        this.executor.schedule(new ExpirePendingTaskCleaner(this, pendingTaskExpireMs), 5, TimeUnit.SECONDS);
     }
 
     /**
@@ -209,9 +252,10 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
             ServiceEventKey serviceEventKey = validResult.getServiceEventKey();
             if (null == serviceEventKey) {
                 if (CollectionUtils.isNotEmpty(pendingTask.values())) {
-                    notifyTasks.addAll(pendingTask.values());
+                    notifyTasks.addAll(listPendingTasks());
 
-                    for (ServiceUpdateTask task : pendingTask.values()) {
+                    for (SpecTask value : pendingTask.values()) {
+                        ServiceUpdateTask task = value.task;
                         PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
                                 String.format("[ServerConnector]code %s, fail to query service %s from server(%s): %s",
                                         validResult.getErrorCode(), task.getServiceEventKey(),
@@ -336,7 +380,7 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
                 return false;
             }
             ServiceEventKey serviceEventKey = serviceUpdateTask.getServiceEventKey();
-            ServiceUpdateTask lastUpdateTask = pendingTask.get(serviceEventKey);
+            SpecTask lastUpdateTask = pendingTask.get(serviceEventKey);
             if (null != lastUpdateTask) {
                 LOG.warn("[ServerConnector]pending task {} has been overwritten", lastUpdateTask);
             }
@@ -345,14 +389,22 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
         return true;
     }
 
+    private List<ServiceUpdateTask> listPendingTasks() {
+        return pendingTask.values().stream().map(specTask -> specTask.task).collect(Collectors.toList());
+    }
+
     public void putPendingTask(ServiceUpdateTask serviceUpdateTask) {
         LOG.debug("Put " + serviceUpdateTask.getServiceEventKey() + "to pending task map. reqId: " + reqId);
-        pendingTask.put(serviceUpdateTask.getServiceEventKey(), serviceUpdateTask);
+        pendingTask.put(serviceUpdateTask.getServiceEventKey(), new SpecTask(serviceUpdateTask));
     }
 
     public ServiceUpdateTask removePendingTask(ServiceEventKey serviceEventKey) {
         LOG.debug("Remove " + serviceEventKey + "from pending task map. reqId: " + reqId);
-        return pendingTask.remove(serviceEventKey);
+        SpecTask task = pendingTask.remove(serviceEventKey);
+        if (Objects.isNull(task)) {
+            return null;
+        }
+        return task.task;
     }
 
     private static class ValidResult {
@@ -377,6 +429,57 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
 
         public String getMessage() {
             return message;
+        }
+    }
+
+    private static class SpecTask {
+        private final ServiceUpdateTask task;
+
+        private final long submitTimeMs;
+
+        private SpecTask(ServiceUpdateTask task) {
+            this.task = task;
+            this.submitTimeMs = System.currentTimeMillis();
+        }
+    }
+
+    private static class ExpirePendingTaskCleaner implements Runnable {
+
+        private final SpecStreamClient client;
+
+        private final long pendingTaskExpireMs;
+
+        private ExpirePendingTaskCleaner(SpecStreamClient client, long pendingTaskExpireMs) {
+            this.client = client;
+            this.pendingTaskExpireMs = pendingTaskExpireMs;
+        }
+
+        @Override
+        public void run() {
+            try {
+                realCheck();
+            } finally {
+                client.executor.schedule(this, 5, TimeUnit.SECONDS);
+            }
+        }
+
+        private void realCheck() {
+            long current = System.currentTimeMillis();
+            synchronized (client.clientLock) {
+                Map<ServiceEventKey, ServiceUpdateTask> waitRetry = new HashMap<>();
+                for (Map.Entry<ServiceEventKey, SpecTask> entry : client.pendingTask.entrySet()) {
+                    SpecTask specTask = entry.getValue();
+                    if (current - specTask.submitTimeMs > pendingTaskExpireMs) {
+                        waitRetry.put(entry.getKey(), specTask.task);
+                    }
+                }
+
+                waitRetry.forEach((serviceEventKey, serviceUpdateTask) -> {
+                    LOG.info("[ServerConnector] retry pending task {}, because it's long time to running", serviceEventKey);
+                    client.removePendingTask(serviceEventKey);
+                    serviceUpdateTask.retry();
+                });
+            }
         }
     }
 }
