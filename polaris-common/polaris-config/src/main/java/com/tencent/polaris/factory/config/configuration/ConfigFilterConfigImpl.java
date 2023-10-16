@@ -60,10 +60,6 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
         return this.chain;
     }
 
-    public void setChain(List<String> chain) {
-        this.chain = chain;
-    }
-
     @Override
     public Map<String, Verifier> getPluginConfigs() throws PolarisException {
         Map<String, Verifier> values = new HashMap<>();
