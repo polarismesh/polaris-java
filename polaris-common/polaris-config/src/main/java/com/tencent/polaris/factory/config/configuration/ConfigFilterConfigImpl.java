@@ -26,6 +26,7 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
     private Boolean enable;
 
     @JsonProperty
-    private List<String> chain;
+    private List<String> chain = new ArrayList<>();
 
     @Override
     public boolean isEnable() {
