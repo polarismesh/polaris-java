@@ -23,7 +23,6 @@ import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
@@ -50,9 +49,18 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
         return enable != null && enable;
     }
 
+    public void setEnable(Boolean enable) {
+        this.enable = enable;
+    }
+
+
     @Override
     public List<String> getChain() {
         return this.chain;
+    }
+
+    public void setChain(List<String> chain) {
+        this.chain = chain;
     }
 
     @Override
@@ -73,7 +81,8 @@ public class ConfigFilterConfigImpl extends PluginConfigImpl implements ConfigFi
         ConfigUtils.validateNull(chain, "ConfigFilterConfig Chain");
         ConfigUtils.validateNull(getPlugin(), "ConfigFilterConfig Plugin");
         if (getPlugin().size() != chain.size()) {
-            throw new PolarisException(ErrorCode.INVALID_CONFIG, "ConfigFilterConfig plugin config does not match chain");
+            throw new PolarisException(ErrorCode.INVALID_CONFIG, "ConfigFilterConfig plugin config does not match "
+                    + "chain");
         }
         chain.forEach(chain ->
                 ConfigUtils.validateNull(getPlugin().get(chain), "ConfigFilter plugin config for chain " + chain));
