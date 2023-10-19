@@ -19,7 +19,6 @@ package com.tencent.polaris.plugins.configfilefilter;
 
 import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.api.config.configuration.CryptoConfig;
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -32,7 +31,9 @@ import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.configuration.client.JustForTest;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,8 @@ import java.util.function.Function;
  */
 public class CryptoConfigFileFilter implements ConfigFileFilter {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CryptoConfigFileFilter.class);
+
     private Crypto crypto;
 
     private RSAService rsaService;
@@ -53,7 +56,8 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     private Map<String, Crypto> cryptoMap;
 
     @Override
-    public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile, ConfigFileResponse> next) {
+    public Function<ConfigFile, ConfigFileResponse> doFilter(ConfigFile configFile, Function<ConfigFile,
+            ConfigFileResponse> next) {
         return new Function<ConfigFile, ConfigFileResponse>() {
             @Override
             public ConfigFileResponse apply(ConfigFile configFile) {
@@ -69,7 +73,10 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
                 if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
                     String dataKey = configFileResponse.getDataKey();
                     if (dataKey == null) {
-                        throw new PolarisException(ErrorCode.RSA_DECRYPT_ERROR, "dataKey is null");
+                        LOG.info("ConfigFile [namespace: {}, file group: {}, file name: {}] does not have data key. "
+                                        + "Return original response.",
+                                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
+                        return response;
                     }
                     byte[] password = rsaService.decrypt(dataKey);
                     crypto.doDecrypt(configFileResponse, password);
@@ -83,7 +90,8 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
     }
 
     @JustForTest
-    public CryptoConfigFileFilter(Crypto crypto, RSAService rsaService, CryptoConfig cryptoConfig, Map<String, Crypto> cryptoMap) {
+    public CryptoConfigFileFilter(Crypto crypto, RSAService rsaService, CryptoConfig cryptoConfig, Map<String,
+            Crypto> cryptoMap) {
         this.crypto = crypto;
         this.rsaService = rsaService;
         this.cryptoConfig = cryptoConfig;

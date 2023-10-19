@@ -2,7 +2,6 @@ package com.tencent.polaris.factory.config.configuration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
-import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
 /**
@@ -49,7 +48,7 @@ public class ConfigFileConfigImpl implements ConfigFileConfig {
     }
 
     @Override
-    public ConfigFilterConfig getConfigFilterConfig() {
+    public ConfigFilterConfigImpl getConfigFilterConfig() {
         return configFilter;
     }
 
