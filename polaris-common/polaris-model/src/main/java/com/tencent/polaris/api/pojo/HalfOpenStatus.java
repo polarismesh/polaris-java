@@ -43,10 +43,6 @@ public class HalfOpenStatus extends CircuitBreakerStatus {
         this.calledResult = new ArrayList<>(maxRequest * 2);
     }
 
-    public int getMaxRequest() {
-        return maxRequest;
-    }
-
     public boolean report(boolean success) {
         synchronized (lock) {
             calledResult.add(success);

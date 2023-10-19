@@ -100,7 +100,9 @@ public class CircuitBreakerRuleContainer {
                 } else {
                     ResourceCounters oldCounters = resourceResourceCounters.remove(resource);
                     if (null != oldCounters) {
+                        LOG.info("start to destroyed counters {} for resource {}", oldCounters.getCurrentActiveRule().getName(), resource);
                         // remove the old health check scheduler
+                        oldCounters.setDestroyed(true);
                         scheduleHealthCheck();
                     }
                 }
