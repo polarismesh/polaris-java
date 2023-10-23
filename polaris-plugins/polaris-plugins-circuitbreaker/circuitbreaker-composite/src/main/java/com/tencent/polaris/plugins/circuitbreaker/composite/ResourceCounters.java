@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -86,6 +87,8 @@ public class ResourceCounters implements StatusChangeHandler {
     private final Function<String, Pattern> regexFunction;
 
     private Extensions extensions;
+
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
             ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
@@ -158,6 +161,10 @@ public class ResourceCounters implements StatusChangeHandler {
     @Override
     public void closeToOpen(String circuitBreaker) {
         synchronized (this) {
+            if (destroyed.get()) {
+                LOG.info("counters {} for resource {} is destroyed, closeToOpen skipped", currentActiveRule.getName(), resource);
+                return;
+            }
             CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
             if (circuitBreakerStatus.getStatus() == Status.CLOSE) {
                 toOpen(circuitBreakerStatus, circuitBreaker);
@@ -185,6 +192,10 @@ public class ResourceCounters implements StatusChangeHandler {
     @Override
     public void openToHalfOpen() {
         synchronized (this) {
+            if (destroyed.get()) {
+                LOG.info("counters {} for resource {} is destroyed, openToHalfOpen skipped", currentActiveRule.getName(), resource);
+                return;
+            }
             CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
             if (circuitBreakerStatus.getStatus() != Status.OPEN) {
                 return;
@@ -203,6 +214,10 @@ public class ResourceCounters implements StatusChangeHandler {
     @Override
     public void halfOpenToClose() {
         synchronized (this) {
+            if (destroyed.get()) {
+                LOG.info("counters {} for resource {} is destroyed, halfOpenToClose skipped", currentActiveRule.getName(), resource);
+                return;
+            }
             CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
             if (circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
                 CircuitBreakerStatus newStatus = new CircuitBreakerStatus(circuitBreakerStatus.getCircuitBreaker(),
@@ -222,6 +237,10 @@ public class ResourceCounters implements StatusChangeHandler {
     @Override
     public void halfOpenToOpen() {
         synchronized (this) {
+            if (destroyed.get()) {
+                LOG.info("counters {} for resource {} is destroyed, halfOpenToOpen skipped", currentActiveRule.getName(), resource);
+                return;
+            }
             CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
             if (circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
                 toOpen(circuitBreakerStatus, circuitBreakerStatus.getCircuitBreaker());
@@ -344,5 +363,9 @@ public class ResourceCounters implements StatusChangeHandler {
                 LOG.info("circuit breaker report encountered exception, e: {}", ex.getMessage());
             }
         }
+    }
+
+    public void setDestroyed(boolean value) {
+        destroyed.set(value);
     }
 }

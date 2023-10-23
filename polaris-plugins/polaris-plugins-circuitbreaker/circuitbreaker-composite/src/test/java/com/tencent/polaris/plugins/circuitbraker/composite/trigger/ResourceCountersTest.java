@@ -142,4 +142,27 @@ public class ResourceCountersTest {
         Assert.assertEquals(RetStatus.RetSuccess, nextStatus);
     }
 
+    @Test
+    public void testDestroy() {
+        CircuitBreakerRule.Builder builder = CircuitBreakerRule.newBuilder();
+        builder.setName("test_cb_rule");
+        builder.setEnable(true);
+        builder.setLevel(Level.METHOD);
+        builder.addErrorConditions(ErrorCondition.newBuilder().setCondition(MatchString.newBuilder().setValue(
+                StringValue.newBuilder().setValue("500").build())).build());
+        builder.addTriggerCondition(
+                TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
+        builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(1).setSleepWindow(5).build());
+        Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
+        resourceCounters.setDestroyed(true);
+        resourceCounters.report(new ResourceStat(resource, 500, 1000));
+        resourceCounters.closeToOpen("cb_rule_status");
+        resourceCounters.openToHalfOpen();
+        resourceCounters.halfOpenToClose();
+        resourceCounters.halfOpenToOpen();
+        Assert.assertEquals(Status.CLOSE, resourceCounters.getCircuitBreakerStatus().getStatus());
+    }
+
+
 }
