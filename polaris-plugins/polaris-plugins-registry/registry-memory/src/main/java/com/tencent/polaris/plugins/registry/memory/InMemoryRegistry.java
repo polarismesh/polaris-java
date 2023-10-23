@@ -77,6 +77,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -398,6 +399,24 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         resourceEventListeners.add(listener);
     }
 
+    @Override
+    public void watchResource(ServiceEventKey svcEventKey) {
+        CacheObject cacheObject = resourceMap.get(svcEventKey);
+        if (Objects.isNull(cacheObject)) {
+            return;
+        }
+        cacheObject.openWatch();
+    }
+
+    @Override
+    public void unwatchResource(ServiceEventKey svcEventKey) {
+        CacheObject cacheObject = resourceMap.get(svcEventKey);
+        if (Objects.isNull(cacheObject)) {
+            return;
+        }
+        cacheObject.cancelWatch();
+    }
+
     public Collection<ResourceEventListener> getResourceEventListeners() {
         return resourceEventListeners;
     }
@@ -607,8 +626,12 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         @Override
         public void run() {
             for (Map.Entry<ServiceEventKey, CacheObject> entry : resourceMap.entrySet()) {
-                //如果当前时间减去最新访问时间没有超过expireTime，那么不用淘汰，继续检查下一个服务
                 CacheObject cacheObject = entry.getValue();
+                // 如果资源被 Watch 了, 则不能淘汰
+                if (cacheObject.isWatched()) {
+                    continue;
+                }
+                //如果当前时间减去最新访问时间没有超过expireTime，那么不用淘汰，继续检查下一个服务
                 long lastAccessTime = cacheObject.getLastAccessTimeMs();
                 if (lastAccessTime == 0) {
                     continue;

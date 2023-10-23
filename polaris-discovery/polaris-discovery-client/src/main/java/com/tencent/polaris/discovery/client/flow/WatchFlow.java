@@ -76,6 +76,7 @@ public class WatchFlow {
      * @return WatchServiceResponse
      */
     public WatchServiceResponse commonWatchService(CommonWatchServiceRequest request) throws PolarisException {
+        extensions.getLocalRegistry().watchResource(request.getSvcEventKey());
         ServiceKey serviceKey = request.getSvcEventKey().getServiceKey();
         InstancesResponse response = syncFlow.commonSyncGetAllInstances(request.getAllRequest());
         watchers.computeIfAbsent(request.getSvcEventKey().getServiceKey(),
@@ -111,9 +112,13 @@ public class WatchFlow {
 
         if (request.getRequest().isRemoveAll()) {
             watchers.remove(request.getSvcEventKey().getServiceKey());
+            extensions.getLocalRegistry().unwatchResource(request.getSvcEventKey());
         } else {
             if (CollectionUtils.isNotEmpty(listeners)) {
                 result = listeners.removeAll(request.getRequest().getListeners());
+            }
+            if (CollectionUtils.isEmpty(listeners)) {
+                extensions.getLocalRegistry().unwatchResource(request.getSvcEventKey());
             }
         }
 
