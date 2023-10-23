@@ -119,6 +119,10 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
 
     public abstract boolean notifyServerEvent(ServerEvent serverEvent);
 
+    public Status getTaskStatus() {
+        return taskStatus.get();
+    }
+
     /**
      * 加入调度队列
      */
