@@ -195,8 +195,9 @@ public class NacosConnector extends DestroyableServerConnector {
 
         synchronized (lock) {
             Properties properties = new Properties(nacosProperties);
-            if (!Objects.equals(namespace, "default")) {
-                properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
+            if (StringUtils.isEmpty(nacosProperties.getProperty(PropertyKeyConst.NAMESPACE))
+                    && !StringUtils.equals("default", namespace)) {
+                properties.put(PropertyKeyConst.NAMESPACE, namespace);
             }
 
             try {
