@@ -18,7 +18,6 @@
 package com.tencent.polaris.logging.logback;
 
 import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.LogbackException;
 import com.tencent.polaris.logging.AbstractPolarisLogging;
 import org.slf4j.LoggerFactory;
@@ -42,9 +41,9 @@ public class LogbackPolarisLogging extends AbstractPolarisLogging {
             URL url = getResourceUrl(location);
             final String urlString = url.toString();
             if (urlString.endsWith("xml")) {
-                JoranConfigurator configurator = new JoranConfigurator();
+                PolarisJoranConfigurator configurator = new PolarisJoranConfigurator();
                 configurator.setContext(loggerContext);
-                configurator.doConfigure(url);
+                configurator.doPolarisConfigure(url);
             } else {
                 throw new LogbackException("Unexpected filename extension of file [" + url + "]. Should be"
                         + " either .groovy or .xml");
