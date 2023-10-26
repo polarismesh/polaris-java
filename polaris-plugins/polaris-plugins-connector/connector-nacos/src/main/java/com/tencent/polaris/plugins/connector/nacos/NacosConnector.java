@@ -75,6 +75,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
+import static com.alibaba.nacos.api.common.Constants.GROUP;
 
 /**
  * An implement of {@link ServerConnector} to connect to Nacos Server.
@@ -117,6 +118,11 @@ public class NacosConnector extends DestroyableServerConnector {
      * Nacos Config Properties .
      */
     private Properties nacosProperties = new Properties();
+
+    /**
+     * Nacos Group.
+     */
+    private String nacosGroup = DEFAULT_GROUP;
 
     /**
      * Nacos namespace & NamingService mappings .
@@ -166,6 +172,11 @@ public class NacosConnector extends DestroyableServerConnector {
         }
 
         this.nacosProperties = this.decodeNacosConfigProperties(connectorConfig);
+
+        this.nacosGroup = Optional.ofNullable(connectorConfig.getMetadata())
+                .map(metadata -> metadata.get(GROUP))
+                .filter(StringUtils::isNotEmpty)
+                .orElse(DEFAULT_GROUP);
     }
 
     private Properties decodeNacosConfigProperties(ServerConnectorConfig config) {
@@ -275,7 +286,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
             Instance instance = buildDeregisterNacosInstance(req, analyzeNacosGroup(req.getService()));
 
-            // register with nacos naming service
+            // deregister with nacos naming service
             service.deregisterInstance(analyzeNacosService(req.getService()), analyzeNacosGroup(req.getService()),
                     instance);
         } catch (NacosException e) {
@@ -381,8 +392,7 @@ public class NacosConnector extends DestroyableServerConnector {
             }
 
             int pageIndex = 1;
-            ListView<String> listView = namingService.getServicesOfServer(pageIndex, NACOS_SERVICE_PAGESIZE,
-                    DEFAULT_GROUP);
+            ListView<String> listView = namingService.getServicesOfServer(pageIndex, NACOS_SERVICE_PAGESIZE, nacosGroup);
             final Set<String> serviceNames = new LinkedHashSet<>(listView.getData());
             int count = listView.getCount();
             int pageNumbers = count / NACOS_SERVICE_PAGESIZE;
@@ -392,7 +402,7 @@ public class NacosConnector extends DestroyableServerConnector {
             }
             // If more than 1 page
             while (pageIndex < pageNumbers) {
-                listView = namingService.getServicesOfServer(++pageIndex, NACOS_SERVICE_PAGESIZE, DEFAULT_GROUP);
+                listView = namingService.getServicesOfServer(++pageIndex, NACOS_SERVICE_PAGESIZE, nacosGroup);
                 serviceNames.addAll(listView.getData());
             }
 
