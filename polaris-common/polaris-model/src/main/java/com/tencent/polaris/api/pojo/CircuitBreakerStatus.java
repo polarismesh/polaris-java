@@ -47,6 +47,11 @@ public class CircuitBreakerStatus {
      */
     private final FallbackInfo fallbackInfo;
 
+    /**
+     * 是否被销毁
+     */
+    private boolean isDestroy;
+
     public CircuitBreakerStatus(String circuitBreaker, Status status, long startTimeMs) {
         this(circuitBreaker, status, startTimeMs, null);
     }
@@ -72,6 +77,14 @@ public class CircuitBreakerStatus {
 
     public FallbackInfo getFallbackInfo() {
         return fallbackInfo;
+    }
+
+    public boolean isDestroy() {
+        return isDestroy;
+    }
+
+    public void setDestroy(boolean destroy) {
+        isDestroy = destroy;
     }
 
     /**
