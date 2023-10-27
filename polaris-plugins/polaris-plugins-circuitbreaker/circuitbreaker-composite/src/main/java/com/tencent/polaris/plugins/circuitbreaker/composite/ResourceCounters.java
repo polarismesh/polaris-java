@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
-import static com.tencent.polaris.logging.LoggingConsts.LOGGING_CIRCUITBREAKER_EVENT;
-
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
@@ -44,27 +42,20 @@ import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.CounterOptio
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ErrRateCounter;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.TriggerCounter;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreakerRule;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.ErrorCondition;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.FallbackConfig;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.FallbackResponse;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.*;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.FallbackResponse.MessageHeader;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import org.slf4j.Logger;
+
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
+
+import static com.tencent.polaris.logging.LoggingConsts.LOGGING_CIRCUITBREAKER_EVENT;
 
 public class ResourceCounters implements StatusChangeHandler {
 
@@ -367,5 +358,21 @@ public class ResourceCounters implements StatusChangeHandler {
 
     public void setDestroyed(boolean value) {
         destroyed.set(value);
+        toDestroy();
+    }
+
+    private void toDestroy() {
+        synchronized (this) {
+            CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
+            circuitBreakerStatus.setDestroy(true);
+            circuitBreakerStatusReference.set(circuitBreakerStatus);
+            CB_EVENT_LOG.info("previous status {}, current status {}, resource {}, rule {}",
+                    circuitBreakerStatus.getStatus(),
+                    "DESTROY", resource, circuitBreakerStatus.getCircuitBreaker());
+            for (TriggerCounter triggerCounter : counters) {
+                triggerCounter.resume();
+            }
+            reportCircuitStatus();
+        }
     }
 }
