@@ -17,13 +17,13 @@
 
 package com.tencent.polaris.plugins.stat.common.model;
 
-import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.HALF_OPEN;
-import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.OPEN;
-
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.RetStatus;
+
+import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.HALF_OPEN;
+import static com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status.OPEN;
 
 public class MetricValueAggregationStrategyCollections {
 
@@ -283,6 +283,15 @@ public class MetricValueAggregationStrategyCollections {
                 return;
             }
 
+            if (targetValue instanceof StatStatefulMetric) {
+                StatStatefulMetric markMetric = ((StatStatefulMetric) targetValue);
+                if (dataSource.getCircuitBreakStatus().isDestroy()) {
+                    targetValue.setValue(0);
+                    markMetric.removeMarkedName(dataSource.getCircuitBreakStatus().getCircuitBreaker());
+                    return;
+                }
+            }
+
             if (OPEN == dataSource.getCircuitBreakStatus().getStatus()) {
                 targetValue.incValue();
             } else if (HALF_OPEN == dataSource.getCircuitBreakStatus().getStatus()) {
@@ -323,6 +332,11 @@ public class MetricValueAggregationStrategyCollections {
 
             if (targetValue instanceof StatStatefulMetric) {
                 StatStatefulMetric markMetric = ((StatStatefulMetric) targetValue);
+                if (dataSource.getCircuitBreakStatus().isDestroy()) {
+                    targetValue.setValue(0);
+                    markMetric.removeMarkedName(dataSource.getCircuitBreakStatus().getCircuitBreaker());
+                    return;
+                }
                 switch (dataSource.getCircuitBreakStatus().getStatus()) {
                     case OPEN:
                         if (markMetric.contain(dataSource.getCircuitBreakStatus().getCircuitBreaker())) {
