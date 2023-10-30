@@ -47,6 +47,11 @@ public class CircuitBreakerStatus {
      */
     private final FallbackInfo fallbackInfo;
 
+    /**
+     * 是否被销毁
+     */
+    private boolean isDestroy;
+
     public CircuitBreakerStatus(String circuitBreaker, Status status, long startTimeMs) {
         this(circuitBreaker, status, startTimeMs, null);
     }
@@ -72,6 +77,14 @@ public class CircuitBreakerStatus {
 
     public FallbackInfo getFallbackInfo() {
         return fallbackInfo;
+    }
+
+    public boolean isDestroy() {
+        return isDestroy;
+    }
+
+    public void setDestroy(boolean destroy) {
+        this.isDestroy = destroy;
     }
 
     /**
@@ -120,7 +133,11 @@ public class CircuitBreakerStatus {
         /**
          * 熔断器打开状态，实例不提供服务
          */
-        OPEN
+        OPEN,
+        /**
+         * 熔断规则被销毁，实例可提供服务
+         */
+        DESTROY
     }
 
 
