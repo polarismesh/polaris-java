@@ -368,7 +368,7 @@ public class ResourceCounters implements StatusChangeHandler {
             circuitBreakerStatusReference.set(circuitBreakerStatus);
             CB_EVENT_LOG.info("previous status {}, current status {}, resource {}, rule {}",
                     circuitBreakerStatus.getStatus(),
-                    "DESTROY", resource, circuitBreakerStatus.getCircuitBreaker());
+                    Status.DESTROY, resource, circuitBreakerStatus.getCircuitBreaker());
             for (TriggerCounter triggerCounter : counters) {
                 triggerCounter.resume();
             }

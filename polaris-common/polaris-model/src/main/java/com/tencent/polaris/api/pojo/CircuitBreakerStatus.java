@@ -133,7 +133,11 @@ public class CircuitBreakerStatus {
         /**
          * 熔断器打开状态，实例不提供服务
          */
-        OPEN
+        OPEN,
+        /**
+         * 熔断规则被销毁，实例可提供服务
+         */
+        DESTROY
     }
 
 
