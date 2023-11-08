@@ -64,7 +64,7 @@ public class RuleUtils {
         return matchStringValue(matchType, actualValue, matchValue, regexToPattern);
     }
 
-    private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue) {
+    public static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue) {
         return matchStringValue(matchType, actualValue, matchValue, DEFAULT_REGEX_PATTERN);
     }
 
@@ -104,6 +104,20 @@ public class RuleUtils {
                     }
                 }
                 return true;
+            }
+            case RANGE: {
+                String[] tokens = matchValue.split("~");
+                if (tokens.length != 2) {
+                    return false;
+                }
+                try {
+                    long left = Long.parseLong(tokens[0]);
+                    long right = Long.parseLong(tokens[1]);
+                    long matchV = Long.parseLong(actualValue);
+                    return matchV >= left && matchV <= right;
+                } catch (NumberFormatException ignore) {
+                    return false;
+                }
             }
         }
         return false;
@@ -148,9 +162,8 @@ public class RuleUtils {
                         && ruleMetaValue.getValueType() != MatchString.ValueType.PARAMETER) {
                     continue;
                 }
-
+                // 这里获取到的是真正流量标签的 value 或者实例的标签 value
                 String destMetaValue = destMeta.get(ruleMetaKey);
-
                 allMetaMatched = isAllMetaMatched(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
                         multiEnvRouterParamMap, variables);
             }
@@ -196,11 +209,11 @@ public class RuleUtils {
                     // 当匹配的是source，记录请求的 K V
                     multiEnvRouterParamMap.put(ruleMetaKey, destMetaValue);
                 } else {
-                    // 当匹配的是dest， 判断value
-                    if (!multiEnvRouterParamMap.containsKey(ruleMetaKey)) {
+                    // 当匹配的是dest, 并且如果是参数类型, 则需要根据 dest 的 value 获取到流量标签里面对应 key 的真实 value
+                    if (!multiEnvRouterParamMap.containsKey(ruleMetaValue.getValue().getValue())) {
                         allMetaMatched = false;
                     } else {
-                        String ruleValue = multiEnvRouterParamMap.get(ruleMetaKey);
+                        String ruleValue = multiEnvRouterParamMap.get(ruleMetaValue.getValue().getValue());
                         // contains key
                         allMetaMatched = matchStringValue(ruleMetaValue.getType(), ruleValue, destMetaValue);
                     }

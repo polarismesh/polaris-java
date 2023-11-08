@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.tencent.polaris.api.utils.RuleUtils.matchMetadata;
+import static com.tencent.polaris.api.utils.RuleUtils.matchStringValue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -105,4 +106,17 @@ public class RuleUtilsTest {
 
         assertThat(matchMetadata(ruleMeta3, destMeta3)).isTrue();
     }
+
+    @Test
+    public void testRangeMatch() {
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "123", "123~456")).isTrue();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "231", "123~456")).isTrue();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "456", "123~456")).isTrue();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "789", "123~456")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "0", "123~456")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "a", "123~456")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "123", "a~456")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "123", "123~123as")).isFalse();
+    }
+
 }
