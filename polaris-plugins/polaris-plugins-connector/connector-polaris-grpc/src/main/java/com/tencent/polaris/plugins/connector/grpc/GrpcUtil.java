@@ -152,7 +152,7 @@ public class GrpcUtil {
     public static <T extends AbstractStub<T>> void attachRequestHeader(T stub, String nextID) {
         Metadata extraHeaders = new Metadata();
         extraHeaders.put(KEY_REQUEST_ID, nextID);
-        MetadataUtils.attachHeaders(stub, extraHeaders);
+        stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(extraHeaders));
     }
 
     /**
@@ -170,7 +170,7 @@ public class GrpcUtil {
         for (Entry<String, String> header : customHeader.entrySet()) {
             customMetadata.put(Metadata.Key.of(header.getKey(), Metadata.ASCII_STRING_MARSHALLER), header.getValue());
         }
-        MetadataUtils.attachHeaders(stub, customMetadata);
+        stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(customMetadata));
     }
 
     public static void checkResponse(ResponseProto.Response response) throws PolarisException {
