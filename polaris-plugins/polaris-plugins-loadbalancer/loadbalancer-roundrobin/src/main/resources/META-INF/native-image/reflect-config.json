@@ -1,0 +1,9 @@
+[
+{
+  "name":"com.tencent.polaris.plugins.loadbalancer.roundrobin.WeightedRoundRobinBalanceTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testChooseInstance","parameterTypes":[] }]
+}
+]

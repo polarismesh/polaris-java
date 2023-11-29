@@ -1,0 +1,39 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\QMETA-INF/native/libnetty_tcnative_osx_x86_64.jnilib\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.config.ConfigProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.TypeProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.server.ServerConnector\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.LoadBalancerProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.ManagedChannelProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.NameResolverProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.ServerProvider\\E"
+  }, {
+    "pattern":"\\Qclient.crt\\E"
+  }, {
+    "pattern":"\\Qclient.key\\E"
+  }, {
+    "pattern":"\\Qconf/default-config.yml\\E"
+  }, {
+    "pattern":"\\Qjava/lang/reflect/AccessibleObject.class\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qpolaris-logback.xml\\E"
+  }, {
+    "pattern":"\\Qserver.crt\\E"
+  }, {
+    "pattern":"java.base:\\Qjava/lang/reflect/AccessibleObject.class\\E"
+  }, {
+    "pattern":"java.base:\\Qjdk/internal/icu/impl/data/icudt67b/nfc.nrm\\E"
+  }]},
+  "bundles":[]
+}

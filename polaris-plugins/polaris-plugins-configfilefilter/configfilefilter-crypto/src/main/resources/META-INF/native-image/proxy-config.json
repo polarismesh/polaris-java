@@ -1,0 +1,35 @@
+[
+  {
+    "interfaces":["net.bytebuddy.description.method.MethodDescription$InDefinedShape$AbstractBase$Executable"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.method.ParameterDescription$ForLoadedParameter$Parameter"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.method.ParameterList$ForLoadedExecutable$Executable"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.type.TypeDefinition$Sort$AnnotatedType"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.type.TypeDescription$ForLoadedType$Dispatcher"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.type.TypeDescription$Generic$AnnotationReader$Delegator$ForLoadedExecutableExceptionType$Dispatcher"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.type.TypeDescription$Generic$AnnotationReader$Delegator$ForLoadedExecutableParameterType$Dispatcher"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.type.TypeDescription$Generic$AnnotationReader$Delegator$ForLoadedMethodReturnType$Dispatcher"]
+  },
+  {
+    "interfaces":["net.bytebuddy.description.type.TypeDescription$Generic$AnnotationReader$ForComponentType$AnnotatedParameterizedType"]
+  },
+  {
+    "interfaces":["net.bytebuddy.utility.JavaModule$Module"]
+  },
+  {
+    "interfaces":["net.bytebuddy.utility.JavaModule$Resolver"]
+  }
+]

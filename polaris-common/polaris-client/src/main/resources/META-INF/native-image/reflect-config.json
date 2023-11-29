@@ -1,0 +1,7 @@
+[
+{
+  "name":"MessagePersistHandlerTest",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"suite","parameterTypes":[] }]
+}
+]

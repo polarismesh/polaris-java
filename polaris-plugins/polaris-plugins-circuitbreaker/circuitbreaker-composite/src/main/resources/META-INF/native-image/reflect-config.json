@@ -1,0 +1,44 @@
+[
+{
+  "name":"com.tencent.polaris.plugins.circuitbraker.composite.trigger.CircuitBreakerRuleContainerTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testSelectRuleMethod","parameterTypes":[] }, {"name":"testSelectRuleService","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbraker.composite.trigger.ConsecutiveCounterTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testConsecutiveReport","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbraker.composite.trigger.ErrRateCounterTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testErrorRateReport","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbraker.composite.trigger.PolarisCircuitBreakerTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testCheckResource","parameterTypes":[] }, {"name":"testRuleChanged","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbraker.composite.trigger.ResourceCountersTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testDestroy","parameterTypes":[] }, {"name":"testParseStatus","parameterTypes":[] }, {"name":"testStatusChanged","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbraker.composite.trigger.ResourceHealthCheckerTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testSelectFdRule","parameterTypes":[] }]
+}
+]

@@ -1,0 +1,13 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.config.ConfigProvider\\E"
+  }, {
+    "pattern":"\\Qconf/default-config.yml\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qpolaris-logback.xml\\E"
+  }]},
+  "bundles":[]
+}
