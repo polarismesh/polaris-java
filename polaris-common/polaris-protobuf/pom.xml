@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>polaris-common</artifactId>
         <groupId>com.tencent.polaris</groupId>
@@ -59,7 +59,7 @@
                     </protocArtifact>
                     <pluginId>grpc-java</pluginId>
                     <pluginArtifact>
-                        io.grpc:protoc-gen-grpc-java:1.50.0:exe:${os.detected.classifier}
+                        io.grpc:protoc-gen-grpc-java:1.59.1:exe:${os.detected.classifier}
                     </pluginArtifact>
                     <!--The source directories containing the .proto definitions to be compiled. -->
                     <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
