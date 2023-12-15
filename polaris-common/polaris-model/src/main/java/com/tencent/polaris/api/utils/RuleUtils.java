@@ -18,8 +18,10 @@
 package com.tencent.polaris.api.utils;
 
 
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
@@ -27,6 +29,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class RuleUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RuleUtils.class);
 
     public static final String MATCH_ALL = "*";
 
@@ -106,16 +110,20 @@ public class RuleUtils {
                 return true;
             }
             case RANGE: {
+                // 区间范围判断 [a, b], a <= matchV <= b
                 String[] tokens = matchValue.split("~");
                 if (tokens.length != 2) {
                     return false;
                 }
                 try {
+                    // 区间范围中的左端值
                     long left = Long.parseLong(tokens[0]);
+                    // 区间范围中的右端值
                     long right = Long.parseLong(tokens[1]);
                     long matchV = Long.parseLong(actualValue);
                     return matchV >= left && matchV <= right;
                 } catch (NumberFormatException ignore) {
+                    LOG.error("[RuleUtils] matchValue is not a number in RANGE match type, return false");
                     return false;
                 }
             }
@@ -209,7 +217,9 @@ public class RuleUtils {
                     // 当匹配的是source，记录请求的 K V
                     multiEnvRouterParamMap.put(ruleMetaKey, destMetaValue);
                 } else {
-                    // 当匹配的是dest, 并且如果是参数类型, 则需要根据 dest 的 value 获取到流量标签里面对应 key 的真实 value
+                    // 当匹配的是 dest 方向时，ruleMetaKey 为 dest 标签的 key，destMetaValue 为实例标签的 value, 流量标签的变量值信息都在 multiEnvRouterParamMap 中
+                    // 例如， source 标签为 <source-key,source-value>, dest 标签则为 <instance-metadata-key, source-key>
+                    // 因此，在参数场景下，需要根据 dest 中的标签的 value 值信息，反向去查询 source 对应标签的 value
                     if (!multiEnvRouterParamMap.containsKey(ruleMetaValue.getValue().getValue())) {
                         allMetaMatched = false;
                     } else {
