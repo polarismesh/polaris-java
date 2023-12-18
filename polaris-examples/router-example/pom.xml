@@ -26,7 +26,12 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-all</artifactId>
+            <artifactId>polaris-discovery-factory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-router-factory</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
