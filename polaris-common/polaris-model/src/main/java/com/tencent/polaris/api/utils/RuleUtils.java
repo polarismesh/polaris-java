@@ -18,8 +18,10 @@
 package com.tencent.polaris.api.utils;
 
 
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
@@ -27,6 +29,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class RuleUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RuleUtils.class);
 
     public static final String MATCH_ALL = "*";
 
@@ -64,7 +68,7 @@ public class RuleUtils {
         return matchStringValue(matchType, actualValue, matchValue, regexToPattern);
     }
 
-    private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue) {
+    public static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue) {
         return matchStringValue(matchType, actualValue, matchValue, DEFAULT_REGEX_PATTERN);
     }
 
@@ -104,6 +108,25 @@ public class RuleUtils {
                     }
                 }
                 return true;
+            }
+            case RANGE: {
+                // 区间范围判断 [a, b], a <= matchV <= b
+                String[] tokens = matchValue.split("~");
+                if (tokens.length != 2) {
+                    return false;
+                }
+                try {
+                    // 区间范围中的左端值
+                    long left = Long.parseLong(tokens[0]);
+                    // 区间范围中的右端值
+                    long right = Long.parseLong(tokens[1]);
+                    long matchV = Long.parseLong(actualValue);
+                    return matchV >= left && matchV <= right;
+                } catch (NumberFormatException ignore) {
+                    LOG.error("[RuleUtils] actualValue {} is not a number in RANGE match type, return false",
+                            actualValue);
+                    return false;
+                }
             }
         }
         return false;
@@ -148,9 +171,8 @@ public class RuleUtils {
                         && ruleMetaValue.getValueType() != MatchString.ValueType.PARAMETER) {
                     continue;
                 }
-
+                // 这里获取到的是真正流量标签的 value 或者实例的标签 value
                 String destMetaValue = destMeta.get(ruleMetaKey);
-
                 allMetaMatched = isAllMetaMatched(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
                         multiEnvRouterParamMap, variables);
             }
@@ -196,11 +218,14 @@ public class RuleUtils {
                     // 当匹配的是source，记录请求的 K V
                     multiEnvRouterParamMap.put(ruleMetaKey, destMetaValue);
                 } else {
-                    // 当匹配的是dest， 判断value
-                    if (!multiEnvRouterParamMap.containsKey(ruleMetaKey)) {
+                    // 当匹配的是 dest 方向时，ruleMetaKey 为 dest 标签的 key，destMetaValue 为实例标签的 value, 流量标签的变量值信息都在
+                    // multiEnvRouterParamMap 中
+                    // 例如， source 标签为 <source-key,source-value>, dest 标签则为 <instance-metadata-key, source-key>
+                    // 因此，在参数场景下，需要根据 dest 中的标签的 value 值信息，反向去查询 source 对应标签的 value
+                    if (!multiEnvRouterParamMap.containsKey(ruleMetaValue.getValue().getValue())) {
                         allMetaMatched = false;
                     } else {
-                        String ruleValue = multiEnvRouterParamMap.get(ruleMetaKey);
+                        String ruleValue = multiEnvRouterParamMap.get(ruleMetaValue.getValue().getValue());
                         // contains key
                         allMetaMatched = matchStringValue(ruleMetaValue.getType(), ruleValue, destMetaValue);
                     }
