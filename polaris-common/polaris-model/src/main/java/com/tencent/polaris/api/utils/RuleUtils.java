@@ -123,7 +123,8 @@ public class RuleUtils {
                     long matchV = Long.parseLong(actualValue);
                     return matchV >= left && matchV <= right;
                 } catch (NumberFormatException ignore) {
-                    LOG.error("[RuleUtils] matchValue is not a number in RANGE match type, return false");
+                    LOG.error("[RuleUtils] actualValue {} is not a number in RANGE match type, return false",
+                            actualValue);
                     return false;
                 }
             }
@@ -217,7 +218,8 @@ public class RuleUtils {
                     // 当匹配的是source，记录请求的 K V
                     multiEnvRouterParamMap.put(ruleMetaKey, destMetaValue);
                 } else {
-                    // 当匹配的是 dest 方向时，ruleMetaKey 为 dest 标签的 key，destMetaValue 为实例标签的 value, 流量标签的变量值信息都在 multiEnvRouterParamMap 中
+                    // 当匹配的是 dest 方向时，ruleMetaKey 为 dest 标签的 key，destMetaValue 为实例标签的 value, 流量标签的变量值信息都在
+                    // multiEnvRouterParamMap 中
                     // 例如， source 标签为 <source-key,source-value>, dest 标签则为 <instance-metadata-key, source-key>
                     // 因此，在参数场景下，需要根据 dest 中的标签的 value 值信息，反向去查询 source 对应标签的 value
                     if (!multiEnvRouterParamMap.containsKey(ruleMetaValue.getValue().getValue())) {
