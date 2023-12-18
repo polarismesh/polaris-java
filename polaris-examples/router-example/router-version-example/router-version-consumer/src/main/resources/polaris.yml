@@ -2,7 +2,7 @@ global:
   serverConnectors:
     - protocol: grpc
       addresses:
-        - 127.0.0.1:8091
+        - 119.91.66.223:8091
   statReporter:
     enable: true
     plugin:

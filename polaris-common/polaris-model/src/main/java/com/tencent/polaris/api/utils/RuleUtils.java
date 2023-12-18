@@ -48,6 +48,9 @@ public class RuleUtils {
      * @return 是否全匹配，全匹配则忽略该规则
      */
     public static boolean isMatchAllValue(MatchString ruleMetaValue) {
+        if (ruleMetaValue.getValueType() != MatchString.ValueType.TEXT) {
+            return false;
+        }
         return isMatchAllValue(ruleMetaValue.getValue().getValue());
     }
 
