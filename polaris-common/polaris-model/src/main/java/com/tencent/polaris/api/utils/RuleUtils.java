@@ -48,6 +48,11 @@ public class RuleUtils {
      * @return 是否全匹配，全匹配则忽略该规则
      */
     public static boolean isMatchAllValue(MatchString ruleMetaValue) {
+        // see issue: https://github.com/Tencent/spring-cloud-tencent/issues/1214
+        // 如果 ValueType 类型不为 TEXT, 则不参与是否为全匹配场景判断, 直接快速返回 false
+        if (ruleMetaValue.getValueType() != MatchString.ValueType.TEXT) {
+            return false;
+        }
         return isMatchAllValue(ruleMetaValue.getValue().getValue());
     }
 
