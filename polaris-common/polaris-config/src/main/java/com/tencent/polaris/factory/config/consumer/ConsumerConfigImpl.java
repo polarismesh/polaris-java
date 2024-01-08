@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
 
     @JsonProperty
     private SubscribeConfigImpl subscribe;
+
+    @JsonProperty
+    private ZeroProtectionConfigImpl zeroProtection;
 
     @JsonProperty
     private List<DiscoveryConfigImpl> discoveries;
@@ -86,6 +90,11 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     @Override
     public SubscribeConfigImpl getSubscribe() {
         return subscribe;
+    }
+
+    @Override
+    public ZeroProtectionConfigImpl getZeroProtection() {
+        return zeroProtection;
     }
 
     @Override
@@ -128,6 +137,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         circuitBreaker.verify();
         outlierDetection.verify();
         subscribe.verify();
+        zeroProtection.verify();
         if (CollectionUtils.isNotEmpty(discoveries)) {
             for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                 discoveryConfig.verify();
@@ -156,6 +166,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         if (null == subscribe) {
             subscribe = new SubscribeConfigImpl();
         }
+        if (null == zeroProtection) {
+            zeroProtection = new ZeroProtectionConfigImpl();
+        }
         if (null != defaultObject) {
             ConsumerConfig consumerConfig = (ConsumerConfig) defaultObject;
             localCache.setDefault(consumerConfig.getLocalCache());
@@ -164,6 +177,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
             circuitBreaker.setDefault(consumerConfig.getCircuitBreaker());
             outlierDetection.setDefault(consumerConfig.getOutlierDetection());
             subscribe.setDefault(consumerConfig.getSubscribe());
+            zeroProtection.setDefault(consumerConfig.getZeroProtection());
             if (CollectionUtils.isNotEmpty(discoveries)) {
                 for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                     discoveryConfig.setDefault(consumerConfig.getDiscoveries().get(0));
