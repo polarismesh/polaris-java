@@ -645,8 +645,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             ResponseProto.Response reportServiceContractResponse =
                     stub.reportServiceContract(buildReportServiceContractRequest(req));
             GrpcUtil.checkResponse(reportServiceContractResponse);
-            ReportServiceContractResponse resp = new ReportServiceContractResponse();
-            return resp;
+            return new ReportServiceContractResponse();
         } catch (Throwable t) {
             if (t instanceof PolarisException) {
                 throw t;
@@ -723,6 +722,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             LOG.info("start to destroy connector {}", getName());
             ThreadPoolUtils.waitAndStopThreadPools(
                     new ExecutorService[]{sendDiscoverExecutor, buildInExecutor, updateServiceExecutor});
+            destroyStreamClient();
             if (null != connectionManager) {
                 connectionManager.destroy();
             }
@@ -759,5 +759,13 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
     }
 
-
+    private void destroyStreamClient() {
+        for (AtomicReference<SpecStreamClient> streamClientRef : streamClients.values()) {
+            SpecStreamClient streamClient = streamClientRef.get();
+            if (null == streamClient) {
+                continue;
+            }
+            streamClient.closeStream(true);
+        }
+    }
 }
