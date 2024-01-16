@@ -73,6 +73,7 @@ public class ReleaseConfigFileRequest {
         if (StringUtils.isBlank(getFilename())) {
             throw new IllegalArgumentException("file name cannot be empty.");
         }
+
     }
 
     public static final class Builder {
