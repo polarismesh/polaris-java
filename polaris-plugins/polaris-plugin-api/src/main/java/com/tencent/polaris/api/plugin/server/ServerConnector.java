@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.server;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 
 import java.util.Map;
 
@@ -90,6 +91,17 @@ public interface ServerConnector extends Plugin {
      * @since 1.15.0
      */
     ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException;
+
+    /**
+     * 获取服务契约
+     *
+     * @param req
+     * @return
+     * @throws PolarisException
+     */
+    default ServiceRuleByProto getServiceContract(CommonServiceContractRequest req) throws PolarisException {
+        return new ServiceRuleByProto();
+    }
 
     /**
      * 更新服务端地址

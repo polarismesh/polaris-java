@@ -17,6 +17,11 @@
 
 package com.tencent.polaris.api.plugin.configuration;
 
+import com.google.protobuf.BoolValue;
+import com.google.protobuf.StringValue;
+import com.google.protobuf.UInt64Value;
+import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
+
 import java.util.Date;
 import java.util.Objects;
 
@@ -156,5 +161,20 @@ public class ConfigFile {
                ", md5='" + md5 + '\'' +
                ", releaseTime=" + releaseTime + '\'' +
                '}';
+    }
+
+    public ConfigFileProto.ClientConfigFileInfo toClientConfigFileInfo() {
+        ConfigFileProto.ClientConfigFileInfo.Builder builder = ConfigFileProto.ClientConfigFileInfo.newBuilder();
+
+        builder.setNamespace(StringValue.newBuilder().setValue(getNamespace()).build());
+        builder.setGroup(StringValue.newBuilder().setValue(getFileGroup()).build());
+        builder.setFileName(StringValue.newBuilder().setValue(getFileName()).build());
+        builder.setVersion(UInt64Value.newBuilder().setValue(getVersion()).build());
+        if (isEncrypted()) {
+            builder.setEncrypted(BoolValue.newBuilder().setValue(isEncrypted()).buildPartial());
+            builder.setPublicKey(StringValue.newBuilder().setValue(getPublicKey()).build());
+        }
+
+        return builder.build();
     }
 }

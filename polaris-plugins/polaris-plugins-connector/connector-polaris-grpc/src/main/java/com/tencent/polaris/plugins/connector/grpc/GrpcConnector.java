@@ -33,6 +33,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
+import com.tencent.polaris.api.plugin.server.CommonServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.InterfaceDescriptor;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
@@ -47,6 +48,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
@@ -646,6 +648,42 @@ public class GrpcConnector extends DestroyableServerConnector {
                     stub.reportServiceContract(buildReportServiceContractRequest(req));
             GrpcUtil.checkResponse(reportServiceContractResponse);
             return new ReportServiceContractResponse();
+        } catch (Throwable t) {
+            if (t instanceof PolarisException) {
+                throw t;
+            }
+            if (null != connection) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+            }
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("fail to report service contract, "
+                    + "service %s", serviceKey), t);
+        } finally {
+            if (null != connection) {
+                connection.release(GrpcUtil.OP_KEY_REPORT_SERVICE_CONTRACT);
+            }
+        }
+    }
+
+    @Override
+    public ServiceRuleByProto getServiceContract(CommonServiceContractRequest req) throws PolarisException {
+        if (!isReportServiceContractEnable()) {
+            return null;
+        }
+        checkDestroyed();
+        Connection connection = null;
+        ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
+        try {
+            waitDiscoverReady();
+            connection = connectionManager
+                    .getConnection(GrpcUtil.OP_KEY_REPORT_SERVICE_CONTRACT, ClusterType.SERVICE_DISCOVER_CLUSTER);
+            req.setTargetServer(connectionToTargetNode(connection));
+            PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
+                    PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
+            ResponseProto.Response response = stub.getServiceContract(req.toQuerySpec());
+            GrpcUtil.checkResponse(response);
+            ServiceContractProto.ServiceContract remoteVal = response.getServiceContract();
+            return new ServiceRuleByProto(remoteVal, remoteVal.getRevision(), false, EventType.SERVICE_CONTRACT);
         } catch (Throwable t) {
             if (t instanceof PolarisException) {
                 throw t;

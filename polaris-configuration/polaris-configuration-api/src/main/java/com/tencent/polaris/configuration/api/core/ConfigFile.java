@@ -62,6 +62,8 @@ public interface ConfigFile extends ConfigFileMetadata {
      */
     boolean hasContent();
 
+    String getMd5();
+
     /**
      * Adding a config file change listener, will trigger a callback when the config file is published
      *

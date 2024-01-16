@@ -25,6 +25,7 @@ import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
@@ -172,5 +173,12 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         Validator.validateUnWatchServiceRequest(request);
         CommonUnWatchServiceRequest unWatchServiceRequest = new CommonUnWatchServiceRequest(request);
         return watchFlow.commonUnWatchService(unWatchServiceRequest).isSuccess();
+    }
+
+    @Override
+    public ServiceRuleResponse getServiceContract(GetServiceContractRequest req) throws PolarisException {
+        checkAvailable("ConsumerAPI");
+        Validator.validateGetServiceContractRequest(req);
+        return discoveryFlow.getServiceContract(req);
     }
 }

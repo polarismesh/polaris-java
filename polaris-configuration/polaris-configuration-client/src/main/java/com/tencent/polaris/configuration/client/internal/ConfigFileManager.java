@@ -18,6 +18,7 @@
 package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.plugin.configuration.ConfigPublishFile;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
@@ -28,6 +29,10 @@ import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 import com.tencent.polaris.annonation.JustForTest;
+import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
+import com.tencent.polaris.configuration.api.rpc.CreateConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.ReleaseConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.UpdateConfigFileRequest;
 
 import java.io.IOException;
 import java.util.Map;
@@ -111,35 +116,49 @@ public class ConfigFileManager {
         return configFile;
     }
 
-    public ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public ConfigFileResponse createConfigFile(CreateConfigFileRequest request) {
         com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
-                new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
-                        configFileMetadata.getFileGroup(),
-                        configFileMetadata.getFileName());
-        configFile.setContent(content);
+                new com.tencent.polaris.api.plugin.configuration.ConfigFile(request.getNamespace(),
+                        request.getGroup(),
+                        request.getFilename());
+        configFile.setContent(request.getContent());
         return connector.createConfigFile(configFile);
     }
 
-    public ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
+    public ConfigFileResponse updateConfigFile(UpdateConfigFileRequest request) {
         com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
-                new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
-                        configFileMetadata.getFileGroup(),
-                        configFileMetadata.getFileName());
-        configFile.setContent(content);
+                new com.tencent.polaris.api.plugin.configuration.ConfigFile(request.getNamespace(),
+                        request.getGroup(),
+                        request.getFilename());
+        configFile.setContent(request.getContent());
         return connector.updateConfigFile(configFile);
     }
 
-    public ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata) {
+    public ConfigFileResponse releaseConfigFile(ReleaseConfigFileRequest request) {
         com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
-                new com.tencent.polaris.api.plugin.configuration.ConfigFile(configFileMetadata.getNamespace(),
-                        configFileMetadata.getFileGroup(),
-                        configFileMetadata.getFileName());
+                new com.tencent.polaris.api.plugin.configuration.ConfigFile(request.getNamespace(),
+                        request.getGroup(),
+                        request.getFilename());
         return connector.releaseConfigFile(configFile);
     }
 
+    public ConfigFileResponse upsertAndPublish(ConfigPublishRequest request) {
+        ConfigPublishFile publishFile = new ConfigPublishFile();
+        publishFile.setReleaseName(request.getReleaseName());
+        publishFile.setNamespace(request.getNamespace());
+        publishFile.setFileGroup(request.getGroup());
+        publishFile.setFileName(request.getFilename());
+        publishFile.setMd5(request.getCasMd5());
+        publishFile.setContent(request.getContent());
+        publishFile.setLabels(request.getLabels());
+        return connector.upsertAndPublishConfigFile(publishFile);
+    }
+
+
     public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
 
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain,
+                connector, configFileMetadata, persistentHandler);
 
         return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName(), configFileRepo,
@@ -147,7 +166,8 @@ public class ConfigFileManager {
     }
 
     public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
-        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain, connector, configFileMetadata, persistentHandler);
+        ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain,
+                connector, configFileMetadata, persistentHandler);
         switch (format) {
             case Properties: {
                 return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),

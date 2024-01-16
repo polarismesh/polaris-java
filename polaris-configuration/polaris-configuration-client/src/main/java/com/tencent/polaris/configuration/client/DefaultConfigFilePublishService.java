@@ -23,6 +23,10 @@ import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFilePublishService;
+import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
+import com.tencent.polaris.configuration.api.rpc.CreateConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.ReleaseConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.UpdateConfigFileRequest;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
@@ -51,7 +55,12 @@ public class DefaultConfigFilePublishService extends BaseEngine implements Confi
     @Override
     public ConfigFileResponse createConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.createConfigFile(configFileMetadata, content);
+        CreateConfigFileRequest request = new CreateConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setContent(content);
+        return configFileManager.createConfigFile(request);
     }
 
     @Override
@@ -62,7 +71,12 @@ public class DefaultConfigFilePublishService extends BaseEngine implements Confi
     @Override
     public ConfigFileResponse updateConfigFile(ConfigFileMetadata configFileMetadata, String content) {
         ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.updateConfigFile(configFileMetadata, content);
+        UpdateConfigFileRequest request = new UpdateConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setContent(content);
+        return configFileManager.updateConfigFile(request);
     }
 
     @Override
@@ -72,8 +86,34 @@ public class DefaultConfigFilePublishService extends BaseEngine implements Confi
 
     @Override
     public ConfigFileResponse releaseConfigFile(ConfigFileMetadata configFileMetadata) {
-        ConfigFileUtils.checkConfigFileMetadata(configFileMetadata);
-        return configFileManager.releaseConfigFile(configFileMetadata);
+        ReleaseConfigFileRequest request = new ReleaseConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        return release(request);
     }
 
+    @Override
+    public ConfigFileResponse create(CreateConfigFileRequest request) {
+        request.verify();
+        return configFileManager.createConfigFile(request);
+    }
+
+    @Override
+    public ConfigFileResponse update(UpdateConfigFileRequest request) {
+        request.verify();
+        return configFileManager.updateConfigFile(request);
+    }
+
+    @Override
+    public ConfigFileResponse release(ReleaseConfigFileRequest request) {
+        request.verify();
+        return configFileManager.releaseConfigFile(request);
+    }
+
+    @Override
+    public ConfigFileResponse upsertAndPublish(ConfigPublishRequest request) {
+        request.verify();
+        return configFileManager.upsertAndPublish(request);
+    }
 }

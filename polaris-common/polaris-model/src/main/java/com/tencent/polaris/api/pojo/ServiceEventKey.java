@@ -2,6 +2,7 @@ package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.StringUtils;
 
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -30,6 +31,7 @@ public class ServiceEventKey implements Service {
         RATE_LIMITING,
         SERVICE,
         FAULT_DETECTING,
+        SERVICE_CONTRACT,
     }
 
     private final ServiceKey serviceKey;
@@ -90,7 +92,6 @@ public class ServiceEventKey implements Service {
     }
 
     public static final class ServiceEventKeyBuilder {
-
         private ServiceKey serviceKey;
         private EventType eventType;
 
@@ -108,7 +109,8 @@ public class ServiceEventKey implements Service {
         }
 
         public ServiceEventKey build() {
-            return new ServiceEventKey(serviceKey, eventType);
+            ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, eventType);
+            return serviceEventKey;
         }
     }
 }
