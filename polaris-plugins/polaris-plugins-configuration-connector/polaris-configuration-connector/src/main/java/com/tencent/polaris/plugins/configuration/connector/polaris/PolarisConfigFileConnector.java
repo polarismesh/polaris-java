@@ -72,7 +72,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //附加通用 header
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             //执行调用
-            ConfigFileResponseProto.ConfigClientResponse response = stub.getConfigFile(transfer2DTO(configFile));
+            ConfigFileResponseProto.ConfigClientResponse response = stub.getConfigFile(configFile.toClientConfigFileInfo());
             LOGGER.debug("[Config] get getConfigFile response from remote. fileName = {}, response = {}", configFile.getFileName(), response);
 
             return handleResponse(response);
@@ -108,7 +108,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //执行调用
             List<ConfigFileProto.ClientConfigFileInfo> dtos = Lists.newLinkedList();
             for (ConfigFile configFile : configFiles) {
-                dtos.add(transfer2DTO(configFile));
+                dtos.add(configFile.toClientConfigFileInfo());
             }
             ConfigFileProto.ClientWatchConfigFileRequest request =
                     ConfigFileProto.ClientWatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
@@ -229,23 +229,39 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
     }
 
     @Override
+    public ConfigFileResponse upsertAndPublishConfigFile(ConfigPublishFile request) {
+        Connection connection = null;
+
+        try {
+            connection = connectionManager.getConnection(OP_KEY_RELEASE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
+
+            //grpc 调用
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
+                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            //附加通用 header
+            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            //执行调用
+            ConfigFileResponseProto.ConfigClientResponse response = stub.upsertAndPublishConfigFile(request.toSpec());
+            return handleResponse(response);
+        } catch (Throwable t) {
+            // 网络访问异常
+            if (connection != null) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+            }
+            throw new RetriableException(ErrorCode.NETWORK_ERROR,
+                    String.format(
+                            "failed to upsert and publish config file. namespace = %s, group = %s, file = %s",
+                            request.getNamespace(), request.getFileGroup(),
+                            request.getFileName()), t);
+        } finally {
+            if (connection != null) {
+                connection.release(OP_KEY_RELEASE_CONFIG_FILE);
+            }
+        }    }
+
+    @Override
     public String getName() {
         return "polaris";
-    }
-
-    private ConfigFileProto.ClientConfigFileInfo transfer2DTO(ConfigFile configFile) {
-        ConfigFileProto.ClientConfigFileInfo.Builder builder = ConfigFileProto.ClientConfigFileInfo.newBuilder();
-
-        builder.setNamespace(StringValue.newBuilder().setValue(configFile.getNamespace()).build());
-        builder.setGroup(StringValue.newBuilder().setValue(configFile.getFileGroup()).build());
-        builder.setFileName(StringValue.newBuilder().setValue(configFile.getFileName()).build());
-        builder.setVersion(UInt64Value.newBuilder().setValue(configFile.getVersion()).build());
-        if (configFile.isEncrypted()) {
-            builder.setEncrypted(BoolValue.newBuilder().setValue(configFile.isEncrypted()).buildPartial());
-            builder.setPublicKey(StringValue.newBuilder().setValue(configFile.getPublicKey()).build());
-        }
-
-        return builder.build();
     }
 
     private ConfigFile transferFromDTO(ConfigFileProto.ClientConfigFileInfo configFileDTO) {

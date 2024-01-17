@@ -54,6 +54,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.configuration.ConfigPublishFile;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.factory.util.FileUtils;
@@ -143,17 +144,22 @@ public class LocalFileConfigFileConnector implements ConfigFileConnector {
 
 	@Override
 	public ConfigFileResponse createConfigFile(ConfigFile configFile) {
-		return null;
+		throw new UnsupportedOperationException("not support createConfigFile");
 	}
 
 	@Override
 	public ConfigFileResponse updateConfigFile(ConfigFile configFile) {
-		return null;
+		throw new UnsupportedOperationException("not support updateConfigFile");
 	}
 
 	@Override
 	public ConfigFileResponse releaseConfigFile(ConfigFile configFile) {
-		return null;
+		throw new UnsupportedOperationException("not support releaseConfigFile");
+	}
+
+	@Override
+	public ConfigFileResponse upsertAndPublishConfigFile(ConfigPublishFile request) {
+		throw new UnsupportedOperationException("not support upsertAndPublishConfigFile");
 	}
 
 	@Override

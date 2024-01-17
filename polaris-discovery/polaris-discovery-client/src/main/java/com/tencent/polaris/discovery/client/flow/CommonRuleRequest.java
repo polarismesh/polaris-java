@@ -24,6 +24,7 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
+
 import java.util.Set;
 
 public class CommonRuleRequest implements ServiceEventKeysProvider, FlowControlParam {

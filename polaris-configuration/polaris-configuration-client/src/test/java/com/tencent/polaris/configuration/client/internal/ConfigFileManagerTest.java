@@ -24,6 +24,9 @@ import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.api.rpc.CreateConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.ReleaseConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.UpdateConfigFileRequest;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -101,22 +104,39 @@ public class ConfigFileManagerTest {
     @Test(expected = RuntimeException.class)
     public void testCreateConfigFileOnFail() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
-        doThrow(new RuntimeException("test")).when(fileManager).createConfigFile(configFileMetadata, "content");
-        fileManager.createConfigFile(configFileMetadata, "content");
+        CreateConfigFileRequest request = new CreateConfigFileRequest();
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+
+        doThrow(new RuntimeException("test")).when(fileManager).createConfigFile(request);
+        fileManager.createConfigFile(request);
     }
 
     @Test(expected = RuntimeException.class)
     public void testUpdateConfigFileOnFail() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
-        doThrow(new RuntimeException("test")).when(fileManager).updateConfigFile(configFileMetadata, "content");
-        fileManager.updateConfigFile(configFileMetadata, "content");
+        UpdateConfigFileRequest request = new UpdateConfigFileRequest();
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+
+        doThrow(new RuntimeException("test")).when(fileManager).updateConfigFile(request);
+        fileManager.updateConfigFile(request);
     }
 
     @Test(expected = RuntimeException.class)
     public void testReleaseConfigFileOnFail() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
-        doThrow(new RuntimeException("test")).when(fileManager).releaseConfigFile(configFileMetadata);
-        fileManager.releaseConfigFile(configFileMetadata);
+        ReleaseConfigFileRequest request = new ReleaseConfigFileRequest();
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setFilename(configFileMetadata.getFileName());
+
+        doThrow(new RuntimeException("test")).when(fileManager).releaseConfigFile(request);
+        fileManager.releaseConfigFile(request);
     }
 
     @Test(expected = RuntimeException.class)
@@ -131,7 +151,14 @@ public class ConfigFileManagerTest {
         doThrow(new RuntimeException("test")).when(configFileConnector).createConfigFile(configFile);
 
         ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
-        fileManager.createConfigFile(configFileMetadata, "content");
+
+        CreateConfigFileRequest request = new CreateConfigFileRequest();
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+
+        fileManager.createConfigFile(request);
     }
 
     @Test(expected = RuntimeException.class)
@@ -146,7 +173,14 @@ public class ConfigFileManagerTest {
         doThrow(new RuntimeException("test")).when(configFileConnector).updateConfigFile(configFile);
 
         ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
-        fileManager.updateConfigFile(configFileMetadata, "content");
+
+        UpdateConfigFileRequest request = new UpdateConfigFileRequest();
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+
+        fileManager.updateConfigFile(request);
     }
 
 
@@ -157,7 +191,13 @@ public class ConfigFileManagerTest {
         doThrow(new RuntimeException("test")).when(configFileConnector).releaseConfigFile(Mockito.any());
 
         ConfigFileManager fileManager = new ConfigFileManager(configFileConnector);
-        ConfigFileResponse response = fileManager.releaseConfigFile(configFileMetadata);
+
+        ReleaseConfigFileRequest request = new ReleaseConfigFileRequest();
+        request.setNamespace(configFileMetadata.getNamespace());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setFilename(configFileMetadata.getFileName());
+
+        ConfigFileResponse response = fileManager.releaseConfigFile(request);
         System.out.println(response);
     }
 }

@@ -62,4 +62,11 @@ public interface ConfigFileConnector extends Plugin {
      * @return 配置文件信息
      */
     ConfigFileResponse releaseConfigFile(ConfigFile configFile);
+
+    /**
+     *
+     * @param request {@link ConfigPublishFile}
+     * @return {@link ConfigFileResponse}
+     */
+    ConfigFileResponse upsertAndPublishConfigFile(ConfigPublishFile request);
 }

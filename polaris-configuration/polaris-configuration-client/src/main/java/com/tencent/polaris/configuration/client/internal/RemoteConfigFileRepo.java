@@ -111,6 +111,10 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         return remoteConfigFile.get() != null ? remoteConfigFile.get().getContent() : null;
     }
 
+    public String getMd5() {
+        return remoteConfigFile.get() != null ? remoteConfigFile.get().getMd5() : "";
+    }
+
     public long getConfigFileVersion() {
         if (remoteConfigFile.get() == null) {
             return INIT_VERSION;

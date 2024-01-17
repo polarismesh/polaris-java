@@ -26,6 +26,7 @@ import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
+import com.tencent.polaris.api.plugin.server.CommonServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
@@ -33,6 +34,7 @@ import com.tencent.polaris.api.plugin.server.TargetServer;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
+import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
@@ -49,6 +51,7 @@ import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -277,6 +280,42 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             }
         }
         throw new PolarisException(ErrorCode.API_TIMEOUT, "report service contract timeout.");
+    }
+
+    @Override
+    public ServiceRuleResponse getServiceContract(GetServiceContractRequest req) {
+        long timeout = getTimeout(req);
+        long retryInterval = sdkContext.getConfig().getGlobal().getAPI().getRetryInterval();
+        ServerConnector serverConnector = sdkContext.getExtensions().getServerConnector();
+
+        while (timeout > 0) {
+            long start = System.currentTimeMillis();
+            ServiceCallResult serviceCallResult = new ServiceCallResult();
+            CommonServiceContractRequest request = req.getRequest();
+            request.setNamespace(req.getNamespace());
+            request.setService(req.getService());
+            try {
+                ServiceRuleByProto response = serverConnector.getServiceContract(request);
+                serviceCallResult.setRetStatus(RetStatus.RetSuccess);
+                serviceCallResult.setRetCode(ErrorCode.Success.getCode());
+                return new ServiceRuleResponse(response);
+            } catch (PolarisException e) {
+                serviceCallResult.setRetStatus(RetStatus.RetFail);
+                serviceCallResult.setRetCode(exceptionToErrorCode(e).getCode());
+                if (e instanceof RetriableException) {
+                    LOG.warn("get service contract error, retrying.", e);
+                    Utils.sleepUninterrupted(retryInterval);
+                    continue;
+                }
+                throw e;
+            } finally {
+                long delay = System.currentTimeMillis() - start;
+                serviceCallResult.setDelay(delay);
+                reportServerCall(serviceCallResult, request.getTargetServer(), "getServiceContract");
+                timeout -= delay;
+            }
+        }
+        throw new PolarisException(ErrorCode.API_TIMEOUT, "get service contract timeout.");
     }
 
     private void enrichInstanceLocation(InstanceRegisterRequest request) {

@@ -21,6 +21,7 @@ import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
+import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
@@ -57,6 +58,10 @@ public interface DiscoveryFlow extends AbstractFlow {
     }
 
     default ServiceRuleResponse getServiceRule(GetServiceRuleRequest req) {
+        return null;
+    }
+
+    default ServiceRuleResponse getServiceContract(GetServiceContractRequest req) {
         return null;
     }
 

@@ -153,6 +153,11 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
     }
 
     @Override
+    public String getMd5() {
+        return configFileRepo.getMd5();
+    }
+
+    @Override
     public void addChangeListener(ConfigFileChangeListener listener) {
         if (!listeners.contains(listener)) {
             listeners.add(listener);

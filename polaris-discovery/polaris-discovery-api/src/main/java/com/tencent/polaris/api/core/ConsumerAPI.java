@@ -21,6 +21,7 @@ import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.rpc.GetServiceContractRequest;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.InstancesFuture;
@@ -161,6 +162,15 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @return 取消成功标识
      */
     boolean unWatchService(UnWatchServiceRequest request);
+
+    /**
+     * 查询服务契约信息
+     *
+     * @param req {@link GetServiceContractRequest}
+     * @return {@link ServiceRuleResponse}
+     * @throws PolarisException
+     */
+    ServiceRuleResponse getServiceContract(GetServiceContractRequest req) throws PolarisException;
 
     /**
      * 清理并释放资源

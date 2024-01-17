@@ -26,6 +26,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
+import com.tencent.polaris.api.plugin.server.CommonServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientRequest;
 import com.tencent.polaris.api.plugin.server.ReportClientResponse;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
@@ -34,6 +35,7 @@ import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -223,6 +225,19 @@ public class CompositeConnector extends DestroyableServerConnector {
         ReportServiceContractResponse response = null;
         for (DestroyableServerConnector sc : serverConnectors) {
             ReportServiceContractResponse temp = sc.reportServiceContract(req);
+            if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
+                response = temp;
+            }
+        }
+        return response;
+    }
+
+    @Override
+    public ServiceRuleByProto getServiceContract(CommonServiceContractRequest req) throws PolarisException {
+        checkDestroyed();
+        ServiceRuleByProto response = null;
+        for (DestroyableServerConnector sc : serverConnectors) {
+            ServiceRuleByProto temp = sc.getServiceContract(req);
             if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(sc.getName())) {
                 response = temp;
             }

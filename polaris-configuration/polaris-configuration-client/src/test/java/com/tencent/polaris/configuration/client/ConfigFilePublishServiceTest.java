@@ -18,6 +18,9 @@
 package com.tencent.polaris.configuration.client;
 
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.configuration.api.rpc.CreateConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.ReleaseConfigFileRequest;
+import com.tencent.polaris.configuration.api.rpc.UpdateConfigFileRequest;
 import com.tencent.polaris.configuration.client.internal.ConfigFileManager;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import org.junit.Test;
@@ -133,8 +136,12 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = RuntimeException.class)
     public void testCreateConfigFile() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
-
-        doThrow(new RuntimeException("test")).when(configFileManager).createConfigFile(configFileMetadata, "content");
+        CreateConfigFileRequest request = new CreateConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        doThrow(new RuntimeException("test")).when(configFileManager).createConfigFile(request);
 
         defaultConfigFilePublishService.createConfigFile("testNamespace", "testGroup", "testFile", "content");
     }
@@ -142,8 +149,12 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = RuntimeException.class)
     public void testCreateConfigFile2() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
-
-        doThrow(new RuntimeException("test")).when(configFileManager).createConfigFile(configFileMetadata, "content");
+        CreateConfigFileRequest request = new CreateConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        doThrow(new RuntimeException("test")).when(configFileManager).createConfigFile(request);
 
         defaultConfigFilePublishService.createConfigFile(configFileMetadata, "content");
     }
@@ -151,8 +162,12 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = RuntimeException.class)
     public void testUpdateConfigFile() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
-
-        doThrow(new RuntimeException("test")).when(configFileManager).updateConfigFile(configFileMetadata, "content");
+        UpdateConfigFileRequest request = new UpdateConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        doThrow(new RuntimeException("test")).when(configFileManager).updateConfigFile(request);
 
         defaultConfigFilePublishService.updateConfigFile("testNamespace", "testGroup", "testFile", "content");
     }
@@ -160,8 +175,12 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = RuntimeException.class)
     public void testUpdateConfigFile2() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
-
-        doThrow(new RuntimeException("test")).when(configFileManager).updateConfigFile(configFileMetadata, "content");
+        UpdateConfigFileRequest request = new UpdateConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setContent("content");
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        doThrow(new RuntimeException("test")).when(configFileManager).updateConfigFile(request);
 
         defaultConfigFilePublishService.updateConfigFile(configFileMetadata, "content");
     }
@@ -169,8 +188,11 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = RuntimeException.class)
     public void testReleaseConfigFile() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
-
-        doThrow(new RuntimeException("test")).when(configFileManager).releaseConfigFile(configFileMetadata);
+        ReleaseConfigFileRequest request = new ReleaseConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        doThrow(new RuntimeException("test")).when(configFileManager).releaseConfigFile(request);
 
         defaultConfigFilePublishService.releaseConfigFile("testNamespace", "testGroup", "testFile");
     }
@@ -178,8 +200,11 @@ public class ConfigFilePublishServiceTest {
     @Test(expected = RuntimeException.class)
     public void testReleaseConfigFile2() {
         ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
-
-        doThrow(new RuntimeException("test")).when(configFileManager).releaseConfigFile(configFileMetadata);
+        ReleaseConfigFileRequest request = new ReleaseConfigFileRequest();
+        request.setFilename(configFileMetadata.getFileName());
+        request.setGroup(configFileMetadata.getFileGroup());
+        request.setNamespace(configFileMetadata.getNamespace());
+        doThrow(new RuntimeException("test")).when(configFileManager).releaseConfigFile(request);
 
         defaultConfigFilePublishService.releaseConfigFile(configFileMetadata);
     }

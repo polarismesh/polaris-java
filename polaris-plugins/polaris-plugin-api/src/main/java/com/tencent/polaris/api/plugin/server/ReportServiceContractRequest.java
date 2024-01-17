@@ -38,6 +38,8 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     private String version;
 
+    private String content;
+
     private List<InterfaceDescriptor> interfaceDescriptors;
 
     private TargetServer targetServer;
@@ -80,6 +82,14 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public List<InterfaceDescriptor> getInterfaceDescriptors() {

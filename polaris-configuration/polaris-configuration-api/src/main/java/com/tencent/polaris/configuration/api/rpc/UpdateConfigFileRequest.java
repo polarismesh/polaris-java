@@ -15,19 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.configuration.client.internal;
+package com.tencent.polaris.configuration.api.rpc;
 
-/**
- * @author lepdou 2022-03-02
- */
-public interface ConfigFileRepo {
-
-    String getContent();
-
-    String getMd5();
-
-    void addChangeListener(ConfigFileRepoChangeListener listener);
-
-    void removeChangeListener(ConfigFileRepoChangeListener listener);
-
+public class UpdateConfigFileRequest extends CreateConfigFileRequest {
 }
