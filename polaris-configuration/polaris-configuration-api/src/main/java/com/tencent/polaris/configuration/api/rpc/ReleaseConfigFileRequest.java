@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.configuration.api.rpc;
 
+import com.tencent.polaris.api.utils.StringUtils;
+
 public class ReleaseConfigFileRequest {
     private String namespace;
 
@@ -62,7 +64,15 @@ public class ReleaseConfigFileRequest {
     }
 
     public void verify() {
-
+        if (StringUtils.isBlank(getNamespace())) {
+            throw new IllegalArgumentException("namespace cannot be empty.");
+        }
+        if (StringUtils.isBlank(getGroup())) {
+            throw new IllegalArgumentException("file group cannot be empty.");
+        }
+        if (StringUtils.isBlank(getFilename())) {
+            throw new IllegalArgumentException("file name cannot be empty.");
+        }
     }
 
     public static final class Builder {
