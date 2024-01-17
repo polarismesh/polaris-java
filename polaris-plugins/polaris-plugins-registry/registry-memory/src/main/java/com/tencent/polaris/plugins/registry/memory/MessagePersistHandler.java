@@ -17,43 +17,36 @@
 
 package com.tencent.polaris.plugins.registry.memory;
 
-import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.JsonFormat;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
-import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import org.slf4j.Logger;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.yaml.snakeyaml.Yaml;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * 消息持久化处理器，用于持久化PB对象
@@ -65,10 +58,6 @@ public class MessagePersistHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(MessagePersistHandler.class);
 
-    private static final String CACHE_SUFFIX = ".yaml";
-
-    private static final Pattern REGEX_PATTERN_SERVICE = Pattern.compile("^svc#.+#.+#.+\\.yaml$");
-
     private static final String PATTERN_SERVICE = "svc#%s#%s#%s.yaml";
 
     private final File persistDirFile;
@@ -77,19 +66,12 @@ public class MessagePersistHandler {
 
     private final int maxWriteRetry;
 
-    private final int maxReadRetry;
-
-    private final long retryInterval;
-
     private final JsonFormat.Printer printer = JsonFormat.printer();
 
     private final JsonFormat.Parser parser = JsonFormat.parser();
 
-    public MessagePersistHandler(
-            String persistDirPath, int maxWriteRetry, int maxReadRetry, long retryInterval) {
-        this.maxReadRetry = maxReadRetry;
+    public MessagePersistHandler(String persistDirPath, int maxWriteRetry) {
         this.maxWriteRetry = maxWriteRetry;
-        this.retryInterval = retryInterval;
         this.persistDirPath = Utils.translatePath(persistDirPath);
         persistDirFile = new File(this.persistDirPath);
     }
@@ -164,22 +146,6 @@ public class MessagePersistHandler {
         }
     }
 
-    private static ServiceEventKey fileNameToServiceKey(String fileName) {
-        fileName = fileName.substring(0, fileName.length() - CACHE_SUFFIX.length());
-        String[] pieces = fileName.split("#");
-        try {
-            String namespace = URLDecoder.decode(pieces[1], "UTF-8");
-            String service = URLDecoder.decode(pieces[2], "UTF-8");
-            String eventTypeStr = URLDecoder.decode(pieces[3], "UTF-8");
-            ServiceEventKey.EventType eventType = ServiceEventKey.EventType.valueOf(eventTypeStr.toUpperCase());
-            return new ServiceEventKey(new ServiceKey(namespace, service), eventType);
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 is unknown");
-            // or 'throw new AssertionError("Impossible things are happening today. " +
-            //                              "Consider buying a lottery ticket!!");'
-        }
-    }
-
     private void writeTmpFile(File persistTmpFile, File persistLockFile, Message message) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(persistLockFile, "rw");
                 FileChannel channel = raf.getChannel()) {
@@ -236,64 +202,13 @@ public class MessagePersistHandler {
         return persistPath.toAbsolutePath();
     }
 
-    /**
-     * 遍历缓存目录并加载之前缓存的服务信息
-     *
-     * @param message 消息对象
-     * @return 服务标识-消息对象的集合
-     */
-    public Map<ServiceEventKey, Message> loadPersistedServices(Message message) {
-        Path curDir = Paths.get(persistDirPath);
-        Map<ServiceEventKey, Message> result = new HashMap<>();
-        try {
-            Files.walkFileTree(curDir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
-                    Path fileNamePath = filePath.getFileName();
-                    if (null == fileNamePath) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    String fileName = fileNamePath.toString();
-                    if (!REGEX_PATTERN_SERVICE.matcher(fileName).matches()) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    ServiceEventKey svcEventKey = fileNameToServiceKey(fileName);
-                    int retryTimes = 0;
-                    Message readMessage = null;
-                    while (retryTimes <= maxReadRetry) {
-                        retryTimes++;
-                        Message.Builder builder = message.newBuilderForType();
-                        readMessage = loadMessage(filePath.toFile(), builder);
-                        if (null == readMessage) {
-                            Utils.sleepUninterrupted(retryInterval);
-                            continue;
-                        }
-                        break;
-                    }
-                    if (null == readMessage) {
-                        LOG.debug("fail to read service from {} after retry {} times", fileName, retryTimes);
-                        return FileVisitResult.CONTINUE;
-                    }
-                    result.put(svcEventKey, readMessage);
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            LOG.error("fail to visit cache directory {}", persistDirPath);
-        }
-        return result;
-    }
-
     private Message loadMessage(File persistFile, Message.Builder builder) {
         if (null == persistFile || !persistFile.exists()) {
             return null;
         }
-        InputStream inputStream = null;
-        InputStreamReader reader = null;
         Yaml yaml = new Yaml();
-        try {
-            inputStream = new FileInputStream(persistFile);
-            reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
+        try (InputStream inputStream = Files.newInputStream(persistFile.toPath());
+             InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
             Map<String, Object> jsonMap = yaml.load(reader);
             ObjectMapper jsonWriter = new ObjectMapper();
             String jsonStr = jsonWriter.writeValueAsString(jsonMap);
@@ -302,22 +217,15 @@ public class MessagePersistHandler {
         } catch (IOException e) {
             LOG.debug("fail to read file {}", persistFile.getAbsoluteFile(), e);
             return null;
-        } finally {
-            if (null != reader) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    LOG.warn("fail to close reader for {}", persistFile.getAbsoluteFile(), e);
-                }
-            }
-            if (null != inputStream) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    LOG.warn("fail to close stream for {}", persistFile.getAbsoluteFile(), e);
-                }
-            }
         }
     }
 
+    public Message loadFromFile(ServiceEventKey svcEventKey) {
+        String fileName = serviceKeyToFileName(svcEventKey);
+        String persistFilePathStr = persistDirPath + File.separator + fileName;
+        Path filePath = FileSystems.getDefault().getPath(persistFilePathStr);
+        ResponseProto.DiscoverResponse.Builder builder =
+                ResponseProto.DiscoverResponse.getDefaultInstance().newBuilderForType();
+        return loadMessage(filePath.toFile(), builder);
+    }
 }

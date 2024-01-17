@@ -35,10 +35,20 @@ public class ResourceFilter {
     //使用缓存
     private final boolean includeCache;
 
+    private final boolean fallback;
+
     public ResourceFilter(ServiceEventKey svcEventKey, boolean internalRequest, boolean includeCache) {
         this.svcEventKey = svcEventKey;
         this.internalRequest = internalRequest;
         this.includeCache = includeCache;
+        this.fallback = false;
+    }
+
+    public ResourceFilter(ServiceEventKey svcEventKey, boolean internalRequest, boolean includeCache, boolean failover) {
+        this.svcEventKey = svcEventKey;
+        this.internalRequest = internalRequest;
+        this.includeCache = includeCache;
+        this.fallback = failover;
     }
 
     public ServiceEventKey getSvcEventKey() {
@@ -51,5 +61,9 @@ public class ResourceFilter {
 
     public boolean isIncludeCache() {
         return includeCache;
+    }
+
+    public boolean isFallback() {
+        return fallback;
     }
 }

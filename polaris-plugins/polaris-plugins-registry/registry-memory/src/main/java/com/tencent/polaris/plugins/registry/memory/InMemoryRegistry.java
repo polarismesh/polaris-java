@@ -174,24 +174,26 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public ServiceRule getServiceRule(ResourceFilter filter) {
-        RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
-                filter.isInternalRequest());
+        RegistryCacheValue resourceCache = getResource(filter);
         if (null == resourceCache) {
             return ServiceRuleByProto.EMPTY_SERVICE_RULE;
         }
         return (ServiceRule) resourceCache;
     }
 
-    private RegistryCacheValue getResource(ServiceEventKey svcEventKey, boolean includeCache, boolean internalRequest) {
-        CacheObject cacheObject = resourceMap.get(svcEventKey);
+    private RegistryCacheValue getResource(ResourceFilter filter) {
+        CacheObject cacheObject = resourceMap.get(filter.getSvcEventKey());
+        if (null == cacheObject && filter.isFallback()) {
+            cacheObject = loadFileCacheIfAbsent(filter.getSvcEventKey());
+        }
         if (null == cacheObject) {
             return null;
         }
-        RegistryCacheValue registryCacheValue = cacheObject.loadValue(!internalRequest);
+        RegistryCacheValue registryCacheValue = cacheObject.loadValue(!filter.isInternalRequest());
         if (null == registryCacheValue) {
             return null;
         }
-        if (cacheObject.isRemoteUpdated() || includeCache) {
+        if (cacheObject.isRemoteUpdated() || filter.isIncludeCache()) {
             return registryCacheValue;
         }
         return null;
@@ -199,8 +201,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public ServiceInstances getInstances(ResourceFilter filter) {
-        RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
-                filter.isInternalRequest());
+        RegistryCacheValue resourceCache = getResource(filter);
         if (null == resourceCache) {
             return ServiceInstancesByProto.EMPTY_INSTANCES;
         }
@@ -214,8 +215,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public Services getServices(ResourceFilter filter) {
-        RegistryCacheValue resourceCache = getResource(filter.getSvcEventKey(), filter.isIncludeCache(),
-                filter.isInternalRequest());
+        RegistryCacheValue resourceCache = getResource(filter);
         if (null == resourceCache) {
             return ServicesByProto.EMPTY_SERVICES;
         }
@@ -357,7 +357,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
             return;
         }
         ServiceEventKey svcEventKey = new ServiceEventKey(request.getServiceKey(), EventType.INSTANCE);
-        RegistryCacheValue cacheValue = getResource(svcEventKey, true, true);
+        ResourceFilter filter = new ResourceFilter(svcEventKey, true, true);
+        RegistryCacheValue cacheValue = getResource(filter);
         if (null == cacheValue) {
             //服务不存在，忽略
             return;
@@ -453,9 +454,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
         //构建基础属性
         String persistDir = ctx.getConfig().getConsumer().getLocalCache().getPersistDir();
-        int maxReadRetry = ctx.getConfig().getConsumer().getLocalCache().getPersistMaxReadRetry();
         int maxWriteRetry = ctx.getConfig().getConsumer().getLocalCache().getPersistMaxWriteRetry();
-        long retryIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getPersistRetryInterval();
         this.serviceRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache().getServiceRefreshInterval();
         this.serviceListRefreshIntervalMs = ctx.getConfig().getConsumer().getLocalCache()
                 .getServiceListRefreshInterval();
@@ -463,14 +462,13 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         persistEnable = configPersistEnable && StringUtils.isNotBlank(persistDir);
         //启动本地缓存
         if (persistEnable) {
-            messagePersistHandler = new MessagePersistHandler(persistDir, maxWriteRetry, maxReadRetry, retryIntervalMs);
+            messagePersistHandler = new MessagePersistHandler(persistDir, maxWriteRetry);
             try {
                 messagePersistHandler.init();
             } catch (IOException e) {
                 throw new PolarisException(ErrorCode.PLUGIN_ERROR,
                         String.format("plugin %s init failed", getName()), e);
             }
-            loadFileCache(persistDir);
         }
         NamedThreadFactory namedThreadFactory = new NamedThreadFactory(getName());
         serviceExpireTimeMs = ctx.getConfig().getConsumer().getLocalCache().getServiceExpireTime();
@@ -522,27 +520,24 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         }
     }
 
-    private void loadFileCache(String persistPath) {
-        LOG.info("start to load local cache files from {}", persistPath);
-        Map<ServiceEventKey, Message> loadCachedServices = messagePersistHandler.loadPersistedServices(
-                ResponseProto.DiscoverResponse.getDefaultInstance());
-        for (Map.Entry<ServiceEventKey, Message> entry : loadCachedServices.entrySet()) {
-            ServiceEventKey svcEventKey = entry.getKey();
-            Message message = entry.getValue();
-            if (null == message) {
-                LOG.warn("load local cache, response is null, service event:{}", svcEventKey);
-                continue;
-            }
-            CacheHandler cacheHandler = cacheHandlers.get(svcEventKey.getEventType());
-            if (null == cacheHandler) {
-                LOG.warn("[LocalRegistry]resource type {} not registered, ignore the file", svcEventKey.getEventType());
-                continue;
-            }
-            CacheObject cacheObject = new CacheObject(
-                    cacheHandler, svcEventKey, this, message);
-            resourceMap.put(svcEventKey, cacheObject);
+    private CacheObject loadFileCacheIfAbsent(ServiceEventKey svcEventKey) {
+        return resourceMap.computeIfAbsent(svcEventKey, serviceEventKey -> loadFromFile(svcEventKey));
+    }
+
+    private CacheObject loadFromFile(ServiceEventKey svcEventKey) {
+        Message message = messagePersistHandler.loadFromFile(svcEventKey);
+        if (null == message) {
+            LOG.warn("load local cache, response is null, service event:{}", svcEventKey);
+            return null;
         }
-        LOG.info("loaded {} services from local cache", loadCachedServices.size());
+        CacheHandler cacheHandler = cacheHandlers.get(svcEventKey.getEventType());
+        if (null == cacheHandler) {
+            LOG.warn("[LocalRegistry]resource type {} not registered, ignore the file", svcEventKey.getEventType());
+            return null;
+        }
+        CacheObject cacheObject = new CacheObject(cacheHandler, svcEventKey, this, message);
+        LOG.info("loaded service {} from local cache", svcEventKey);
+        return cacheObject;
     }
 
     /**
