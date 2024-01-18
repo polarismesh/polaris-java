@@ -44,11 +44,11 @@ public class ResourceFilter {
         this.fallback = false;
     }
 
-    public ResourceFilter(ServiceEventKey svcEventKey, boolean internalRequest, boolean includeCache, boolean failover) {
+    public ResourceFilter(ServiceEventKey svcEventKey, boolean internalRequest, boolean includeCache, boolean fallback) {
         this.svcEventKey = svcEventKey;
         this.internalRequest = internalRequest;
         this.includeCache = includeCache;
-        this.fallback = failover;
+        this.fallback = fallback;
     }
 
     public ServiceEventKey getSvcEventKey() {
