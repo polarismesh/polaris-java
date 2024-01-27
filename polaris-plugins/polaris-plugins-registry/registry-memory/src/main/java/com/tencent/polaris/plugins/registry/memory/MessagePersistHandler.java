@@ -17,9 +17,6 @@
 
 package com.tencent.polaris.plugins.registry.memory;
 
-import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
@@ -29,6 +26,9 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+import org.yaml.snakeyaml.Yaml;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -47,13 +47,12 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.yaml.snakeyaml.Yaml;
+
+import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * 消息持久化处理器，用于持久化PB对象
@@ -134,7 +133,7 @@ public class MessagePersistHandler {
      * 持久化单个服务实例数据
      *
      * @param svcEventKey 服务标识
-     * @param message 数据内容
+     * @param message     数据内容
      */
     public void saveService(ServiceEventKey svcEventKey, Message message) {
         int retryTimes = 0;
@@ -182,7 +181,7 @@ public class MessagePersistHandler {
 
     private void writeTmpFile(File persistTmpFile, File persistLockFile, Message message) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(persistLockFile, "rw");
-                FileChannel channel = raf.getChannel()) {
+             FileChannel channel = raf.getChannel()) {
             FileLock lock = channel.tryLock();
             if (lock == null) {
                 throw new IOException(
@@ -239,49 +238,26 @@ public class MessagePersistHandler {
     /**
      * 遍历缓存目录并加载之前缓存的服务信息
      *
-     * @param message 消息对象
+     * @param eventKey 消息对象
+     * @param builderSupplier
      * @return 服务标识-消息对象的集合
      */
-    public Map<ServiceEventKey, Message> loadPersistedServices(Message message) {
-        Path curDir = Paths.get(persistDirPath);
-        Map<ServiceEventKey, Message> result = new HashMap<>();
-        try {
-            Files.walkFileTree(curDir, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs) {
-                    Path fileNamePath = filePath.getFileName();
-                    if (null == fileNamePath) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    String fileName = fileNamePath.toString();
-                    if (!REGEX_PATTERN_SERVICE.matcher(fileName).matches()) {
-                        return FileVisitResult.CONTINUE;
-                    }
-                    ServiceEventKey svcEventKey = fileNameToServiceKey(fileName);
-                    int retryTimes = 0;
-                    Message readMessage = null;
-                    while (retryTimes <= maxReadRetry) {
-                        retryTimes++;
-                        Message.Builder builder = message.newBuilderForType();
-                        readMessage = loadMessage(filePath.toFile(), builder);
-                        if (null == readMessage) {
-                            Utils.sleepUninterrupted(retryInterval);
-                            continue;
-                        }
-                        break;
-                    }
-                    if (null == readMessage) {
-                        LOG.debug("fail to read service from {} after retry {} times", fileName, retryTimes);
-                        return FileVisitResult.CONTINUE;
-                    }
-                    result.put(svcEventKey, readMessage);
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            LOG.error("fail to visit cache directory {}", persistDirPath);
+    public Message loadPersistedServices(ServiceEventKey eventKey, Supplier<Message.Builder> builderSupplier) {
+        String fileName = serviceKeyToFileName(eventKey);
+        int retryTimes = 0;
+        Message readMessage = null;
+        Message.Builder builder = builderSupplier.get();
+        while (retryTimes <= maxReadRetry) {
+            retryTimes++;
+            readMessage = loadMessage(Paths.get(persistDirPath, fileName).toFile(), builder);
+            if (null == readMessage) {
+                Utils.sleepUninterrupted(retryInterval);
+                continue;
+            }
+            return readMessage;
         }
-        return result;
+        LOG.debug("fail to read service from {} after retry {} times", fileName, retryTimes);
+        return null;
     }
 
     private Message loadMessage(File persistFile, Message.Builder builder) {
