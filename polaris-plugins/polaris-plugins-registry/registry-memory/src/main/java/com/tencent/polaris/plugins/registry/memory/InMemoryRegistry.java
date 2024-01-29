@@ -532,6 +532,9 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private void loadResourceFromLocal(ServiceEventKey svcEventKey) {
+        if (!persistEnable) {
+            return;
+        }
         CacheHandler cacheHandler = cacheHandlers.get(svcEventKey.getEventType());
         if (null == cacheHandler) {
             LOG.warn("[LocalRegistry]resource type {} not registered, ignore the file", svcEventKey.getEventType());
