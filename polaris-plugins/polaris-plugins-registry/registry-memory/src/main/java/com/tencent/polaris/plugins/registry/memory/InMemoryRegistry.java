@@ -38,6 +38,7 @@ import com.tencent.polaris.api.plugin.registry.ResourceEventListener;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.registry.ServiceUpdateRequest;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
@@ -80,7 +81,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,7 +91,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 /**
  * 本地缓存,保存服务端返回的实例信息.
@@ -187,13 +187,18 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     private RegistryCacheValue getResource(ServiceEventKey svcEventKey, boolean includeCache, boolean internalRequest) {
         CacheObject cacheObject = resourceMap.get(svcEventKey);
-        if (null == cacheObject) {
-            // 没有从 remote 正常获取到数据，从本地容灾文件进行数据获取
-            loadResourceFromLocal(svcEventKey);
-            cacheObject = resourceMap.get(svcEventKey);
-            if (Objects.isNull(cacheObject)) {
-                return null;
+        if (null == cacheObject || Objects.equals("", cacheObject.getRevision())) {
+            if (includeCache) {
+                // 没有从 remote 正常获取到数据，从本地容灾文件进行数据获取
+                loadResourceFromLocal(svcEventKey);
+                cacheObject = resourceMap.get(svcEventKey);
+                if (Objects.isNull(cacheObject)) {
+                    return null;
+                }
             }
+        }
+        if (Objects.isNull(cacheObject)) {
+            return null;
         }
         RegistryCacheValue registryCacheValue = cacheObject.loadValue(!internalRequest);
         if (null == registryCacheValue) {
@@ -258,10 +263,9 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
             throw new PolarisException(ErrorCode.INTERNAL_ERROR,
                     String.format("[LocalRegistry] unRegistered resource type %s", svcEventKey.getEventType()));
         }
-        CacheObject cacheObject = resourceMap
-                .computeIfAbsent(svcEventKey,
-                        serviceEventKey -> new CacheObject(handler, svcEventKey, InMemoryRegistry.this)
-                );
+        CacheObject cacheObject = resourceMap.computeIfAbsent(svcEventKey,
+                serviceEventKey -> new CacheObject(handler, svcEventKey, InMemoryRegistry.this)
+        );
         //添加监听器
         cacheObject.addNotifier(notifier);
         //触发往serverConnector注册
@@ -544,9 +548,12 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         if (Objects.isNull(message)) {
             return;
         }
-        CacheObject cacheObject = new CacheObject(
-                cacheHandler, svcEventKey, this, message);
-        resourceMap.put(svcEventKey, cacheObject);
+        CacheObject waitSave = new CacheObject(cacheHandler, svcEventKey, InMemoryRegistry.this, message);
+        CacheObject saveObj = resourceMap.computeIfAbsent(svcEventKey, eventKey -> waitSave);
+        // 这里是直接对比两个对象的地址是否一致，如果不一致，才调用 onEvent
+        if (waitSave != saveObj) {
+            saveObj.onEventUpdate(new ServerEvent(svcEventKey, message, null));
+        }
     }
 
     /**
