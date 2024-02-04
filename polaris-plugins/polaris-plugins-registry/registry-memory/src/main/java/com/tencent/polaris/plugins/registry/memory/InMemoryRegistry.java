@@ -38,6 +38,7 @@ import com.tencent.polaris.api.plugin.registry.ResourceEventListener;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.registry.ServiceUpdateRequest;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
@@ -71,6 +72,8 @@ import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -88,7 +91,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
+import java.util.function.Function;
 
 /**
  * 本地缓存,保存服务端返回的实例信息.
@@ -184,7 +187,17 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     private RegistryCacheValue getResource(ServiceEventKey svcEventKey, boolean includeCache, boolean internalRequest) {
         CacheObject cacheObject = resourceMap.get(svcEventKey);
-        if (null == cacheObject) {
+        if (null == cacheObject || Objects.equals("", cacheObject.getRevision())) {
+            if (includeCache) {
+                // 没有从 remote 正常获取到数据，从本地容灾文件进行数据获取
+                loadResourceFromLocal(svcEventKey);
+                cacheObject = resourceMap.get(svcEventKey);
+                if (Objects.isNull(cacheObject)) {
+                    return null;
+                }
+            }
+        }
+        if (Objects.isNull(cacheObject)) {
             return null;
         }
         RegistryCacheValue registryCacheValue = cacheObject.loadValue(!internalRequest);
@@ -240,7 +253,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 加载资源
      *
      * @param svcEventKey 服务资源名
-     * @param notifier 通知器
+     * @param notifier    通知器
      * @throws PolarisException 异常
      */
     private void loadRemoteValue(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
@@ -250,10 +263,9 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
             throw new PolarisException(ErrorCode.INTERNAL_ERROR,
                     String.format("[LocalRegistry] unRegistered resource type %s", svcEventKey.getEventType()));
         }
-        CacheObject cacheObject = resourceMap
-                .computeIfAbsent(svcEventKey,
-                        serviceEventKey -> new CacheObject(handler, svcEventKey, InMemoryRegistry.this)
-                );
+        CacheObject cacheObject = resourceMap.computeIfAbsent(svcEventKey,
+                serviceEventKey -> new CacheObject(handler, svcEventKey, InMemoryRegistry.this)
+        );
         //添加监听器
         cacheObject.addNotifier(notifier);
         //触发往serverConnector注册
@@ -320,7 +332,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private void reportCircuitStat(Entry<StatusDimension, CircuitBreakerStatus> dimensionEntry,
-            Instance instance) {
+                                   Instance instance) {
         if (null != statPlugins) {
             try {
                 for (Plugin statPlugin : statPlugins) {
@@ -337,7 +349,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     }
 
     private CircuitBreakGauge convertToCircuitBreakGauge(Entry<StatusDimension, CircuitBreakerStatus> dimensionEntry,
-            Instance instance) {
+                                                         Instance instance) {
         DefaultCircuitBreakResult result = new DefaultCircuitBreakResult();
         result.setMethod(dimensionEntry.getKey().getMethod());
         result.setCallerService(dimensionEntry.getKey().getCallerService());
@@ -470,7 +482,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
                 throw new PolarisException(ErrorCode.PLUGIN_ERROR,
                         String.format("plugin %s init failed", getName()), e);
             }
-            loadFileCache(persistDir);
+            // 这里不能直接一把 Load 所有容灾文件，应该做成按需加载
+            // loadFileCache(persistDir);
         }
         NamedThreadFactory namedThreadFactory = new NamedThreadFactory(getName());
         serviceExpireTimeMs = ctx.getConfig().getConsumer().getLocalCache().getServiceExpireTime();
@@ -497,7 +510,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 持久化消息
      *
      * @param svcEventKey 资源KEY
-     * @param message 原始消息
+     * @param message     原始消息
      */
     public void saveMessageToFile(ServiceEventKey svcEventKey, Message message) {
         if (!persistEnable) {
@@ -522,27 +535,25 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         }
     }
 
-    private void loadFileCache(String persistPath) {
-        LOG.info("start to load local cache files from {}", persistPath);
-        Map<ServiceEventKey, Message> loadCachedServices = messagePersistHandler.loadPersistedServices(
-                ResponseProto.DiscoverResponse.getDefaultInstance());
-        for (Map.Entry<ServiceEventKey, Message> entry : loadCachedServices.entrySet()) {
-            ServiceEventKey svcEventKey = entry.getKey();
-            Message message = entry.getValue();
-            if (null == message) {
-                LOG.warn("load local cache, response is null, service event:{}", svcEventKey);
-                continue;
-            }
-            CacheHandler cacheHandler = cacheHandlers.get(svcEventKey.getEventType());
-            if (null == cacheHandler) {
-                LOG.warn("[LocalRegistry]resource type {} not registered, ignore the file", svcEventKey.getEventType());
-                continue;
-            }
-            CacheObject cacheObject = new CacheObject(
-                    cacheHandler, svcEventKey, this, message);
-            resourceMap.put(svcEventKey, cacheObject);
+    private void loadResourceFromLocal(ServiceEventKey svcEventKey) {
+        if (!persistEnable) {
+            return;
         }
-        LOG.info("loaded {} services from local cache", loadCachedServices.size());
+        CacheHandler cacheHandler = cacheHandlers.get(svcEventKey.getEventType());
+        if (null == cacheHandler) {
+            LOG.warn("[LocalRegistry]resource type {} not registered, ignore the file", svcEventKey.getEventType());
+            return;
+        }
+        Message message = messagePersistHandler.loadPersistedServices(svcEventKey, ResponseProto.DiscoverResponse::newBuilder);
+        if (Objects.isNull(message)) {
+            return;
+        }
+        CacheObject waitSave = new CacheObject(cacheHandler, svcEventKey, InMemoryRegistry.this, message);
+        CacheObject saveObj = resourceMap.computeIfAbsent(svcEventKey, eventKey -> waitSave);
+        // 这里是直接对比两个对象的地址是否一致，如果不一致，才调用 onEvent
+        if (waitSave != saveObj) {
+            saveObj.onEventUpdate(new ServerEvent(svcEventKey, message, null));
+        }
     }
 
     /**

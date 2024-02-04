@@ -32,4 +32,39 @@ public class WatchInstancesRequest extends BaseEntity {
         this.listeners = listeners;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private String service;
+        private String namespace;
+        private List<ServiceListener> listeners;
+
+        private Builder() {
+        }
+
+        public Builder service(String service) {
+            this.service = service;
+            return this;
+        }
+
+        public Builder namespace(String namespace) {
+            this.namespace = namespace;
+            return this;
+        }
+
+        public Builder listeners(List<ServiceListener> listeners) {
+            this.listeners = listeners;
+            return this;
+        }
+
+        public WatchInstancesRequest build() {
+            WatchInstancesRequest watchInstancesRequest = new WatchInstancesRequest();
+            watchInstancesRequest.setService(service);
+            watchInstancesRequest.setNamespace(namespace);
+            watchInstancesRequest.setListeners(listeners);
+            return watchInstancesRequest;
+        }
+    }
 }
