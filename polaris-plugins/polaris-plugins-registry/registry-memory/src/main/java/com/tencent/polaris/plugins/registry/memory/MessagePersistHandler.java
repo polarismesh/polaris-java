@@ -48,6 +48,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -70,6 +75,9 @@ public class MessagePersistHandler {
 
     private static final String PATTERN_SERVICE = "svc#%s#%s#%s.yaml";
 
+    // 同一个文件，两次读取之间的时间间隔为10s
+    private static final long MESSAGE_READ_INTERVAL = TimeUnit.SECONDS.toMillis(10);
+
     private final File persistDirFile;
 
     private final String persistDirPath;
@@ -83,6 +91,9 @@ public class MessagePersistHandler {
     private final JsonFormat.Printer printer = JsonFormat.printer();
 
     private final JsonFormat.Parser parser = JsonFormat.parser();
+
+    // 缓存文件上一次加载的时间，避免频繁对同一个文件进行读取
+    private final Map<ServiceEventKey, Long> messageLastReadTime = new ConcurrentHashMap<>();
 
     public MessagePersistHandler(
             String persistDirPath, int maxWriteRetry, int maxReadRetry, long retryInterval) {
@@ -235,6 +246,31 @@ public class MessagePersistHandler {
         return persistPath.toAbsolutePath();
     }
 
+    boolean shouldLoadFromStore(ServiceEventKey eventKey) {
+        long currentTimeMs = System.currentTimeMillis();
+        Long previousTimeMs = messageLastReadTime.putIfAbsent(eventKey, currentTimeMs);
+        final boolean[] loadFromStore = {false};
+        if (null != previousTimeMs) {
+            if (currentTimeMs - previousTimeMs < MESSAGE_READ_INTERVAL) {
+                return false;
+            }
+            messageLastReadTime.computeIfPresent(eventKey, new BiFunction<ServiceEventKey, Long, Long>() {
+                @Override
+                public Long apply(ServiceEventKey serviceEventKey, Long aLong) {
+                    if (Objects.equals(aLong, previousTimeMs)) {
+                        loadFromStore[0] = true;
+                        return currentTimeMs;
+                    }
+                    return aLong;
+                }
+            });
+        } else {
+            // first time
+            loadFromStore[0] = true;
+        }
+        return loadFromStore[0];
+    }
+
     /**
      * 遍历缓存目录并加载之前缓存的服务信息
      *
@@ -243,6 +279,9 @@ public class MessagePersistHandler {
      * @return 服务标识-消息对象的集合
      */
     public Message loadPersistedServices(ServiceEventKey eventKey, Supplier<Message.Builder> builderSupplier) {
+        if (!shouldLoadFromStore(eventKey)) {
+            return null;
+        }
         String fileName = serviceKeyToFileName(eventKey);
         int retryTimes = 0;
         Message readMessage = null;
