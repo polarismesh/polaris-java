@@ -34,16 +34,14 @@ import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.flow.AsyncFlow;
 import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
-import com.tencent.polaris.discovery.client.flow.CommonUnWatchServiceRequest;
-import com.tencent.polaris.discovery.client.flow.CommonWatchServiceRequest;
 import com.tencent.polaris.discovery.client.flow.SyncFlow;
-import com.tencent.polaris.discovery.client.flow.WatchFlow;
 import com.tencent.polaris.discovery.client.util.Validator;
 
 /**
@@ -56,13 +54,11 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
 
     private final Configuration config;
 
+    private DiscoveryFlow discoveryFlow;
+
     private final SyncFlow syncFlow = new SyncFlow();
 
     private final AsyncFlow asyncFlow = new AsyncFlow();
-
-    private final WatchFlow watchFlow = new WatchFlow();
-
-    private DiscoveryFlow discoveryFlow;
 
     public DefaultConsumerAPI(SDKContext context) {
         super(context);
@@ -74,7 +70,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
         discoveryFlow = sdkContext.getOrInitFlow(DiscoveryFlow.class);
         syncFlow.init(sdkContext.getExtensions());
         asyncFlow.init(syncFlow);
-        watchFlow.init(sdkContext.getExtensions(), syncFlow);
     }
 
     @Override
@@ -159,20 +154,24 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public WatchServiceResponse watchService(WatchServiceRequest request) throws PolarisException {
         checkAvailable("ConsumerAPI");
         Validator.validateWatchServiceRequest(request);
-        CommonWatchServiceRequest watchServiceRequest = new CommonWatchServiceRequest(request,
-                new CommonInstancesRequest(GetAllInstancesRequest.builder()
-                        .service(request.getService())
-                        .namespace(request.getNamespace())
-                        .build(), config));
-        return watchFlow.commonWatchService(watchServiceRequest);
+        InstancesResponse response = discoveryFlow.watchInstances(WatchInstancesRequest.builder()
+                .service(request.getService())
+                .namespace(request.getNamespace())
+                .listeners(request.getListeners())
+                .build());
+        return new WatchServiceResponse(response, true);
     }
 
     @Override
     public boolean unWatchService(UnWatchServiceRequest request) {
         checkAvailable("ConsumerAPI");
         Validator.validateUnWatchServiceRequest(request);
-        CommonUnWatchServiceRequest unWatchServiceRequest = new CommonUnWatchServiceRequest(request);
-        return watchFlow.commonUnWatchService(unWatchServiceRequest).isSuccess();
+        discoveryFlow.unWatchInstances(WatchInstancesRequest.builder()
+                .service(request.getService())
+                .namespace(request.getNamespace())
+                .listeners(request.getListeners())
+                .build());
+        return true;
     }
 
     @Override
