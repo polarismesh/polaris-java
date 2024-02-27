@@ -619,6 +619,8 @@ public class GrpcConnector extends DestroyableServerConnector {
         for (InterfaceDescriptor i : req.getInterfaceDescriptors()) {
             ServiceContractProto.InterfaceDescriptor.Builder interfaceDescriptorBuilder =
                     ServiceContractProto.InterfaceDescriptor.newBuilder();
+            interfaceDescriptorBuilder.setName(i.getName());
+            interfaceDescriptorBuilder.setId(i.getId());
             interfaceDescriptorBuilder.setMethod(i.getMethod());
             interfaceDescriptorBuilder.setPath(i.getPath());
             interfaceDescriptorBuilder.setContent(i.getContent());
