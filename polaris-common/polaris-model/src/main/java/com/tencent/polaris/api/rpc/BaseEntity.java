@@ -29,6 +29,8 @@ public class BaseEntity {
 
     private String namespace;
 
+    private String token;
+
     public String getService() {
         return service;
     }
@@ -43,6 +45,14 @@ public class BaseEntity {
 
     public void setNamespace(String namespace) {
         this.namespace = namespace;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     @Override
