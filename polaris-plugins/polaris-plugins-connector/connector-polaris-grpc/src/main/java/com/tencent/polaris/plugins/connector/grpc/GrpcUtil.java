@@ -10,11 +10,13 @@ import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.Disc
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import io.grpc.Metadata;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.MetadataUtils;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -188,6 +190,15 @@ public class GrpcUtil {
         throw exception;
     }
 
+    public static void checkGrpcUnImplement(Throwable t) throws PolarisException {
+        if (t instanceof StatusRuntimeException) {
+            StatusRuntimeException grpcEx = (StatusRuntimeException) t;
+            // 如果是服务端未实现
+            if (Objects.equals(grpcEx.getStatus().getCode(), io.grpc.Status.Code.UNIMPLEMENTED)) {
+                throw new PolarisException(ErrorCode.SERVER_ERROR, grpcEx.getMessage());
+            }
+        }
+    }
 
     public static DiscoverRequestType buildDiscoverRequestType(
             ServiceEventKey.EventType type) {

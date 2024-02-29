@@ -69,6 +69,8 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.Dis
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.AbstractStub;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
@@ -76,6 +78,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -613,15 +616,15 @@ public class GrpcConnector extends DestroyableServerConnector {
         serviceContractBuilder.setService(req.getService());
         serviceContractBuilder.setNamespace(req.getNamespace());
         serviceContractBuilder.setProtocol(req.getProtocol());
-        serviceContractBuilder.setVersion(req.getVersion());
-        serviceContractBuilder.setContent(req.getContent());
+        serviceContractBuilder.setVersion(StringUtils.defaultString(req.getVersion()));
+        serviceContractBuilder.setContent(StringUtils.defaultString(req.getContent()));
+        serviceContractBuilder.setRevision(StringUtils.defaultString(req.getRevision()));
         List<ServiceContractProto.InterfaceDescriptor> interfaceDescriptorList = new ArrayList<>();
         for (InterfaceDescriptor i : req.getInterfaceDescriptors()) {
             ServiceContractProto.InterfaceDescriptor.Builder interfaceDescriptorBuilder =
                     ServiceContractProto.InterfaceDescriptor.newBuilder();
             interfaceDescriptorBuilder.setName(i.getName());
-            interfaceDescriptorBuilder.setId(i.getId());
-            interfaceDescriptorBuilder.setMethod(i.getMethod());
+            interfaceDescriptorBuilder.setMethod(StringUtils.defaultString(i.getMethod()));
             interfaceDescriptorBuilder.setPath(i.getPath());
             interfaceDescriptorBuilder.setContent(i.getContent());
             interfaceDescriptorList.add(interfaceDescriptorBuilder.build());
@@ -647,6 +650,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
+            attachAccessToken(req.getToken(), stub);
             ResponseProto.Response reportServiceContractResponse =
                     stub.reportServiceContract(buildReportServiceContractRequest(req));
             GrpcUtil.checkResponse(reportServiceContractResponse);
@@ -658,6 +662,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            GrpcUtil.checkGrpcUnImplement(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("fail to report service contract, "
                     + "service %s", serviceKey), t);
         } finally {
@@ -665,6 +670,17 @@ public class GrpcConnector extends DestroyableServerConnector {
                 connection.release(GrpcUtil.OP_KEY_REPORT_SERVICE_CONTRACT);
             }
         }
+    }
+
+    private <T extends AbstractStub<T>> void attachAccessToken(String token, T stub) {
+        if (StringUtils.isBlank(token)) {
+            return;
+        }
+        GrpcUtil.attachRequestHeader(stub, new HashMap<String, String>() {
+            {
+                put("X-Polaris-Token", token);
+            }
+        });
     }
 
     @Override
@@ -683,6 +699,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
+            attachAccessToken(req.getToken(), stub);
             ResponseProto.Response response = stub.getServiceContract(req.toQuerySpec());
             GrpcUtil.checkResponse(response);
             ServiceContractProto.ServiceContract remoteVal = response.getServiceContract();
@@ -694,6 +711,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            GrpcUtil.checkGrpcUnImplement(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("fail to report service contract, "
                     + "service %s", serviceKey), t);
         } finally {

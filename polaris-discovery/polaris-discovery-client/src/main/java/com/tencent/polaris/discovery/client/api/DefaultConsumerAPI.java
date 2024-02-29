@@ -19,6 +19,7 @@ package com.tencent.polaris.discovery.client.api;
 
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
@@ -37,6 +38,7 @@ import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.flow.AsyncFlow;
@@ -177,7 +179,15 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     @Override
     public ServiceRuleResponse getServiceContract(GetServiceContractRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
-        Validator.validateGetServiceContractRequest(req);
+        if (StringUtils.isBlank(req.getService())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract namespace can not be blank");
+        }
+        if (StringUtils.isBlank(req.getName())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract name can not be blank");
+        }
+        if (StringUtils.isBlank(req.getProtocol())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract protocol can not be blank");
+        }
         return discoveryFlow.getServiceContract(req);
     }
 }

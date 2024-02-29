@@ -42,6 +42,10 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     private List<InterfaceDescriptor> interfaceDescriptors;
 
+    private String revision;
+
+    private String token;
+
     private TargetServer targetServer;
 
     public String getName() {
@@ -98,6 +102,22 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     public void setInterfaceDescriptors(List<InterfaceDescriptor> interfaceDescriptors) {
         this.interfaceDescriptors = interfaceDescriptors;
+    }
+
+    public String getRevision() {
+        return revision;
+    }
+
+    public void setRevision(String revision) {
+        this.revision = revision;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public TargetServer getTargetServer() {

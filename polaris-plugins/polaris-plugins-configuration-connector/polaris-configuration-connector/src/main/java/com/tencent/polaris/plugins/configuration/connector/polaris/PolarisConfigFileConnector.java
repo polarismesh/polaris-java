@@ -150,6 +150,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            checkGrpcUnImplement(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format(
                             "failed to create config file. namespace = %s, group = %s, file = %s, content = %s",
@@ -183,6 +184,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            checkGrpcUnImplement(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format(
                             "failed to update config file. namespace = %s, group = %s, file = %s, content = %s",
@@ -216,6 +218,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            checkGrpcUnImplement(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format(
                             "failed to release config file. namespace = %s, group = %s, file = %s",
@@ -248,6 +251,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            checkGrpcUnImplement(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format(
                             "failed to upsert and publish config file. namespace = %s, group = %s, file = %s",

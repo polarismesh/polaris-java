@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.tencent.polaris.api.config.global.ClusterType;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -25,9 +26,11 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
+import io.grpc.StatusRuntimeException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class AbstractPolarisConfigConnector implements Plugin {
@@ -55,6 +58,16 @@ public abstract class AbstractPolarisConfigConnector implements Plugin {
     public void destroy() {
         if (connectionManager != null) {
             connectionManager.destroy();
+        }
+    }
+
+    protected void checkGrpcUnImplement(Throwable t) throws PolarisException {
+        if (t instanceof StatusRuntimeException) {
+            StatusRuntimeException grpcEx = (StatusRuntimeException) t;
+            // 如果是服务端未实现
+            if (Objects.equals(grpcEx.getStatus().getCode(), io.grpc.Status.Code.UNIMPLEMENTED)) {
+                throw new PolarisException(ErrorCode.SERVER_ERROR, grpcEx.getMessage());
+            }
         }
     }
 }
