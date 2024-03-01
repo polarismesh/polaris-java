@@ -180,9 +180,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     @Override
     public ServiceRuleResponse getServiceContract(GetServiceContractRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
-        if (StringUtils.isBlank(req.getService())) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract namespace can not be blank");
-        }
         if (StringUtils.isBlank(req.getName())) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract name can not be blank");
         }

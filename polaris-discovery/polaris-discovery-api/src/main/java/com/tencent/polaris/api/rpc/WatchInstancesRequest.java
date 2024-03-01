@@ -69,6 +69,7 @@ public class WatchInstancesRequest extends BaseEntity {
             WatchInstancesRequest watchInstancesRequest = new WatchInstancesRequest();
             watchInstancesRequest.setService(service);
             watchInstancesRequest.setNamespace(namespace);
+            watchInstancesRequest.setToken(token);
             watchInstancesRequest.setListeners(listeners);
             return watchInstancesRequest;
         }
