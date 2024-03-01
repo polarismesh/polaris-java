@@ -20,6 +20,8 @@ package com.tencent.polaris.discovery.client.flow;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
+import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 
 import java.util.Collections;
@@ -30,23 +32,19 @@ import java.util.Set;
  */
 public class CommonWatchServiceRequest  implements ServiceEventKeysProvider {
 
-    private final WatchServiceRequest watchServiceRequest;
+    private final WatchInstancesRequest watchServiceRequest;
 
     private final ServiceEventKey eventKey;
 
     private CommonInstancesRequest allRequest;
 
-    public CommonWatchServiceRequest(WatchServiceRequest watchServiceRequest) {
+    public CommonWatchServiceRequest(WatchInstancesRequest watchServiceRequest, CommonInstancesRequest allRequest) {
         this.watchServiceRequest = watchServiceRequest;
         this.eventKey = ServiceEventKey
                 .builder()
                 .serviceKey(new ServiceKey(watchServiceRequest.getNamespace(), watchServiceRequest.getService()))
                 .eventType(ServiceEventKey.EventType.INSTANCE).
                 build();
-    }
-
-    public CommonWatchServiceRequest(WatchServiceRequest watchServiceRequest, CommonInstancesRequest allRequest) {
-        this(watchServiceRequest);
         this.allRequest = allRequest;
     }
 
@@ -65,7 +63,7 @@ public class CommonWatchServiceRequest  implements ServiceEventKeysProvider {
         return eventKey;
     }
 
-    public WatchServiceRequest getWatchServiceRequest() {
+    public WatchInstancesRequest getWatchServiceRequest() {
         return watchServiceRequest;
     }
 

@@ -34,6 +34,7 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
@@ -168,7 +169,7 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public boolean unWatchService(UnWatchServiceRequest request) {
         checkAvailable("ConsumerAPI");
         Validator.validateUnWatchServiceRequest(request);
-        discoveryFlow.unWatchInstances(WatchInstancesRequest.builder()
+        discoveryFlow.unWatchInstances(UnWatchInstancesRequest.builder()
                 .service(request.getService())
                 .namespace(request.getNamespace())
                 .listeners(request.getListeners())
@@ -179,9 +180,6 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     @Override
     public ServiceRuleResponse getServiceContract(GetServiceContractRequest req) throws PolarisException {
         checkAvailable("ConsumerAPI");
-        if (StringUtils.isBlank(req.getService())) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract namespace can not be blank");
-        }
         if (StringUtils.isBlank(req.getName())) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract name can not be blank");
         }

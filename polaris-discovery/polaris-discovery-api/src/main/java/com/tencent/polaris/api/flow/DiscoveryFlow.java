@@ -32,6 +32,7 @@ import com.tencent.polaris.api.rpc.InstancesFuture;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.client.flow.AbstractFlow;
 
@@ -53,7 +54,7 @@ public interface DiscoveryFlow extends AbstractFlow {
         return null;
     }
 
-    default InstancesResponse unWatchInstances(WatchInstancesRequest request) {
+    default InstancesResponse unWatchInstances(UnWatchInstancesRequest request) {
         return null;
     }
 
