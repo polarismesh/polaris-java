@@ -50,6 +50,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
@@ -69,8 +70,6 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.Dis
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
-import io.grpc.StatusRuntimeException;
-import io.grpc.stub.AbstractStub;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
@@ -78,7 +77,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -119,6 +117,8 @@ public class GrpcConnector extends DestroyableServerConnector {
     private boolean isDiscoveryEnable = true;
     private String clientInstanceId;
     private boolean isReportServiceContractEnable = true;
+
+    private ServerConnectorConfigImpl connectorConfig;
 
     /**
      * 发送消息的线程池
@@ -172,6 +172,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     }
 
     private void initActually(InitContext ctx, ServerConnectorConfig connectorConfig) {
+        this.connectorConfig = (ServerConnectorConfigImpl) connectorConfig;
         readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_DISCOVER_CLUSTER, readyFuture);
@@ -255,6 +256,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                 String reqId = GrpcUtil.nextGetInstanceReqId();
                 PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
                 GrpcUtil.attachRequestHeader(namingStub, reqId);
+                GrpcUtil.attachAccessToken(connectorConfig.getToken(), namingStub);
                 CountDownLatch countDownLatch = new CountDownLatch(1);
                 StreamObserver<DiscoverRequest> discoverClient = namingStub
                         .discover(new StreamObserver<DiscoverResponse>() {
@@ -347,6 +349,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             GrpcUtil.attachRequestHeader(stub, customHeader);
+            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response registerInstanceResponse = stub.registerInstance(buildRegisterInstanceRequest(req));
             GrpcUtil.checkResponse(registerInstanceResponse);
             if (!registerInstanceResponse.hasInstance()) {
@@ -501,6 +504,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceDeRegisterReqId());
+            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response deregisterInstanceResponse = stub
                     .deregisterInstance(buildDeregisterInstanceRequest(req));
             GrpcUtil.checkResponse(deregisterInstanceResponse);
@@ -539,6 +543,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
+            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             startTimestamp = System.currentTimeMillis();
             LOG.debug("start heartbeat at {} ms.", startTimestamp);
             ResponseProto.Response heartbeatResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
@@ -577,6 +582,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
+            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ClientProto.Client request = buildReportRequest(req);
             ResponseProto.Response response = stub.reportClient(request);
             LOG.debug("reportClient req:{}, rsp:{}", req, TextFormat.shortDebugString(response));
@@ -612,10 +618,10 @@ public class GrpcConnector extends DestroyableServerConnector {
     private ServiceContractProto.ServiceContract buildReportServiceContractRequest(ReportServiceContractRequest req) {
         ServiceContractProto.ServiceContract.Builder serviceContractBuilder =
                 ServiceContractProto.ServiceContract.newBuilder();
-        serviceContractBuilder.setName(req.getName());
-        serviceContractBuilder.setService(req.getService());
-        serviceContractBuilder.setNamespace(req.getNamespace());
-        serviceContractBuilder.setProtocol(req.getProtocol());
+        serviceContractBuilder.setName(StringUtils.defaultString(req.getName()));
+        serviceContractBuilder.setService(StringUtils.defaultString(req.getService()));
+        serviceContractBuilder.setNamespace(StringUtils.defaultString(req.getNamespace()));
+        serviceContractBuilder.setProtocol(StringUtils.defaultString(req.getProtocol()));
         serviceContractBuilder.setVersion(StringUtils.defaultString(req.getVersion()));
         serviceContractBuilder.setContent(StringUtils.defaultString(req.getContent()));
         serviceContractBuilder.setRevision(StringUtils.defaultString(req.getRevision()));
@@ -623,10 +629,10 @@ public class GrpcConnector extends DestroyableServerConnector {
         for (InterfaceDescriptor i : req.getInterfaceDescriptors()) {
             ServiceContractProto.InterfaceDescriptor.Builder interfaceDescriptorBuilder =
                     ServiceContractProto.InterfaceDescriptor.newBuilder();
-            interfaceDescriptorBuilder.setName(i.getName());
+            interfaceDescriptorBuilder.setName(StringUtils.defaultString(i.getName()));
             interfaceDescriptorBuilder.setMethod(StringUtils.defaultString(i.getMethod()));
-            interfaceDescriptorBuilder.setPath(i.getPath());
-            interfaceDescriptorBuilder.setContent(i.getContent());
+            interfaceDescriptorBuilder.setPath(StringUtils.defaultString(i.getPath()));
+            interfaceDescriptorBuilder.setContent(StringUtils.defaultString(i.getContent()));
             interfaceDescriptorList.add(interfaceDescriptorBuilder.build());
         }
         serviceContractBuilder.addAllInterfaces(interfaceDescriptorList);
@@ -650,7 +656,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
-            attachAccessToken(req.getToken(), stub);
+            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response reportServiceContractResponse =
                     stub.reportServiceContract(buildReportServiceContractRequest(req));
             GrpcUtil.checkResponse(reportServiceContractResponse);
@@ -672,17 +678,6 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
     }
 
-    private <T extends AbstractStub<T>> void attachAccessToken(String token, T stub) {
-        if (StringUtils.isBlank(token)) {
-            return;
-        }
-        GrpcUtil.attachRequestHeader(stub, new HashMap<String, String>() {
-            {
-                put("X-Polaris-Token", token);
-            }
-        });
-    }
-
     @Override
     public ServiceRuleByProto getServiceContract(CommonServiceContractRequest req) throws PolarisException {
         if (!isReportServiceContractEnable()) {
@@ -699,7 +694,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
             GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
-            attachAccessToken(req.getToken(), stub);
+            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response response = stub.getServiceContract(req.toQuerySpec());
             GrpcUtil.checkResponse(response);
             ServiceContractProto.ServiceContract remoteVal = response.getServiceContract();
@@ -826,5 +821,9 @@ public class GrpcConnector extends DestroyableServerConnector {
             }
             streamClient.closeStream(true);
         }
+    }
+
+    public ServerConnectorConfigImpl getConnectorConfig() {
+        return connectorConfig;
     }
 }

@@ -37,6 +37,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * @author lepdou 2022-03-02
@@ -80,8 +81,11 @@ public class ConfigFileLongPullService {
      */
     private final RetryPolicy retryPolicy;
 
+    private String token;
+
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
+        this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.started = new AtomicReference<>(false);
         this.configFilePool = Maps.newConcurrentMap();
         this.notifiedVersion = Maps.newConcurrentMap();
@@ -133,7 +137,6 @@ public class ConfigFileLongPullService {
         while (!isLongPullingStopped.get() && !Thread.currentThread().isInterrupted()) {
             try {
                 List<ConfigFile> watchConfigFiles = assembleWatchConfigFiles();
-
                 LOGGER.debug("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
                         retryPolicy.getCurrentDelayTime());
 

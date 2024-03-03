@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.configuration;
 import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt64Value;
+import com.tencent.polaris.api.rpc.BaseEntity;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
 
 import java.util.Date;
@@ -28,7 +29,7 @@ import java.util.Objects;
 /**
  * @author lepdou 2022-03-02
  */
-public class ConfigFile {
+public class ConfigFile extends BaseEntity {
 
     private String namespace;
     private String fileGroup;

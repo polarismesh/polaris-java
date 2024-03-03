@@ -56,6 +56,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private ConfigFilePersistentHandler configFilePersistHandler;
     private final boolean fallbackToLocalCache;
 
+    private String token;
+
     static {
         createPullExecutorService();
     }
@@ -69,6 +71,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         super(sdkContext, configFileMetadata);
         //保证线程池正常初始化
         createPullExecutorService();
+        this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.remoteConfigFile = new AtomicReference<>();
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);

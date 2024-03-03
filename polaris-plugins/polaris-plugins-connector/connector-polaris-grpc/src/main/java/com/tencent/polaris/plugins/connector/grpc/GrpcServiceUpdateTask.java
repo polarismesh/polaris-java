@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
@@ -37,8 +38,12 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
     private final AtomicLong msgSendTime = new AtomicLong(0);
     private final AtomicLong totalRequests = new AtomicLong(0);
 
-    public GrpcServiceUpdateTask(ServiceEventHandler handler, DestroyableServerConnector connector) {
+    private ServerConnectorConfigImpl connectorConfig;
+
+    public GrpcServiceUpdateTask(ServiceEventHandler handler,
+                                 DestroyableServerConnector connector) {
         super(handler, connector);
+        this.connectorConfig = ((GrpcConnector) connector).getConnectorConfig();
     }
 
     @Override
@@ -87,7 +92,7 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
                     grpcConnector.retryServiceUpdateTask(serviceUpdateTask);
                     return;
                 }
-                specStreamClient = new SpecStreamClient(connection, grpcConnector.getConnectionIdleTimeoutMs(),
+                specStreamClient = new SpecStreamClient(connectorConfig, connection, grpcConnector.getConnectionIdleTimeoutMs(),
                         serviceUpdateTask);
                 streamClientAtomicReference.set(specStreamClient);
                 LOG.info("[ServerConnector]success to create stream client for task {}", serviceUpdateTask);

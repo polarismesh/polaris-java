@@ -88,7 +88,6 @@ public class UnWatchInstancesRequest extends BaseEntity {
             UnWatchInstancesRequest unWatchInstancesRequest = new UnWatchInstancesRequest();
             unWatchInstancesRequest.setService(service);
             unWatchInstancesRequest.setNamespace(namespace);
-            unWatchInstancesRequest.setToken(token);
             unWatchInstancesRequest.setRemoveAll(removeAll);
             unWatchInstancesRequest.setListeners(listeners);
             return unWatchInstancesRequest;

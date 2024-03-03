@@ -129,16 +129,6 @@ public class Validator {
     }
 
     /**
-     * 校验获取服务规则的请求
-     *
-     * @param request 请求对象
-     * @throws PolarisException 校验失败
-     */
-    public static void validateGetServiceContractRequest(GetServiceContractRequest request) throws PolarisException {
-        checkCommon(request);
-    }
-
-    /**
      * 校验服务监听的请求
      *
      * @param request 请求对象
@@ -242,7 +232,33 @@ public class Validator {
      * @throws PolarisException exception
      */
     public static void validateReportServiceContractRequest(ReportServiceContractRequest request) throws PolarisException {
-        
+        if (StringUtils.isBlank(request.getNamespace())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract namespace can not be blank");
+        }
+        if (StringUtils.isBlank(request.getName())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract name can not be blank");
+        }
+        if (StringUtils.isBlank(request.getProtocol())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract protocol can not be blank");
+        }
+    }
+
+    /**
+     * Validate report service contract request.
+     *
+     * @param request report service contract request
+     * @throws PolarisException exception
+     */
+    public static void validateGetServiceContractRequest(GetServiceContractRequest request) throws PolarisException {
+        if (StringUtils.isBlank(request.getNamespace())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract namespace can not be blank");
+        }
+        if (StringUtils.isBlank(request.getName())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract name can not be blank");
+        }
+        if (StringUtils.isBlank(request.getProtocol())) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service_contract protocol can not be blank");
+        }
     }
 
     private static void checkCommon(BaseEntity entity) throws PolarisException {

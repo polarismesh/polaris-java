@@ -31,6 +31,7 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
@@ -73,6 +74,8 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      * 同步锁
      */
     private final Object clientLock = new Object();
+
+    private ServerConnectorConfigImpl connectorConfig;
 
     /**
      * 在流中没有结束的任务
@@ -128,14 +131,16 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
      * @param connectionIdleTimeoutMs 连接超时
      * @param serviceUpdateTask       初始更新任务
      */
-    public SpecStreamClient(Connection connection, long connectionIdleTimeoutMs,
+    public SpecStreamClient(ServerConnectorConfigImpl connectorConfig, Connection connection, long connectionIdleTimeoutMs,
                             ServiceUpdateTask serviceUpdateTask) {
+        this.connectorConfig = connectorConfig;
         this.connection = connection;
         this.connectionIdleTimeoutMs = connectionIdleTimeoutMs;
         createTimeMs = System.currentTimeMillis();
         reqId = GrpcUtil.nextGetInstanceReqId();
         PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
         GrpcUtil.attachRequestHeader(namingStub, reqId);
+        GrpcUtil.attachAccessToken(connectorConfig.getToken(), namingStub);
         discoverClient = namingStub.discover(this);
         putPendingTask(serviceUpdateTask);
         executor.schedule(new ExpirePendingTaskCleaner(this, PENDING_TASK_EXPIRE_MS), 5, TimeUnit.SECONDS);

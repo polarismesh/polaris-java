@@ -134,4 +134,5 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
 	public void setConfigFileGroupThreadNum(Integer configFileGroupThreadNum) {
 		this.configFileGroupThreadNum = configFileGroupThreadNum;
 	}
+
 }

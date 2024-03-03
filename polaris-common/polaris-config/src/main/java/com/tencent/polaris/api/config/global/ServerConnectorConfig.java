@@ -112,4 +112,11 @@ public interface ServerConnectorConfig extends PluginConfig, Verifier {
      * @return client keychain
      */
     String getKeyFile();
+
+    /**
+     * Get client access resource token
+     *
+     * @return polaris user or user-group access resource token
+     */
+    String getToken();
 }

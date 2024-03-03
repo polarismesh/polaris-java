@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.plugin.configuration;
 
 import com.google.protobuf.StringValue;
+import com.tencent.polaris.api.rpc.BaseEntity;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
 
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * @author lepdou 2022-03-02
  */
-public class ConfigPublishFile {
+public class ConfigPublishFile extends BaseEntity {
 
     //
     private String namespace;

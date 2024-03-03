@@ -66,10 +66,10 @@ public class CommonServiceContractRequest extends RequestBaseEntity {
     public ServiceContractProto.ServiceContract toQuerySpec() {
         ServiceContractProto.ServiceContract.Builder serviceContractBuilder =
                 ServiceContractProto.ServiceContract.newBuilder();
-        serviceContractBuilder.setName(getName());
+        serviceContractBuilder.setName(StringUtils.defaultString(getName()));
         serviceContractBuilder.setService(StringUtils.defaultString(getService()));
-        serviceContractBuilder.setNamespace(getNamespace());
-        serviceContractBuilder.setProtocol(getProtocol());
+        serviceContractBuilder.setNamespace(StringUtils.defaultString(getNamespace()));
+        serviceContractBuilder.setProtocol(StringUtils.defaultString(getProtocol()));
         serviceContractBuilder.setVersion(StringUtils.defaultString(getVersion()));
         return serviceContractBuilder.build();
     }
