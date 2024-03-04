@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -81,11 +82,8 @@ public class ConfigFileLongPullService {
      */
     private final RetryPolicy retryPolicy;
 
-    private String token;
-
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
-        this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.started = new AtomicReference<>(false);
         this.configFilePool = Maps.newConcurrentMap();
         this.notifiedVersion = Maps.newConcurrentMap();
