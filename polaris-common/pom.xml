@@ -22,5 +22,6 @@
         <module>polaris-protobuf</module>
         <module>polaris-client</module>
         <module>polaris-logging</module>
+        <module>polaris-metadata</module>
     </modules>
 </project>
