@@ -82,11 +82,8 @@ public class ConfigFileLongPullService {
      */
     private final RetryPolicy retryPolicy;
 
-    private String token;
-
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
-        this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.started = new AtomicReference<>(false);
         this.configFilePool = Maps.newConcurrentMap();
         this.notifiedVersion = Maps.newConcurrentMap();
