@@ -19,6 +19,7 @@ package com.tencent.polaris.discovery.client.api;
 
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
@@ -33,10 +34,12 @@ import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.flow.AsyncFlow;
@@ -166,7 +169,7 @@ public class DefaultConsumerAPI extends BaseEngine implements ConsumerAPI {
     public boolean unWatchService(UnWatchServiceRequest request) {
         checkAvailable("ConsumerAPI");
         Validator.validateUnWatchServiceRequest(request);
-        discoveryFlow.unWatchInstances(WatchInstancesRequest.builder()
+        discoveryFlow.unWatchInstances(UnWatchInstancesRequest.builder()
                 .service(request.getService())
                 .namespace(request.getNamespace())
                 .listeners(request.getListeners())

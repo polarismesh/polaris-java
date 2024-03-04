@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.api.rpc;
 
+import com.tencent.polaris.api.rpc.BaseEntity;
 import com.tencent.polaris.api.utils.StringUtils;
 
 public class ReleaseConfigFileRequest {

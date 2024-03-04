@@ -59,6 +59,8 @@ public class ConfigFileManager {
 
     private ConfigFilePersistentHandler persistentHandler;
 
+    private String token;
+
     @JustForTest
     public ConfigFileManager() {
 
@@ -72,6 +74,7 @@ public class ConfigFileManager {
     public ConfigFileManager(SDKContext sdkContext) {
         String configFileConnectorType = sdkContext.getConfig().getConfigFile().getServerConnector()
                 .getConnectorType();
+        this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.context = sdkContext;
         this.configFileFilterChain = new ConfigFileFilterChain(sdkContext.getExtensions().getPlugins(),
                 sdkContext.getConfig().getConfigFile().getConfigFilterConfig());

@@ -32,11 +32,13 @@ import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * @author lepdou 2022-03-02
@@ -133,7 +135,6 @@ public class ConfigFileLongPullService {
         while (!isLongPullingStopped.get() && !Thread.currentThread().isInterrupted()) {
             try {
                 List<ConfigFile> watchConfigFiles = assembleWatchConfigFiles();
-
                 LOGGER.debug("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
                         retryPolicy.getCurrentDelayTime());
 

@@ -6,13 +6,17 @@ import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest.DiscoverRequestType;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import io.grpc.Metadata;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.stub.AbstractStub;
 import io.grpc.stub.MetadataUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
@@ -173,6 +177,17 @@ public class GrpcUtil {
         stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(customMetadata));
     }
 
+    public static <T extends AbstractStub<T>> void attachAccessToken(String token, T stub) {
+        if (StringUtils.isBlank(token)) {
+            return;
+        }
+        attachRequestHeader(stub, new HashMap<String, String>() {
+            {
+                put("X-Polaris-Token", token);
+            }
+        });
+    }
+
     public static void checkResponse(ResponseProto.Response response) throws PolarisException {
         if (!response.hasCode()) {
             return;
@@ -188,6 +203,20 @@ public class GrpcUtil {
         throw exception;
     }
 
+    public static void checkGrpcUnImplement(Throwable t) throws PolarisException {
+        if (t instanceof StatusRuntimeException) {
+            StatusRuntimeException grpcEx = (StatusRuntimeException) t;
+            Status.Code code = grpcEx.getStatus().getCode();
+            switch (code) {
+                case UNAVAILABLE:
+                case DEADLINE_EXCEEDED:
+                case ABORTED:
+                    return;
+            }
+            // 如果是服务端未实现
+            throw new PolarisException(ErrorCode.SERVER_ERROR, grpcEx.getMessage());
+        }
+    }
 
     public static DiscoverRequestType buildDiscoverRequestType(
             ServiceEventKey.EventType type) {

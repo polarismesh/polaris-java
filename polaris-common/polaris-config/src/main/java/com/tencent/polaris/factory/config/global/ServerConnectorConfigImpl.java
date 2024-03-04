@@ -66,6 +66,8 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     private String keyFile;
     @JsonProperty
     private String id = "polaris";
+    @JsonProperty
+    private String token;
 
     @Override
     public List<String> getAddresses() {
@@ -239,19 +241,30 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "ServerConnectorConfigImpl{" +
-                "addresses=" + addresses +
+                "metadata=" + metadata +
+                ", addresses=" + addresses +
                 ", protocol='" + protocol + '\'' +
                 ", connectTimeout=" + connectTimeout +
                 ", messageTimeout=" + messageTimeout +
                 ", serverSwitchInterval=" + serverSwitchInterval +
                 ", connectionIdleTimeout=" + connectionIdleTimeout +
                 ", reconnectInterval=" + reconnectInterval +
-                ", trustedCertificate=" + trustedCAFile +
-                ", clientCertificate=" + certFile +
-                ", clientKey=" + keyFile +
-                "} " + super.toString();
+                ", trustedCAFile='" + trustedCAFile + '\'' +
+                ", certFile='" + certFile + '\'' +
+                ", keyFile='" + keyFile + '\'' +
+                ", id='" + id + '\'' +
+                ", token='" + token + '\'' +
+                '}';
     }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
 }

@@ -47,7 +47,9 @@ import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
+import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
@@ -115,12 +117,21 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
 
     @Override
     public InstancesResponse watchInstances(WatchInstancesRequest request) {
-        return null;
+        GetAllInstancesRequest getAllInstancesRequest = GetAllInstancesRequest.builder()
+                .namespace(request.getNamespace())
+                .service(request.getService())
+                .build();
+        CommonInstancesRequest allRequest = new CommonInstancesRequest(getAllInstancesRequest, this.config);
+        CommonWatchServiceRequest watchServiceRequest = new CommonWatchServiceRequest(request, allRequest);
+        WatchServiceResponse response = watchFlow.commonWatchService(watchServiceRequest);
+        return response.getResponse();
     }
 
     @Override
-    public InstancesResponse unWatchInstances(WatchInstancesRequest request) {
-        return null;
+    public InstancesResponse unWatchInstances(UnWatchInstancesRequest request) {
+        CommonUnWatchServiceRequest watchServiceRequest = new CommonUnWatchServiceRequest(request);
+        WatchServiceResponse response = watchFlow.commonUnWatchService(watchServiceRequest);
+        return response.getResponse();
     }
 
     @Override

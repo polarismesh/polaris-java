@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.plugin.server;
 
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
 
 public class CommonServiceContractRequest extends RequestBaseEntity {
@@ -65,11 +66,11 @@ public class CommonServiceContractRequest extends RequestBaseEntity {
     public ServiceContractProto.ServiceContract toQuerySpec() {
         ServiceContractProto.ServiceContract.Builder serviceContractBuilder =
                 ServiceContractProto.ServiceContract.newBuilder();
-        serviceContractBuilder.setName(getName());
-        serviceContractBuilder.setService(getService());
-        serviceContractBuilder.setNamespace(getNamespace());
-        serviceContractBuilder.setProtocol(getProtocol());
-        serviceContractBuilder.setVersion(getVersion());
+        serviceContractBuilder.setName(StringUtils.defaultString(getName()));
+        serviceContractBuilder.setService(StringUtils.defaultString(getService()));
+        serviceContractBuilder.setNamespace(StringUtils.defaultString(getNamespace()));
+        serviceContractBuilder.setProtocol(StringUtils.defaultString(getProtocol()));
+        serviceContractBuilder.setVersion(StringUtils.defaultString(getVersion()));
         return serviceContractBuilder.build();
     }
 }

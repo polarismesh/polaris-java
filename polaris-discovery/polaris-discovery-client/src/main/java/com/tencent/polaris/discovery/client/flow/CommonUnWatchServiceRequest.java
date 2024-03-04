@@ -20,7 +20,9 @@ package com.tencent.polaris.discovery.client.flow;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 
 import java.util.Collections;
@@ -31,11 +33,11 @@ import java.util.Set;
  */
 public class CommonUnWatchServiceRequest implements ServiceEventKeysProvider {
 
-    private final UnWatchServiceRequest request;
+    private final UnWatchInstancesRequest request;
 
     private final ServiceEventKey eventKey;
 
-    public CommonUnWatchServiceRequest(UnWatchServiceRequest request) {
+    public CommonUnWatchServiceRequest(UnWatchInstancesRequest request) {
         this.request = request;
         this.eventKey = ServiceEventKey
                 .builder()
@@ -59,7 +61,7 @@ public class CommonUnWatchServiceRequest implements ServiceEventKeysProvider {
         return eventKey;
     }
 
-    public UnWatchServiceRequest getRequest() {
+    public UnWatchInstancesRequest getRequest() {
         return request;
     }
 }
