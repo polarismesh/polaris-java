@@ -53,7 +53,8 @@ public class PolarisConfigFileGroupConnector extends AbstractPolarisConfigConnec
         try {
             connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_METADATA_LIST, ClusterType.SERVICE_CONFIG_CLUSTER);
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ConfigFileResponseProto.ConfigClientListResponse response = stub.getConfigFileMetadataList(configFileGroupToProto(metadata, revision));
             LOGGER.debug("[Config] get GetConfigFileMetadataList response from remote. response = {}", response);
 

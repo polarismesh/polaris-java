@@ -59,8 +59,8 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.getConfigFile(configFile.toClientConfigFileInfo());
             LOGGER.debug("[Config] get getConfigFile response from remote. fileName = {}, response = {}", configFile.getFileName(), response);
@@ -90,8 +90,8 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             List<ConfigFileProto.ClientConfigFileInfo> dtos = Lists.newLinkedList();
             for (ConfigFile configFile : configFiles) {
@@ -126,8 +126,8 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.createConfigFile(transfer2ConfigFile(configFile));
 
@@ -156,8 +156,8 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.updateConfigFile(transfer2ConfigFile(configFile));
 
@@ -186,8 +186,8 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.publishConfigFile(transfer2ConfigFileRelease(configFile));
 
@@ -216,8 +216,8 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             //grpc 调用
             PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.upsertAndPublishConfigFile(request.toSpec());
             return handleResponse(response);

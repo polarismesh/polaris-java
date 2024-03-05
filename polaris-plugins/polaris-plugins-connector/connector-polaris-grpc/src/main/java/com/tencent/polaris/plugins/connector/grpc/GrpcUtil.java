@@ -153,10 +153,10 @@ public class GrpcUtil {
      * @param stub   请求桩
      * @param nextID 请求ID
      */
-    public static <T extends AbstractStub<T>> void attachRequestHeader(T stub, String nextID) {
+    public static <T extends AbstractStub<T>> T attachRequestHeader(T stub, String nextID) {
         Metadata extraHeaders = new Metadata();
         extraHeaders.put(KEY_REQUEST_ID, nextID);
-        stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(extraHeaders));
+        return stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(extraHeaders));
     }
 
     /**
@@ -166,22 +166,22 @@ public class GrpcUtil {
      * @param customHeader 自定义header
      * @param <T>          桩类型
      */
-    public static <T extends AbstractStub<T>> void attachRequestHeader(T stub, Map<String, String> customHeader) {
+    public static <T extends AbstractStub<T>> T attachRequestHeader(T stub, Map<String, String> customHeader) {
         if (MapUtils.isEmpty(customHeader)) {
-            return;
+            return stub;
         }
         Metadata customMetadata = new Metadata();
         for (Entry<String, String> header : customHeader.entrySet()) {
             customMetadata.put(Metadata.Key.of(header.getKey(), Metadata.ASCII_STRING_MARSHALLER), header.getValue());
         }
-        stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(customMetadata));
+        return stub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(customMetadata));
     }
 
-    public static <T extends AbstractStub<T>> void attachAccessToken(String token, T stub) {
+    public static <T extends AbstractStub<T>> T attachAccessToken(String token, T stub) {
         if (StringUtils.isBlank(token)) {
-            return;
+            return stub;
         }
-        attachRequestHeader(stub, new HashMap<String, String>() {
+        return attachRequestHeader(stub, new HashMap<String, String>() {
             {
                 put("X-Polaris-Token", token);
             }
