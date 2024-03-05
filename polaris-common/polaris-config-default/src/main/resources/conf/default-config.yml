@@ -258,6 +258,11 @@ provider:
   registers:
     - serverConnectorId: polaris # Name of server connector.
       enable: true # If registration is enabled.
+  # 优雅上下线
+  lossless:
+    enable: false
+    port: 28080
+    persistRetryInterval: 30s
   # 限流配置
   rateLimit:
     # 是否开启限流功能

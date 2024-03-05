@@ -17,23 +17,11 @@
 
 package com.tencent.polaris.api.flow;
 
+import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
+import com.tencent.polaris.api.plugin.lossless.RegisterStatusProvider;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
-import com.tencent.polaris.api.rpc.GetServiceContractRequest;
-import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.GetServicesRequest;
-import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
-import com.tencent.polaris.api.rpc.InstancesFuture;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.api.rpc.ServiceRuleResponse;
-import com.tencent.polaris.api.rpc.ServicesResponse;
-import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
-import com.tencent.polaris.api.rpc.WatchInstancesRequest;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.client.flow.AbstractFlow;
 
 public interface DiscoveryFlow extends AbstractFlow {
@@ -85,6 +73,23 @@ public interface DiscoveryFlow extends AbstractFlow {
     default ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) {
         return null;
     }
+
+    /**
+     * 设置无损上下线相关的动作提供器, 不设置则使用默认的动态提供器（基于北极星SDK注册和反注册）
+     * @param losslessActionProvider
+     */
+    default void setLosslessActionProvider(LosslessActionProvider losslessActionProvider) {}
+
+    /**
+     * 实施无损上下线
+     */
+    default void losslessRegister() {}
+
+    /**
+     * 设置实例上线状态的提供器，如不设置则使用默认的提供器，基本北极星SDK的注册和反注册来实现
+     * @param registerStatusProvider
+     */
+    default void setRegisterStatusProvider(RegisterStatusProvider registerStatusProvider) {}
 
     void destroy();
 

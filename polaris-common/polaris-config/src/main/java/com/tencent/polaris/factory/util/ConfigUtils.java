@@ -38,8 +38,8 @@ public class ConfigUtils {
     }
 
     public static void validateInterval(Long interval, String name) {
-        if (null == interval || interval == 0) {
-            throw new IllegalArgumentException(name + " must not be empty or 0");
+        if (null == interval || interval <= 0) {
+            throw new IllegalArgumentException(name + " must not be empty or less than 0");
         }
     }
 
@@ -65,6 +65,12 @@ public class ConfigUtils {
     public static void validateNull(Object value, String name) {
         if (null == value) {
             throw new IllegalArgumentException(name + " must not be empty");
+        }
+    }
+
+    public static void validatePositiveInteger(Integer value, String name) {
+        if (null == value || value <= 0) {
+            throw new IllegalArgumentException(name + " must not be empty or less than and equals 0");
         }
     }
 
