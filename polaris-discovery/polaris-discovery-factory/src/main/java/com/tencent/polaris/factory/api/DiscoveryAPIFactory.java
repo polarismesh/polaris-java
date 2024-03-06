@@ -19,10 +19,12 @@ package com.tencent.polaris.factory.api;
 
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.api.DefaultConsumerAPI;
+import com.tencent.polaris.discovery.client.api.DefaultLosslessAPI;
 import com.tencent.polaris.discovery.client.api.DefaultProviderAPI;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 
@@ -156,10 +158,10 @@ public class DiscoveryAPIFactory {
     }
 
     /**
-     * 通过注册地址创建ProviderAPI
+     * 通过注册地址创建LosslessAPI
      *
      * @param addresses 地址
-     * @return ProviderAPI对象
+     * @return LosslessAPI对象
      */
     public static ProviderAPI createProviderAPIByAddress(String... addresses) {
         return createProviderAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addresses));
@@ -175,4 +177,71 @@ public class DiscoveryAPIFactory {
         return createProviderAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addressList));
     }
 
+    /**
+     * 通过默认配置创建LosslessAPI
+     *
+     * @return LosslessAPI对象
+     * @throws PolarisException 初始化过程异常
+     */
+    public static LosslessAPI createLosslessAPI() throws PolarisException {
+        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        return createLosslessAPIByConfig(configuration);
+    }
+
+    /**
+     * 通过SDK上下文创建LosslessAPI
+     *
+     * @param context SDK上下文，包含插件列表，配置对象等信息
+     * @return LosslessAPI对象
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static LosslessAPI createLosslessAPIByContext(SDKContext context) throws PolarisException {
+        DefaultLosslessAPI defaultValue = new DefaultLosslessAPI(context);
+        defaultValue.init();
+        return defaultValue;
+    }
+
+    /**
+     * 通过配置文件创建LosslessAPI
+     *
+     * @param configStream 配置文件流
+     * @return LosslessAPI对象
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static LosslessAPI createLosslessAPIByFile(InputStream configStream) throws PolarisException {
+        Configuration configuration = ConfigAPIFactory.loadConfig(configStream);
+        return DiscoveryAPIFactory.createLosslessAPIByConfig(configuration);
+    }
+
+    /**
+     * 通过配置对象创建LosslessAPI
+     *
+     * @param config 配置对象
+     * @return LosslessAPI对象
+     * @throws PolarisException 初始化过程的异常
+     */
+    public static LosslessAPI createLosslessAPIByConfig(Configuration config) throws PolarisException {
+        SDKContext context = SDKContext.initContextByConfig(config);
+        return createLosslessAPIByContext(context);
+    }
+
+    /**
+     * 通过注册地址创建LosslessAPI
+     *
+     * @param addresses 地址
+     * @return LosslessAPI对象
+     */
+    public static LosslessAPI createLosslessAPIByAddress(String... addresses) {
+        return createLosslessAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addresses));
+    }
+
+    /**
+     * 通过注册地址创建LosslessAPI
+     *
+     * @param addressList 地址
+     * @return LosslessAPI对象
+     */
+    public static LosslessAPI createLosslessAPIByAddress(List<String> addressList) {
+        return createLosslessAPIByConfig(ConfigAPIFactory.createConfigurationByAddress(addressList));
+    }
 }

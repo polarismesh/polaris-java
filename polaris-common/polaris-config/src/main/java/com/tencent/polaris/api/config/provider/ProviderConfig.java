@@ -62,4 +62,10 @@ public interface ProviderConfig extends Verifier {
      * @return minimal register interval millisecond
      */
     long getMinRegisterInterval();
+
+    /**
+     * get the lossless configuration
+     * @return configuration
+     */
+    LosslessConfig getLossless();
 }
