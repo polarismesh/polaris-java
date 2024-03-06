@@ -21,5 +21,10 @@ import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 
 public interface RegisterStatusProvider {
 
+    /**
+     * the key identify in ValueContext
+     */
+    String CTX_KEY = "key_statusProvider";
+
     RegisterStatus checkRegisterStatus(CommonProviderRequest commonProviderRequest);
 }
