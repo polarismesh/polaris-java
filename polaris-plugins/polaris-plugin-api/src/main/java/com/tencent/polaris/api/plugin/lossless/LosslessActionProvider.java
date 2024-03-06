@@ -20,20 +20,30 @@ package com.tencent.polaris.api.plugin.lossless;
 public interface LosslessActionProvider {
 
     /**
+     * the key identify in ValueContext
+     */
+    String CTX_KEY = "key_losslessActionProvider";
+
+    /**
      * register name
      * @return name for register
      */
    String getName();
 
     /**
-     * do the instance register action
-     * @return register succeed
+     * build or modify the instance properties
+     * @param instanceProperties properties, for the callback register to set into instance
      */
-   void doRegister();
+   void buildInstanceProperties(InstanceProperties instanceProperties);
+
+    /**
+     * do the instance register action
+     * @param instanceProperties properties, for the callback register to set into instance
+     */
+   void doRegister(InstanceProperties instanceProperties);
 
     /**
      * do the instance deregister action
-     * @return deregister succeed
      */
    void doDeregister();
 

@@ -23,19 +23,19 @@ public interface LosslessPolicy extends Plugin {
 
     /**
      * 实施无损上线
-     * @param losslessActionProvider
+     * @param losslessActionProvider action provider
      */
     void losslessRegister(LosslessActionProvider losslessActionProvider);
 
     /**
      * 实施无损下线
-     * @param losslessActionProvider
+     * @param losslessActionProvider action provider
      */
     void losslessDeregister(LosslessActionProvider losslessActionProvider);
 
     /**
      * 获取应用节点上线状态
-     * @param registerStatusProvider
+     * @param registerStatusProvider status provider
      */
     RegisterStatus fetchRegisterStatus(RegisterStatusProvider registerStatusProvider);
 }
