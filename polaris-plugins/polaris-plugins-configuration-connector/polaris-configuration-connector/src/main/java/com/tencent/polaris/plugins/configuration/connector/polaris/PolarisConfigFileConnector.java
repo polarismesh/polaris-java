@@ -18,38 +18,25 @@
 package com.tencent.polaris.plugins.configuration.connector.polaris;
 
 import com.google.common.collect.Lists;
-import com.google.protobuf.BoolValue;
 import com.google.protobuf.StringValue;
-import com.google.protobuf.UInt64Value;
-
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.exception.ErrorCode;
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
-import com.tencent.polaris.api.plugin.PluginType;
-import com.tencent.polaris.api.plugin.common.InitContext;
-import com.tencent.polaris.api.plugin.common.PluginTypes;
-import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.configuration.*;
-import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.configuration.ConfigPublishFile;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
-import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
-
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileProto;
 import com.tencent.polaris.specification.api.v1.config.manage.ConfigFileResponseProto;
 import com.tencent.polaris.specification.api.v1.config.manage.PolarisConfigGRPCGrpc;
-import io.grpc.stub.AbstractStub;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author lepdou 2022-03-02
@@ -70,11 +57,10 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
-            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.getConfigFile(configFile.toClientConfigFileInfo());
             LOGGER.debug("[Config] get getConfigFile response from remote. fileName = {}, response = {}", configFile.getFileName(), response);
@@ -86,11 +72,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             GrpcUtil.checkGrpcUnImplement(t);
-            throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format(
-                            "failed to load config file. namespace = %s, group = %s, file = %s",
-                            configFile.getNamespace(), configFile.getFileGroup(),
-                            configFile.getFileName()), t);
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to load config file. namespace = %s, group = %s, file = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName()), t);
         } finally {
             if (connection != null) {
                 connection.release(OP_KEY_GET_CONFIG_FILE);
@@ -106,18 +88,16 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             connection = connectionManager.getConnection(OP_KEY_GET_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
-            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             List<ConfigFileProto.ClientConfigFileInfo> dtos = Lists.newLinkedList();
             for (ConfigFile configFile : configFiles) {
                 dtos.add(configFile.toClientConfigFileInfo());
             }
-            ConfigFileProto.ClientWatchConfigFileRequest request =
-                    ConfigFileProto.ClientWatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
+            ConfigFileProto.ClientWatchConfigFileRequest request = ConfigFileProto.ClientWatchConfigFileRequest.newBuilder().addAllWatchFiles(dtos).build();
 
             ConfigFileResponseProto.ConfigClientResponse response = stub.watchConfigFiles(request);
 
@@ -144,11 +124,10 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             connection = connectionManager.getConnection(OP_KEY_CREATE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
-            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.createConfigFile(transfer2ConfigFile(configFile));
 
@@ -159,11 +138,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             GrpcUtil.checkGrpcUnImplement(t);
-            throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format(
-                            "failed to create config file. namespace = %s, group = %s, file = %s, content = %s",
-                            configFile.getNamespace(), configFile.getFileGroup(),
-                            configFile.getFileName(), configFile.getContent()), t);
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to create config file. namespace = %s, group = %s, file = %s, content = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent()), t);
         } finally {
             if (connection != null) {
                 connection.release(OP_KEY_CREATE_CONFIG_FILE);
@@ -179,11 +154,10 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             connection = connectionManager.getConnection(OP_KEY_UPDATE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
-            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.updateConfigFile(transfer2ConfigFile(configFile));
 
@@ -194,11 +168,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             GrpcUtil.checkGrpcUnImplement(t);
-            throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format(
-                            "failed to update config file. namespace = %s, group = %s, file = %s, content = %s",
-                            configFile.getNamespace(), configFile.getFileGroup(),
-                            configFile.getFileName(), configFile.getContent()), t);
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to update config file. namespace = %s, group = %s, file = %s, content = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent()), t);
         } finally {
             if (connection != null) {
                 connection.release(OP_KEY_UPDATE_CONFIG_FILE);
@@ -214,11 +184,10 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             connection = connectionManager.getConnection(OP_KEY_RELEASE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
-            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.publishConfigFile(transfer2ConfigFileRelease(configFile));
 
@@ -229,11 +198,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             GrpcUtil.checkGrpcUnImplement(t);
-            throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format(
-                            "failed to release config file. namespace = %s, group = %s, file = %s",
-                            configFile.getNamespace(), configFile.getFileGroup(),
-                            configFile.getFileName()), t);
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to release config file. namespace = %s, group = %s, file = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName()), t);
         } finally {
             if (connection != null) {
                 connection.release(OP_KEY_RELEASE_CONFIG_FILE);
@@ -249,11 +214,10 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             connection = connectionManager.getConnection(OP_KEY_RELEASE_CONFIG_FILE, ClusterType.SERVICE_CONFIG_CLUSTER);
 
             //grpc 调用
-            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub =
-                    PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
+            PolarisConfigGRPCGrpc.PolarisConfigGRPCBlockingStub stub = PolarisConfigGRPCGrpc.newBlockingStub(connection.getChannel());
             //附加通用 header
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             //执行调用
             ConfigFileResponseProto.ConfigClientResponse response = stub.upsertAndPublishConfigFile(request.toSpec());
             return handleResponse(response);
@@ -263,16 +227,13 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
             GrpcUtil.checkGrpcUnImplement(t);
-            throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format(
-                            "failed to upsert and publish config file. namespace = %s, group = %s, file = %s",
-                            request.getNamespace(), request.getFileGroup(),
-                            request.getFileName()), t);
+            throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to upsert and publish config file. namespace = %s, group = %s, file = %s", request.getNamespace(), request.getFileGroup(), request.getFileName()), t);
         } finally {
             if (connection != null) {
                 connection.release(OP_KEY_RELEASE_CONFIG_FILE);
             }
-        }    }
+        }
+    }
 
     @Override
     public String getName() {
@@ -284,9 +245,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             return null;
         }
 
-        ConfigFile configFile = new ConfigFile(configFileDTO.getNamespace().getValue(),
-                configFileDTO.getGroup().getValue(),
-                configFileDTO.getFileName().getValue());
+        ConfigFile configFile = new ConfigFile(configFileDTO.getNamespace().getValue(), configFileDTO.getGroup().getValue(), configFileDTO.getFileName().getValue());
         configFile.setContent(configFileDTO.getContent().getValue());
         configFile.setMd5(configFileDTO.getMd5().getValue());
         configFile.setVersion(configFileDTO.getVersion().getValue());
@@ -325,9 +284,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
     private ConfigFileResponse handleResponse(ConfigFileResponseProto.ConfigClientResponse response) {
         int code = response.getCode().getValue();
         //预期code，正常响应
-        if (code == ServerCodes.EXECUTE_SUCCESS ||
-                code == ServerCodes.NOT_FOUND_RESOURCE ||
-                code == ServerCodes.DATA_NO_CHANGE) {
+        if (code == ServerCodes.EXECUTE_SUCCESS || code == ServerCodes.NOT_FOUND_RESOURCE || code == ServerCodes.DATA_NO_CHANGE) {
             ConfigFile loadedConfigFile = transferFromDTO(response.getConfigFile());
             return new ConfigFileResponse(code, response.getInfo().getValue(), loadedConfigFile);
         }

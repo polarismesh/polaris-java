@@ -255,8 +255,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                         ClusterType.BUILTIN_CLUSTER);
                 String reqId = GrpcUtil.nextGetInstanceReqId();
                 PolarisGRPCGrpc.PolarisGRPCStub namingStub = PolarisGRPCGrpc.newStub(connection.getChannel());
-                GrpcUtil.attachRequestHeader(namingStub, reqId);
-                GrpcUtil.attachAccessToken(connectorConfig.getToken(), namingStub);
+                namingStub = GrpcUtil.attachRequestHeader(namingStub, reqId);
+                namingStub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), namingStub);
                 CountDownLatch countDownLatch = new CountDownLatch(1);
                 StreamObserver<DiscoverRequest> discoverClient = namingStub
                         .discover(new StreamObserver<DiscoverResponse>() {
@@ -347,9 +347,9 @@ public class GrpcConnector extends DestroyableServerConnector {
                     .getConnection(GrpcUtil.OP_KEY_REGISTER_INSTANCE, ClusterType.SERVICE_DISCOVER_CLUSTER);
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
-            GrpcUtil.attachRequestHeader(stub, customHeader);
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
+            stub = GrpcUtil.attachRequestHeader(stub, customHeader);
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response registerInstanceResponse = stub.registerInstance(buildRegisterInstanceRequest(req));
             GrpcUtil.checkResponse(registerInstanceResponse);
             if (!registerInstanceResponse.hasInstance()) {
@@ -503,8 +503,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                     .getConnection(GrpcUtil.OP_KEY_DEREGISTER_INSTANCE, ClusterType.SERVICE_DISCOVER_CLUSTER);
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceDeRegisterReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceDeRegisterReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response deregisterInstanceResponse = stub
                     .deregisterInstance(buildDeregisterInstanceRequest(req));
             GrpcUtil.checkResponse(deregisterInstanceResponse);
@@ -542,8 +542,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                     .getConnection(GrpcUtil.OP_KEY_INSTANCE_HEARTBEAT, ClusterType.HEALTH_CHECK_CLUSTER);
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             startTimestamp = System.currentTimeMillis();
             LOG.debug("start heartbeat at {} ms.", startTimestamp);
             ResponseProto.Response heartbeatResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
@@ -581,8 +581,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                     .getConnection(GrpcUtil.OP_KEY_REPORT_CLIENT, ClusterType.SERVICE_DISCOVER_CLUSTER);
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ClientProto.Client request = buildReportRequest(req);
             ResponseProto.Response response = stub.reportClient(request);
             LOG.debug("reportClient req:{}, rsp:{}", req, TextFormat.shortDebugString(response));
@@ -655,8 +655,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response reportServiceContractResponse =
                     stub.reportServiceContract(buildReportServiceContractRequest(req));
             GrpcUtil.checkResponse(reportServiceContractResponse);
@@ -693,8 +693,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             req.setTargetServer(connectionToTargetNode(connection));
             PolarisServiceContractGRPCGrpc.PolarisServiceContractGRPCBlockingStub stub =
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
-            GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
-            GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+            stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
+            stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ResponseProto.Response response = stub.getServiceContract(req.toQuerySpec());
             GrpcUtil.checkResponse(response);
             ServiceContractProto.ServiceContract remoteVal = response.getServiceContract();
