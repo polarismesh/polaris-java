@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
+import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 
@@ -48,13 +49,9 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
     private static final Logger LOG = LoggerFactory.getLogger(HealthCheckRegisterLosslessPolicy.class);
 
-    private static final String ONLINE_PATH = "/online";
-
     private LosslessConfig losslessConfig;
 
     private ValueContext valueContext;
-
-    private final NamedThreadFactory namedThreadFactory = new NamedThreadFactory("lossless-register");
 
     private final ScheduledExecutorService healthCheckExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("lossless-register-check"));
@@ -180,13 +177,7 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             public void handle(HttpExchange exchange) throws IOException {
                 AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
                 RegisterStatus registerStatus = registered.get() ? RegisterStatus.REGISTERED : RegisterStatus.UNREGISTERED;
-                exchange.getResponseHeaders().set("Content-Type", "text/plain");
-                ByteArrayOutputStream byteArrayOutputStream = null;
-                byteArrayOutputStream = new ByteArrayOutputStream();
-                byte[] bytes = registerStatus.toString().getBytes(StandardCharsets.UTF_8);
-                byteArrayOutputStream.write(bytes, 0, bytes.length);
-                exchange.sendResponseHeaders(200, byteArrayOutputStream.size());
-                byteArrayOutputStream.writeTo(exchange.getResponseBody());
+                HttpServerUtils.writeTextToHttpServer(exchange, registerStatus.toString(), 200);
             }
         });
         return handlers;

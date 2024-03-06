@@ -27,6 +27,16 @@ public interface LosslessPolicy extends Plugin, SortableAware {
      */
     String CTX_KEY_REGISTER_STATUS = "key-register-status";
 
+    String ONLINE_PATH = "/online";
+
+    String OFFLINE_PATH = "/offline";
+
+    String REPS_TEXT_NO_ACTION = "no action";
+
+    String REPS_TEXT_OK = "ok";
+
+    String REPS_TEXT_FAILED = "failed";
+
     /**
      * build or modify the instance properties
      * @param instanceProperties properties, for the callback register to set into instance

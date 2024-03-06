@@ -17,53 +17,110 @@
 
 package com.tencent.polaris.plugin.lossless.deregister;
 
+import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import com.tencent.polaris.api.config.provider.LosslessConfig;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.HttpServerAware;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
+import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
+import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class DeregisterLosslessPolicy  implements LosslessPolicy, HttpServerAware {
+public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
 
     private static final Logger LOG = LoggerFactory.getLogger(DeregisterLosslessPolicy.class);
 
-    private static final String OFFLINE_PATH = "/offline";
+    private LosslessConfig losslessConfig;
+
+    private ValueContext valueContext;
 
     @Override
     public String getHost() {
-
+        return losslessConfig.getHost();
     }
 
     @Override
     public int getPort() {
-        return 0;
+        return losslessConfig.getPort();
     }
 
     @Override
     public Map<String, HttpHandler> getHandlers() {
-        return null;
+        if (!losslessConfig.isEnable()) {
+            return Collections.emptyMap();
+        }
+        Map<String, HttpHandler> handlers = new HashMap<>();
+        handlers.put(OFFLINE_PATH, new DeregisterHandler());
+        return handlers;
+    }
+
+    private class DeregisterHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            InetSocketAddress remoteAddress = exchange.getRemoteAddress();
+            LOG.info("[LosslessDeregister] received lossless deregister request from {}", remoteAddress);
+            if (!remoteAddress.getAddress().isLoopbackAddress()) {
+                exchange.sendResponseHeaders(403, 0);
+                exchange.close();
+                return;
+            }
+            LosslessActionProvider losslessActionProvider = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+            if (null == losslessActionProvider) {
+                LOG.warn("[LosslessDeRegister] LosslessActionProvider not found, no lossless action will be taken");
+                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_ACTION, 200);
+                return;
+            }
+            String text;
+            int code;
+            try {
+                losslessActionProvider.doDeregister();
+                AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+                registered.set(false);
+                text = REPS_TEXT_OK;
+                code = 200;
+            } catch (Throwable e) {
+                LOG.error("[LosslessDeRegister] fail to execute deregister", e);
+                text = REPS_TEXT_FAILED + ": " + e.getMessage();
+                code = 500;
+            }
+            HttpServerUtils.writeTextToHttpServer(exchange, text, code);
+
+        }
     }
 
     @Override
     public String getName() {
-        return null;
+        return "deregister-lossless";
     }
 
     @Override
     public PluginType getType() {
-        return null;
+        return PluginTypes.LOSSLESS_POLICY.getBaseType();
     }
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-
+        losslessConfig = ctx.getConfig().getProvider().getLossless();
+        valueContext = ctx.getValueContext();
+        if (!valueContext.containsValue(CTX_KEY_REGISTER_STATUS)) {
+            valueContext.setValue(CTX_KEY_REGISTER_STATUS, new AtomicBoolean(false));
+        }
     }
 
     @Override
