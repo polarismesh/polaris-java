@@ -56,7 +56,7 @@ public class ProviderConfigImpl implements ProviderConfig {
     private long minRegisterInterval;
 
     @JsonProperty
-    private LosslessConfig lossless;
+    private LosslessConfigImpl lossless;
 
     @Override
     public RateLimitConfigImpl getRateLimit() {

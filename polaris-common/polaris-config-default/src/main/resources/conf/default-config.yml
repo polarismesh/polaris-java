@@ -262,7 +262,7 @@ provider:
   lossless:
     enable: false
     port: 28080
-    persistRetryInterval: 30s
+    delayRegisterInterval: 30s
   # 限流配置
   rateLimit:
     # 是否开启限流功能
