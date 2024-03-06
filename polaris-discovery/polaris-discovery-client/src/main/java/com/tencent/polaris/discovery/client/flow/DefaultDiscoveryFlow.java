@@ -23,6 +23,8 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
 import com.tencent.polaris.api.flow.DiscoveryFlow;
+import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
+import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
 import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
@@ -50,6 +52,7 @@ import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchInstancesRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
@@ -386,6 +389,22 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
         }
         serviceCallResult.setMethod(method);
         reportInvokeStat(serviceCallResult);
+    }
+
+    @Override
+    public void losslessRegister() {
+        List<LosslessPolicy> losslessPolicies = sdkContext.getExtensions().getLosslessPolicies();
+        if (CollectionUtils.isEmpty(losslessPolicies)) {
+            LOG.info("lossless is disabled, no losslessRegister will do nothing");
+            return;
+        }
+        InstanceProperties instanceProperties = new InstanceProperties();
+        for (LosslessPolicy losslessPolicy : losslessPolicies) {
+            losslessPolicy.buildInstanceProperties(instanceProperties);
+        }
+        for (LosslessPolicy losslessPolicy : losslessPolicies) {
+            losslessPolicy.losslessRegister(instanceProperties);
+        }
     }
 
     @Override

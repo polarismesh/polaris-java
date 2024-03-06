@@ -18,24 +18,26 @@
 package com.tencent.polaris.api.plugin.lossless;
 
 import com.tencent.polaris.api.plugin.Plugin;
+import com.tencent.polaris.api.plugin.SortableAware;
 
-public interface LosslessPolicy extends Plugin {
+public interface LosslessPolicy extends Plugin, SortableAware {
+
+    /**
+     * 上线状态的KEY
+     */
+    String CTX_KEY_REGISTER_STATUS = "key-register-status";
+
+    /**
+     * build or modify the instance properties
+     * @param instanceProperties properties, for the callback register to set into instance
+     */
+    void buildInstanceProperties(InstanceProperties instanceProperties);
 
     /**
      * 实施无损上线
-     * @param losslessActionProvider action provider
+     * @param instanceProperties properties, for the callback register to set into instance
      */
-    void losslessRegister(LosslessActionProvider losslessActionProvider);
+    void losslessRegister(InstanceProperties instanceProperties);
 
-    /**
-     * 实施无损下线
-     * @param losslessActionProvider action provider
-     */
-    void losslessDeregister(LosslessActionProvider losslessActionProvider);
 
-    /**
-     * 获取应用节点上线状态
-     * @param registerStatusProvider status provider
-     */
-    RegisterStatus fetchRegisterStatus(RegisterStatusProvider registerStatusProvider);
 }

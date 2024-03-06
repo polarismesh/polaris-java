@@ -15,41 +15,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.config.provider;
+package com.tencent.polaris.api.plugin;
 
-import com.tencent.polaris.api.config.verify.Verifier;
-
-public interface LosslessConfig extends Verifier {
+public interface SortableAware {
 
     /**
-     * 是否启用无损上下线
-     * @return 启用无损上下线
+     * 获取优雅上下线策略的优先级，
+     * @return order，数字越小，优先级越高
      */
-    boolean isEnable();
-
-    /**
-     * 无损下线和获取上线状态的监听IP
-     * @return host
-     */
-    String getHost();
-
-    /**
-     * 无损下线和获取上线状态的监听端口
-     * @return port
-     */
-    int getPort();
-
-    /**
-     * 如果没有实现健康检查，延迟注册的时间，单位毫秒
-     * @return long
-     */
-    long getDelayRegisterInterval();
-
-    /**
-     * 获取健康探测的间隔时间
-     * @return long
-     */
-    long getHealthCheckInterval();
-
-
+    int getOrder();
 }

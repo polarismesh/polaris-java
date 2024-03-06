@@ -74,22 +74,8 @@ public interface DiscoveryFlow extends AbstractFlow {
         return null;
     }
 
-    /**
-     * 设置无损上下线相关的动作提供器, 不设置则使用默认的动态提供器（基于北极星SDK注册和反注册）
-     * @param losslessActionProvider
-     */
-    default void setLosslessActionProvider(LosslessActionProvider losslessActionProvider) {}
 
-    /**
-     * 实施无损上下线
-     */
     default void losslessRegister() {}
-
-    /**
-     * 设置实例上线状态的提供器，如不设置则使用默认的提供器，基本北极星SDK的注册和反注册来实现
-     * @param registerStatusProvider
-     */
-    default void setRegisterStatusProvider(RegisterStatusProvider registerStatusProvider) {}
 
     void destroy();
 

@@ -42,6 +42,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.CommonValidator;
 
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -263,5 +264,17 @@ public class Validator {
 
     private static void checkCommon(BaseEntity entity) throws PolarisException {
         CommonValidator.validateNamespaceService(entity.getNamespace(), entity.getService());
+    }
+
+    /**
+     * validate nullable request
+     * @param request request object
+     * @param name argument name
+     * @throws PolarisException exception
+     */
+    public static void validateNotNull(Object request, String name) throws PolarisException {
+        if (null == request) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, String.format("argument %s can not be null", name));
+        }
     }
 }

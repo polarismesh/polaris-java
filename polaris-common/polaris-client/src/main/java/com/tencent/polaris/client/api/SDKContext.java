@@ -318,6 +318,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         extensions.init(configuration, plugins, valueContext);
         plugins.postContextInitPlugins(extensions);
         reportClient(extensions);
+        registerDestroyHook(extensions);
     }
 
     private boolean clusterAvailable(ClusterConfig clusterConfig) {

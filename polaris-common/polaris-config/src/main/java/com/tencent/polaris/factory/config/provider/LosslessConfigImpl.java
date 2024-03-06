@@ -20,6 +20,7 @@ package com.tencent.polaris.factory.config.provider;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.provider.LosslessConfig;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
@@ -29,15 +30,27 @@ public class LosslessConfigImpl implements LosslessConfig {
     private Boolean enable;
 
     @JsonProperty
+    private String host;
+
+    @JsonProperty
     private Integer port;
 
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long delayRegisterInterval;
 
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long healthCheckInterval;
+
     @Override
     public boolean isEnable() {
         return enable;
+    }
+
+    @Override
+    public String getHost() {
+        return host;
     }
 
     @Override
@@ -63,7 +76,21 @@ public class LosslessConfigImpl implements LosslessConfig {
     }
 
     @Override
+    public long getHealthCheckInterval() {
+        return healthCheckInterval;
+    }
+
+    public void setHealthCheckInterval(long healthCheckInterval) {
+        this.healthCheckInterval = healthCheckInterval;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+    @Override
     public void verify() {
+        ConfigUtils.validateString(host, "lossless.host or lossless[?].host");
         ConfigUtils.validateNull(enable,
                 "lossless.enable or lossless[?].enable");
         ConfigUtils.validatePositiveInteger(port,
@@ -79,11 +106,17 @@ public class LosslessConfigImpl implements LosslessConfig {
             if (null == enable) {
                 setEnable(losslessConfig.isEnable());
             }
-            if (null == port) {
+            if (null == port || 0 == port) {
                 setPort(losslessConfig.getPort());
+            }
+            if (StringUtils.isBlank(host)) {
+                setHost(losslessConfig.getHost());
             }
             if (null == delayRegisterInterval) {
                 setDelayRegisterInterval(losslessConfig.getDelayRegisterInterval());
+            }
+            if (null == healthCheckInterval || 0 == healthCheckInterval) {
+                setHealthCheckInterval(losslessConfig.getHealthCheckInterval());
             }
         }
     }
