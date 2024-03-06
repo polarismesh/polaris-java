@@ -31,12 +31,6 @@ public interface LosslessActionProvider {
    String getName();
 
     /**
-     * build or modify the instance properties
-     * @param instanceProperties properties, for the callback register to set into instance
-     */
-   void buildInstanceProperties(InstanceProperties instanceProperties);
-
-    /**
      * do the instance register action
      * @param instanceProperties properties, for the callback register to set into instance
      */
