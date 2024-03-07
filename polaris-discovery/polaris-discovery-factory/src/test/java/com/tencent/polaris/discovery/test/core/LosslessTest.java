@@ -70,7 +70,7 @@ public class LosslessTest {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
         ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setEnable(true);
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(28080);
+        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(38080);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =
@@ -81,7 +81,7 @@ public class LosslessTest {
             Utils.sleepUninterrupted(5000);
             System.out.println("[testLosslessRegisterWithoutHealthCheck] start to query status");
             try {
-                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:28080/online", "GET");
+                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38080/online", "GET");
                 Assert.assertEquals(200, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.REGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
@@ -89,7 +89,7 @@ public class LosslessTest {
             }
             System.out.println("[testLosslessRegisterWithoutHealthCheck] start to do lossless deregister");
             try {
-                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:28080/offline", "PUT");
+                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38080/offline", "PUT");
                 Assert.assertEquals(200, wrapper.getCode());
                 Assert.assertEquals(LosslessPolicy.REPS_TEXT_OK, wrapper.getMessage());
             } catch (IOException e) {
@@ -97,7 +97,7 @@ public class LosslessTest {
             }
             System.out.println("[testLosslessRegisterWithoutHealthCheck] start to query status");
             try {
-                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:28080/online", "GET");
+                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38080/online", "GET");
                 Assert.assertEquals(200, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
@@ -111,7 +111,7 @@ public class LosslessTest {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
         ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setEnable(true);
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(28081);
+        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(38081);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =
@@ -122,7 +122,7 @@ public class LosslessTest {
             Utils.sleepUninterrupted(10000);
             System.out.println("[testLosslessRegisterWithHealthCheck] start to query status");
             try {
-                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:28081/online", "GET");
+                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38081/online", "GET");
                 Assert.assertEquals(200, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.REGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
@@ -130,7 +130,7 @@ public class LosslessTest {
             }
             System.out.println("[testLosslessRegisterWithHealthCheck] start to do lossless deregister");
             try {
-                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:28081/offline", "PUT");
+                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38081/offline", "PUT");
                 Assert.assertEquals(200, wrapper.getCode());
                 Assert.assertEquals(LosslessPolicy.REPS_TEXT_OK, wrapper.getMessage());
             } catch (IOException e) {
@@ -138,7 +138,7 @@ public class LosslessTest {
             }
             System.out.println("[testLosslessRegisterWithHealthCheck] start to query status");
             try {
-                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:28081/online", "GET");
+                HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38081/online", "GET");
                 Assert.assertEquals(200, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {

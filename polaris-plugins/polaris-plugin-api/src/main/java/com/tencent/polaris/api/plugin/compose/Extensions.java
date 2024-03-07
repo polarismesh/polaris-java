@@ -100,6 +100,9 @@ public class Extensions extends Destroyable {
     //全局监听端口，如果SDK需要暴露端口，则通过这里初始化
     private Map<Node, HttpServer> httpServers;
 
+    //插件与端口的映射关系
+    private Map<String, Node> pluginToNodes;
+
     // 无损上下线策略列表，按照order排序
      private List<LosslessPolicy> losslessPolicies;
 
@@ -192,7 +195,6 @@ public class Extensions extends Destroyable {
 
         initLocation(config, valueContext);
 
-        initHttpServer(plugins);
     }
 
     public ValueContext getValueContext() {
@@ -285,14 +287,16 @@ public class Extensions extends Destroyable {
         losslessPolicies.sort((o1, o2) -> o1.getOrder() - o2.getOrder());
     }
 
-    private  void initHttpServer(Supplier plugins) {
+    public void initHttpServer(Supplier plugins) {
         // 遍历插件并获取监听器
+        pluginToNodes = new HashMap<>();
         Map<Node, Map<String, HttpHandler>> allHandlers = new HashMap<>();
         for (Plugin plugin : plugins.getAllPlugins()) {
             if (plugin instanceof HttpServerAware) {
                 HttpServerAware httpServerAware = (HttpServerAware)plugin;
                 Map<String, HttpHandler> handlers = httpServerAware.getHandlers();
                 if (CollectionUtils.isEmpty(handlers)) {
+                    LOG.info("plugin {} has no http handlers", plugin.getName());
                     continue;
                 }
                 int port = httpServerAware.getPort();
@@ -320,6 +324,7 @@ public class Extensions extends Destroyable {
                     }
                     existsHandlers.putAll(handlers);
                 }
+                pluginToNodes.put(plugin.getName(), node);
 
             }
         }
@@ -351,6 +356,11 @@ public class Extensions extends Destroyable {
             if (!targetNode.equals(node)) {
                 LOG.info("listen port has changed from {} to {}", node.getPort(), targetNode.getPort());
                 allHandlers.put(targetNode, allHandlers.remove(node));
+                for (Map.Entry<String, Node> entry : pluginToNodes.entrySet()) {
+                    if (entry.getValue().equals(node)) {
+                        pluginToNodes.put(entry.getKey(), targetNode);
+                    }
+                }
             }
         }
         //启动监听
@@ -375,6 +385,10 @@ public class Extensions extends Destroyable {
                 throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Create polaris http server failed!", e);
             }
         }
+    }
+
+    public Node getHttpServerNodeByPlugin(String name) {
+        return pluginToNodes.get(name);
     }
 
     private static void startServer(ThreadFactory threadFactory, HttpServer httpServer) {

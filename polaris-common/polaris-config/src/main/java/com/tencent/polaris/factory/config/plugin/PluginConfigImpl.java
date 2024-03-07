@@ -186,6 +186,7 @@ public class PluginConfigImpl implements PluginConfig {
                 throw new PolarisException(ErrorCode.INVALID_CONFIG,
                         String.format("config is null, plugin name %s", pluginName));
             }
+            pluginConfigs.put(pluginName, config);
             mutableSetPluginConfig(pluginName, config);
         }
     }

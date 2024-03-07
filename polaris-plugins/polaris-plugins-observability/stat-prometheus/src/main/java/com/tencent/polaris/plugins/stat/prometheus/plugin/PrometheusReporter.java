@@ -46,6 +46,7 @@ import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
@@ -59,7 +60,6 @@ import com.tencent.polaris.plugins.stat.prometheus.exporter.PushGateway;
 import com.tencent.polaris.plugins.stat.prometheus.handler.CommonHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.HttpMetricHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHttpServer;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import org.slf4j.Logger;
@@ -91,8 +91,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
 	private String instanceID;
 
-	private PrometheusHttpServer httpServer;
-
 	private ScheduledExecutorService executorService;
 
 	private PushGateway pushGateway;
@@ -104,6 +102,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 	private int port;
 
 	private String host;
+
+	private String path;
 
 	private Map<String, HttpHandler> handlers;
 
@@ -210,14 +210,15 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
 	@Override
 	public ReporterMetaInfo metaInfo() {
-		if (!enable || Objects.equals(config.getType(), "push") || Objects.isNull(httpServer)) {
+		if (!enable || Objects.equals(config.getType(), "push") || Objects.isNull(handlers)) {
 			return ReporterMetaInfo.builder().build();
 		}
+		Node httpServerNode = extensions.getHttpServerNodeByPlugin(getName());
 		return ReporterMetaInfo.builder().
 				protocol("http").
-				path(httpServer.getPath()).
-				host(httpServer.getHost()).
-				port(httpServer.getPort()).
+				path(path).
+				host(httpServerNode.getHost()).
+				port(httpServerNode.getPort()).
 				target(getName()).
 				build();
 	}
@@ -245,9 +246,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 		if (Objects.nonNull(executorService)) {
 			executorService.shutdown();
 		}
-		if (Objects.nonNull(httpServer)) {
-			httpServer.stopServer();
-		}
 	}
 
 	private void startScheduleAggregationTask() {
@@ -268,7 +266,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 		HttpMetricHandler metricHandler = new HttpMetricHandler(promRegistry);
 		handlers.put("/", metricHandler);
 		handlers.put("/-/healthy", metricHandler);
-		String path = config.getPath();
+		path = config.getPath();
 		if (StringUtils.isBlank(path)) {
 			path = DEFAULT_PATH;
 		}
