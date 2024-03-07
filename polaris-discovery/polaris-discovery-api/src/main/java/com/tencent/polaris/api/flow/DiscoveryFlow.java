@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.api.flow;
 
-import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
-import com.tencent.polaris.api.plugin.lossless.RegisterStatusProvider;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.rpc.*;

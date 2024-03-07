@@ -19,3 +19,10 @@ consumer:
   circuitBreaker:
     #描述:是否启用节点熔断功能
     enable: false
+provider:
+  # 优雅上下线
+  lossless:
+    # 是否启用优雅上下线
+    enable: false
+    delayRegisterInterval: 1s
+    healthCheckInterval: 1s

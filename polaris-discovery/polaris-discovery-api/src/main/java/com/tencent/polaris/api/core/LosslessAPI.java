@@ -18,9 +18,10 @@
 package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
-import com.tencent.polaris.api.plugin.lossless.RegisterStatusProvider;
 
-public interface LosslessAPI {
+import java.io.Closeable;
+
+public interface LosslessAPI extends AutoCloseable, Closeable {
 
     /**
      * 设置无损上下线相关的动作提供器, 不设置则使用默认的动态提供器（基于北极星SDK注册和反注册）
@@ -33,9 +34,11 @@ public interface LosslessAPI {
      */
     void losslessRegister();
 
-    /**
-     * 设置实例上线状态的提供器，如不设置则使用默认的提供器，基本北极星SDK的注册和反注册来实现
-     * @param registerStatusProvider 上线状态获取的提供器
-     */
-    void setRegisterStatusProvider(RegisterStatusProvider registerStatusProvider);
+    void destroy();
+
+    @Override
+    default void close() {
+        destroy();
+    }
+
 }

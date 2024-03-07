@@ -366,6 +366,18 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- polaris-plugins-lossless -->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>lossless-register</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>lossless-deregister</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- test -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

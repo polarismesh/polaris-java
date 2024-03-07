@@ -21,12 +21,13 @@ import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
-import com.tencent.polaris.api.plugin.lossless.RegisterStatusProvider;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.discovery.client.util.Validator;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
+
+import java.io.IOException;
 
 public class DefaultLosslessAPI extends BaseEngine implements LosslessAPI {
 
@@ -48,7 +49,7 @@ public class DefaultLosslessAPI extends BaseEngine implements LosslessAPI {
         checkAvailable("LosslessAPI");
         Validator.validateNotNull(losslessActionProvider, "losslessActionProvider");
         sdkContext.getValueContext().setValue(LosslessActionProvider.CTX_KEY, losslessActionProvider);
-        LOG.info("[LosslessAPI] losslessActionProvider updated, key {}", LosslessActionProvider.CTX_KEY);
+        LOG.info("[LosslessAPI] losslessActionProvider updated, key {}, name is {}", LosslessActionProvider.CTX_KEY, losslessActionProvider.getName());
     }
 
     @Override
@@ -57,12 +58,4 @@ public class DefaultLosslessAPI extends BaseEngine implements LosslessAPI {
         discoveryFlow.losslessRegister();
     }
 
-    @Override
-    public void setRegisterStatusProvider(RegisterStatusProvider registerStatusProvider) {
-        checkAvailable("LosslessAPI");
-        Validator.validateNotNull(registerStatusProvider, "registerStatusProvider");
-        sdkContext.getValueContext().setValue(RegisterStatusProvider.CTX_KEY, registerStatusProvider);
-        LOG.info("[LosslessAPI] registerStatusProvider updated, key {}", RegisterStatusProvider.CTX_KEY);
-
-    }
 }

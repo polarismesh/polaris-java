@@ -119,9 +119,7 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             }
             LOG.info("[LosslessRegister] health-check success, start to do register");
             try {
-                losslessActionProvider.doRegister(instanceProperties);
-                AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-                registered.set(true);
+                doRegister(losslessActionProvider, instanceProperties);
             } catch (Throwable throwable) {
                 LOG.error("[LosslessRegister] fail to do lossless register in plugin {}", getName(), throwable);
             }
@@ -141,19 +139,28 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             return;
         }
         if (!losslessActionProvider.isEnableHealthCheck()) {
+            LOG.info("[LosslessRegister] health check disabled, start lossless register after {}ms, plugin {}",
+                    losslessConfig.getDelayRegisterInterval(), getName());
             healthCheckExecutor.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    LOG.info("[LosslessRegister] health-check disabled, start to do register after delay {}",
-                            losslessConfig.getDelayRegisterInterval());
-                    losslessActionProvider.doRegister(instanceProperties);
+                    LOG.info("[LosslessRegister] health-check disabled, start to do register now");
+                    doRegister(losslessActionProvider, instanceProperties);
                 }
             }, losslessConfig.getDelayRegisterInterval(), TimeUnit.MILLISECONDS);
         } else {
+            LOG.info("[LosslessRegister] health check enabled, start lossless register after check, interval {}ms, plugin {}",
+                    losslessConfig.getHealthCheckInterval(), getName());
             HealthChecker healthChecker = new HealthChecker(losslessActionProvider, instanceProperties);
             healthCheckExecutor.schedule(
                     healthChecker, losslessConfig.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
         }
+    }
+
+    private void doRegister(LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+        losslessActionProvider.doRegister(instanceProperties);
+        AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+        registered.set(true);
     }
 
     @Override
