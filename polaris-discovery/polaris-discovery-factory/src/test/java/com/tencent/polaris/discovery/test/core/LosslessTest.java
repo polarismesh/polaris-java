@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
+import com.tencent.polaris.api.pojo.DefaultBaseInstance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.Node;
@@ -75,7 +76,12 @@ public class LosslessTest {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =
                     new DemoLosslessActionProvider(sdkContext, serviceKey, node, false);
-            losslessAPI.setLosslessActionProvider(demoLosslessActionProvider);
+            DefaultBaseInstance defaultBaseInstance = new DefaultBaseInstance();
+            defaultBaseInstance.setNamespace(serviceKey.getNamespace());
+            defaultBaseInstance.setService(serviceKey.getService());
+            defaultBaseInstance.setHost(node.getHost());
+            defaultBaseInstance.setPort(node.getPort());
+            losslessAPI.setLosslessActionProvider(defaultBaseInstance, demoLosslessActionProvider);
             System.out.println("[testLosslessRegisterWithoutHealthCheck] start to do lossless register");
             losslessAPI.losslessRegister();
             Utils.sleepUninterrupted(5000);
@@ -98,9 +104,10 @@ public class LosslessTest {
             System.out.println("[testLosslessRegisterWithoutHealthCheck] start to query status");
             try {
                 HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38080/online", "GET");
-                Assert.assertEquals(200, wrapper.getCode());
+                Assert.assertEquals(404, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
+                e.printStackTrace();
                 Assert.fail(e.getMessage());
             }
         }
@@ -116,7 +123,12 @@ public class LosslessTest {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =
                     new DemoLosslessActionProvider(sdkContext, serviceKey, node, true);
-            losslessAPI.setLosslessActionProvider(demoLosslessActionProvider);
+            DefaultBaseInstance defaultBaseInstance = new DefaultBaseInstance();
+            defaultBaseInstance.setNamespace(serviceKey.getNamespace());
+            defaultBaseInstance.setService(serviceKey.getService());
+            defaultBaseInstance.setHost(node.getHost());
+            defaultBaseInstance.setPort(node.getPort());
+            losslessAPI.setLosslessActionProvider(defaultBaseInstance, demoLosslessActionProvider);
             System.out.println("[testLosslessRegisterWithHealthCheck] start to do lossless register");
             losslessAPI.losslessRegister();
             Utils.sleepUninterrupted(10000);
@@ -139,9 +151,10 @@ public class LosslessTest {
             System.out.println("[testLosslessRegisterWithHealthCheck] start to query status");
             try {
                 HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38081/online", "GET");
-                Assert.assertEquals(200, wrapper.getCode());
+                Assert.assertEquals(404, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
+                e.printStackTrace();
                 Assert.fail(e.getMessage());
             }
         }

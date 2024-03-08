@@ -30,6 +30,9 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
+import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
+import com.tencent.polaris.api.pojo.BaseInstance;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -39,6 +42,7 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
@@ -69,6 +73,12 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
         return handlers;
     }
 
+    @Override
+    public boolean allowPortDrift() {
+        // 优雅上下线端口会配置在K8S的脚本中，不允许漂移
+        return false;
+    }
+
     private class DeregisterHandler implements HttpHandler {
 
         @Override
@@ -80,18 +90,22 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
                 exchange.close();
                 return;
             }
-            LosslessActionProvider losslessActionProvider = valueContext.getValue(LosslessActionProvider.CTX_KEY);
-            if (null == losslessActionProvider) {
+            Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+            if (CollectionUtils.isEmpty(actionProviders)) {
                 LOG.warn("[LosslessDeRegister] LosslessActionProvider not found, no lossless action will be taken");
                 HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_ACTION, 200);
                 return;
             }
             String text;
             int code;
+            Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
             try {
-                losslessActionProvider.doDeregister();
-                AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-                registered.set(false);
+                for (Map.Entry<BaseInstance, LosslessActionProvider> entry : actionProviders.entrySet()) {
+                    BaseInstance instance = entry.getKey();
+                    LosslessActionProvider actionProvider = entry.getValue();
+                    actionProvider.doDeregister();
+                    registerStatusMap.put(instance, RegisterStatus.UNREGISTERED);
+                }
                 text = REPS_TEXT_OK;
                 code = 200;
             } catch (Throwable e) {
@@ -119,7 +133,8 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
         losslessConfig = ctx.getConfig().getProvider().getLossless();
         valueContext = ctx.getValueContext();
         if (!valueContext.containsValue(CTX_KEY_REGISTER_STATUS)) {
-            valueContext.setValue(CTX_KEY_REGISTER_STATUS, new AtomicBoolean(false));
+            Map<BaseInstance, RegisterStatus> registerStatuses = new ConcurrentHashMap<>();
+            valueContext.setValue(CTX_KEY_REGISTER_STATUS, registerStatuses);
         }
     }
 

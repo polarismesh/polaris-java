@@ -26,16 +26,12 @@ import java.util.Map;
  * @author andrewshan
  * @date 2019/8/21
  */
-public interface Instance extends Comparable<Instance> {
+public interface Instance extends BaseInstance, Comparable<Instance> {
 
     /**
      * 默认权重为100
      */
     int DEFAULT_WEIGHT = 100;
-
-    String getNamespace();
-
-    String getService();
 
     String getRevision();
 
@@ -67,10 +63,6 @@ public interface Instance extends Comparable<Instance> {
     String getProtocol();
 
     String getId();
-
-    String getHost();
-
-    int getPort();
 
     String getVersion();
 

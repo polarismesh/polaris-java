@@ -27,7 +27,9 @@ import com.tencent.polaris.api.config.global.LocationProviderConfig;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.plugin.*;
+import com.tencent.polaris.api.plugin.HttpServerAware;
+import com.tencent.polaris.api.plugin.Plugin;
+import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
@@ -49,6 +51,7 @@ import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -57,8 +60,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-
-import org.slf4j.Logger;
 
 /**
  * 流程编排所需要用到的插件实例列表
@@ -104,7 +105,7 @@ public class Extensions extends Destroyable {
     private Map<String, Node> pluginToNodes;
 
     // 无损上下线策略列表，按照order排序
-     private List<LosslessPolicy> losslessPolicies;
+    private List<LosslessPolicy> losslessPolicies;
 
     public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
@@ -129,8 +130,8 @@ public class Extensions extends Destroyable {
     /**
      * 初始化
      *
-     * @param config 配置
-     * @param plugins 插件工厂
+     * @param config       配置
+     * @param plugins      插件工厂
      * @param valueContext 全局变量
      * @throws PolarisException 异常
      */
@@ -290,10 +291,11 @@ public class Extensions extends Destroyable {
     public void initHttpServer(Supplier plugins) {
         // 遍历插件并获取监听器
         pluginToNodes = new HashMap<>();
+        Map<Node, Boolean> nodeToDrift = new HashMap<>();
         Map<Node, Map<String, HttpHandler>> allHandlers = new HashMap<>();
         for (Plugin plugin : plugins.getAllPlugins()) {
             if (plugin instanceof HttpServerAware) {
-                HttpServerAware httpServerAware = (HttpServerAware)plugin;
+                HttpServerAware httpServerAware = (HttpServerAware) plugin;
                 Map<String, HttpHandler> handlers = httpServerAware.getHandlers();
                 if (CollectionUtils.isEmpty(handlers)) {
                     LOG.info("plugin {} has no http handlers", plugin.getName());
@@ -325,7 +327,12 @@ public class Extensions extends Destroyable {
                     existsHandlers.putAll(handlers);
                 }
                 pluginToNodes.put(plugin.getName(), node);
-
+                boolean allowPortDrift = httpServerAware.allowPortDrift();
+                if (!allowPortDrift) {
+                    nodeToDrift.put(node, allowPortDrift);
+                } else {
+                    nodeToDrift.putIfAbsent(node, allowPortDrift);
+                }
             }
         }
         if (MapUtils.isEmpty(allHandlers)) {
@@ -333,8 +340,8 @@ public class Extensions extends Destroyable {
             return;
         }
         // 校验端口重复，并自动迁移
-        Set<Node> nodesToCompare = new HashSet<>(allHandlers.keySet());
-        for (Node node : nodesToCompare) {
+        for (Map.Entry<Node, Boolean> entry : nodeToDrift.entrySet()) {
+            Node node = entry.getKey();
             Node targetNode = null;
             for (int i = 0; i <= MAX_EXTEND_PORT_RANGE; i++) {
                 Node probeNode = new Node(node.getHost(), node.getPort() + i);
@@ -345,6 +352,10 @@ public class Extensions extends Destroyable {
                 if (isPortAvailable(probeNode)) {
                     targetNode = probeNode;
                     break;
+                } else if (!entry.getValue()) {
+                    // 检查是否允许端口漂移
+                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                            String.format("host %s, port %d conflicted", probeNode.getHost(), probeNode.getPort()));
                 }
             }
             if (targetNode == null) {
@@ -356,9 +367,9 @@ public class Extensions extends Destroyable {
             if (!targetNode.equals(node)) {
                 LOG.info("listen port has changed from {} to {}", node.getPort(), targetNode.getPort());
                 allHandlers.put(targetNode, allHandlers.remove(node));
-                for (Map.Entry<String, Node> entry : pluginToNodes.entrySet()) {
-                    if (entry.getValue().equals(node)) {
-                        pluginToNodes.put(entry.getKey(), targetNode);
+                for (Map.Entry<String, Node> entry1 : pluginToNodes.entrySet()) {
+                    if (entry1.getValue().equals(node)) {
+                        pluginToNodes.put(entry1.getKey(), targetNode);
                     }
                 }
             }
@@ -483,7 +494,7 @@ public class Extensions extends Destroyable {
                 LOG.info("stop http server for {}", entry.getKey());
                 HttpServer httpServer = entry.getValue();
                 httpServer.stop(0);
-                ((ExecutorService)httpServer.getExecutor()).shutdownNow();
+                ((ExecutorService) httpServer.getExecutor()).shutdownNow();
             }
         }
     }

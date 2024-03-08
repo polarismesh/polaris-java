@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.core;
 
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
+import com.tencent.polaris.api.pojo.BaseInstance;
 
 import java.io.Closeable;
 
@@ -25,9 +26,10 @@ public interface LosslessAPI extends AutoCloseable, Closeable {
 
     /**
      * 设置无损上下线相关的动作提供器, 不设置则使用默认的动态提供器（基于北极星SDK注册和反注册）
+     * instance 对应需要进行无损上下线的实例，每个实例可以有一个动作管理器
      * @param losslessActionProvider 无损上下线动作提供器
      */
-    void setLosslessActionProvider(LosslessActionProvider losslessActionProvider);
+    void setLosslessActionProvider(BaseInstance instance, LosslessActionProvider losslessActionProvider);
 
     /**
      * 实施无损上下线

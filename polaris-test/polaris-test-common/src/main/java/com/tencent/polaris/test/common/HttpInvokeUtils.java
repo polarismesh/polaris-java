@@ -62,8 +62,12 @@ public class HttpInvokeUtils {
             connection.setUseCaches(false);
 
             int responseCode = connection.getResponseCode();
-
-            InputStream inputStream = connection.getInputStream();
+            InputStream inputStream;
+            if (responseCode == 200) {
+                inputStream = connection.getInputStream();
+            } else {
+                inputStream = connection.getErrorStream();
+            }
             stringBuffer = new StringBuilder();
             String line;
             bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));

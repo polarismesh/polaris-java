@@ -416,4 +416,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 	public Map<String, HttpHandler> getHandlers() {
 		return handlers;
 	}
+
+	@Override
+	public boolean allowPortDrift() {
+		return true;
+	}
 }

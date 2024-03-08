@@ -15,38 +15,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin;
-
-import com.sun.net.httpserver.HttpHandler;
-
-import java.util.Map;
+package com.tencent.polaris.api.pojo;
 
 /**
- *  plugin who want to expose port should implement this interface
+ * Essential Properties for instance
  */
-public interface HttpServerAware {
+public interface BaseInstance {
 
-    /**
-     * get host to listen to this plugin
-     * @return host
-     */
+    String getNamespace();
+
+    String getService();
+
     String getHost();
 
-    /**
-     * get port to listen in this plugin
-     * @return port
-     */
     int getPort();
-
-    /**
-     * get the http server handlers
-     * @return handlers
-     */
-    Map<String, HttpHandler> getHandlers();
-
-    /**
-     * 在端口冲突时允许端口漂移
-     * @return boolean
-     */
-    boolean allowPortDrift();
 }

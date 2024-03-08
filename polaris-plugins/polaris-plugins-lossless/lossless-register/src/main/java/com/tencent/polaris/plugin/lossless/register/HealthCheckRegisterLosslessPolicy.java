@@ -31,19 +31,22 @@ import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
+import com.tencent.polaris.api.pojo.BaseInstance;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
 
 public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
 
@@ -73,7 +76,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         losslessConfig = ctx.getConfig().getProvider().getLossless();
         valueContext = ctx.getValueContext();
         if (!valueContext.containsValue(CTX_KEY_REGISTER_STATUS)) {
-            valueContext.setValue(CTX_KEY_REGISTER_STATUS, new AtomicBoolean(false));
+            Map<BaseInstance, RegisterStatus> registerStatuses = new ConcurrentHashMap<>();
+            valueContext.setValue(CTX_KEY_REGISTER_STATUS, registerStatuses);
         }
     }
 
@@ -100,11 +104,15 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
     private class HealthChecker implements Runnable {
 
+        final BaseInstance instance;
+
         final LosslessActionProvider losslessActionProvider;
 
         final InstanceProperties instanceProperties;
 
-        public HealthChecker(LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+        public HealthChecker(BaseInstance instance,
+                             LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+            this.instance = instance;
             this.losslessActionProvider = losslessActionProvider;
             this.instanceProperties = instanceProperties;
         }
@@ -119,25 +127,16 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             }
             LOG.info("[LosslessRegister] health-check success, start to do register");
             try {
-                doRegister(losslessActionProvider, instanceProperties);
+                doRegister(instance, losslessActionProvider, instanceProperties);
             } catch (Throwable throwable) {
                 LOG.error("[LosslessRegister] fail to do lossless register in plugin {}", getName(), throwable);
             }
         }
     }
 
-    @Override
-    public void losslessRegister(InstanceProperties instanceProperties) {
-        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
-        LosslessActionProvider losslessActionProvider = valueContext.getValue(LosslessActionProvider.CTX_KEY);
-        if (null == losslessActionProvider) {
-            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
-            return;
-        }
-        if (stopped.get()) {
-            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
-            return;
-        }
+    private void doLosslessRegister(
+            BaseInstance instance, LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+        LOG.info("[LosslessRegister] do losslessRegister for instance {}", instance);
         if (!losslessActionProvider.isEnableHealthCheck()) {
             LOG.info("[LosslessRegister] health check disabled, start lossless register after {}ms, plugin {}",
                     losslessConfig.getDelayRegisterInterval(), getName());
@@ -145,22 +144,41 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
                 @Override
                 public void run() {
                     LOG.info("[LosslessRegister] health-check disabled, start to do register now");
-                    doRegister(losslessActionProvider, instanceProperties);
+                    doRegister(instance, losslessActionProvider, instanceProperties);
                 }
             }, losslessConfig.getDelayRegisterInterval(), TimeUnit.MILLISECONDS);
         } else {
             LOG.info("[LosslessRegister] health check enabled, start lossless register after check, interval {}ms, plugin {}",
                     losslessConfig.getHealthCheckInterval(), getName());
-            HealthChecker healthChecker = new HealthChecker(losslessActionProvider, instanceProperties);
+            HealthChecker healthChecker = new HealthChecker(instance, losslessActionProvider, instanceProperties);
             healthCheckExecutor.schedule(
                     healthChecker, losslessConfig.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
         }
     }
 
-    private void doRegister(LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+    @Override
+    public void losslessRegister(InstanceProperties instanceProperties) {
+        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
+
+        Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+        if (CollectionUtils.isEmpty(actionProviders)) {
+            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
+            return;
+        }
+        if (stopped.get()) {
+            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
+            return;
+        }
+        for (Map.Entry<BaseInstance, LosslessActionProvider> entry : actionProviders.entrySet()) {
+            doLosslessRegister(entry.getKey(), entry.getValue(), instanceProperties);
+        }
+    }
+
+    private void doRegister(BaseInstance instance,
+                            LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
         losslessActionProvider.doRegister(instanceProperties);
-        AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-        registered.set(true);
+        Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+        registerStatusMap.put(instance, RegisterStatus.REGISTERED);
     }
 
     @Override
@@ -182,11 +200,32 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         handlers.put(ONLINE_PATH, new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
-                AtomicBoolean registered = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-                RegisterStatus registerStatus = registered.get() ? RegisterStatus.REGISTERED : RegisterStatus.UNREGISTERED;
-                HttpServerUtils.writeTextToHttpServer(exchange, registerStatus.toString(), 200);
+                RegisterStatus finalStatus = RegisterStatus.REGISTERED;
+                Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+                // 全部实例都已经注册成功，才返回注册成功
+                if (CollectionUtils.isNotEmpty(actionProviders)) {
+                    Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+                    if (CollectionUtils.isNotEmpty(registerStatuses)) {
+                        for (BaseInstance baseInstance : actionProviders.keySet()) {
+                            RegisterStatus registerStatus = registerStatuses.get(baseInstance);
+                            if (registerStatus != RegisterStatus.REGISTERED) {
+                                finalStatus = RegisterStatus.UNREGISTERED;
+                            }
+                        }
+                    }
+                } else {
+                    finalStatus = RegisterStatus.UNREGISTERED;
+                }
+                HttpServerUtils.writeTextToHttpServer(
+                        exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 404);
             }
         });
         return handlers;
+    }
+
+    @Override
+    public boolean allowPortDrift() {
+        // 优雅上下线端口会配置在K8S的脚本中，不允许漂移
+        return false;
     }
 }
