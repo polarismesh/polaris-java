@@ -17,12 +17,17 @@
 
 package com.tencent.polaris.api.plugin.compose;
 
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.global.LocationConfig;
 import com.tencent.polaris.api.config.global.LocationProviderConfig;
+import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.HttpServerAware;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
@@ -33,31 +38,42 @@ import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.location.LocationProvider;
+import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * 流程编排所需要用到的插件实例列表
  *
  * @author andrewshan, Haotian Zhang
  */
-public class Extensions {
+public class Extensions extends Destroyable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Extensions.class);
+
+    private static final int MAX_EXTEND_PORT_RANGE = 10;
+
+    private static final int HTTP_SERVER_BACKLOG_SIZE = 5;
+
     private final List<InstanceCircuitBreaker> instanceCircuitBreakers = new ArrayList<>();
     private final List<HealthChecker> healthCheckers = new ArrayList<>();
     private final Map<String, HealthChecker> allHealthCheckers = new HashMap<>();
@@ -82,6 +98,15 @@ public class Extensions {
     //全局变量
     private ValueContext valueContext;
 
+    //全局监听端口，如果SDK需要暴露端口，则通过这里初始化
+    private Map<Node, HttpServer> httpServers;
+
+    //插件与端口的映射关系
+    private Map<String, Node> pluginToNodes;
+
+    // 无损上下线策略列表，按照order排序
+    private List<LosslessPolicy> losslessPolicies;
+
     public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(routerChain)) {
@@ -105,8 +130,8 @@ public class Extensions {
     /**
      * 初始化
      *
-     * @param config 配置
-     * @param plugins 插件工厂
+     * @param config       配置
+     * @param plugins      插件工厂
      * @param valueContext 全局变量
      * @throws PolarisException 异常
      */
@@ -166,7 +191,11 @@ public class Extensions {
         // 加载监控上报
         loadStatReporters(plugins);
 
+        // 加载优雅上下线插件
+        loadLosslessPolicies(config, plugins);
+
         initLocation(config, valueContext);
+
     }
 
     public ValueContext getValueContext() {
@@ -245,6 +274,163 @@ public class Extensions {
         }
     }
 
+    private void loadLosslessPolicies(Configuration config, Supplier plugins) throws PolarisException {
+        if (!config.getProvider().getLossless().isEnable()) {
+            return;
+        }
+        Collection<Plugin> losslessPolicyPlugins = plugins.getPlugins(PluginTypes.LOSSLESS_POLICY.getBaseType());
+        losslessPolicies = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(losslessPolicyPlugins)) {
+            for (Plugin plugin : losslessPolicyPlugins) {
+                losslessPolicies.add((LosslessPolicy) plugin);
+            }
+        }
+        losslessPolicies.sort((o1, o2) -> o1.getOrder() - o2.getOrder());
+    }
+
+    public void initHttpServer(Supplier plugins) {
+        // 遍历插件并获取监听器
+        pluginToNodes = new HashMap<>();
+        Map<Node, Boolean> nodeToDrift = new HashMap<>();
+        Map<Node, Map<String, HttpHandler>> allHandlers = new HashMap<>();
+        for (Plugin plugin : plugins.getAllPlugins()) {
+            if (plugin instanceof HttpServerAware) {
+                HttpServerAware httpServerAware = (HttpServerAware) plugin;
+                Map<String, HttpHandler> handlers = httpServerAware.getHandlers();
+                if (CollectionUtils.isEmpty(handlers)) {
+                    LOG.info("plugin {} has no http handlers", plugin.getName());
+                    continue;
+                }
+                int port = httpServerAware.getPort();
+                String host = httpServerAware.getHost();
+                LOG.info("plugin {} listen on {}:{}, expose paths {}", plugin.getName(), host, port, handlers.keySet());
+                if (port <= 0) {
+                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                            String.format("invalid port %d to bind by plugin %s", port, plugin.getName()));
+                }
+                if (StringUtils.isBlank(host)) {
+                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                            String.format("empty host to bind by plugin %s", plugin.getName()));
+                }
+                Node node = new Node(host, port);
+                if (!allHandlers.containsKey(node)) {
+                    allHandlers.put(node, handlers);
+                } else {
+                    Map<String, HttpHandler> existsHandlers = allHandlers.get(node);
+                    // validate duplicated paths
+                    for (String key : handlers.keySet()) {
+                        if (existsHandlers.containsKey(key)) {
+                            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                                    String.format("duplicated path %s in plugin %s", key, plugin.getName()));
+                        }
+                    }
+                    existsHandlers.putAll(handlers);
+                }
+                pluginToNodes.put(plugin.getName(), node);
+                boolean allowPortDrift = httpServerAware.allowPortDrift();
+                if (!allowPortDrift) {
+                    nodeToDrift.put(node, allowPortDrift);
+                } else {
+                    nodeToDrift.putIfAbsent(node, allowPortDrift);
+                }
+            }
+        }
+        if (MapUtils.isEmpty(allHandlers)) {
+            LOG.info("no http paths to exposed, will not listen on any ports");
+            return;
+        }
+        // 校验端口重复，并自动迁移
+        for (Map.Entry<Node, Boolean> entry : nodeToDrift.entrySet()) {
+            Node node = entry.getKey();
+            Node targetNode = null;
+            for (int i = 0; i <= MAX_EXTEND_PORT_RANGE; i++) {
+                Node probeNode = new Node(node.getHost(), node.getPort() + i);
+                if (!probeNode.equals(node) && allHandlers.containsKey(probeNode)) {
+                    // check duplicated
+                    continue;
+                }
+                if (isPortAvailable(probeNode)) {
+                    targetNode = probeNode;
+                    break;
+                } else if (!entry.getValue()) {
+                    // 检查是否允许端口漂移
+                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                            String.format("host %s, port %d conflicted", probeNode.getHost(), probeNode.getPort()));
+                }
+            }
+            if (targetNode == null) {
+                LOG.error("fail to bind {}, port conflict within range [{}, {}]", node,
+                        node.getPort(), node.getPort() + MAX_EXTEND_PORT_RANGE);
+                throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                        String.format("port conflict in node %s", node));
+            }
+            if (!targetNode.equals(node)) {
+                LOG.info("listen port has changed from {} to {}", node.getPort(), targetNode.getPort());
+                allHandlers.put(targetNode, allHandlers.remove(node));
+                for (Map.Entry<String, Node> entry1 : pluginToNodes.entrySet()) {
+                    if (entry1.getValue().equals(node)) {
+                        pluginToNodes.put(entry1.getKey(), targetNode);
+                    }
+                }
+            }
+        }
+        //启动监听
+        httpServers = new HashMap<>();
+        for (Map.Entry<Node, Map<String, HttpHandler>> entry : allHandlers.entrySet()) {
+            Node node = entry.getKey();
+            Map<String, HttpHandler> handlers = entry.getValue();
+            try {
+                HttpServer httpServer = HttpServer.create(
+                        new InetSocketAddress(node.getHost(), node.getPort()), HTTP_SERVER_BACKLOG_SIZE);
+                for (Map.Entry<String, HttpHandler> handlerEntry : handlers.entrySet()) {
+                    httpServer.createContext(handlerEntry.getKey(), handlerEntry.getValue());
+                }
+                NamedThreadFactory threadFactory = new NamedThreadFactory("polaris-java-http");
+                ExecutorService executor = Executors.newFixedThreadPool(3, threadFactory);
+                httpServer.setExecutor(executor);
+                httpServers.put(node, httpServer);
+                startServer(threadFactory, httpServer);
+            } catch (IOException e) {
+                LOG.error("create polaris http server exception. host:{}, port:{}, path:{}",
+                        node.getHost(), node.getPort(), handlers.keySet(), e);
+                throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Create polaris http server failed!", e);
+            }
+        }
+    }
+
+    public Node getHttpServerNodeByPlugin(String name) {
+        return pluginToNodes.get(name);
+    }
+
+    private static void startServer(ThreadFactory threadFactory, HttpServer httpServer) {
+        if (Thread.currentThread().isDaemon()) {
+            httpServer.start();
+            return;
+        }
+        Thread httpServerThread = threadFactory.newThread(httpServer::start);
+        httpServerThread.start();
+        try {
+            httpServerThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static boolean isPortAvailable(Node node) {
+        try {
+            bindPort(node.getHost(), node.getPort());
+            return true;
+        } catch (Exception ignored) {
+        }
+        return false;
+    }
+
+    private static void bindPort(String host, int port) throws IOException {
+        try (Socket socket = new Socket()) {
+            socket.bind(new InetSocketAddress(host, port));
+        }
+    }
+
     public Supplier getPlugins() {
         return plugins;
     }
@@ -295,5 +481,21 @@ public class Extensions {
 
     public FlowCache getFlowCache() {
         return flowCache;
+    }
+
+    public List<LosslessPolicy> getLosslessPolicies() {
+        return losslessPolicies;
+    }
+
+    @Override
+    protected void doDestroy() {
+        if (MapUtils.isNotEmpty(httpServers)) {
+            for (Map.Entry<Node, HttpServer> entry : httpServers.entrySet()) {
+                LOG.info("stop http server for {}", entry.getKey());
+                HttpServer httpServer = entry.getValue();
+                httpServer.stop(0);
+                ((ExecutorService) httpServer.getExecutor()).shutdownNow();
+            }
+        }
     }
 }

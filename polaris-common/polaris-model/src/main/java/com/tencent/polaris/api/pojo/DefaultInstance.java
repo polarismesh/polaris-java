@@ -23,11 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-public class DefaultInstance implements Instance {
-
-    private String namespace;
-
-    private String service;
+public class DefaultInstance extends DefaultBaseInstance implements Instance {
 
     private String revision;
 
@@ -40,10 +36,6 @@ public class DefaultInstance implements Instance {
     private String protocol;
 
     private String id;
-
-    private String host;
-
-    private int port;
 
     private String version;
 
@@ -62,25 +54,6 @@ public class DefaultInstance implements Instance {
     private int weight;
 
     private String logicSet;
-
-
-    @Override
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    @Override
-    public String getService() {
-        return service;
-    }
-
-    public void setService(String service) {
-        this.service = service;
-    }
 
     @Override
     public String getRevision() {
@@ -129,24 +102,6 @@ public class DefaultInstance implements Instance {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    @Override
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     @Override
@@ -276,16 +231,16 @@ public class DefaultInstance implements Instance {
     @Override
     public String toString() {
         return "DefaultInstance{" +
-                "namespace='" + namespace + '\'' +
-                ", service='" + service + '\'' +
+                "namespace='" + getNamespace() + '\'' +
+                ", service='" + getService() + '\'' +
                 ", revision='" + revision + '\'' +
                 ", circuitBreakerStatuses=" + circuitBreakerStatuses +
                 ", healthy=" + healthy +
                 ", isolated=" + isolated +
                 ", protocol='" + protocol + '\'' +
                 ", id='" + id + '\'' +
-                ", host='" + host + '\'' +
-                ", port=" + port +
+                ", host='" + getHost() + '\'' +
+                ", port=" + getPort() +
                 ", version='" + version + '\'' +
                 ", metadata=" + metadata +
                 ", enableHealthCheck=" + enableHealthCheck +

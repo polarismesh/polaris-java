@@ -27,12 +27,8 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ServiceLoader;
+
+import java.util.*;
 
 
 /**
@@ -152,5 +148,14 @@ public class PluginManager implements Manager {
         }
         Map<String, Plugin> plugins = typedPlugins.get(type);
         return plugins.values();
+    }
+
+    @Override
+    public Collection<Plugin> getAllPlugins() throws PolarisException {
+        Collection<Plugin> plugins = new HashSet<>();
+        for (Map.Entry<PluginType, Map<String, Plugin>> entry: typedPlugins.entrySet()) {
+            plugins.addAll(entry.getValue().values());
+        }
+        return plugins;
     }
 }

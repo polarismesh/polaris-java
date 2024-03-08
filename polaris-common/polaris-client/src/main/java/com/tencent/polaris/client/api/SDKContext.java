@@ -223,7 +223,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         try {
             return getHostByDial(configuration);
         } catch (IOException e) {
-            LOG.error("[ReportClient]get address by dial failed", e);
+            LOG.info("[ReportClient]get address by dial failed: {}", e.getMessage());
         }
         return DEFAULT_ADDRESS;
     }
@@ -317,7 +317,9 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         }
         extensions.init(configuration, plugins, valueContext);
         plugins.postContextInitPlugins(extensions);
+        extensions.initHttpServer(plugins);
         reportClient(extensions);
+        registerDestroyHook(extensions);
     }
 
     private boolean clusterAvailable(ClusterConfig clusterConfig) {

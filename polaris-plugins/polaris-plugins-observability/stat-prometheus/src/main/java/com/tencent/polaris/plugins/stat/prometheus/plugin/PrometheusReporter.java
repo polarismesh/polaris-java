@@ -28,10 +28,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.tencent.polaris.api.config.global.StatReporterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.HttpServerAware;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -44,6 +46,7 @@ import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
@@ -55,8 +58,8 @@ import com.tencent.polaris.plugins.stat.common.model.StatMetric;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel.SystemMetricLabelOrder;
 import com.tencent.polaris.plugins.stat.prometheus.exporter.PushGateway;
 import com.tencent.polaris.plugins.stat.prometheus.handler.CommonHandler;
+import com.tencent.polaris.plugins.stat.prometheus.handler.HttpMetricHandler;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
-import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHttpServer;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import org.slf4j.Logger;
@@ -66,9 +69,13 @@ import org.slf4j.Logger;
  *
  * @author wallezhang
  */
-public class PrometheusReporter implements StatReporter, PluginConfigProvider {
+public class PrometheusReporter implements StatReporter, PluginConfigProvider, HttpServerAware {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusReporter.class);
+
+	public static final Integer DEFAULT_MIN_PULL_PORT = 28080;
+
+	private static final String DEFAULT_PATH = "/metrics";
 
 	private PrometheusHandlerConfig config;
 
@@ -84,8 +91,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
 	private String instanceID;
 
-	private PrometheusHttpServer httpServer;
-
 	private ScheduledExecutorService executorService;
 
 	private PushGateway pushGateway;
@@ -93,6 +98,14 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 	private Extensions extensions;
 
 	private boolean enable;
+
+	private int port;
+
+	private String host;
+
+	private String path;
+
+	private Map<String, HttpHandler> handlers;
 
 	public PrometheusReporter() {
 		this.container = new StatInfoCollectorContainer();
@@ -197,14 +210,15 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
 	@Override
 	public ReporterMetaInfo metaInfo() {
-		if (!enable || Objects.equals(config.getType(), "push") || Objects.isNull(httpServer)) {
+		if (!enable || Objects.equals(config.getType(), "push") || Objects.isNull(handlers)) {
 			return ReporterMetaInfo.builder().build();
 		}
+		Node httpServerNode = extensions.getHttpServerNodeByPlugin(getName());
 		return ReporterMetaInfo.builder().
 				protocol("http").
-				path(httpServer.getPath()).
-				host(httpServer.getHost()).
-				port(httpServer.getPort()).
+				path(path).
+				host(httpServerNode.getHost()).
+				port(httpServerNode.getPort()).
 				target(getName()).
 				build();
 	}
@@ -232,20 +246,31 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 		if (Objects.nonNull(executorService)) {
 			executorService.shutdown();
 		}
-		if (Objects.nonNull(httpServer)) {
-			httpServer.stopServer();
-		}
 	}
 
 	private void startScheduleAggregationTask() {
 		// If port is -1, then disable prometheus http server and metrics report
-		if (config.getPort() == -1) {
+		if (config.getPort() < 0) {
 			// 如果启用了 pull 模式，但是没有对外暴露 prometheus http-server，则效果还是 disable 状态
 			enable = false;
-			LOGGER.info("[Metrics][Prometheus] port == -1, disable run prometheus http-server and metrics report");
+			LOGGER.info("[Metrics][Prometheus] port < 0, disable run prometheus http-server and metrics report");
 			return;
 		}
-		httpServer = new PrometheusHttpServer(config.getHost(), config.getPort(), promRegistry);
+		if (config.getPort() == 0) {
+			port = DEFAULT_MIN_PULL_PORT;
+		} else {
+			port = config.getPort();
+		}
+		host = config.getHost();
+		handlers = new HashMap<>();
+		HttpMetricHandler metricHandler = new HttpMetricHandler(promRegistry);
+		handlers.put("/", metricHandler);
+		handlers.put("/-/healthy", metricHandler);
+		path = config.getPath();
+		if (StringUtils.isBlank(path)) {
+			path = DEFAULT_PATH;
+		}
+		handlers.put(path, metricHandler);
 		if (null != container && null != executorService && null != sampleMapping) {
 			this.executorService.scheduleWithFixedDelay(this::doAggregation,
 					CommonHandler.DEFAULT_INTERVAL_MILLI,
@@ -375,5 +400,25 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider {
 
 	void setExecutorService(ScheduledExecutorService executorService) {
 		this.executorService = executorService;
+	}
+
+	@Override
+	public String getHost() {
+		return host;
+	}
+
+	@Override
+	public int getPort() {
+		return port;
+	}
+
+	@Override
+	public Map<String, HttpHandler> getHandlers() {
+		return handlers;
+	}
+
+	@Override
+	public boolean allowPortDrift() {
+		return true;
 	}
 }

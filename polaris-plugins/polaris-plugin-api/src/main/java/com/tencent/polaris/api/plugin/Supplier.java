@@ -56,4 +56,11 @@ public interface Supplier {
      */
     Collection<Plugin> getPlugins(PluginType type) throws PolarisException;
 
+    /**
+     * 获取当前已经加载的所有插件
+     * @return 插件实例列表
+     * @throws PolarisException 获取失败异常
+     */
+    Collection<Plugin> getAllPlugins() throws PolarisException;
+
 }

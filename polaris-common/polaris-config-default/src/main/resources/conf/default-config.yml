@@ -260,9 +260,16 @@ provider:
       enable: true # If registration is enabled.
   # 优雅上下线
   lossless:
+    # 是否启用优雅上下线
     enable: false
+    # 优雅上下线功能需要对外提供接口，接口的监听IP
+    host: 0.0.0.0
+    # 优雅上下线功能需要对外提供接口，接口的监听端口
     port: 28080
+    # 优雅上线时，如果没有启动探测，则兜底延迟多久会进行上线
     delayRegisterInterval: 30s
+    # 优雅上线的探测周期
+    healthCheckInterval: 5s
   # 限流配置
   rateLimit:
     # 是否开启限流功能

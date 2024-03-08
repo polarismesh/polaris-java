@@ -55,6 +55,10 @@ public class ValueContext {
         return (T) coreMap.get(key);
     }
 
+    public boolean containsValue(String key) {
+        return coreMap.containsKey(key);
+    }
+
     /**
      * 等待地域信息就绪
      *

@@ -143,6 +143,18 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- 优雅上下线插件 -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>lossless-register</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>lossless-deregister</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!--测试依赖插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

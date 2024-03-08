@@ -24,10 +24,17 @@ public class NamedThreadFactory implements ThreadFactory {
 
     private final String component;
 
+    private final boolean daemon;
+
     private final AtomicInteger idx = new AtomicInteger(0);
 
     public NamedThreadFactory(String component) {
+        this(component, false);
+    }
+
+    public NamedThreadFactory(String component, boolean daemon) {
         this.component = component;
+        this.daemon = daemon;
     }
 
     @Override
@@ -35,6 +42,7 @@ public class NamedThreadFactory implements ThreadFactory {
         Thread thread = new Thread(r);
         int nextIdx = idx.addAndGet(1);
         thread.setName(String.format("polaris-%s-%d", component, nextIdx));
+        thread.setDaemon(daemon);
         return thread;
     }
 

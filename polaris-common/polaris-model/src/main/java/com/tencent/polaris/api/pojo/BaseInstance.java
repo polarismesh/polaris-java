@@ -15,16 +15,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin.lossless;
+package com.tencent.polaris.api.pojo;
 
-import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
+/**
+ * Essential Properties for instance
+ */
+public interface BaseInstance {
 
-public interface RegisterStatusProvider {
+    String getNamespace();
 
-    /**
-     * the key identify in ValueContext
-     */
-    String CTX_KEY = "key_statusProvider";
+    String getService();
 
-    RegisterStatus checkRegisterStatus(CommonProviderRequest commonProviderRequest);
+    String getHost();
+
+    int getPort();
 }

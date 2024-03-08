@@ -19,13 +19,24 @@ package com.tencent.polaris.discovery.client.api;
 
 import com.tencent.polaris.api.core.LosslessAPI;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.flow.DiscoveryFlow;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
-import com.tencent.polaris.api.plugin.lossless.RegisterStatusProvider;
+import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.discovery.client.util.Validator;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultLosslessAPI extends BaseEngine implements LosslessAPI {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultLosslessAPI.class);
+
+    private DiscoveryFlow discoveryFlow;
 
     public DefaultLosslessAPI(SDKContext sdkContext) {
         super(sdkContext);
@@ -33,21 +44,25 @@ public class DefaultLosslessAPI extends BaseEngine implements LosslessAPI {
 
     @Override
     protected void subInit() throws PolarisException {
-
+        discoveryFlow = sdkContext.getOrInitFlow(DiscoveryFlow.class);
+        Map<BaseInstance, LosslessActionProvider> actionProviders = new ConcurrentHashMap<>();
+        sdkContext.getValueContext().setValue(LosslessActionProvider.CTX_KEY, actionProviders);
     }
 
     @Override
-    public void setLosslessActionProvider(LosslessActionProvider losslessActionProvider) {
-
+    public void setLosslessActionProvider(BaseInstance instance, LosslessActionProvider losslessActionProvider) {
+        checkAvailable("LosslessAPI");
+        Validator.validateNotNull(losslessActionProvider, "losslessActionProvider");
+        Map<BaseInstance, LosslessActionProvider> actionProviders = sdkContext.getValueContext().getValue(LosslessActionProvider.CTX_KEY);
+        actionProviders.put(instance, losslessActionProvider);
+        LOG.info("[LosslessAPI] losslessActionProvider updated, key {}, name is {}, instance {}",
+                LosslessActionProvider.CTX_KEY, losslessActionProvider.getName(), instance);
     }
 
     @Override
     public void losslessRegister() {
-
+        checkAvailable("LosslessAPI");
+        discoveryFlow.losslessRegister();
     }
 
-    @Override
-    public void setRegisterStatusProvider(RegisterStatusProvider registerStatusProvider) {
-
-    }
 }

@@ -17,6 +17,10 @@
 
 package com.tencent.polaris.api.plugin.lossless;
 
+import com.tencent.polaris.api.pojo.BaseInstance;
+
+import java.util.Collection;
+
 public interface LosslessActionProvider {
 
     /**
