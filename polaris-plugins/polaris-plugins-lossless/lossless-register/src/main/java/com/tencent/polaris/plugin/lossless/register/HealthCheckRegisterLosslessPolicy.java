@@ -33,9 +33,11 @@ import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
 import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.Event;
 import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.logging.LoggingConsts;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -51,6 +53,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
 
     private static final Logger LOG = LoggerFactory.getLogger(HealthCheckRegisterLosslessPolicy.class);
+
+    private static final Logger EVENT_LOG = LoggerFactory.getLogger(LoggingConsts.LOGGING_LOSSLESS_EVENT);
 
     private LosslessConfig losslessConfig;
 
@@ -179,6 +183,13 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         losslessActionProvider.doRegister(instanceProperties);
         Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
         registerStatusMap.put(instance, RegisterStatus.REGISTERED);
+        // record event log
+        String clientId = valueContext.getClientId();
+        Event event = new Event();
+        event.setClientId(clientId);
+        event.setBaseInstance(instance);
+        event.setEventName(EVENT_LOSSLESS_REGISTER);
+        EVENT_LOG.info(event.toString());
     }
 
     @Override

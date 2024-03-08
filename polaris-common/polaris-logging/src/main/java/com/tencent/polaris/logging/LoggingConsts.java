@@ -35,4 +35,6 @@ public interface LoggingConsts {
     String LOGGING_CIRCUITBREAKER_EVENT = "polaris-circuitbreaker-event";
 
     String LOGGING_HEALTHCHECK_EVENT = "polaris-healthcheck-event";
+
+    String LOGGING_LOSSLESS_EVENT = "polaris-lossless-event";
 }

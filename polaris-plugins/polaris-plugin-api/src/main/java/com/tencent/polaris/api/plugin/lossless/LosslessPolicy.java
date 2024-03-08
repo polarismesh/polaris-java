@@ -27,6 +27,10 @@ public interface LosslessPolicy extends Plugin, SortableAware {
      */
     String CTX_KEY_REGISTER_STATUS = "key-register-status";
 
+    String EVENT_LOSSLESS_REGISTER = "LosslessRegister";
+
+    String EVENT_LOSSLESS_DEREGISTER = "LosslessDeregister";
+
     String ONLINE_PATH = "/online";
 
     String OFFLINE_PATH = "/offline";
