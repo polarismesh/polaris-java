@@ -19,6 +19,7 @@ package com.tencent.polaris.api.plugin.lossless;
 
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.SortableAware;
+import com.tencent.polaris.api.pojo.BaseInstance;
 
 public interface LosslessPolicy extends Plugin, SortableAware {
 
@@ -48,10 +49,15 @@ public interface LosslessPolicy extends Plugin, SortableAware {
     void buildInstanceProperties(InstanceProperties instanceProperties);
 
     /**
-     * 实施无损上线
+     * do lossless register
+     * @param instance instance to lossless register
      * @param instanceProperties properties, for the callback register to set into instance
      */
-    void losslessRegister(InstanceProperties instanceProperties);
+    void losslessRegister(BaseInstance instance, InstanceProperties instanceProperties);
 
-
+    /**
+     * do lossless deregister
+     * @param instance instance to lossless deregister
+     */
+    void losslessDeregister(BaseInstance instance);
 }

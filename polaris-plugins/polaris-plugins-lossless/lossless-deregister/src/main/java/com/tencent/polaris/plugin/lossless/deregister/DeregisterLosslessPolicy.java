@@ -32,6 +32,7 @@ import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
 import com.tencent.polaris.api.pojo.BaseInstance;
+import com.tencent.polaris.api.rpc.BaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.Event;
 import com.tencent.polaris.client.util.HttpServerUtils;
@@ -43,9 +44,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
 
@@ -56,6 +57,8 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
     private LosslessConfig losslessConfig;
 
     private ValueContext valueContext;
+
+    private Extensions extensions;
 
     @Override
     public String getHost() {
@@ -100,22 +103,21 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
                 HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_ACTION, 200);
                 return;
             }
+
+            List<LosslessPolicy> losslessPolicies = extensions.getLosslessPolicies();
+            if (CollectionUtils.isEmpty(losslessPolicies)) {
+                LOG.warn("lossless is disabled, no losslessDeregister will do");
+                exchange.sendResponseHeaders(500, 0);
+                exchange.close();
+                return;
+            }
             String text;
             int code;
-            Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
             try {
-                for (Map.Entry<BaseInstance, LosslessActionProvider> entry : actionProviders.entrySet()) {
-                    BaseInstance instance = entry.getKey();
-                    LosslessActionProvider actionProvider = entry.getValue();
-                    actionProvider.doDeregister();
-                    registerStatusMap.put(instance, RegisterStatus.UNREGISTERED);
-                    // record event log
-                    String clientId = valueContext.getClientId();
-                    Event event = new Event();
-                    event.setClientId(clientId);
-                    event.setBaseInstance(instance);
-                    event.setEventName(EVENT_LOSSLESS_DEREGISTER);
-                    EVENT_LOG.info(event.toString());
+                for (BaseInstance instance : actionProviders.keySet()) {
+                    for (LosslessPolicy losslessPolicy : losslessPolicies) {
+                        losslessPolicy.losslessDeregister(instance);
+                    }
                 }
                 text = REPS_TEXT_OK;
                 code = 200;
@@ -125,7 +127,6 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
                 code = 500;
             }
             HttpServerUtils.writeTextToHttpServer(exchange, text, code);
-
         }
     }
 
@@ -151,7 +152,7 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
-
+        extensions = ctx;
     }
 
     @Override
@@ -170,7 +171,36 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
     }
 
     @Override
-    public void losslessRegister(InstanceProperties instanceProperties) {
+    public void losslessRegister(BaseInstance instance, InstanceProperties instanceProperties) {
 
+    }
+
+    @Override
+    public void losslessDeregister(BaseInstance instance) {
+        Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+        if (CollectionUtils.isEmpty(actionProviders)) {
+            LOG.warn("[LosslessDeRegister] LosslessActionProvider not found, " +
+                    "no lossless action will be taken for instance {}", instance);
+            return;
+        }
+        LosslessActionProvider losslessActionProvider = actionProviders.get(instance);
+        if (null == losslessActionProvider) {
+            LOG.warn("[LosslessDeRegister] LosslessActionProvider not found for instance {}", instance);
+            return;
+        }
+        doLosslessDeregister(instance, losslessActionProvider);
+    }
+
+    private void doLosslessDeregister(BaseInstance instance, LosslessActionProvider actionProvider) {
+        actionProvider.doDeregister();
+        Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+        registerStatusMap.put(instance, RegisterStatus.UNREGISTERED);
+        // record event log
+        String clientId = valueContext.getClientId();
+        Event event = new Event();
+        event.setClientId(clientId);
+        event.setBaseInstance(instance);
+        event.setEventName(EVENT_LOSSLESS_DEREGISTER);
+        EVENT_LOG.info(event.toString());
     }
 }

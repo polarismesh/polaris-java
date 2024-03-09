@@ -33,6 +33,7 @@ import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.TargetServer;
+import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
@@ -392,10 +393,10 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
     }
 
     @Override
-    public void losslessRegister() {
+    public void losslessRegister(BaseInstance instance) {
         List<LosslessPolicy> losslessPolicies = sdkContext.getExtensions().getLosslessPolicies();
         if (CollectionUtils.isEmpty(losslessPolicies)) {
-            LOG.info("lossless is disabled, no losslessRegister will do nothing");
+            LOG.info("lossless is disabled, no losslessRegister will do");
             return;
         }
         InstanceProperties instanceProperties = new InstanceProperties();
@@ -403,7 +404,19 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             losslessPolicy.buildInstanceProperties(instanceProperties);
         }
         for (LosslessPolicy losslessPolicy : losslessPolicies) {
-            losslessPolicy.losslessRegister(instanceProperties);
+            losslessPolicy.losslessRegister(instance, instanceProperties);
+        }
+    }
+
+    @Override
+    public void losslessDeregister(BaseInstance instance) {
+        List<LosslessPolicy> losslessPolicies = sdkContext.getExtensions().getLosslessPolicies();
+        if (CollectionUtils.isEmpty(losslessPolicies)) {
+            LOG.info("lossless is disabled, no losslessDeregister will do");
+            return;
+        }
+        for (LosslessPolicy losslessPolicy : losslessPolicies) {
+            losslessPolicy.losslessDeregister(instance);
         }
     }
 

@@ -106,6 +106,33 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
     }
 
+    @Override
+    public void losslessRegister(BaseInstance instance, InstanceProperties instanceProperties) {
+        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
+
+        Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+        if (CollectionUtils.isEmpty(actionProviders)) {
+            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
+            return;
+        }
+        if (stopped.get()) {
+            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
+            return;
+        }
+        LosslessActionProvider losslessActionProvider = actionProviders.get(instance);
+        if (null == losslessActionProvider) {
+            LOG.warn("[LosslessRegister] LosslessActionProvider for instance {} not found, " +
+                    "no lossless action will be taken", instance);
+            return;
+        }
+        doLosslessRegister(instance, losslessActionProvider, instanceProperties);
+    }
+
+    @Override
+    public void losslessDeregister(BaseInstance instance) {
+
+    }
+
     private class HealthChecker implements Runnable {
 
         final BaseInstance instance;
@@ -157,24 +184,6 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             HealthChecker healthChecker = new HealthChecker(instance, losslessActionProvider, instanceProperties);
             healthCheckExecutor.schedule(
                     healthChecker, losslessConfig.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
-        }
-    }
-
-    @Override
-    public void losslessRegister(InstanceProperties instanceProperties) {
-        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
-
-        Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
-        if (CollectionUtils.isEmpty(actionProviders)) {
-            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
-            return;
-        }
-        if (stopped.get()) {
-            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
-            return;
-        }
-        for (Map.Entry<BaseInstance, LosslessActionProvider> entry : actionProviders.entrySet()) {
-            doLosslessRegister(entry.getKey(), entry.getValue(), instanceProperties);
         }
     }
 
