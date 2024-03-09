@@ -19,6 +19,7 @@ package com.tencent.polaris.api.flow;
 
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
+import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.client.flow.AbstractFlow;
 
@@ -73,7 +74,9 @@ public interface DiscoveryFlow extends AbstractFlow {
     }
 
 
-    default void losslessRegister() {}
+    default void losslessRegister(BaseInstance instance) {}
+
+    default void losslessDeregister(BaseInstance instance) {}
 
     void destroy();
 

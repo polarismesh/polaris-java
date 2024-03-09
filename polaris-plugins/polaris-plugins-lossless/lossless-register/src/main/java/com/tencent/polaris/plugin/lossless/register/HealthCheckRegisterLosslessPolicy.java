@@ -33,9 +33,11 @@ import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
 import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.Event;
 import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.logging.LoggingConsts;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -51,6 +53,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
 
     private static final Logger LOG = LoggerFactory.getLogger(HealthCheckRegisterLosslessPolicy.class);
+
+    private static final Logger EVENT_LOG = LoggerFactory.getLogger(LoggingConsts.LOGGING_LOSSLESS_EVENT);
 
     private LosslessConfig losslessConfig;
 
@@ -99,6 +103,33 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
     @Override
     public void buildInstanceProperties(InstanceProperties instanceProperties) {
+
+    }
+
+    @Override
+    public void losslessRegister(BaseInstance instance, InstanceProperties instanceProperties) {
+        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
+
+        Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+        if (CollectionUtils.isEmpty(actionProviders)) {
+            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
+            return;
+        }
+        if (stopped.get()) {
+            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
+            return;
+        }
+        LosslessActionProvider losslessActionProvider = actionProviders.get(instance);
+        if (null == losslessActionProvider) {
+            LOG.warn("[LosslessRegister] LosslessActionProvider for instance {} not found, " +
+                    "no lossless action will be taken", instance);
+            return;
+        }
+        doLosslessRegister(instance, losslessActionProvider, instanceProperties);
+    }
+
+    @Override
+    public void losslessDeregister(BaseInstance instance) {
 
     }
 
@@ -156,29 +187,18 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         }
     }
 
-    @Override
-    public void losslessRegister(InstanceProperties instanceProperties) {
-        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
-
-        Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
-        if (CollectionUtils.isEmpty(actionProviders)) {
-            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
-            return;
-        }
-        if (stopped.get()) {
-            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
-            return;
-        }
-        for (Map.Entry<BaseInstance, LosslessActionProvider> entry : actionProviders.entrySet()) {
-            doLosslessRegister(entry.getKey(), entry.getValue(), instanceProperties);
-        }
-    }
-
     private void doRegister(BaseInstance instance,
                             LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
         losslessActionProvider.doRegister(instanceProperties);
         Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
         registerStatusMap.put(instance, RegisterStatus.REGISTERED);
+        // record event log
+        String clientId = valueContext.getClientId();
+        Event event = new Event();
+        event.setClientId(clientId);
+        event.setBaseInstance(instance);
+        event.setEventName(EVENT_LOSSLESS_REGISTER);
+        EVENT_LOG.info(event.toString());
     }
 
     @Override

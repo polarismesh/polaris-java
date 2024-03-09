@@ -25,16 +25,23 @@ import java.io.Closeable;
 public interface LosslessAPI extends AutoCloseable, Closeable {
 
     /**
-     * 设置无损上下线相关的动作提供器, 不设置则使用默认的动态提供器（基于北极星SDK注册和反注册）
-     * instance 对应需要进行无损上下线的实例，每个实例可以有一个动作管理器
+     * 设置无损上下线相关的动作提供器
+     * @param  instance 对应需要进行无损上下线的实例，每个实例可以有一个动作管理器
      * @param losslessActionProvider 无损上下线动作提供器
      */
     void setLosslessActionProvider(BaseInstance instance, LosslessActionProvider losslessActionProvider);
 
     /**
-     * 实施无损上下线
+     * 对指定实例实施无损上线
+     * @param  instance 对应需要进行无损上线的实例
      */
-    void losslessRegister();
+    void losslessRegister(BaseInstance instance);
+
+    /**
+     * 对指定实例实施无损下线
+     * @param  instance 对应需要进行无损下线的实例
+     */
+    void losslessDeRegister(BaseInstance instance);
 
     void destroy();
 

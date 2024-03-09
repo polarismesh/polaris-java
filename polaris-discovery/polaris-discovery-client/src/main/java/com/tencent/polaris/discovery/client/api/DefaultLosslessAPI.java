@@ -60,9 +60,14 @@ public class DefaultLosslessAPI extends BaseEngine implements LosslessAPI {
     }
 
     @Override
-    public void losslessRegister() {
+    public void losslessRegister(BaseInstance instance) {
         checkAvailable("LosslessAPI");
-        discoveryFlow.losslessRegister();
+        discoveryFlow.losslessRegister(instance);
+    }
+
+    @Override
+    public void losslessDeRegister(BaseInstance instance) {
+        discoveryFlow.losslessDeregister(instance);
     }
 
 }
