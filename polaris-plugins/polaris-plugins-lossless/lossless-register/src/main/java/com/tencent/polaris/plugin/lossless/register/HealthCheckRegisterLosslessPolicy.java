@@ -41,9 +41,7 @@ import com.tencent.polaris.logging.LoggingConsts;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -108,20 +106,20 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
     @Override
     public void losslessRegister(BaseInstance instance, InstanceProperties instanceProperties) {
-        LOG.info("[LosslessRegister] start to do lossless register by plugin {}", getName());
+        LOG.info("[HealthCheckRegisterLosslessPolicy] start to do lossless register by plugin {}", getName());
 
         Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
         if (CollectionUtils.isEmpty(actionProviders)) {
-            LOG.warn("[LosslessRegister] LosslessActionProvider not found, no lossless action will be taken");
+            LOG.warn("[HealthCheckRegisterLosslessPolicy] LosslessActionProvider not found, no lossless action will be taken");
             return;
         }
         if (stopped.get()) {
-            LOG.info("[LosslessRegister] plugin {} stopped, not lossless register action will be taken", getName());
+            LOG.info("[HealthCheckRegisterLosslessPolicy] plugin {} stopped, not lossless register action will be taken", getName());
             return;
         }
         LosslessActionProvider losslessActionProvider = actionProviders.get(instance);
         if (null == losslessActionProvider) {
-            LOG.warn("[LosslessRegister] LosslessActionProvider for instance {} not found, " +
+            LOG.warn("[HealthCheckRegisterLosslessPolicy] LosslessActionProvider for instance {} not found, " +
                     "no lossless action will be taken", instance);
             return;
         }
@@ -151,35 +149,35 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         @Override
         public void run() {
             boolean result = losslessActionProvider.doHealthCheck();
-            LOG.info("[LosslessRegister] do health-check for lossless register, result {}", result);
+            LOG.info("[HealthCheckRegisterLosslessPolicy] do health-check for lossless register, result {}", result);
             if (!result) {
                 healthCheckExecutor.schedule(this, losslessConfig.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
                 return;
             }
-            LOG.info("[LosslessRegister] health-check success, start to do register");
+            LOG.info("[HealthCheckRegisterLosslessPolicy] health-check success, start to do register");
             try {
                 doRegister(instance, losslessActionProvider, instanceProperties);
             } catch (Throwable throwable) {
-                LOG.error("[LosslessRegister] fail to do lossless register in plugin {}", getName(), throwable);
+                LOG.error("[HealthCheckRegisterLosslessPolicy] fail to do lossless register in plugin {}", getName(), throwable);
             }
         }
     }
 
     private void doLosslessRegister(
             BaseInstance instance, LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
-        LOG.info("[LosslessRegister] do losslessRegister for instance {}", instance);
+        LOG.info("[HealthCheckRegisterLosslessPolicy] do losslessRegister for instance {}", instance);
         if (!losslessActionProvider.isEnableHealthCheck()) {
-            LOG.info("[LosslessRegister] health check disabled, start lossless register after {}ms, plugin {}",
+            LOG.info("[HealthCheckRegisterLosslessPolicy] health check disabled, start lossless register after {}ms, plugin {}",
                     losslessConfig.getDelayRegisterInterval(), getName());
             healthCheckExecutor.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    LOG.info("[LosslessRegister] health-check disabled, start to do register now");
+                    LOG.info("[HealthCheckRegisterLosslessPolicy] health-check disabled, start to do register now");
                     doRegister(instance, losslessActionProvider, instanceProperties);
                 }
             }, losslessConfig.getDelayRegisterInterval(), TimeUnit.MILLISECONDS);
         } else {
-            LOG.info("[LosslessRegister] health check enabled, start lossless register after check, interval {}ms, plugin {}",
+            LOG.info("[HealthCheckRegisterLosslessPolicy] health check enabled, start lossless register after check, interval {}ms, plugin {}",
                     losslessConfig.getHealthCheckInterval(), getName());
             HealthChecker healthChecker = new HealthChecker(instance, losslessActionProvider, instanceProperties);
             healthCheckExecutor.schedule(
@@ -211,6 +209,32 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         return losslessConfig.getPort();
     }
 
+    static RegisterStatus checkRegisterStatus(
+            Collection<BaseInstance> instances, Map<BaseInstance, RegisterStatus> registerStatuses) {
+        RegisterStatus finalStatus = RegisterStatus.REGISTERED;
+        if (CollectionUtils.isNotEmpty(instances)) {
+            if (CollectionUtils.isNotEmpty(registerStatuses)) {
+                for (BaseInstance baseInstance : instances) {
+                    RegisterStatus registerStatus = registerStatuses.get(baseInstance);
+                    if (registerStatus != RegisterStatus.REGISTERED) {
+                        finalStatus = RegisterStatus.UNREGISTERED;
+                        LOG.info("[HealthCheckRegisterLosslessPolicy] instance {} not register, register status is unregistered", baseInstance);
+                        break;
+                    }
+                }
+            } else {
+                LOG.info("[HealthCheckRegisterLosslessPolicy] no instances registered, register status is unregistered");
+                // 如果没有实例发起过上线，那么这个还是未注册状态
+                finalStatus = RegisterStatus.UNREGISTERED;
+            }
+        } else {
+            LOG.info("[HealthCheckRegisterLosslessPolicy] instances is empty, register status is unregistered");
+            // 没有actionProvider，无法发现优雅上线，那么这个还是未上线状态
+            finalStatus = RegisterStatus.UNREGISTERED;
+        }
+        return finalStatus;
+    }
+
     @Override
     public Map<String, HttpHandler> getHandlers() {
         if (!losslessConfig.isEnable()) {
@@ -220,22 +244,11 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         handlers.put(ONLINE_PATH, new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
-                RegisterStatus finalStatus = RegisterStatus.REGISTERED;
                 Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
-                // 全部实例都已经注册成功，才返回注册成功
-                if (CollectionUtils.isNotEmpty(actionProviders)) {
-                    Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-                    if (CollectionUtils.isNotEmpty(registerStatuses)) {
-                        for (BaseInstance baseInstance : actionProviders.keySet()) {
-                            RegisterStatus registerStatus = registerStatuses.get(baseInstance);
-                            if (registerStatus != RegisterStatus.REGISTERED) {
-                                finalStatus = RegisterStatus.UNREGISTERED;
-                            }
-                        }
-                    }
-                } else {
-                    finalStatus = RegisterStatus.UNREGISTERED;
-                }
+                Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+                Set<BaseInstance> instances = actionProviders.keySet();
+                LOG.info("[HealthCheckRegisterLosslessPolicy] receive /online request, check register status for instances {}", instances);
+                RegisterStatus finalStatus = checkRegisterStatus(instances, registerStatuses);
                 HttpServerUtils.writeTextToHttpServer(
                         exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 404);
             }
