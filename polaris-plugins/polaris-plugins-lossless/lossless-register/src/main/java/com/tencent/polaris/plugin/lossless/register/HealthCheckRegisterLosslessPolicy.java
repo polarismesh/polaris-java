@@ -242,13 +242,24 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         }
         Map<String, HttpHandler> handlers = new HashMap<>();
         handlers.put(ONLINE_PATH, new HttpHandler() {
+
+            private RegisterStatus lastFinalStatus;
+
             @Override
             public void handle(HttpExchange exchange) throws IOException {
                 Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
                 Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
                 Set<BaseInstance> instances = actionProviders.keySet();
-                LOG.info("[HealthCheckRegisterLosslessPolicy] receive /online request, check register status for instances {}", instances);
                 RegisterStatus finalStatus = checkRegisterStatus(instances, registerStatuses);
+                if (finalStatus != lastFinalStatus) {
+                    LOG.info("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
+                            "finalStatus from {} to {}", instances, lastFinalStatus, finalStatus);
+                    // 最终一致性，无需做多线程保护
+                    lastFinalStatus = finalStatus;
+                } else {
+                    LOG.debug("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
+                            "finalStatus from {} to {}", instances, lastFinalStatus, finalStatus);
+                }
                 HttpServerUtils.writeTextToHttpServer(
                         exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 404);
             }
