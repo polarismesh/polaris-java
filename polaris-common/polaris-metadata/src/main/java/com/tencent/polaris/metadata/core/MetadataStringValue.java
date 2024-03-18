@@ -19,5 +19,7 @@ package com.tencent.polaris.metadata.core;
 
 public interface MetadataStringValue extends MetadataValue {
 
+    TransitiveType getTransitiveType();
+
     String getStringValue();
 }

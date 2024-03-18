@@ -17,16 +17,22 @@
 
 package com.tencent.polaris.metadata.core;
 
+import java.util.Map;
+import java.util.function.BiConsumer;
+
 public interface MetadataContainer {
 
-    void putStringMetadataValue(String key, String value, TransitiveType transitiveType);
+    void putMetadataStringValue(String key, String value, TransitiveType transitiveType);
 
-    MetadataStringValue getStringMetadataValue(String key);
+    void putMetadataMapValue(String key, String mapKey, String value, TransitiveType transitiveType);
 
-    void putMapMetadataValue(String key, String mapKey, String value, TransitiveType transitiveType);
+    MetadataValue getMetadataValue(String key);
 
-    MetadataStringValue getMapMetadataValue(String key, String mapKey);
+    void iterateMetadataValues(BiConsumer<String, MetadataValue> iterator);
 
-
-
+    /**
+     * 获取所有的透传标签列表（包括pass_through和disposal），对于Pass_through会自动带入透传前缀（如有）
+     * @return 透传标签列表
+     */
+    Map<String, String> getAllTransitiveKeyValues();
 }
