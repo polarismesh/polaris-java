@@ -17,10 +17,6 @@
 
 package com.tencent.polaris.metadata.core;
 
-import java.util.Map;
-
 public interface MetadataValue {
-
-    TransitiveType getTransitiveType();
 
 }
