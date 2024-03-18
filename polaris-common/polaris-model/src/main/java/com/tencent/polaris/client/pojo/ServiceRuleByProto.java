@@ -36,7 +36,7 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
     public static final ServiceRuleByProto EMPTY_SERVICE_RULE = new ServiceRuleByProto();
 
-    private final Message ruleValue;
+    private final Object ruleValue;
 
     private final String revision;
 
@@ -46,7 +46,7 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
     private final EventType eventType;
 
-    public ServiceRuleByProto(Message ruleValue, String revision, boolean loadFromFile, EventType eventType) {
+    public ServiceRuleByProto(Object ruleValue, String revision, boolean loadFromFile, EventType eventType) {
         this.ruleValue = ruleValue;
         this.revision = revision;
         this.loadFromFile = loadFromFile;
@@ -90,7 +90,17 @@ public class ServiceRuleByProto implements ServiceRule, RegistryCacheValue {
 
     @Override
     public String toString() {
-        return "ServiceRuleByProto [rule=" + (ruleValue == null ? null : TextFormat.shortDebugString(ruleValue))
+        String val = "";
+        if (ruleValue instanceof Message) {
+            val = TextFormat.shortDebugString((Message) ruleValue);
+        }
+        if (ruleValue instanceof List) {
+            List<Message> messages = (List<Message>) ruleValue;
+            StringBuilder builder = new StringBuilder();
+            messages.forEach(message -> builder.append(TextFormat.shortDebugString(message)));
+            val = builder.toString();
+        }
+        return "ServiceRuleByProto [rule=" + (ruleValue == null ? null : val)
                 + ", revision=" + revision + ", initialized="
                 + initialized + ", eventType=" + eventType + "]";
     }

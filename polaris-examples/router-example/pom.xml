@@ -17,6 +17,7 @@
     <modules>
         <module>router-version-example</module>
         <module>router-multienv-example</module>
+        <module>router-lane-example</module>
     </modules>
 
     <properties>
