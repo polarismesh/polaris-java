@@ -148,6 +148,8 @@ consumer:
       - isolatedRouter
     #描述: 服务路由链
     chain:
+      # 泳道路由
+      - laneRouter
       # 元数据路由
       - metadataRouter
       # 规则路由

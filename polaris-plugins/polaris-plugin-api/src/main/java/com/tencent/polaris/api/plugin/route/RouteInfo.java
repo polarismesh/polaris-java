@@ -17,6 +17,8 @@
 package com.tencent.polaris.api.plugin.route;
 
 import com.tencent.polaris.api.config.provider.ServiceConfig;
+import com.tencent.polaris.api.pojo.EmptyExternalParameterSupplier;
+import com.tencent.polaris.api.pojo.ExternalParameterSupplier;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
@@ -32,6 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -67,7 +70,9 @@ public class RouteInfo {
     //规则路由降级类型
     private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
     //各个路由插件依赖的 metadata 参数
-    private Map<String, Map<String, String>> routerMetadata = new HashMap<>();
+    private final Map<String, Map<String, String>> routerMetadata = new HashMap<>();
+
+    private ExternalParameterSupplier externalParameterSupplier = new EmptyExternalParameterSupplier();
 
     /**
      * 下一步的路由信息
@@ -130,6 +135,14 @@ public class RouteInfo {
     public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method,
             ServiceConfig serviceConfig) {
         this(sourceService, null, destService, null, method, serviceConfig);
+    }
+
+    public ExternalParameterSupplier getExternalParameterSupplier() {
+        return externalParameterSupplier;
+    }
+
+    public void setExternalParameterSupplier(ExternalParameterSupplier externalParameterSupplier) {
+        this.externalParameterSupplier = externalParameterSupplier;
     }
 
     public MetadataFailoverType getMetadataFailoverType() {
@@ -237,11 +250,8 @@ public class RouteInfo {
     }
 
     public Map<String, String> getRouterMetadata(String routerType) {
-        if (routerMetadata == null) {
-            return Collections.emptyMap();
-        }
         Map<String, String> metadata = routerMetadata.get(routerType);
-        if (metadata == null || metadata.size() == 0) {
+        if (metadata == null || metadata.isEmpty()) {
             return Collections.emptyMap();
         }
         return Collections.unmodifiableMap(metadata);

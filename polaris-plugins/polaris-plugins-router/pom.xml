@@ -25,6 +25,7 @@
         <module>router-healthy</module>
         <module>router-metadata</module>
         <module>router-common</module>
+        <module>router-lane</module>
     </modules>
 
     <dependencies>

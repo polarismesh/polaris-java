@@ -26,6 +26,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import com.tencent.polaris.api.pojo.EmptyExternalParameterSupplier;
+import com.tencent.polaris.api.pojo.ExternalParameterSupplier;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
@@ -52,6 +54,16 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 	private Map<String, Set<RouteArgument>> routerArgument;
 	//元数据路由降级策略
 	private MetadataFailoverType metadataFailoverType;
+
+	private ExternalParameterSupplier externalParameterSupplier = new EmptyExternalParameterSupplier();
+
+	public ExternalParameterSupplier getExternalParameterSupplier() {
+		return externalParameterSupplier;
+	}
+
+	public void setExternalParameterSupplier(ExternalParameterSupplier externalParameterSupplier) {
+		this.externalParameterSupplier = externalParameterSupplier;
+	}
 
 	public ServiceInfo getSourceService() {
 		return sourceService;

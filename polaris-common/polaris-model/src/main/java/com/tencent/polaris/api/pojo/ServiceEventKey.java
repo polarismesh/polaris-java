@@ -32,6 +32,7 @@ public class ServiceEventKey implements Service {
         SERVICE,
         FAULT_DETECTING,
         SERVICE_CONTRACT,
+        LANE_RULE,
     }
 
     private final ServiceKey serviceKey;
