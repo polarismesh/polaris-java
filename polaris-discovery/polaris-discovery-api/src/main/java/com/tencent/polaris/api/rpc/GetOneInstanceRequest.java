@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.api.rpc;
 
+import com.tencent.polaris.api.pojo.EmptyExternalParameterSupplier;
+import com.tencent.polaris.api.pojo.ExternalParameterSupplier;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.SourceService;
@@ -64,6 +66,8 @@ public class GetOneInstanceRequest extends RequestBaseEntity {
      * 主调方服务信息
      */
     private SourceService serviceInfo;
+
+    private ExternalParameterSupplier externalParameterSupplier = new EmptyExternalParameterSupplier();
 
     public Criteria getCriteria() {
         return criteria;
@@ -122,6 +126,14 @@ public class GetOneInstanceRequest extends RequestBaseEntity {
 
     public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
         this.metadataFailoverType = metadataFailoverType;
+    }
+
+    public ExternalParameterSupplier getExternalParameterSupplier() {
+        return externalParameterSupplier;
+    }
+
+    public void setExternalParameterSupplier(ExternalParameterSupplier externalParameterSupplier) {
+        this.externalParameterSupplier = externalParameterSupplier;
     }
 
     @Override
