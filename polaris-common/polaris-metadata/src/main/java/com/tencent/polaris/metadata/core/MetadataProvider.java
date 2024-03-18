@@ -15,14 +15,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core.manager;
-
-import com.tencent.polaris.metadata.core.MetadataType;
+package com.tencent.polaris.metadata.core;
 
 public interface MetadataProvider {
 
-    String getStringValue(MetadataType metadataType, String key);
+    String getRawMetadataStringValue(String key);
 
-    String getMapValue(MetadataType metadataType, String key, String mapKey);
+    String getRawMetadataMapValue(String key, String mapKey);
 
 }

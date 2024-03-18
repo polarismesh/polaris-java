@@ -23,7 +23,7 @@ public class MetadataContextHolder {
 
     private static final ThreadLocal<MetadataContext> THREAD_LOCAL_CONTEXT = new InheritableThreadLocal<>();
 
-    private static MetadataContext get(Supplier<MetadataContext> initialize) {
+    public static MetadataContext get(Supplier<MetadataContext> initialize) {
         MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
         if (null != metadataContext) {
             return metadataContext;
@@ -41,5 +41,9 @@ public class MetadataContextHolder {
             THREAD_LOCAL_CONTEXT.set(metadataContext);
             return metadataContext;
         }
+    }
+
+    public static MetadataContext get() {
+        return get(null);
     }
 }

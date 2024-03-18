@@ -20,7 +20,7 @@ package com.tencent.polaris.metadata.core;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-public interface MetadataContainer {
+public interface MetadataContainer extends MetadataProvider {
 
     void putMetadataStringValue(String key, String value, TransitiveType transitiveType);
 
