@@ -42,6 +42,11 @@
                 <artifactId>polaris-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-metadata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- polaris-factory-->
             <dependency>

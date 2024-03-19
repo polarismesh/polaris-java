@@ -17,18 +17,19 @@
 
 package com.tencent.polaris.metadata.core.manager;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-public class MetadataContextHolder {
+public class MetadataManagerHolder {
 
-    private static final ThreadLocal<MetadataContext> THREAD_LOCAL_CONTEXT = new InheritableThreadLocal<>();
+    private static final ThreadLocal<MetadataManager> THREAD_LOCAL_CONTEXT = new InheritableThreadLocal<>();
 
-    public static MetadataContext get(Supplier<MetadataContext> initialize) {
-        MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
+    public static MetadataManager getOrCreate(Supplier<MetadataManager> initialize) {
+        MetadataManager metadataContext = THREAD_LOCAL_CONTEXT.get();
         if (null != metadataContext) {
             return metadataContext;
         }
-        synchronized (MetadataContextHolder.class) {
+        synchronized (MetadataManagerHolder.class) {
             metadataContext = THREAD_LOCAL_CONTEXT.get();
             if (null != metadataContext) {
                 return metadataContext;
@@ -36,14 +37,24 @@ public class MetadataContextHolder {
             if (null != initialize) {
                 metadataContext = initialize.get();
             } else {
-                metadataContext = new MetadataContext();
+                metadataContext = new MetadataManager();
             }
             THREAD_LOCAL_CONTEXT.set(metadataContext);
             return metadataContext;
         }
     }
 
-    public static MetadataContext get() {
-        return get(null);
+    public static void refresh(Supplier<MetadataManager> initialize, Consumer<MetadataManager> consumer) {
+        remove();
+        MetadataManager metadataManager = getOrCreate(initialize);
+        consumer.accept(metadataManager);
+    }
+
+    public static MetadataManager get() {
+        return THREAD_LOCAL_CONTEXT.get();
+    }
+
+    public static void remove() {
+        THREAD_LOCAL_CONTEXT.remove();
     }
 }
