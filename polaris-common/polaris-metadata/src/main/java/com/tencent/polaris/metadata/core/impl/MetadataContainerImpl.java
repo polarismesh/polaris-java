@@ -71,19 +71,27 @@ public class MetadataContainerImpl implements MetadataContainer {
         iterateMetadataValues(new BiConsumer<String, MetadataValue>() {
             @Override
             public void accept(String key, MetadataValue metadataValue) {
+                String realKey = null;
+                String realValue = null;
                 if (metadataValue instanceof MetadataStringValue) {
                     MetadataStringValue metadataStringValue = (MetadataStringValue) metadataValue;
                     switch (metadataStringValue.getTransitiveType()) {
                         case PASS_THROUGH:
-                            values.put(Utils.encapsulateMetadataKey(transitivePrefix, key), metadataStringValue.getStringValue());
+                            realKey = Utils.encapsulateMetadataKey(transitivePrefix, key);
+                            realValue = metadataStringValue.getStringValue();
                             break;
                         case DISPOSABLE:
-                            values.put(key, metadataStringValue.getStringValue());
+                            realKey = key;
+                            realValue = metadataStringValue.getStringValue();
                             break;
                         default:
                             break;
                     }
                 }
+                if (null != realKey && null != realValue) {
+                    values.put(realKey, realValue);
+                }
+
             }
         });
         return values;
