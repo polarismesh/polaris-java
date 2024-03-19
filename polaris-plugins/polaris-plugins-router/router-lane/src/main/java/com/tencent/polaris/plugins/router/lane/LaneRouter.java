@@ -36,8 +36,11 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.MessageMetadataContainer;
+import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.impl.MessageMetadataContainerImpl;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
@@ -87,12 +90,13 @@ public class LaneRouter extends AbstractServiceRouter {
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
         MetadataContext context = MetadataContextHolder.get();
+        MessageMetadataContainer metadataContainer = context.getMetadataContainer(MetadataType.MESSAGE);
 
         Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
         LaneRuleContainer container = fetchLaneRules(routeInfo, instances);
 
         // 判断当前流量是否已存在染色
-        String stainLabel = trafficLabels.get(TRAFFIC_STAIN_LABEL);
+        String stainLabel = metadataContainer.getHeader(TRAFFIC_STAIN_LABEL);
         boolean alreadyStain = StringUtils.isNotBlank(stainLabel);
 
         Optional<LaneProto.LaneRule> targetRule;
@@ -111,11 +115,10 @@ public class LaneRouter extends AbstractServiceRouter {
         LaneProto.LaneRule laneRule = targetRule.get();
         if (!alreadyStain) {
             // 尝试进行流量染色动作，该操作仅在当前 Caller 服务为泳道入口时操作
-            tryStainCurrentTraffic(routeInfo.getSourceService().getServiceKey(), container, laneRule);
+            tryStainCurrentTraffic(context, routeInfo.getSourceService().getServiceKey(), container, laneRule);
         } else {
             // 将染色的标签信息进行持续透传
-            context.getMetadataContainer(MetadataType.MESSAGE)
-                    .putMetadataMapValue(RouteArgument.LABEL_KEY_HEADER, TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
+            metadataContainer.setHeader(TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
         }
 
         List<Instance> resultInstances = tryRedirectToLane(container, laneRule, instances);
@@ -175,7 +178,7 @@ public class LaneRouter extends AbstractServiceRouter {
         return new DefaultServiceInstances(instances.getServiceKey(), result);
     }
 
-    private void tryStainCurrentTraffic(ServiceKey caller, LaneRuleContainer container, LaneProto.LaneRule rule) {
+    private void tryStainCurrentTraffic(MetadataContext context, ServiceKey caller, LaneRuleContainer container, LaneProto.LaneRule rule) {
         LaneProto.LaneGroup group = container.groups.get(rule.getGroupName());
         if (Objects.isNull(group)) {
             // 泳道规则存在，但是对应的泳道组却不存在，这种情况需要直接抛出异常
@@ -203,9 +206,8 @@ public class LaneRouter extends AbstractServiceRouter {
             }
 
             if (needStain) {
-                MetadataContext context = MetadataContextHolder.get();
-                context.getMetadataContainer(MetadataType.MESSAGE)
-                        .putMetadataStringValue(TRAFFIC_STAIN_LABEL, buildStainLabel(rule), TransitiveType.PASS_THROUGH);
+                MessageMetadataContainer metadataContainer = context.getMetadataContainer(MetadataType.MESSAGE);
+                metadataContainer.setHeader(TRAFFIC_STAIN_LABEL, buildStainLabel(rule), TransitiveType.PASS_THROUGH);
             }
         } catch (InvalidProtocolBufferException e) {
             throw new PolarisException(ErrorCode.INVALID_RULE);
@@ -276,9 +278,7 @@ public class LaneRouter extends AbstractServiceRouter {
 
                 List<Boolean> booleans = new LinkedList<>();
                 matchRule.getArgumentsList().forEach(sourceMatch -> {
-                    String trafficValue = context.getMetadataProvider().getMapValue(MetadataType.MESSAGE,
-                            sourceMatch.getType().name(), sourceMatch.getKey());
-
+                    String trafficValue = findTrafficValue(sourceMatch, context);
                     switch (sourceMatch.getValue().getValueType()) {
                         case TEXT:
                             // 直接匹配
@@ -328,25 +328,34 @@ public class LaneRouter extends AbstractServiceRouter {
         }
     }
 
-    private static String formatSourceMatchKey(RoutingProto.SourceMatch match) {
-        switch (match.getType()) {
+    private static String findTrafficValue(RoutingProto.SourceMatch sourceMatch, MetadataContext context) {
+        MessageMetadataContainer metadataContainer = context.getMetadataContainer(MetadataType.MESSAGE);
+        MetadataContainer customContainer = context.getMetadataContainer(MetadataType.CUSTOM);
+        String trafficValue = "";
+        switch (sourceMatch.getType()) {
             case HEADER:
-                return RouteArgument.ArgumentType.HEADER.key(match.getKey());
-            case PATH:
-                return RouteArgument.ArgumentType.PATH.key(match.getKey());
-            case QUERY:
-                return RouteArgument.ArgumentType.QUERY.key(match.getKey());
-            case COOKIE:
-                return RouteArgument.ArgumentType.COOKIE.key(match.getKey());
-            case METHOD:
-                return RouteArgument.ArgumentType.METHOD.key(match.getKey());
-            case CALLER_IP:
-                return RouteArgument.ArgumentType.CALLER_IP.key(match.getKey());
+                trafficValue = metadataContainer.getHeader(sourceMatch.getKey());
+                break;
             case CUSTOM:
-                return RouteArgument.ArgumentType.CUSTOM.key(match.getKey());
-            default:
-                return match.getKey();
+                trafficValue = customContainer.getRawMetadataStringValue(sourceMatch.getKey());
+                break;
+            case METHOD:
+                trafficValue = metadataContainer.getMethod();
+                break;
+            case CALLER_IP:
+                trafficValue = metadataContainer.getCallerIP();
+                break;
+            case COOKIE:
+                trafficValue = metadataContainer.getCookie(sourceMatch.getKey());
+                break;
+            case QUERY:
+                trafficValue = metadataContainer.getQuery(sourceMatch.getKey());
+                break;
+            case PATH:
+                trafficValue = metadataContainer.getPath();
+                break;
         }
+        return trafficValue;
     }
 
     private static String buildStainLabel(LaneProto.LaneRule rule) {
