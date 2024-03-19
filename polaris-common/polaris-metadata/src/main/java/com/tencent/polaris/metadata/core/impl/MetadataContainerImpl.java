@@ -32,8 +32,11 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     private final String transitivePrefix;
 
-    public MetadataContainerImpl(String transitivePrefix) {
+    private final MetadataProvider metadataProvider;
+
+    public MetadataContainerImpl(String transitivePrefix, MetadataProvider metadataProvider) {
         this.transitivePrefix = transitivePrefix;
+        this.metadataProvider = metadataProvider;
     }
 
     @Override
@@ -86,4 +89,38 @@ public class MetadataContainerImpl implements MetadataContainer {
         return values;
     }
 
+    @Override
+    public String getRawMetadataStringValue(String key) {
+        if (null != metadataProvider) {
+            String value = metadataProvider.getRawMetadataStringValue(key);
+            if (null != value) {
+                return value;
+            }
+        }
+        MetadataValue metadataValue = getMetadataValue(key);
+        if (metadataValue instanceof MetadataStringValue) {
+            return ((MetadataStringValue)metadataValue).getStringValue();
+        }
+        return null;
+    }
+
+    @Override
+    public String getRawMetadataMapValue(String key, String mapKey) {
+        if (null != metadataProvider) {
+            String value = metadataProvider.getRawMetadataMapValue(key, mapKey);
+            if (null != value) {
+                return value;
+            }
+        }
+        MetadataValue metadataValue = getMetadataValue(key);
+        if (metadataValue instanceof MetadataMapValue) {
+            MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
+            MetadataStringValue mapValue = metadataMapValue.getMapValue(mapKey);
+            if (null != mapValue) {
+                return mapValue.getStringValue();
+            }
+            return null;
+        }
+        return null;
+    }
 }

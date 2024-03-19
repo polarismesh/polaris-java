@@ -18,10 +18,12 @@
 package com.tencent.polaris.metadata.core.manager;
 
 import com.tencent.polaris.metadata.core.*;
+import com.tencent.polaris.metadata.core.impl.MessageMetadataContainerImpl;
 import com.tencent.polaris.metadata.core.impl.MetadataContainerImpl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MetadataContext {
 
@@ -35,87 +37,56 @@ public class MetadataContext {
 
     private final String transitivePrefix;
 
-    private final MetadataProvider metadataProvider;
-
-    public MetadataContext(String transitivePrefix, List<MetadataProvider> providers) {
+    public MetadataContext(String transitivePrefix, Map<MetadataType, MetadataProvider> providers) {
         this(transitivePrefix, providers, null);
     }
 
-    public MetadataContext(String transitivePrefix, List<MetadataProvider> providers, List<String> anotherTransitivePrefixes) {
+    public MetadataContext(String transitivePrefix, Map<MetadataType, MetadataProvider> providers, List<String> anotherTransitivePrefixes) {
         this.transitivePrefix = transitivePrefix;
-        this.messageMetadataContainer = new MetadataContainerImpl(transitivePrefix);
-        this.applicationMetadataContainer = new MetadataContainerImpl(transitivePrefix);
-        this.customMetadataContainer = new MetadataContainerImpl(transitivePrefix);
-        List<MetadataProvider> metadataProviders = new ArrayList<>();
-        if (null != providers) {
-            metadataProviders.addAll(providers);
-        }
-        metadataProviders.add(new DefaultMetadataProvider());
         List<String> prefixes = new ArrayList<>();
         prefixes.add(transitivePrefix);
         if (null != anotherTransitivePrefixes) {
             prefixes.addAll(anotherTransitivePrefixes);
         }
-        metadataProvider = new ComposeMetadataProvider(prefixes, metadataProviders);
+        MetadataProvider messageProvider = null != providers ? providers.get(MetadataType.MESSAGE) : null;
+        if (null != messageProvider) {
+            messageProvider = new ComposeMetadataProvider(prefixes, messageProvider);
+        }
+        this.messageMetadataContainer = new MessageMetadataContainerImpl(transitivePrefix, messageProvider);
+
+        MetadataProvider applicationProvider = null != providers ? providers.get(MetadataType.APPLICATION) : null;
+        if (null != applicationProvider) {
+            applicationProvider = new ComposeMetadataProvider(prefixes, applicationProvider);
+        }
+        this.applicationMetadataContainer = new MetadataContainerImpl(transitivePrefix, applicationProvider);
+
+        MetadataProvider customProvider = null != providers ? providers.get(MetadataType.CUSTOM) : null;
+        if (null != customProvider) {
+            customProvider = new ComposeMetadataProvider(prefixes, customProvider);
+        }
+        this.customMetadataContainer = new MetadataContainerImpl(transitivePrefix, customProvider);
     }
 
     public MetadataContext() {
         this(DEFAULT_TRANSITIVE_PREFIX, null);
     }
 
-    public MetadataContainer getMetadataContainer(MetadataType metadataType) {
+    @SuppressWarnings("unchecked")
+    public <T extends MetadataContainer> T getMetadataContainer(MetadataType metadataType) {
         switch (metadataType) {
             case MESSAGE:
-                return messageMetadataContainer;
+                return (T) messageMetadataContainer;
             case APPLICATION:
-                return applicationMetadataContainer;
+                return (T) applicationMetadataContainer;
             case CUSTOM:
-                return customMetadataContainer;
+                return (T) customMetadataContainer;
             default:
                 return null;
         }
     }
 
-    private class DefaultMetadataProvider implements MetadataProvider {
-
-        @Override
-        public String getStringValue(MetadataType metadataType, String key) {
-            MetadataContainer metadataContainer = getMetadataContainer(metadataType);
-            if (null == metadataContainer) {
-                return null;
-            }
-            MetadataValue metadataValue = metadataContainer.getMetadataValue(key);
-            if (metadataValue instanceof MetadataStringValue) {
-                return ((MetadataStringValue)metadataValue).getStringValue();
-            }
-            return null;
-        }
-
-        @Override
-        public String getMapValue(MetadataType metadataType, String key, String mapKey) {
-            MetadataContainer metadataContainer = getMetadataContainer(metadataType);
-            if (null == metadataContainer) {
-                return null;
-            }
-            MetadataValue metadataValue = metadataContainer.getMetadataValue(key);
-            if (metadataValue instanceof MetadataMapValue) {
-                MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-                MetadataStringValue mapValue = metadataMapValue.getMapValue(mapKey);
-                if (null != mapValue) {
-                    return mapValue.getStringValue();
-                }
-                return null;
-            }
-            return null;
-        }
-    }
-
     public String getTransitivePrefix() {
         return transitivePrefix;
-    }
-
-    public MetadataProvider getMetadataProvider() {
-        return metadataProvider;
     }
 
 }
