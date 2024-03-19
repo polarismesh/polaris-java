@@ -36,6 +36,10 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.MetadataType;
+import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
+import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
@@ -82,6 +86,8 @@ public class LaneRouter extends AbstractServiceRouter {
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
+        MetadataContext context = MetadataContextHolder.get();
+
         Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
         LaneRuleContainer container = fetchLaneRules(routeInfo, instances);
 
@@ -94,7 +100,7 @@ public class LaneRouter extends AbstractServiceRouter {
             targetRule = container.matchRule(stainLabel);
         } else {
             // 当前流量无染色，根据泳道规则进行匹配判断
-            targetRule = container.matchRule(routeInfo, instances);
+            targetRule = container.matchRule(routeInfo, context);
         }
 
         // 泳道规则不存在，转为基线路由
@@ -107,7 +113,9 @@ public class LaneRouter extends AbstractServiceRouter {
             // 尝试进行流量染色动作，该操作仅在当前 Caller 服务为泳道入口时操作
             tryStainCurrentTraffic(routeInfo.getSourceService().getServiceKey(), container, laneRule);
         } else {
-            // TODO 传递染色标签, 将其塞入 LabelManager 中进行传递
+            // 将染色的标签信息进行持续透传
+            context.getMetadataContainer(MetadataType.MESSAGE)
+                    .putMetadataMapValue(RouteArgument.LABEL_KEY_HEADER, TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
         }
 
         List<Instance> resultInstances = tryRedirectToLane(container, laneRule, instances);
@@ -150,7 +158,6 @@ public class LaneRouter extends AbstractServiceRouter {
             if (CollectionUtils.isEmpty(metadata)) {
                 return false;
             }
-            // 元数据中没有携带 lane 标签的实例均认为是基线实例
             String val = metadata.get(INTERNAL_INSTANCE_LANE_KEY);
             return StringUtils.equals(val, rule.getDefaultLabelValue());
         }).collect(Collectors.toList());
@@ -196,13 +203,16 @@ public class LaneRouter extends AbstractServiceRouter {
             }
 
             if (needStain) {
-                // TODO 将染色标签塞入 LabelManager 中进行传递
+                MetadataContext context = MetadataContextHolder.get();
+                context.getMetadataContainer(MetadataType.MESSAGE)
+                        .putMetadataStringValue(TRAFFIC_STAIN_LABEL, buildStainLabel(rule), TransitiveType.PASS_THROUGH);
             }
         } catch (InvalidProtocolBufferException e) {
             throw new PolarisException(ErrorCode.INVALID_RULE);
         }
     }
 
+    @SuppressWarnings("unchecked")
     private LaneRuleContainer fetchLaneRules(RouteInfo routeInfo, ServiceInstances instances) {
         List<LaneProto.LaneGroup> result = new ArrayList<>();
         // 获取泳道规则
@@ -243,7 +253,7 @@ public class LaneRouter extends AbstractServiceRouter {
                 }
                 groups.put(laneGroup.getName(), laneGroup);
                 laneGroup.getRulesList().forEach(laneRule -> {
-                    String name = laneGroup.getName() + "/" + laneRule.getName();
+                    String name = buildStainLabel(laneRule);
                     ruleMapping.put(name, laneRule);
                 });
                 rules.addAll(laneGroup.getRulesList());
@@ -258,9 +268,7 @@ public class LaneRouter extends AbstractServiceRouter {
             return Optional.ofNullable(rule);
         }
 
-        public Optional<LaneProto.LaneRule> matchRule(RouteInfo routeInfo, ServiceInstances instances) {
-            Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
-
+        public Optional<LaneProto.LaneRule> matchRule(RouteInfo routeInfo, MetadataContext context) {
             // 当前流量无染色，根据泳道规则进行匹配判断
             LaneProto.LaneRule targetRule = null;
             for (LaneProto.LaneRule rule : rules) {
@@ -268,11 +276,13 @@ public class LaneRouter extends AbstractServiceRouter {
 
                 List<Boolean> booleans = new LinkedList<>();
                 matchRule.getArgumentsList().forEach(sourceMatch -> {
-                    String key = formatSourceMatchKey(sourceMatch);
+                    String trafficValue = context.getMetadataProvider().getMapValue(MetadataType.MESSAGE,
+                            sourceMatch.getType().name(), sourceMatch.getKey());
+
                     switch (sourceMatch.getValue().getValueType()) {
                         case TEXT:
                             // 直接匹配
-                            boolean a = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficLabels.get(key),
+                            boolean a = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficValue,
                                     sourceMatch.getValue().getValue().getValue());
                             booleans.add(a);
                         case VARIABLE:
@@ -281,12 +291,12 @@ public class LaneRouter extends AbstractServiceRouter {
                             // 外部参数来源
                             Optional<String> parameter = routeInfo.getExternalParameterSupplier().search(parameterKey);
                             if (parameter.isPresent()) {
-                                match = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficLabels.get(key),
+                                match = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficValue,
                                         parameter.get());
                             }
                             if (!match) {
-                                match = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficLabels.get(key),
-                                        System.getenv(key));
+                                match = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficValue,
+                                        System.getenv(parameterKey));
                             }
                             booleans.add(match);
                     }
@@ -337,6 +347,10 @@ public class LaneRouter extends AbstractServiceRouter {
             default:
                 return match.getKey();
         }
+    }
+
+    private static String buildStainLabel(LaneProto.LaneRule rule) {
+        return rule.getGroupName() + "/" + rule.getName();
     }
 
 }
