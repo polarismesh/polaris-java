@@ -155,6 +155,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- 元数据管理 -->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-metadata</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!--测试依赖插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
