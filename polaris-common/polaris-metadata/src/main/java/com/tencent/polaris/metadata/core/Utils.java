@@ -29,6 +29,16 @@ public class Utils {
         return prefix + key;
     }
 
+    public static String unpackMetadataKey(String prefix, String key) {
+        if (null == prefix || prefix.isEmpty()) {
+            return key;
+        }
+        if (startsWith(key, prefix, true)) {
+            return key.replaceAll(prefix, "");
+        }
+        return key;
+    }
+
     /**
      * <p>Check if a String starts with a specified prefix (optionally case insensitive).</p>
      *
