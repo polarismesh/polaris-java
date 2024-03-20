@@ -18,13 +18,11 @@
 package com.tencent.polaris.metadata.core.manager;
 
 import com.tencent.polaris.metadata.core.MetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataProvider;
 import com.tencent.polaris.metadata.core.MetadataType;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 public class MetadataManager {
 
@@ -36,18 +34,18 @@ public class MetadataManager {
 
     private final String transitivePrefix;
 
-    public MetadataManager(List<String> transitivePrefixes, Map<MetadataType, MetadataProvider> downstreamProviders) {
+    public MetadataManager(List<String> transitivePrefixes) {
         if (transitivePrefixes == null || transitivePrefixes.isEmpty()) {
             transitivePrefixes = new ArrayList<>();
             transitivePrefixes.add("");
         }
         this.transitivePrefix = transitivePrefixes.get(0);
-        downstreamMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes, downstreamProviders);
-        upstreamMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes, null);
+        downstreamMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
+        upstreamMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
     }
 
     public MetadataManager() {
-        this(Collections.singletonList(DEFAULT_TRANSITIVE_PREFIX), null);
+        this(Collections.singletonList(DEFAULT_TRANSITIVE_PREFIX));
     }
 
     @SuppressWarnings("unchecked")

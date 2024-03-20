@@ -23,6 +23,7 @@ import com.tencent.polaris.metadata.core.manager.Utils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -32,11 +33,10 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     private final String transitivePrefix;
 
-    private final MetadataProvider metadataProvider;
+    private final AtomicReference<MetadataProvider> metadataProviderReference = new AtomicReference<>();
 
-    public MetadataContainerImpl(String transitivePrefix, MetadataProvider metadataProvider) {
+    public MetadataContainerImpl(String transitivePrefix) {
         this.transitivePrefix = transitivePrefix;
-        this.metadataProvider = metadataProvider;
     }
 
     @Override
@@ -97,8 +97,17 @@ public class MetadataContainerImpl implements MetadataContainer {
         return values;
     }
 
+    public void setMetadataProvider(MetadataProvider metadataProvider) {
+        metadataProviderReference.set(metadataProvider);
+    }
+
+    public MetadataProvider getMetadataProvider() {
+        return metadataProviderReference.get();
+    }
+
     @Override
     public String getRawMetadataStringValue(String key) {
+        MetadataProvider metadataProvider = getMetadataProvider();
         if (null != metadataProvider) {
             String value = metadataProvider.getRawMetadataStringValue(key);
             if (null != value) {
@@ -114,6 +123,7 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     @Override
     public String getRawMetadataMapValue(String key, String mapKey) {
+        MetadataProvider metadataProvider = getMetadataProvider();
         if (null != metadataProvider) {
             String value = metadataProvider.getRawMetadataMapValue(key, mapKey);
             if (null != value) {
