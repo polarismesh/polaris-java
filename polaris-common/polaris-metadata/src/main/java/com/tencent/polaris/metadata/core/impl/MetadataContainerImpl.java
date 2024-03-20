@@ -97,10 +97,12 @@ public class MetadataContainerImpl implements MetadataContainer {
         return values;
     }
 
+    @Override
     public void setMetadataProvider(MetadataProvider metadataProvider) {
         metadataProviderReference.set(metadataProvider);
     }
 
+    @Override
     public MetadataProvider getMetadataProvider() {
         return metadataProviderReference.get();
     }
