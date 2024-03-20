@@ -18,13 +18,12 @@
 package com.tencent.polaris.metadata.core.impl;
 
 import com.tencent.polaris.metadata.core.MessageMetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataProvider;
 import com.tencent.polaris.metadata.core.TransitiveType;
 
 public class MessageMetadataContainerImpl extends MetadataContainerImpl implements MessageMetadataContainer {
 
-    public MessageMetadataContainerImpl(String transitivePrefix, MetadataProvider metadataProvider) {
-        super(transitivePrefix, metadataProvider);
+    public MessageMetadataContainerImpl(String transitivePrefix) {
+        super(transitivePrefix);
     }
 
     @Override

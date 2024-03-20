@@ -18,13 +18,10 @@
 package com.tencent.polaris.metadata.core.manager;
 
 import com.tencent.polaris.metadata.core.MetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataProvider;
-import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.impl.MessageMetadataContainerImpl;
 import com.tencent.polaris.metadata.core.impl.MetadataContainerImpl;
 
 import java.util.List;
-import java.util.Map;
 
 public class MetadataContainerGroup {
 
@@ -35,24 +32,11 @@ public class MetadataContainerGroup {
     private final MetadataContainer customMetadataContainer;
 
 
-    public MetadataContainerGroup(List<String> prefixes, Map<MetadataType, MetadataProvider> providers) {
-        MetadataProvider messageProvider = null != providers ? providers.get(MetadataType.MESSAGE) : null;
-        if (null != messageProvider) {
-            messageProvider = new ComposeMetadataProvider(prefixes, messageProvider);
-        }
-        this.messageMetadataContainer = new MessageMetadataContainerImpl(prefixes.get(0), messageProvider);
-
-        MetadataProvider applicationProvider = null != providers ? providers.get(MetadataType.APPLICATION) : null;
-        if (null != applicationProvider) {
-            applicationProvider = new ComposeMetadataProvider(prefixes, applicationProvider);
-        }
-        this.applicationMetadataContainer = new MetadataContainerImpl(prefixes.get(0), applicationProvider);
-
-        MetadataProvider customProvider = null != providers ? providers.get(MetadataType.CUSTOM) : null;
-        if (null != customProvider) {
-            customProvider = new ComposeMetadataProvider(prefixes, customProvider);
-        }
-        this.customMetadataContainer = new MetadataContainerImpl(prefixes.get(0), customProvider);
+    public MetadataContainerGroup(List<String> prefixes) {
+        assert null != prefixes && !prefixes.isEmpty();
+        this.messageMetadataContainer = new MessageMetadataContainerImpl(prefixes.get(0));
+        this.applicationMetadataContainer = new MetadataContainerImpl(prefixes.get(0));
+        this.customMetadataContainer = new MetadataContainerImpl(prefixes.get(0));
     }
 
 
@@ -67,4 +51,5 @@ public class MetadataContainerGroup {
     public MetadataContainer getCustomMetadataContainer() {
         return customMetadataContainer;
     }
+
 }

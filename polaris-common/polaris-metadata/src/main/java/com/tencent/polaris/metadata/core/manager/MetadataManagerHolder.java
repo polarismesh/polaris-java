@@ -57,4 +57,8 @@ public class MetadataManagerHolder {
     public static void remove() {
         THREAD_LOCAL_CONTEXT.remove();
     }
+
+    public static void set(MetadataManager metadataManager) {
+        THREAD_LOCAL_CONTEXT.set(metadataManager);
+    }
 }
