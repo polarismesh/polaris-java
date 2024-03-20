@@ -20,11 +20,15 @@ package com.tencent.polaris.metadata.core;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-public interface MetadataContainer extends MetadataProvider {
+public interface MetadataContainer {
 
     void putMetadataStringValue(String key, String value, TransitiveType transitiveType);
 
+    String getRawMetadataStringValue(String key);
+
     void putMetadataMapValue(String key, String mapKey, String value, TransitiveType transitiveType);
+
+    String getRawMetadataMapValue(String key, String mapKey);
 
     MetadataValue getMetadataValue(String key);
 
@@ -35,4 +39,10 @@ public interface MetadataContainer extends MetadataProvider {
      * @return 透传标签列表
      */
     Map<String, String> getAllTransitiveKeyValues();
+
+    void setMetadataProvider(MetadataProvider metadataProvider);
+
+    MetadataProvider getMetadataProvider();
+
+
 }
