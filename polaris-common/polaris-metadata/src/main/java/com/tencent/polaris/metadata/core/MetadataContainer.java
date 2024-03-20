@@ -35,4 +35,8 @@ public interface MetadataContainer extends MetadataProvider {
      * @return 透传标签列表
      */
     Map<String, String> getAllTransitiveKeyValues();
+
+    void setMetadataProvider(MetadataProvider metadataProvider);
+
+    MetadataProvider getMetadataProvider();
 }
