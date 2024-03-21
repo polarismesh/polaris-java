@@ -17,8 +17,8 @@
 
 package com.tencent.polaris.metadata.core.transmit;
 
-import com.tencent.polaris.metadata.core.manager.MetadataManager;
-import com.tencent.polaris.metadata.core.manager.MetadataManagerHolder;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
+import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -43,7 +43,7 @@ public class ExecutorWrapper<T> implements Executor {
         executor.execute(new RunnableWrapper<>(command, contextGetter, contextSetter));
     }
 
-    public static ExecutorWrapper<MetadataManager> buildDefault(Executor executor) {
-        return new ExecutorWrapper<>(executor, MetadataManagerHolder::get, MetadataManagerHolder::set);
+    public static ExecutorWrapper<MetadataContext> buildDefault(Executor executor) {
+        return new ExecutorWrapper<>(executor, MetadataContextHolder::get, MetadataContextHolder::set);
     }
 }

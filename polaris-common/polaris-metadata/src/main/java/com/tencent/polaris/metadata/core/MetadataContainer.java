@@ -30,6 +30,10 @@ public interface MetadataContainer {
 
     String getRawMetadataMapValue(String key, String mapKey);
 
+    <T> void putMetadataObjectValue(String key, T value);
+
+    <T> void putMetadataMapObjectValue(String key, String mapKey, T value);
+
     MetadataValue getMetadataValue(String key);
 
     void iterateMetadataValues(BiConsumer<String, MetadataValue> iterator);
