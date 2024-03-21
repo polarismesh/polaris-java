@@ -20,10 +20,6 @@ package com.tencent.polaris.metadata.core.manager;
 import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class MetadataContext {
 
     public static final String DEFAULT_TRANSITIVE_PREFIX = "X-Polaris-Metadata-Transitive-";
@@ -34,18 +30,17 @@ public class MetadataContext {
 
     private final String transitivePrefix;
 
-    public MetadataContext(List<String> transitivePrefixes) {
-        if (transitivePrefixes == null || transitivePrefixes.isEmpty()) {
-            transitivePrefixes = new ArrayList<>();
-            transitivePrefixes.add("");
+    public MetadataContext(String transitivePrefix) {
+        if (transitivePrefix == null) {
+            transitivePrefix = "";
         }
-        this.transitivePrefix = transitivePrefixes.get(0);
-        callerMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
-        calleeMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
+        this.transitivePrefix = transitivePrefix;
+        callerMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix);
+        calleeMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix);
     }
 
     public MetadataContext() {
-        this(Collections.singletonList(DEFAULT_TRANSITIVE_PREFIX));
+        this(DEFAULT_TRANSITIVE_PREFIX);
     }
 
     @SuppressWarnings("unchecked")

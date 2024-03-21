@@ -17,10 +17,10 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
+import java.util.Objects;
+
 import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.TransitiveType;
-
-import java.util.Objects;
 
 public class MetadataStringValueImpl implements MetadataStringValue {
 

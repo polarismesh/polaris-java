@@ -17,16 +17,16 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
-import com.tencent.polaris.metadata.core.MetadataMapValue;
-import com.tencent.polaris.metadata.core.MetadataStringValue;
-import com.tencent.polaris.metadata.core.MetadataValue;
-import com.tencent.polaris.metadata.core.manager.Utils;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
+
+import com.tencent.polaris.metadata.core.MetadataMapValue;
+import com.tencent.polaris.metadata.core.MetadataStringValue;
+import com.tencent.polaris.metadata.core.MetadataValue;
+import com.tencent.polaris.metadata.core.manager.Utils;
 
 public class MetadataMapValueImpl implements MetadataMapValue {
 
