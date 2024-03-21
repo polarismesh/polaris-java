@@ -40,8 +40,8 @@ import com.tencent.polaris.metadata.core.MessageMetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
-import com.tencent.polaris.metadata.core.manager.MetadataManager;
-import com.tencent.polaris.metadata.core.manager.MetadataManagerHolder;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
+import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
@@ -94,7 +94,7 @@ public class LaneRouter extends AbstractServiceRouter {
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
-        MetadataManager manager = MetadataManagerHolder.get();
+        MetadataContext manager = MetadataContextHolder.get();
         MessageMetadataContainer callerMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, true);
         MessageMetadataContainer calleeMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, false);
 
@@ -180,7 +180,7 @@ public class LaneRouter extends AbstractServiceRouter {
         return new DefaultServiceInstances(instances.getServiceKey(), result);
     }
 
-    private boolean tryStainCurrentTraffic(MetadataManager manager, ServiceKey caller, LaneRuleContainer container, LaneProto.LaneRule rule) {
+    private boolean tryStainCurrentTraffic(MetadataContext manager, ServiceKey caller, LaneRuleContainer container, LaneProto.LaneRule rule) {
         LaneProto.LaneGroup group = container.groups.get(rule.getGroupName());
         if (Objects.isNull(group)) {
             // 泳道规则存在，但是对应的泳道组却不存在，这种情况需要直接抛出异常
@@ -273,7 +273,7 @@ public class LaneRouter extends AbstractServiceRouter {
             return Optional.ofNullable(rule);
         }
 
-        public Optional<LaneProto.LaneRule> matchRule(RouteInfo routeInfo, MetadataManager manager) {
+        public Optional<LaneProto.LaneRule> matchRule(RouteInfo routeInfo, MetadataContext manager) {
             // 当前流量无染色，根据泳道规则进行匹配判断
             LaneProto.LaneRule targetRule = null;
             for (LaneProto.LaneRule rule : rules) {
@@ -331,7 +331,7 @@ public class LaneRouter extends AbstractServiceRouter {
         }
     }
 
-    private static String findTrafficValue(RouteInfo routeInfo, RoutingProto.SourceMatch sourceMatch, MetadataManager manager) {
+    private static String findTrafficValue(RouteInfo routeInfo, RoutingProto.SourceMatch sourceMatch, MetadataContext manager) {
         Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
 
         MessageMetadataContainer upstreamMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
