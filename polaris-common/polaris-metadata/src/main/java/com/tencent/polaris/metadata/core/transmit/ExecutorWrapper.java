@@ -17,12 +17,12 @@
 
 package com.tencent.polaris.metadata.core.transmit;
 
-import com.tencent.polaris.metadata.core.manager.MetadataContext;
-import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
-
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
+import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 
 public class ExecutorWrapper<T> implements Executor {
 

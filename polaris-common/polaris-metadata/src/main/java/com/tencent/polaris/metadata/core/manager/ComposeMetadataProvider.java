@@ -17,10 +17,10 @@
 
 package com.tencent.polaris.metadata.core.manager;
 
-import com.tencent.polaris.metadata.core.MetadataProvider;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import com.tencent.polaris.metadata.core.MetadataProvider;
 
 public class ComposeMetadataProvider implements MetadataProvider {
 

@@ -21,8 +21,6 @@ import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.impl.MessageMetadataContainerImpl;
 import com.tencent.polaris.metadata.core.impl.MetadataContainerImpl;
 
-import java.util.List;
-
 public class MetadataContainerGroup {
 
     private final MetadataContainer messageMetadataContainer;
@@ -31,14 +29,12 @@ public class MetadataContainerGroup {
 
     private final MetadataContainer customMetadataContainer;
 
-
-    public MetadataContainerGroup(List<String> prefixes) {
-        assert null != prefixes && !prefixes.isEmpty();
-        this.messageMetadataContainer = new MessageMetadataContainerImpl(prefixes.get(0));
-        this.applicationMetadataContainer = new MetadataContainerImpl(prefixes.get(0));
-        this.customMetadataContainer = new MetadataContainerImpl(prefixes.get(0));
+    public MetadataContainerGroup(String transitivePrefix) {
+        assert null != transitivePrefix;
+        this.messageMetadataContainer = new MessageMetadataContainerImpl(transitivePrefix);
+        this.applicationMetadataContainer = new MetadataContainerImpl(transitivePrefix);
+        this.customMetadataContainer = new MetadataContainerImpl(transitivePrefix);
     }
-
 
     public MetadataContainer getMessageMetadataContainer() {
         return messageMetadataContainer;
