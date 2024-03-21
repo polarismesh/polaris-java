@@ -18,28 +18,35 @@
 package com.tencent.polaris.discovery.example.consumer;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.listener.ServiceListener;
+import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
-import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
-import com.tencent.polaris.api.rpc.ServicesResponse;
+import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils;
-import com.tencent.polaris.discovery.example.utils.ExampleUtils.InitResult;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
 
+/**
+ * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ */
 public class GetServiceRuleExample {
 
     public static void main(String[] args) throws Exception {
-        InitResult initResult = ExampleUtils.initConsumerConfiguration(args, true);
+        ExampleUtils.InitResult initResult = ExampleUtils.initConsumerConfiguration(args, true);
         try (ConsumerAPI consumerAPI = ExampleUtils.createConsumerAPI(initResult.getConfig())) {
             GetServiceRuleRequest request = new GetServiceRuleRequest();
-            request.setNamespace("shed");
-            request.setService("QuickStartGatewayService");
             request.setRuleType(ServiceEventKey.EventType.LANE_RULE);
+            request.setService("service-a");
+            request.setNamespace("default");
             ServiceRuleResponse response = consumerAPI.getServiceRule(request);
             System.out.println(response);
+            new CountDownLatch(1).await();
         }
     }
 
