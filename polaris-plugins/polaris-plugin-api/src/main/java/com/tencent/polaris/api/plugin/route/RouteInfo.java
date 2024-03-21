@@ -17,8 +17,6 @@
 package com.tencent.polaris.api.plugin.route;
 
 import com.tencent.polaris.api.config.provider.ServiceConfig;
-import com.tencent.polaris.api.pojo.EmptyExternalParameterSupplier;
-import com.tencent.polaris.api.pojo.ExternalParameterSupplier;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
@@ -36,6 +34,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * 服务路由信息
@@ -72,7 +71,7 @@ public class RouteInfo {
     //各个路由插件依赖的 metadata 参数
     private final Map<String, Map<String, String>> routerMetadata = new HashMap<>();
 
-    private ExternalParameterSupplier externalParameterSupplier = new EmptyExternalParameterSupplier();
+    private Function<String, Optional<String>> externalParameterSupplier = s -> Optional.empty();
 
     /**
      * 下一步的路由信息
@@ -136,11 +135,11 @@ public class RouteInfo {
         this(sourceService, null, destService, null, method, serviceConfig);
     }
 
-    public ExternalParameterSupplier getExternalParameterSupplier() {
+    public Function<String, Optional<String>> getExternalParameterSupplier() {
         return externalParameterSupplier;
     }
 
-    public void setExternalParameterSupplier(ExternalParameterSupplier externalParameterSupplier) {
+    public void setExternalParameterSupplier(Function<String, Optional<String>> externalParameterSupplier) {
         this.externalParameterSupplier = externalParameterSupplier;
     }
 
