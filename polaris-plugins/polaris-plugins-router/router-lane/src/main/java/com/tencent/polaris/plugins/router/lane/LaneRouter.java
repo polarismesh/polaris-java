@@ -27,6 +27,7 @@ import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
@@ -64,12 +65,12 @@ public class LaneRouter extends AbstractServiceRouter {
     /**
      * 处于泳道内的实例标签
      */
-    private static final String INTERNAL_INSTANCE_LANE_KEY = "lane";
+    public static final String INTERNAL_INSTANCE_LANE_KEY = "lane";
 
     /**
      * 泳道染色标签
      */
-    private static final String TRAFFIC_STAIN_LABEL = "service-lane";
+    public static final String TRAFFIC_STAIN_LABEL = "service-lane";
 
     private static final String GATEWAY_SELECTOR = "polarismesh.cn/gateway/spring-cloud-gateway";
 
@@ -94,13 +95,13 @@ public class LaneRouter extends AbstractServiceRouter {
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
         MetadataManager manager = MetadataManagerHolder.get();
-        MessageMetadataContainer downstreamMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, true);
-        MessageMetadataContainer upstreamMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, false);
+        MessageMetadataContainer callerMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, true);
+        MessageMetadataContainer calleeMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, false);
 
         LaneRuleContainer container = fetchLaneRules(routeInfo, instances);
 
         // 判断当前流量是否已存在染色
-        String stainLabel = downstreamMsgContainer.getHeader(TRAFFIC_STAIN_LABEL);
+        String stainLabel = callerMsgContainer.getHeader(TRAFFIC_STAIN_LABEL);
         boolean alreadyStain = StringUtils.isNotBlank(stainLabel);
 
         Optional<LaneProto.LaneRule> targetRule;
@@ -120,7 +121,7 @@ public class LaneRouter extends AbstractServiceRouter {
         if (!tryStainCurrentTraffic(manager, routeInfo.getSourceService().getServiceKey(), container, laneRule)) {
             // 如果染色失败，即当前 Caller 不是泳道入口，不需要进行染色，只需要将已有的泳道标签进行透传
             if (alreadyStain) {
-                upstreamMsgContainer.setHeader(TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
+                calleeMsgContainer.setHeader(TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
             }
         }
 
@@ -280,7 +281,7 @@ public class LaneRouter extends AbstractServiceRouter {
 
                 List<Boolean> booleans = new LinkedList<>();
                 matchRule.getArgumentsList().forEach(sourceMatch -> {
-                    String trafficValue = findTrafficValue(sourceMatch, manager);
+                    String trafficValue = findTrafficValue(routeInfo, sourceMatch, manager);
                     switch (sourceMatch.getValue().getValueType()) {
                         case TEXT:
                             // 直接匹配
@@ -291,7 +292,7 @@ public class LaneRouter extends AbstractServiceRouter {
                             boolean match = false;
                             String parameterKey = sourceMatch.getValue().getValue().getValue();
                             // 外部参数来源
-                            Optional<String> parameter = routeInfo.getExternalParameterSupplier().search(parameterKey);
+                            Optional<String> parameter = routeInfo.getExternalParameterSupplier().apply(parameterKey);
                             if (parameter.isPresent()) {
                                 match = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficValue,
                                         parameter.get());
@@ -330,7 +331,9 @@ public class LaneRouter extends AbstractServiceRouter {
         }
     }
 
-    private static String findTrafficValue(RoutingProto.SourceMatch sourceMatch, MetadataManager manager) {
+    private static String findTrafficValue(RouteInfo routeInfo, RoutingProto.SourceMatch sourceMatch, MetadataManager manager) {
+        Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
+
         MessageMetadataContainer upstreamMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
         MessageMetadataContainer downstreamMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
 
@@ -340,24 +343,52 @@ public class LaneRouter extends AbstractServiceRouter {
         String trafficValue = "";
         switch (sourceMatch.getType()) {
             case HEADER:
+                String headerKey = RouteArgument.ArgumentType.HEADER.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(headerKey)) {
+                    return trafficLabels.get(headerKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamMsgContainer.getHeader(sourceMatch.getKey())).orElse(downstreamMsgContainer.getHeader(sourceMatch.getKey()));
                 break;
             case CUSTOM:
+                String customKey = RouteArgument.ArgumentType.CUSTOM.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(customKey)) {
+                    return trafficLabels.get(customKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamCustomContainer.getRawMetadataStringValue(sourceMatch.getKey())).orElse(downstreamCustomContainer.getRawMetadataStringValue(sourceMatch.getKey()));
                 break;
             case METHOD:
+                String methodKey = RouteArgument.ArgumentType.METHOD.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(methodKey)) {
+                    return trafficLabels.get(methodKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamMsgContainer.getMethod()).orElse(downstreamMsgContainer.getMethod());
                 break;
             case CALLER_IP:
+                String callerIpKey = RouteArgument.ArgumentType.CALLER_IP.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(callerIpKey)) {
+                    return trafficLabels.get(callerIpKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamMsgContainer.getCallerIP()).orElse(downstreamMsgContainer.getCallerIP());
                 break;
             case COOKIE:
+                String cookieKey = RouteArgument.ArgumentType.COOKIE.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(cookieKey)) {
+                    return trafficLabels.get(cookieKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamMsgContainer.getCookie(sourceMatch.getKey())).orElse(downstreamMsgContainer.getCookie(sourceMatch.getKey()));
                 break;
             case QUERY:
+                String queryKey = RouteArgument.ArgumentType.QUERY.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(queryKey)) {
+                    return trafficLabels.get(queryKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamMsgContainer.getQuery(sourceMatch.getKey())).orElse(downstreamMsgContainer.getQuery(sourceMatch.getKey()));
                 break;
             case PATH:
+                String pathKey = RouteArgument.ArgumentType.PATH.key(sourceMatch.getKey());
+                if (trafficLabels.containsKey(pathKey)) {
+                    return trafficLabels.get(pathKey);
+                }
                 trafficValue = Optional.ofNullable(upstreamMsgContainer.getPath()).orElse(downstreamMsgContainer.getPath());
                 break;
         }
