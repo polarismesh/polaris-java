@@ -19,6 +19,7 @@ package com.tencent.polaris.metadata.core.impl;
 
 import com.tencent.polaris.metadata.core.MetadataMapValue;
 import com.tencent.polaris.metadata.core.MetadataStringValue;
+import com.tencent.polaris.metadata.core.MetadataValue;
 import com.tencent.polaris.metadata.core.manager.Utils;
 
 import java.util.Collections;
@@ -29,7 +30,7 @@ import java.util.function.BiConsumer;
 
 public class MetadataMapValueImpl implements MetadataMapValue {
 
-    private final Map<String, MetadataStringValue> mapValues = new ConcurrentHashMap<>();
+    private final Map<String, MetadataValue> mapValues = new ConcurrentHashMap<>();
 
     private final String transitivePrefix;
 
@@ -38,37 +39,39 @@ public class MetadataMapValueImpl implements MetadataMapValue {
     }
 
     @Override
-    public MetadataStringValue getMapValue(String key) {
+    public MetadataValue getMapValue(String key) {
         return mapValues.get(key);
     }
 
     @Override
-    public void putMapValue(String key, MetadataStringValue value) {
+    public void putMapValue(String key, MetadataValue value) {
         mapValues.put(key, value);
     }
 
     @Override
-    public MetadataStringValue removeMapValue(String key) {
-        return mapValues.remove(key);
+    public <T> void putMetadataObjectValue(String key, T value) {
+        mapValues.put(key, new MetadataObjectValueImpl<>(value));
     }
 
     @Override
-    public Map<String, MetadataStringValue> getMapValues() {
+    public Map<String, MetadataValue> getMapValues() {
         return Collections.unmodifiableMap(mapValues);
     }
 
     @Override
-    public void iterateMapValues(BiConsumer<String, MetadataStringValue> iterator) {
+    public void iterateMapValues(BiConsumer<String, MetadataValue> iterator) {
         mapValues.forEach(iterator);
     }
 
     @Override
     public Map<String, String> getAllTransitiveKeyValues() {
         Map<String, String> values = new HashMap<>();
-        iterateMapValues(new BiConsumer<String, MetadataStringValue>() {
+        iterateMapValues(new BiConsumer<String, MetadataValue>() {
             @Override
-            public void accept(String key, MetadataStringValue metadataStringValue) {
-                switch (metadataStringValue.getTransitiveType()) {
+            public void accept(String key, MetadataValue metadataValue) {
+                if (metadataValue instanceof MetadataStringValue) {
+                    MetadataStringValue metadataStringValue = (MetadataStringValue) metadataValue;
+                    switch (metadataStringValue.getTransitiveType()) {
                     case PASS_THROUGH:
                         values.put(Utils.encapsulateMetadataKey(transitivePrefix, key), metadataStringValue.getStringValue());
                         break;
@@ -77,6 +80,7 @@ public class MetadataMapValueImpl implements MetadataMapValue {
                         break;
                     default:
                         break;
+                    }
                 }
             }
         });

@@ -15,26 +15,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core;
+package com.tencent.polaris.metadata.core.impl;
 
-import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.Optional;
 
-public interface MetadataMapValue extends MetadataValue {
+import com.tencent.polaris.metadata.core.MetadataObjectValue;
 
-    MetadataValue getMapValue(String key);
+public class MetadataObjectValueImpl<T> implements MetadataObjectValue<T> {
 
-    void putMapValue(String key, MetadataValue value);
+	private final T value;
 
-    <T> void putMetadataObjectValue(String key, T value);
+	public MetadataObjectValueImpl(T value) {
+		this.value = value;
+	}
 
-    Map<String, MetadataValue> getMapValues();
-
-    void iterateMapValues(BiConsumer<String, MetadataValue> iterator);
-
-    /**
-     * 获取所有的透传标签列表（包括pass_through和disposal），对于Pass_through会自动带入透传前缀（如有）
-     * @return 透传标签列表
-     */
-    Map<String, String> getAllTransitiveKeyValues();
+	@Override
+	public Optional<T> getObjectValue() {
+		return Optional.of(value);
+	}
 }

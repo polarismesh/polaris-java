@@ -24,37 +24,37 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MetadataManager {
+public class MetadataContext {
 
     public static final String DEFAULT_TRANSITIVE_PREFIX = "X-Polaris-Metadata-Transitive-";
 
-    private final MetadataContainerGroup downstreamMetadataContainerGroup;
+    private final MetadataContainerGroup callerMetadataContainerGroup;
 
-    private final MetadataContainerGroup upstreamMetadataContainerGroup;
+    private final MetadataContainerGroup calleeMetadataContainerGroup;
 
     private final String transitivePrefix;
 
-    public MetadataManager(List<String> transitivePrefixes) {
+    public MetadataContext(List<String> transitivePrefixes) {
         if (transitivePrefixes == null || transitivePrefixes.isEmpty()) {
             transitivePrefixes = new ArrayList<>();
             transitivePrefixes.add("");
         }
         this.transitivePrefix = transitivePrefixes.get(0);
-        downstreamMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
-        upstreamMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
+        callerMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
+        calleeMetadataContainerGroup = new MetadataContainerGroup(transitivePrefixes);
     }
 
-    public MetadataManager() {
+    public MetadataContext() {
         this(Collections.singletonList(DEFAULT_TRANSITIVE_PREFIX));
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends MetadataContainer> T getMetadataContainer(MetadataType metadataType, boolean downstream) {
+    public <T extends MetadataContainer> T getMetadataContainer(MetadataType metadataType, boolean caller) {
         MetadataContainerGroup metadataContainer;
-        if (downstream) {
-            metadataContainer = downstreamMetadataContainerGroup;
+        if (caller) {
+            metadataContainer = callerMetadataContainerGroup;
         } else {
-            metadataContainer = upstreamMetadataContainerGroup;
+            metadataContainer = calleeMetadataContainerGroup;
         }
         switch (metadataType) {
             case MESSAGE:
