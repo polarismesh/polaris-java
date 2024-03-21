@@ -21,9 +21,13 @@ import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.listener.ServiceListener;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
+import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
+import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -31,34 +35,18 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class WatchServiceExample {
+public class GetServiceRuleExample {
 
     public static void main(String[] args) throws Exception {
-        ExampleUtils.InitResult initResult = ExampleUtils.initConsumerConfiguration(args, false);
-        String namespace = initResult.getNamespace();
-        String service = initResult.getService();
+        ExampleUtils.InitResult initResult = ExampleUtils.initConsumerConfiguration(args, true);
         try (ConsumerAPI consumerAPI = ExampleUtils.createConsumerAPI(initResult.getConfig())) {
-            System.out.println("namespace " + namespace);
-            WatchServiceRequest request = WatchServiceRequest.builder()
-                    .namespace(namespace)
-                    .service(service)
-                    .listeners(Collections.singletonList(new ServiceWatcher()))
-                    .build();
-            request.setNamespace(namespace);
-            WatchServiceResponse response = consumerAPI.watchService(request);
-            Instance[] instances = response.getResponse().getInstances();
-            System.out.println("instance count is " + instances.length);
-            System.out.println("print all instance " + Arrays.asList(instances));
-
+            GetServiceRuleRequest request = new GetServiceRuleRequest();
+            request.setRuleType(ServiceEventKey.EventType.LANE_RULE);
+            request.setService("service-a");
+            request.setNamespace("default");
+            ServiceRuleResponse response = consumerAPI.getServiceRule(request);
+            System.out.println(response);
             new CountDownLatch(1).await();
-        }
-    }
-
-    private static class ServiceWatcher implements ServiceListener {
-
-        @Override
-        public void onEvent(ServiceChangeEvent event) {
-            System.out.println("service change event " + event);
         }
     }
 
