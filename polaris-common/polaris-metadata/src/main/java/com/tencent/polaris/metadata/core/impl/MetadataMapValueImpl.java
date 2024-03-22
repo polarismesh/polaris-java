@@ -27,7 +27,7 @@ import com.tencent.polaris.metadata.core.MetadataMapValue;
 import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataValue;
 import com.tencent.polaris.metadata.core.TransitiveType;
-import com.tencent.polaris.metadata.core.manager.Utils;
+import com.tencent.polaris.metadata.core.Utils;
 
 public class MetadataMapValueImpl implements MetadataMapValue {
 
@@ -41,17 +41,17 @@ public class MetadataMapValueImpl implements MetadataMapValue {
 
     @Override
     public MetadataValue getMapValue(String key) {
-        return mapValues.get(key);
+        return mapValues.get(Utils.normalize(key));
     }
 
     @Override
     public void putMapStringValue(String key, String value, TransitiveType transitiveType) {
-        mapValues.put(key, new MetadataStringValueImpl(transitiveType, value));
+        mapValues.put(Utils.normalize(key), new MetadataStringValueImpl(transitiveType, value));
     }
 
     @Override
     public <T> void putMetadataObjectValue(String key, T value) {
-        mapValues.put(key, new MetadataObjectValueImpl<>(value));
+        mapValues.put(Utils.normalize(key), new MetadataObjectValueImpl<>(value));
     }
 
     @Override

@@ -17,8 +17,10 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,8 +33,8 @@ import com.tencent.polaris.metadata.core.MetadataProvider;
 import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataValue;
 import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.Utils;
 import com.tencent.polaris.metadata.core.manager.ComposeMetadataProvider;
-import com.tencent.polaris.metadata.core.manager.Utils;
 
 public class MetadataContainerImpl implements MetadataContainer {
 
@@ -42,18 +44,22 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     private final AtomicReference<MetadataProvider> metadataProviderReference = new AtomicReference<>();
 
+    private final ContainerBasedMetadataProvider containerBasedMetadataProvider = new ContainerBasedMetadataProvider();
+
     public MetadataContainerImpl(String transitivePrefix) {
         this.transitivePrefix = transitivePrefix;
+        metadataProviderReference.set(new ComposeMetadataProvider(
+                transitivePrefix, Collections.singletonList(containerBasedMetadataProvider)));
     }
 
     @Override
     public void putMetadataStringValue(String key, String value, TransitiveType transitiveType) {
-        values.put(key, new MetadataStringValueImpl(transitiveType, value));
+        values.put(Utils.normalize(key), new MetadataStringValueImpl(transitiveType, value));
     }
 
     @Override
     public void putMetadataMapValue(String key, String mapKey, String value, TransitiveType transitiveType) {
-        MetadataValue metadataValue = values.computeIfAbsent(key, new Function<String, MetadataValue>() {
+        MetadataValue metadataValue = values.computeIfAbsent(Utils.normalize(key), new Function<String, MetadataValue>() {
             @Override
             public MetadataValue apply(String s) {
                 return new MetadataMapValueImpl(transitivePrefix);
@@ -66,7 +72,7 @@ public class MetadataContainerImpl implements MetadataContainer {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends MetadataValue> T getMetadataValue(String key) {
-        MetadataValue metadataValue = values.get(key);
+        MetadataValue metadataValue = values.get(Utils.normalize(key));
         if (null == metadataValue) {
             return null;
         }
@@ -120,10 +126,12 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     @Override
     public void setMetadataProvider(MetadataProvider metadataProvider) {
+        List<MetadataProvider> metadataProviders = new ArrayList<>();
         if (null != metadataProvider) {
-            metadataProvider = new ComposeMetadataProvider(Collections.singletonList(transitivePrefix), metadataProvider);
+            metadataProviders.add(metadataProvider);
         }
-        metadataProviderReference.set(metadataProvider);
+        metadataProviders.add(containerBasedMetadataProvider);
+        metadataProviderReference.set(new ComposeMetadataProvider(transitivePrefix, metadataProviders));
     }
 
     @Override
@@ -134,54 +142,55 @@ public class MetadataContainerImpl implements MetadataContainer {
     @Override
     public String getRawMetadataStringValue(String key) {
         MetadataProvider metadataProvider = getMetadataProvider();
-        if (null != metadataProvider) {
-            String value = metadataProvider.getRawMetadataStringValue(key);
-            if (null != value) {
-                return value;
-            }
-        }
-        MetadataValue metadataValue = getMetadataValue(key);
-        if (metadataValue instanceof MetadataStringValue) {
-            return ((MetadataStringValue)metadataValue).getStringValue();
-        }
-        return null;
+        return metadataProvider.getRawMetadataStringValue(key);
     }
 
     @Override
     public String getRawMetadataMapValue(String key, String mapKey) {
         MetadataProvider metadataProvider = getMetadataProvider();
-        if (null != metadataProvider) {
-            String value = metadataProvider.getRawMetadataMapValue(key, mapKey);
-            if (null != value) {
-                return value;
-            }
-        }
-        MetadataValue metadataValue = getMetadataValue(key);
-        if (metadataValue instanceof MetadataMapValue) {
-            MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-            MetadataValue mapValue = metadataMapValue.getMapValue(mapKey);
-            if (mapValue instanceof MetadataStringValue) {
-                return ((MetadataStringValue) mapValue).getStringValue();
-            }
-            return null;
-        }
-        return null;
+        return metadataProvider.getRawMetadataMapValue(key, mapKey);
     }
 
     @Override
     public <T> void putMetadataObjectValue(String key, T value) {
-        values.put(key, new MetadataObjectValueImpl<>(value));
+        values.put(Utils.normalize(key), new MetadataObjectValueImpl<>(value));
     }
 
     @Override
     public <T> void putMetadataMapObjectValue(String key, String mapKey, T value) {
-        MetadataValue metadataValue = values.computeIfAbsent(key, new Function<String, MetadataValue>() {
+        MetadataValue metadataValue = values.computeIfAbsent(Utils.normalize(key), new Function<String, MetadataValue>() {
             @Override
             public MetadataValue apply(String s) {
                 return new MetadataMapValueImpl(transitivePrefix);
             }
         });
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-        metadataMapValue.putMetadataObjectValue(mapKey, value);
+        metadataMapValue.putMetadataObjectValue(Utils.normalize(mapKey), value);
+    }
+
+    private class ContainerBasedMetadataProvider implements MetadataProvider {
+
+        @Override
+        public String getRawMetadataStringValue(String key) {
+            MetadataValue metadataValue = getMetadataValue(key);
+            if (metadataValue instanceof MetadataStringValue) {
+                return ((MetadataStringValue) metadataValue).getStringValue();
+            }
+            return null;
+        }
+
+        @Override
+        public String getRawMetadataMapValue(String key, String mapKey) {
+            MetadataValue metadataValue = getMetadataValue(key);
+            if (metadataValue instanceof MetadataMapValue) {
+                MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
+                MetadataValue mapValue = metadataMapValue.getMapValue(mapKey);
+                if (mapValue instanceof MetadataStringValue) {
+                    return ((MetadataStringValue) mapValue).getStringValue();
+                }
+                return null;
+            }
+            return null;
+        }
     }
 }
