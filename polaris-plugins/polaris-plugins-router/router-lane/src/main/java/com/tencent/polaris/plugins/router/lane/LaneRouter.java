@@ -18,10 +18,12 @@
 package com.tencent.polaris.plugins.router.lane;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.registry.EventCompleteNotifier;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
@@ -37,7 +39,6 @@ import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.MessageMetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
@@ -56,6 +57,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class LaneRouter extends AbstractServiceRouter {
@@ -76,6 +81,61 @@ public class LaneRouter extends AbstractServiceRouter {
 
     private static final String SERVICE_SELECTOR = "polarismesh.cn/service";
 
+    @SuppressWarnings("unchecked")
+    private Function<ServiceKey, List<LaneProto.LaneGroup>> ruleGetter = serviceKey -> {
+        if (StringUtils.isBlank(serviceKey.getService()) || StringUtils.isBlank(serviceKey.getNamespace())) {
+            return Collections.emptyList();
+        }
+
+        ServiceEventKey eventKey = ServiceEventKey.builder()
+                .serviceKey(serviceKey)
+                .eventType(ServiceEventKey.EventType.LANE_RULE)
+                .build();
+
+        AtomicBoolean finish = new AtomicBoolean(false);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        ServiceRule outbound = extensions.getLocalRegistry().getServiceRule(new ResourceFilter(eventKey, true, false));
+
+        // 之前已经 Load 成功了，就直接用
+        if (outbound.isInitialized()) {
+            Object rule = outbound.getRule();
+            if (Objects.nonNull(rule)) {
+                return (List<LaneProto.LaneGroup>) rule;
+            }
+            return Collections.emptyList();
+        }
+        extensions.getLocalRegistry().loadServiceRule(eventKey, new EventCompleteNotifier() {
+            @Override
+            public void complete(ServiceEventKey svcEventKey) {
+                if (finish.compareAndSet(false, true)) {
+                    latch.countDown();
+                }
+            }
+
+            @Override
+            public void completeExceptionally(ServiceEventKey svcEventKey, Throwable throwable) {
+                LOG.error("fetch lane group fail: {}", eventKey, throwable);
+                if (finish.compareAndSet(false, true)) {
+                    latch.countDown();
+                }
+            }
+        });
+
+        try {
+            boolean ok = latch.await(extensions.getConfiguration().getGlobal().getAPI().getTimeout(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ignore) {
+            Thread.currentThread().interrupt();
+        }
+
+        outbound = extensions.getLocalRegistry().getServiceRule(new ResourceFilter(eventKey, true, true));
+        Object rule = outbound.getRule();
+        if (Objects.nonNull(rule)) {
+            return (List<LaneProto.LaneGroup>) rule;
+        }
+        return Collections.emptyList();
+    };
+
     @Override
     public void init(InitContext ctx) throws PolarisException {
 
@@ -94,9 +154,9 @@ public class LaneRouter extends AbstractServiceRouter {
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
-        MetadataContext manager = MetadataContextHolder.get();
-        MessageMetadataContainer callerMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, true);
-        MessageMetadataContainer calleeMsgContainer =  manager.getMetadataContainer(MetadataType.MESSAGE, false);
+        MetadataContext manager = MetadataContextHolder.getOrCreate(MetadataContext::new);
+        MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
+        MessageMetadataContainer calleeMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
 
         LaneRuleContainer container = fetchLaneRules(routeInfo, instances);
 
@@ -221,26 +281,8 @@ public class LaneRouter extends AbstractServiceRouter {
     private LaneRuleContainer fetchLaneRules(RouteInfo routeInfo, ServiceInstances instances) {
         List<LaneProto.LaneGroup> result = new ArrayList<>();
         // 获取泳道规则
-        ServiceRule outbound = extensions.getLocalRegistry().getServiceRule(new ResourceFilter(ServiceEventKey.builder()
-                .serviceKey(routeInfo.getSourceService().getServiceKey())
-                .eventType(ServiceEventKey.EventType.LANE_RULE)
-                .build(), true, true));
-
-        Object rule = outbound.getRule();
-        if (Objects.nonNull(rule)) {
-            result.addAll((List<LaneProto.LaneGroup>) rule);
-        }
-
-        ServiceRule inbound = extensions.getLocalRegistry().getServiceRule(new ResourceFilter(ServiceEventKey.builder()
-                .serviceKey(instances.getServiceKey())
-                .eventType(ServiceEventKey.EventType.LANE_RULE)
-                .build(), true, true));
-
-        rule = inbound.getRule();
-        if (Objects.nonNull(rule)) {
-            result.addAll((List<LaneProto.LaneGroup>) rule);
-        }
-
+        result.addAll(ruleGetter.apply(routeInfo.getSourceService().getServiceKey()));
+        result.addAll(ruleGetter.apply(instances.getServiceKey()));
         return new LaneRuleContainer(result);
     }
 
@@ -258,10 +300,13 @@ public class LaneRouter extends AbstractServiceRouter {
                 }
                 groups.put(laneGroup.getName(), laneGroup);
                 laneGroup.getRulesList().forEach(laneRule -> {
+                    if (!laneRule.getEnable()) {
+                        return;
+                    }
                     String name = buildStainLabel(laneRule);
                     ruleMapping.put(name, laneRule);
+                    rules.add(laneRule);
                 });
-                rules.addAll(laneGroup.getRulesList());
             });
 
             // 数字越小，规则优先级越大
@@ -277,6 +322,10 @@ public class LaneRouter extends AbstractServiceRouter {
             // 当前流量无染色，根据泳道规则进行匹配判断
             LaneProto.LaneRule targetRule = null;
             for (LaneProto.LaneRule rule : rules) {
+                if (!rule.getEnable()) {
+                    continue;
+                }
+
                 LaneProto.TrafficMatchRule matchRule = rule.getTrafficMatchRule();
 
                 List<Boolean> booleans = new LinkedList<>();
@@ -334,11 +383,8 @@ public class LaneRouter extends AbstractServiceRouter {
     private static String findTrafficValue(RouteInfo routeInfo, RoutingProto.SourceMatch sourceMatch, MetadataContext manager) {
         Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
 
-        MessageMetadataContainer upstreamMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
-        MessageMetadataContainer downstreamMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
-
-        MetadataContainer upstreamCustomContainer = manager.getMetadataContainer(MetadataType.CUSTOM, false);
-        MetadataContainer downstreamCustomContainer = manager.getMetadataContainer(MetadataType.CUSTOM, true);
+        MessageMetadataContainer calleeContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
+        MessageMetadataContainer callerContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
 
         String trafficValue = "";
         switch (sourceMatch.getType()) {
@@ -347,49 +393,49 @@ public class LaneRouter extends AbstractServiceRouter {
                 if (trafficLabels.containsKey(headerKey)) {
                     return trafficLabels.get(headerKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamMsgContainer.getHeader(sourceMatch.getKey())).orElse(downstreamMsgContainer.getHeader(sourceMatch.getKey()));
+                trafficValue = Optional.ofNullable(calleeContainer.getHeader(sourceMatch.getKey())).orElse(callerContainer.getHeader(sourceMatch.getKey()));
                 break;
             case CUSTOM:
                 String customKey = RouteArgument.ArgumentType.CUSTOM.key(sourceMatch.getKey());
                 if (trafficLabels.containsKey(customKey)) {
                     return trafficLabels.get(customKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamCustomContainer.getRawMetadataStringValue(sourceMatch.getKey())).orElse(downstreamCustomContainer.getRawMetadataStringValue(sourceMatch.getKey()));
+                trafficValue = Optional.ofNullable(calleeContainer.getRawMetadataStringValue(sourceMatch.getKey())).orElse(callerContainer.getRawMetadataStringValue(sourceMatch.getKey()));
                 break;
             case METHOD:
                 String methodKey = RouteArgument.ArgumentType.METHOD.key(sourceMatch.getKey());
                 if (trafficLabels.containsKey(methodKey)) {
                     return trafficLabels.get(methodKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamMsgContainer.getMethod()).orElse(downstreamMsgContainer.getMethod());
+                trafficValue = Optional.ofNullable(calleeContainer.getMethod()).orElse(callerContainer.getMethod());
                 break;
             case CALLER_IP:
                 String callerIpKey = RouteArgument.ArgumentType.CALLER_IP.key(sourceMatch.getKey());
                 if (trafficLabels.containsKey(callerIpKey)) {
                     return trafficLabels.get(callerIpKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamMsgContainer.getCallerIP()).orElse(downstreamMsgContainer.getCallerIP());
+                trafficValue = Optional.ofNullable(calleeContainer.getCallerIP()).orElse(callerContainer.getCallerIP());
                 break;
             case COOKIE:
                 String cookieKey = RouteArgument.ArgumentType.COOKIE.key(sourceMatch.getKey());
                 if (trafficLabels.containsKey(cookieKey)) {
                     return trafficLabels.get(cookieKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamMsgContainer.getCookie(sourceMatch.getKey())).orElse(downstreamMsgContainer.getCookie(sourceMatch.getKey()));
+                trafficValue = Optional.ofNullable(calleeContainer.getCookie(sourceMatch.getKey())).orElse(callerContainer.getCookie(sourceMatch.getKey()));
                 break;
             case QUERY:
                 String queryKey = RouteArgument.ArgumentType.QUERY.key(sourceMatch.getKey());
                 if (trafficLabels.containsKey(queryKey)) {
                     return trafficLabels.get(queryKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamMsgContainer.getQuery(sourceMatch.getKey())).orElse(downstreamMsgContainer.getQuery(sourceMatch.getKey()));
+                trafficValue = Optional.ofNullable(calleeContainer.getQuery(sourceMatch.getKey())).orElse(callerContainer.getQuery(sourceMatch.getKey()));
                 break;
             case PATH:
                 String pathKey = RouteArgument.ArgumentType.PATH.key(sourceMatch.getKey());
                 if (trafficLabels.containsKey(pathKey)) {
                     return trafficLabels.get(pathKey);
                 }
-                trafficValue = Optional.ofNullable(upstreamMsgContainer.getPath()).orElse(downstreamMsgContainer.getPath());
+                trafficValue = Optional.ofNullable(calleeContainer.getPath()).orElse(callerContainer.getPath());
                 break;
         }
         return trafficValue;
@@ -399,4 +445,8 @@ public class LaneRouter extends AbstractServiceRouter {
         return rule.getGroupName() + "/" + rule.getName();
     }
 
+    @JustForTest
+    public void setRuleGetter(Function<ServiceKey, List<LaneProto.LaneGroup>> ruleGetter) {
+        this.ruleGetter = ruleGetter;
+    }
 }
