@@ -17,8 +17,10 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -31,8 +33,8 @@ import com.tencent.polaris.metadata.core.MetadataProvider;
 import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataValue;
 import com.tencent.polaris.metadata.core.TransitiveType;
-import com.tencent.polaris.metadata.core.manager.ComposeMetadataProvider;
 import com.tencent.polaris.metadata.core.Utils;
+import com.tencent.polaris.metadata.core.manager.ComposeMetadataProvider;
 
 public class MetadataContainerImpl implements MetadataContainer {
 
@@ -42,8 +44,12 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     private final AtomicReference<MetadataProvider> metadataProviderReference = new AtomicReference<>();
 
+    private final ContainerBasedMetadataProvider containerBasedMetadataProvider = new ContainerBasedMetadataProvider();
+
     public MetadataContainerImpl(String transitivePrefix) {
         this.transitivePrefix = transitivePrefix;
+        metadataProviderReference.set(new ComposeMetadataProvider(
+                transitivePrefix, Collections.singletonList(containerBasedMetadataProvider)));
     }
 
     @Override
@@ -120,10 +126,12 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     @Override
     public void setMetadataProvider(MetadataProvider metadataProvider) {
+        List<MetadataProvider> metadataProviders = new ArrayList<>();
         if (null != metadataProvider) {
-            metadataProvider = new ComposeMetadataProvider(Collections.singletonList(transitivePrefix), metadataProvider);
+            metadataProviders.add(metadataProvider);
         }
-        metadataProviderReference.set(metadataProvider);
+        metadataProviders.add(containerBasedMetadataProvider);
+        metadataProviderReference.set(new ComposeMetadataProvider(transitivePrefix, metadataProviders));
     }
 
     @Override
@@ -134,38 +142,13 @@ public class MetadataContainerImpl implements MetadataContainer {
     @Override
     public String getRawMetadataStringValue(String key) {
         MetadataProvider metadataProvider = getMetadataProvider();
-        if (null != metadataProvider) {
-            String value = metadataProvider.getRawMetadataStringValue(key);
-            if (null != value) {
-                return value;
-            }
-        }
-        MetadataValue metadataValue = getMetadataValue(key);
-        if (metadataValue instanceof MetadataStringValue) {
-            return ((MetadataStringValue)metadataValue).getStringValue();
-        }
-        return null;
+        return metadataProvider.getRawMetadataStringValue(key);
     }
 
     @Override
     public String getRawMetadataMapValue(String key, String mapKey) {
         MetadataProvider metadataProvider = getMetadataProvider();
-        if (null != metadataProvider) {
-            String value = metadataProvider.getRawMetadataMapValue(key, mapKey);
-            if (null != value) {
-                return value;
-            }
-        }
-        MetadataValue metadataValue = getMetadataValue(key);
-        if (metadataValue instanceof MetadataMapValue) {
-            MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-            MetadataValue mapValue = metadataMapValue.getMapValue(mapKey);
-            if (mapValue instanceof MetadataStringValue) {
-                return ((MetadataStringValue) mapValue).getStringValue();
-            }
-            return null;
-        }
-        return null;
+        return metadataProvider.getRawMetadataMapValue(key, mapKey);
     }
 
     @Override
@@ -183,5 +166,31 @@ public class MetadataContainerImpl implements MetadataContainer {
         });
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
         metadataMapValue.putMetadataObjectValue(Utils.normalize(mapKey), value);
+    }
+
+    private class ContainerBasedMetadataProvider implements MetadataProvider {
+
+        @Override
+        public String getRawMetadataStringValue(String key) {
+            MetadataValue metadataValue = getMetadataValue(key);
+            if (metadataValue instanceof MetadataStringValue) {
+                return ((MetadataStringValue) metadataValue).getStringValue();
+            }
+            return null;
+        }
+
+        @Override
+        public String getRawMetadataMapValue(String key, String mapKey) {
+            MetadataValue metadataValue = getMetadataValue(key);
+            if (metadataValue instanceof MetadataMapValue) {
+                MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
+                MetadataValue mapValue = metadataMapValue.getMapValue(mapKey);
+                if (mapValue instanceof MetadataStringValue) {
+                    return ((MetadataStringValue) mapValue).getStringValue();
+                }
+                return null;
+            }
+            return null;
+        }
     }
 }

@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.metadata.core.manager;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.tencent.polaris.metadata.core.MetadataProvider;
@@ -25,29 +24,23 @@ import com.tencent.polaris.metadata.core.Utils;
 
 public class ComposeMetadataProvider implements MetadataProvider {
 
-    private final MetadataProvider metadataProvider;
+    private final List<MetadataProvider> metadataProviders;
 
-    private final List<String> transitivePrefixes = new ArrayList<>();
+    private final String transitivePrefix;
 
-    public ComposeMetadataProvider(List<String> prefixes, MetadataProvider metadataProvider) {
-        assert null != metadataProvider;
-        for (String prefix : prefixes) {
-            if (null != prefix && !prefix.isEmpty()) {
-                transitivePrefixes.add(prefix);
-            }
-        }
-        this.metadataProvider = metadataProvider;
+    public ComposeMetadataProvider(String transitivePrefix, List<MetadataProvider> metadataProviders) {
+        assert null != metadataProviders && !metadataProviders.isEmpty();
+        this.transitivePrefix = transitivePrefix;
+        this.metadataProviders = metadataProviders;
     }
 
     @Override
     public String getRawMetadataStringValue(String key) {
         // 先获取透传标签
-        if (!transitivePrefixes.isEmpty()) {
-            for (String prefix : transitivePrefixes) {
-                String value = getRawStringValue(Utils.encapsulateMetadataKey(prefix, key));
-                if (null != value) {
-                    return value;
-                }
+        if (null != transitivePrefix && !transitivePrefix.isEmpty()) {
+            String value = getRawStringValue(Utils.encapsulateMetadataKey(transitivePrefix, key));
+            if (null != value) {
+                return value;
             }
         }
         // 透传标签获取失败，则获取原始标签
@@ -57,12 +50,10 @@ public class ComposeMetadataProvider implements MetadataProvider {
     @Override
     public String getRawMetadataMapValue(String key, String mapKey) {
         // 先获取透传标签
-        if (!transitivePrefixes.isEmpty()) {
-            for (String prefix : transitivePrefixes) {
-                String value = getRawMapValue(key, Utils.encapsulateMetadataKey(prefix, mapKey));
-                if (null != value) {
-                    return value;
-                }
+        if (null != transitivePrefix && !transitivePrefix.isEmpty()) {
+            String value = getRawMapValue(key, Utils.encapsulateMetadataKey(transitivePrefix, mapKey));
+            if (null != value) {
+                return value;
             }
         }
         // 透传标签获取失败，则获取原始标签
@@ -70,11 +61,23 @@ public class ComposeMetadataProvider implements MetadataProvider {
     }
 
     private String getRawStringValue(String key) {
-        return metadataProvider.getRawMetadataStringValue(key);
+        for (MetadataProvider metadataProvider : metadataProviders) {
+            String rawMetadataStringValue = metadataProvider.getRawMetadataStringValue(key);
+            if (null != rawMetadataStringValue) {
+                return rawMetadataStringValue;
+            }
+        }
+        return null;
     }
 
     private String getRawMapValue(String key, String mapKey) {
-        return metadataProvider.getRawMetadataMapValue(key, mapKey);
+        for (MetadataProvider metadataProvider : metadataProviders) {
+            String rawMetadataMapValue = metadataProvider.getRawMetadataMapValue(key, mapKey);
+            if (null != rawMetadataMapValue) {
+                return rawMetadataMapValue;
+            }
+        }
+        return null;
     }
 
 
