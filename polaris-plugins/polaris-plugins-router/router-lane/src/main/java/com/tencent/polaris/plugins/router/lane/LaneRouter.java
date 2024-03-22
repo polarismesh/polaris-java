@@ -342,6 +342,7 @@ public class LaneRouter extends AbstractServiceRouter {
                             boolean a = RuleUtils.matchStringValue(sourceMatch.getValue().getType(), trafficValue,
                                     sourceMatch.getValue().getValue().getValue());
                             booleans.add(a);
+                            break;
                         case VARIABLE:
                             boolean match = false;
                             String parameterKey = sourceMatch.getValue().getValue().getValue();
@@ -356,6 +357,7 @@ public class LaneRouter extends AbstractServiceRouter {
                                         System.getenv(parameterKey));
                             }
                             booleans.add(match);
+                            break;
                     }
                 });
 
