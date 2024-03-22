@@ -83,6 +83,9 @@ public class LaneRouter extends AbstractServiceRouter {
 
     @SuppressWarnings("unchecked")
     private Function<ServiceKey, List<LaneProto.LaneGroup>> ruleGetter = serviceKey -> {
+        if (Objects.isNull(serviceKey)) {
+            return Collections.emptyList();
+        }
         if (StringUtils.isBlank(serviceKey.getService()) || StringUtils.isBlank(serviceKey.getNamespace())) {
             return Collections.emptyList();
         }
@@ -281,7 +284,9 @@ public class LaneRouter extends AbstractServiceRouter {
     private LaneRuleContainer fetchLaneRules(RouteInfo routeInfo, ServiceInstances instances) {
         List<LaneProto.LaneGroup> result = new ArrayList<>();
         // 获取泳道规则
-        result.addAll(ruleGetter.apply(routeInfo.getSourceService().getServiceKey()));
+        if (Objects.nonNull(routeInfo.getSourceService())) {
+            result.addAll(ruleGetter.apply(routeInfo.getSourceService().getServiceKey()));
+        }
         result.addAll(ruleGetter.apply(instances.getServiceKey()));
         return new LaneRuleContainer(result);
     }
