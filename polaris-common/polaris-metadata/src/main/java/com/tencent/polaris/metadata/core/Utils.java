@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core.manager;
+package com.tencent.polaris.metadata.core;
 
 public class Utils {
 
@@ -48,5 +48,12 @@ public class Utils {
             return false;
         }
         return str.regionMatches(ignoreCase, 0, prefix, 0, prefix.length());
+    }
+
+    public static String normalize(String key) {
+        if (null == key) {
+            return key;
+        }
+        return key.toLowerCase();
     }
 }

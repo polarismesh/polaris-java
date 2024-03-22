@@ -32,7 +32,7 @@ import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataValue;
 import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.manager.ComposeMetadataProvider;
-import com.tencent.polaris.metadata.core.manager.Utils;
+import com.tencent.polaris.metadata.core.Utils;
 
 public class MetadataContainerImpl implements MetadataContainer {
 
@@ -48,12 +48,12 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     @Override
     public void putMetadataStringValue(String key, String value, TransitiveType transitiveType) {
-        values.put(key, new MetadataStringValueImpl(transitiveType, value));
+        values.put(Utils.normalize(key), new MetadataStringValueImpl(transitiveType, value));
     }
 
     @Override
     public void putMetadataMapValue(String key, String mapKey, String value, TransitiveType transitiveType) {
-        MetadataValue metadataValue = values.computeIfAbsent(key, new Function<String, MetadataValue>() {
+        MetadataValue metadataValue = values.computeIfAbsent(Utils.normalize(key), new Function<String, MetadataValue>() {
             @Override
             public MetadataValue apply(String s) {
                 return new MetadataMapValueImpl(transitivePrefix);
@@ -66,7 +66,7 @@ public class MetadataContainerImpl implements MetadataContainer {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends MetadataValue> T getMetadataValue(String key) {
-        MetadataValue metadataValue = values.get(key);
+        MetadataValue metadataValue = values.get(Utils.normalize(key));
         if (null == metadataValue) {
             return null;
         }
@@ -170,18 +170,18 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     @Override
     public <T> void putMetadataObjectValue(String key, T value) {
-        values.put(key, new MetadataObjectValueImpl<>(value));
+        values.put(Utils.normalize(key), new MetadataObjectValueImpl<>(value));
     }
 
     @Override
     public <T> void putMetadataMapObjectValue(String key, String mapKey, T value) {
-        MetadataValue metadataValue = values.computeIfAbsent(key, new Function<String, MetadataValue>() {
+        MetadataValue metadataValue = values.computeIfAbsent(Utils.normalize(key), new Function<String, MetadataValue>() {
             @Override
             public MetadataValue apply(String s) {
                 return new MetadataMapValueImpl(transitivePrefix);
             }
         });
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-        metadataMapValue.putMetadataObjectValue(mapKey, value);
+        metadataMapValue.putMetadataObjectValue(Utils.normalize(mapKey), value);
     }
 }
