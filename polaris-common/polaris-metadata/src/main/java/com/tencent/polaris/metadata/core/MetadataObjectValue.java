@@ -21,6 +21,10 @@ import java.util.Optional;
 
 public interface MetadataObjectValue<T> extends MetadataValue {
 
+	/**
+	 * 获取对象实际值
+	 * @return 对象值
+	 */
 	Optional<T> getObjectValue();
 
 }

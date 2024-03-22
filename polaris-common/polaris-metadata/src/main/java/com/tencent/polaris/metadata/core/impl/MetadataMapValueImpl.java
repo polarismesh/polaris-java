@@ -26,6 +26,7 @@ import java.util.function.BiConsumer;
 import com.tencent.polaris.metadata.core.MetadataMapValue;
 import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataValue;
+import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.manager.Utils;
 
 public class MetadataMapValueImpl implements MetadataMapValue {
@@ -44,8 +45,8 @@ public class MetadataMapValueImpl implements MetadataMapValue {
     }
 
     @Override
-    public void putMapValue(String key, MetadataValue value) {
-        mapValues.put(key, value);
+    public void putMapStringValue(String key, String value, TransitiveType transitiveType) {
+        mapValues.put(key, new MetadataStringValueImpl(transitiveType, value));
     }
 
     @Override
@@ -64,7 +65,7 @@ public class MetadataMapValueImpl implements MetadataMapValue {
     }
 
     @Override
-    public Map<String, String> getAllTransitiveKeyValues() {
+    public Map<String, String> getTransitiveStringValues() {
         Map<String, String> values = new HashMap<>();
         iterateMapValues(new BiConsumer<String, MetadataValue>() {
             @Override
