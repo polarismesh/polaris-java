@@ -44,6 +44,7 @@ import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
@@ -104,7 +105,7 @@ public class LaneRouter extends AbstractServiceRouter {
         if (outbound.isInitialized()) {
             Object rule = outbound.getRule();
             if (Objects.nonNull(rule)) {
-                return (List<LaneProto.LaneGroup>) rule;
+                return ((ResponseProto.DiscoverResponse) rule).getLanesList();
             }
             return Collections.emptyList();
         }

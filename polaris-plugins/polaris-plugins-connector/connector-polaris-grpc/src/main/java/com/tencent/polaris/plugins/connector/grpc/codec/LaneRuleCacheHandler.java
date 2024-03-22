@@ -42,8 +42,7 @@ public class LaneRuleCacheHandler extends AbstractCacheHandler {
     @Override
     public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded) {
         ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) newValue;
-        List<LaneProto.LaneGroup> rules = discoverResponse.getLanesList();
         String revision = discoverResponse.getService().getRevision().getValue();
-        return new ServiceRuleByProto(rules, revision, isCacheLoaded, getTargetEventType());
+        return new ServiceRuleByProto(discoverResponse, revision, isCacheLoaded, getTargetEventType());
     }
 }
