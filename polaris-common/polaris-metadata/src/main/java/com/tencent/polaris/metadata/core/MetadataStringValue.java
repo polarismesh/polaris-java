@@ -19,7 +19,15 @@ package com.tencent.polaris.metadata.core;
 
 public interface MetadataStringValue extends MetadataValue {
 
+    /**
+     * 获取字符串的透传类型
+     * @return 透传类型
+     */
     TransitiveType getTransitiveType();
 
+    /**
+     * 获取字符串值
+     * @return 值
+     */
     String getStringValue();
 }

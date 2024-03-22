@@ -60,12 +60,17 @@ public class MetadataContainerImpl implements MetadataContainer {
             }
         });
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-        metadataMapValue.putMapValue(mapKey, new MetadataStringValueImpl(transitiveType, value));
+        metadataMapValue.putMapStringValue(mapKey, value, transitiveType);
     }
 
     @Override
-    public MetadataValue getMetadataValue(String key) {
-        return values.get(key);
+    @SuppressWarnings("unchecked")
+    public <T extends MetadataValue> T getMetadataValue(String key) {
+        MetadataValue metadataValue = values.get(key);
+        if (null == metadataValue) {
+            return null;
+        }
+        return (T) metadataValue;
     }
 
     public void iterateMetadataValues(BiConsumer<String, MetadataValue> iterator) {
@@ -73,7 +78,7 @@ public class MetadataContainerImpl implements MetadataContainer {
     }
 
     @Override
-    public Map<String, String> getAllTransitiveKeyValues() {
+    public Map<String, String> getTransitiveStringValues() {
         Map<String, String> values = new HashMap<>();
         iterateMetadataValues(new BiConsumer<String, MetadataValue>() {
             @Override
@@ -102,6 +107,15 @@ public class MetadataContainerImpl implements MetadataContainer {
             }
         });
         return values;
+    }
+
+    @Override
+    public Map<String, String> getMapTransitiveStringValues(String key) {
+        MetadataMapValue metadataMapValue = getMetadataValue(key);
+        if (null == metadataMapValue) {
+            return Collections.emptyMap();
+        }
+        return metadataMapValue.getTransitiveStringValues();
     }
 
     @Override
@@ -168,6 +182,6 @@ public class MetadataContainerImpl implements MetadataContainer {
             }
         });
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-        metadataMapValue.putMapValue(mapKey, new MetadataObjectValueImpl<>(value));
+        metadataMapValue.putMetadataObjectValue(mapKey, value);
     }
 }

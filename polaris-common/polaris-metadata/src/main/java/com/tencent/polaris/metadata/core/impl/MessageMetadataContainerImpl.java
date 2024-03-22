@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
+import java.util.Map;
+
 import com.tencent.polaris.metadata.core.MessageMetadataContainer;
 import com.tencent.polaris.metadata.core.TransitiveType;
 
@@ -84,5 +86,20 @@ public class MessageMetadataContainerImpl extends MetadataContainerImpl implemen
     @Override
     public void setCallerIP(String callerIP) {
         putMetadataStringValue(LABEL_KEY_CALLER_IP, callerIP, TransitiveType.NONE);
+    }
+
+    @Override
+    public Map<String, String> getTransitiveHeaders() {
+        return getMapTransitiveStringValues(LABEL_MAP_KEY_HEADER);
+    }
+
+    @Override
+    public Map<String, String> getTransitiveQueries() {
+        return getMapTransitiveStringValues(LABEL_MAP_KEY_QUERY);
+    }
+
+    @Override
+    public Map<String, String> getTransitiveCookies() {
+        return getMapTransitiveStringValues(LABEL_MAP_KEY_COOKIE);
     }
 }

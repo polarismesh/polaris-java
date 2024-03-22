@@ -19,8 +19,19 @@ package com.tencent.polaris.metadata.core;
 
 public interface MetadataProvider {
 
+    /**
+     * 根据键获取一级字符串型元数据原始值
+     * @param key 元数据键
+     * @return 字符串原始值
+     */
     String getRawMetadataStringValue(String key);
 
+    /**
+     * 获取原始二级元数据值
+     * @param key 一级键
+     * @param mapKey 二级键
+     * @return 值
+     */
     String getRawMetadataMapValue(String key, String mapKey);
 
 }

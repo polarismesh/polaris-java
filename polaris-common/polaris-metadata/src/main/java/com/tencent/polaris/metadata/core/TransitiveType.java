@@ -18,12 +18,19 @@
 package com.tencent.polaris.metadata.core;
 
 public enum TransitiveType {
-    // 不透传：标签只在当前进程中扭转，不会透传到下一跳。
+
+    /**
+     * 不透传：标签只在当前进程中扭转，不会透传到下一跳。
+     */
     NONE,
 
-    // 单跳透传：标签只透传一跳。
+    /**
+     * 单跳透传：标签只透传一跳。
+     */
     DISPOSABLE,
 
-    // 一直透传：标签会在整个微服务链路中一直透传。
+    /**
+     * 一直透传：标签会在整个微服务链路中一直透传。
+     */
     PASS_THROUGH
 }
