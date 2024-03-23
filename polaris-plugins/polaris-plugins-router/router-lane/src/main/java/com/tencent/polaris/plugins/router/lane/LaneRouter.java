@@ -127,7 +127,7 @@ public class LaneRouter extends AbstractServiceRouter {
         });
 
         try {
-            boolean ok = latch.await(extensions.getConfiguration().getGlobal().getAPI().getTimeout(), TimeUnit.MILLISECONDS);
+            boolean ok = latch.await(1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignore) {
             Thread.currentThread().interrupt();
         }
