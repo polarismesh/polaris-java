@@ -21,10 +21,7 @@ import com.tencent.polaris.metadata.core.transmit.ExecutorWrapper;
 
 import java.util.Objects;
 import java.util.concurrent.*;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.*;
 
 /**
  * 异步获取实例的应答
@@ -50,9 +47,8 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
         }
     }
 
-    public InstancesFuture(
-            CompletableFuture<InstancesResponse> completableFuture) {
-        this.completableFuture = completableFuture;
+    public InstancesFuture(Supplier<InstancesResponse> supplier) {
+        this.completableFuture = CompletableFuture.supplyAsync(supplier, wrapExecutor(ASYNC_POOL));
     }
 
     @Override
