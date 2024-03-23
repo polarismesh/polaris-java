@@ -19,15 +19,10 @@ package com.tencent.polaris.discovery.example.consumer;
 
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
-import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.GetServicesRequest;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
-import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils;
 import com.tencent.polaris.discovery.example.utils.ExampleUtils.InitResult;
-
-import java.util.List;
 
 public class GetServiceRuleExample {
 
