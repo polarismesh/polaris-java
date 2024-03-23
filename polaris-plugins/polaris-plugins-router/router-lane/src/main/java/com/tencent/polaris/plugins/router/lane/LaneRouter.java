@@ -135,7 +135,7 @@ public class LaneRouter extends AbstractServiceRouter {
         outbound = extensions.getLocalRegistry().getServiceRule(new ResourceFilter(eventKey, true, true));
         Object rule = outbound.getRule();
         if (Objects.nonNull(rule)) {
-            return (List<LaneProto.LaneGroup>) rule;
+            return ((ResponseProto.DiscoverResponse) rule).getLanesList();
         }
         return Collections.emptyList();
     };
