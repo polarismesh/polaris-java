@@ -36,7 +36,7 @@ public class GetServiceRuleExample {
         try (ConsumerAPI consumerAPI = ExampleUtils.createConsumerAPI(initResult.getConfig())) {
             GetServiceRuleRequest request = new GetServiceRuleRequest();
             request.setNamespace("shed");
-            request.setService("QuickStartGatewayService");
+            request.setService("QuickstartCalleeService");
             request.setRuleType(ServiceEventKey.EventType.LANE_RULE);
             ServiceRuleResponse response = consumerAPI.getServiceRule(request);
             System.out.println(response);

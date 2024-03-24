@@ -26,6 +26,8 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
@@ -91,6 +93,14 @@ public class MessagePersistHandler {
     private final JsonFormat.Printer printer = JsonFormat.printer();
 
     private final JsonFormat.Parser parser = JsonFormat.parser();
+
+    private final JsonFormat.TypeRegistry registry = JsonFormat.TypeRegistry.newBuilder()
+            .add(LaneProto.LaneGroup.getDescriptor())
+            .add(LaneProto.ServiceSelector.getDescriptor())
+            .add(LaneProto.ServiceGatewaySelector.getDescriptor())
+            .add(RoutingProto.RuleRoutingConfig.getDescriptor())
+            .add(RoutingProto.MetadataRoutingConfig.getDescriptor())
+            .build();
 
     // 缓存文件上一次加载的时间，避免频繁对同一个文件进行读取
     private final Map<ServiceEventKey, Long> messageLastReadTime = new ConcurrentHashMap<>();
@@ -214,7 +224,7 @@ public class MessagePersistHandler {
             }
         }
         try (FileOutputStream outputFile = new FileOutputStream(persistTmpFile)) {
-            String jsonStr = printer.print(message);
+            String jsonStr = printer.usingTypeRegistry(registry).print(message);
             JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonStr);
             String jsonAsYaml = new YAMLMapper().writeValueAsString(jsonNodeTree);
             outputFile.write(jsonAsYaml.getBytes(StandardCharsets.UTF_8));
