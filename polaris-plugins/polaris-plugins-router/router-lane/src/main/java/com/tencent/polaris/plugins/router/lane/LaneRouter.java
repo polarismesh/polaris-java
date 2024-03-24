@@ -82,7 +82,6 @@ public class LaneRouter extends AbstractServiceRouter {
 
     private static final String SERVICE_SELECTOR = "polarismesh.cn/service";
 
-    @SuppressWarnings("unchecked")
     private Function<ServiceKey, List<LaneProto.LaneGroup>> ruleGetter = serviceKey -> {
         if (Objects.isNull(serviceKey)) {
             return Collections.emptyList();
@@ -204,8 +203,8 @@ public class LaneRouter extends AbstractServiceRouter {
     private List<Instance> tryRedirectToLane(LaneRuleContainer container, LaneProto.LaneRule rule, ServiceInstances instances) {
         LaneProto.LaneGroup group = container.groups.get(rule.getGroupName());
         if (Objects.isNull(group)) {
-            // 泳道组不存在，直接认为不需要过滤实例
-            return instances.getInstances();
+            // 泳道组不存在，直接认为不需要过滤实例, 默认转发至基线实例
+            return redirectToBase(instances).getInstances();
         }
         // 判断目标服务是否属于泳道内服务
         boolean inLane = false;
@@ -217,9 +216,9 @@ public class LaneRouter extends AbstractServiceRouter {
             }
         }
 
-        // 不在泳道内的服务，不需要进行实例过滤
+        // 不在泳道内的服务，不需要进行实例过滤, 默认转发至基线实例
         if (!inLane) {
-            return instances.getInstances();
+            return redirectToBase(instances).getInstances();
         }
 
         return instances.getInstances().stream().filter(instance -> {
@@ -248,7 +247,7 @@ public class LaneRouter extends AbstractServiceRouter {
         LaneProto.LaneGroup group = container.groups.get(rule.getGroupName());
         if (Objects.isNull(group)) {
             // 泳道规则存在，但是对应的泳道组却不存在，这种情况需要直接抛出异常
-            LOG.debug("lane_group where lane_rule located not found, lane_rule: {}, lane_group: {}", rule.getName(), rule.getGroupName());
+            LOG.error("lane_group where lane_rule located not found, lane_rule: {}, lane_group: {}", rule.getName(), rule.getGroupName());
             throw new PolarisException(ErrorCode.INVALID_STATE, "lane_group where lane_rule located not found");
         }
 
@@ -277,11 +276,11 @@ public class LaneRouter extends AbstractServiceRouter {
             }
             return needStain;
         } catch (InvalidProtocolBufferException e) {
+            LOG.error("lane_rule: {}, lane_group: {} unpark traffic entry selector fail", rule.getName(), rule.getGroupName(), e);
             throw new PolarisException(ErrorCode.INVALID_RULE);
         }
     }
 
-    @SuppressWarnings("unchecked")
     private LaneRuleContainer fetchLaneRules(RouteInfo routeInfo, ServiceInstances instances) {
         List<LaneProto.LaneGroup> result = new ArrayList<>();
         // 获取泳道规则
