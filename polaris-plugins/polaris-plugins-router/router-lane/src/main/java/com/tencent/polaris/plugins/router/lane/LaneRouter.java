@@ -259,14 +259,14 @@ public class LaneRouter extends AbstractServiceRouter {
                         LaneProto.ServiceGatewaySelector gatewaySelector = entry.getSelector().unpack(LaneProto.ServiceGatewaySelector.class);
                         if (Objects.equals(caller.getNamespace(), gatewaySelector.getNamespace()) && Objects.equals(caller.getService(), gatewaySelector.getService())) {
                             needStain = true;
-                            break;
                         }
+                        break;
                     case SERVICE_SELECTOR:
                         LaneProto.ServiceSelector serviceSelector = entry.getSelector().unpack(LaneProto.ServiceSelector.class);
                         if (Objects.equals(caller.getNamespace(), serviceSelector.getNamespace()) && Objects.equals(caller.getService(), serviceSelector.getService())) {
                             needStain = true;
-                            break;
                         }
+                        break;
                 }
             }
 
