@@ -22,6 +22,7 @@ import com.tencent.polaris.client.pojo.Node;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * 服务实例集合的包装类，用于实例动态变化的场景
@@ -30,6 +31,8 @@ import java.util.Objects;
  * @date 2019/8/25
  */
 public class ServiceInstancesWrap implements ServiceInstances {
+
+    private final String uuid = UUID.randomUUID().toString();
 
     private final ServiceInstances serviceInstances;
 
@@ -146,5 +149,9 @@ public class ServiceInstancesWrap implements ServiceInstances {
                 ", totalWeight=" + totalWeight +
                 ", instances=" + instances +
                 '}';
+    }
+
+    public String getObjectId() {
+        return uuid;
     }
 }
