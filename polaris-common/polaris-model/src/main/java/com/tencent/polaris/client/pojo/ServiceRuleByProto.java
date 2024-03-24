@@ -23,6 +23,9 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceRule;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
  * 通过PB对象封装的服务信息
  *

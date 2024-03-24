@@ -39,7 +39,56 @@ public class RouteArgument {
     public static final String LABEL_KEY_CALLER_IP = "$caller_ip";
 
     public enum ArgumentType {
-        CUSTOM, METHOD, HEADER, QUERY, COOKIE, PATH, CALLER_IP
+        CUSTOM{
+            @Override
+            public String key(String v) {
+                return v;
+            }
+        },
+
+        METHOD {
+            @Override
+            public String key(String val) {
+                return LABEL_KEY_METHOD;
+            }
+        },
+
+        HEADER {
+            @Override
+            public String key(String val) {
+                return LABEL_KEY_HEADER + val;
+            }
+        },
+
+        QUERY {
+            @Override
+            public String key(String val) {
+                return LABEL_KEY_QUERY + val;
+            }
+        },
+
+        COOKIE {
+            @Override
+            public String key(String val) {
+                return LABEL_KEY_COOKIE + val;
+            }
+        },
+
+        PATH {
+            @Override
+            public String key(String val) {
+                return LABEL_KEY_PATH;
+            }
+        },
+
+        CALLER_IP {
+            @Override
+            public String key(String val) {
+                return LABEL_KEY_CALLER_IP;
+            }
+        };
+
+        public abstract String key(String val);
     }
 
     private final ArgumentType type;

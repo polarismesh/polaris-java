@@ -54,7 +54,6 @@ public class WatchServiceExample {
         }
     }
 
-
     private static class ServiceWatcher implements ServiceListener {
 
         @Override
