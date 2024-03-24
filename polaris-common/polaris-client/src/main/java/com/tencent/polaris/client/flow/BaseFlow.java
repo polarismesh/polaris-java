@@ -175,6 +175,7 @@ public class BaseFlow {
                 RouteResult.NextRouterInfo nextRouterInfo = filteredInstances.getNextRouterInfo();
                 if (nextRouterInfo.getState() == RouteResult.State.Next) {
                     serviceInstances.setInstances(filteredInstances.getInstances());
+                    LOG.debug("router: {} get filtered instance result size : {}", router.getName(), serviceInstances.getInstances().size());
                     break;
                 }
                 //重试获取
