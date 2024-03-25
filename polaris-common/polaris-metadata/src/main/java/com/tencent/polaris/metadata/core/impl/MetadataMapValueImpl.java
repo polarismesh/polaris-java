@@ -35,23 +35,26 @@ public class MetadataMapValueImpl implements MetadataMapValue {
 
     private final String transitivePrefix;
 
-    public MetadataMapValueImpl(String transitivePrefix) {
+    private final boolean keyCaseSensitive;
+
+    public MetadataMapValueImpl(String transitivePrefix, boolean keyCaseSensitive) {
         this.transitivePrefix = transitivePrefix;
+        this.keyCaseSensitive = keyCaseSensitive;
     }
 
     @Override
     public MetadataValue getMapValue(String key) {
-        return mapValues.get(Utils.normalize(key));
+        return mapValues.get(normalizeKey(key));
     }
 
     @Override
     public void putMapStringValue(String key, String value, TransitiveType transitiveType) {
-        mapValues.put(Utils.normalize(key), new MetadataStringValueImpl(transitiveType, value));
+        mapValues.put(normalizeKey(key), new MetadataStringValueImpl(transitiveType, value));
     }
 
     @Override
     public <T> void putMetadataObjectValue(String key, T value) {
-        mapValues.put(Utils.normalize(key), new MetadataObjectValueImpl<>(value));
+        mapValues.put(normalizeKey(key), new MetadataObjectValueImpl<>(value));
     }
 
     @Override
@@ -86,5 +89,9 @@ public class MetadataMapValueImpl implements MetadataMapValue {
             }
         });
         return values;
+    }
+
+    private String normalizeKey(String key) {
+        return keyCaseSensitive ? key : Utils.normalize(key);
     }
 }
