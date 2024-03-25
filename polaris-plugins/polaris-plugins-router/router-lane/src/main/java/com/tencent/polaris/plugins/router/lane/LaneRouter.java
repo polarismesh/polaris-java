@@ -27,7 +27,6 @@ import com.tencent.polaris.api.plugin.registry.EventCompleteNotifier;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
-import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
@@ -277,6 +276,7 @@ public class LaneRouter extends AbstractServiceRouter {
                 MessageMetadataContainer metadataContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
                 metadataContainer.setHeader(TRAFFIC_STAIN_LABEL, buildStainLabel(rule), TransitiveType.PASS_THROUGH);
             }
+            LOG.debug("stain current traffic: {}, lane_rule: {}, lane_group: {}, caller: {}", needStain, rule.getName(), rule.getGroupName(), caller);
             return needStain;
         } catch (InvalidProtocolBufferException e) {
             LOG.error("lane_rule: {}, lane_group: {} unpark traffic entry selector fail", rule.getName(), rule.getGroupName(), e);
