@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.composite;
 
+import com.tencent.polaris.api.config.consumer.ZeroProtectionConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -42,6 +43,9 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
+import com.tencent.polaris.plugins.connector.composite.zero.TestConnectivityTask;
+import com.tencent.polaris.plugins.connector.composite.zero.TestConnectivityTaskManager;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -74,6 +78,8 @@ public class CompositeConnector extends DestroyableServerConnector {
      * If server connector initialized.
      */
     private boolean initialized = false;
+
+    private ZeroProtectionConfig zeroProtectionConfig;
     /**
      * Thread pool for sending request to discovery server.
      */
@@ -82,6 +88,8 @@ public class CompositeConnector extends DestroyableServerConnector {
      * Thread pool for updating service information.
      */
     private ScheduledThreadPoolExecutor updateServiceExecutor;
+
+    private TestConnectivityTaskManager testConnectivityTaskManager;
 
     @Override
     public String getName() {
@@ -136,6 +144,8 @@ public class CompositeConnector extends DestroyableServerConnector {
             updateServiceExecutor = new ScheduledThreadPoolExecutor(1,
                     new NamedThreadFactory(getName() + "-update-service"));
             updateServiceExecutor.setMaximumPoolSize(1);
+            testConnectivityTaskManager = new TestConnectivityTaskManager(ctx);
+            zeroProtectionConfig = ctx.getConfig().getConsumer().getZeroProtection();
             initialized = true;
         }
     }
@@ -261,5 +271,24 @@ public class CompositeConnector extends DestroyableServerConnector {
     protected void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
         LOG.debug("[ServerConnector]task for service {} has been scheduled discover", updateTask);
         sendDiscoverExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
+    }
+
+    protected boolean submitTestConnectivityTask(ServiceUpdateTask updateTask,
+                                                 ResponseProto.DiscoverResponse discoverResponse) {
+        if (updateTask instanceof CompositeServiceUpdateTask && isZeroProtectionEnabled() && isNeedTestConnectivity()) {
+            LOG.debug("[ServerConnector]task for service {} has been scheduled test connectivity.",
+                    updateTask.getServiceEventKey());
+            return testConnectivityTaskManager.submitTask(new TestConnectivityTask((CompositeServiceUpdateTask) updateTask,
+                    discoverResponse, zeroProtectionConfig));
+        }
+        return false;
+    }
+
+    public boolean isZeroProtectionEnabled() {
+        return zeroProtectionConfig.isEnable();
+    }
+
+    public boolean isNeedTestConnectivity() {
+        return zeroProtectionConfig.isNeedTestConnectivity();
     }
 }

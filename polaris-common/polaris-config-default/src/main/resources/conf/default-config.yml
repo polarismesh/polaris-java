@@ -118,6 +118,17 @@ consumer:
   discoveries:
     - serverConnectorId: polaris # Name of server connector.
       enable: true # If discovery is enabled.
+  zeroProtection:
+    # 是否开启零实例保护
+    enable: false
+    # 是否实例的检测网络连通性
+    needTestConnectivity: false
+    # 探测结果的过期时间（ms）
+    testConnectivityExpiration: 60000
+    # 检测网络连通性超时时间（ms）
+    testConnectivityTimeout: 1000
+    # 检测网络连通性的并发数
+    testConnectivityParallel: 1
   #描述: 本地服务缓存相关配置
   localCache:
     #描述: 缓存插件名
