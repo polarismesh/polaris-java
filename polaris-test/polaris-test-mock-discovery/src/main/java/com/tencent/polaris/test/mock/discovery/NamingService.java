@@ -448,6 +448,8 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
                 builder.setType(DiscoverResponseType.SERVICES);
                 break;
+            case LANE:
+                builder.setType(DiscoverResponseType.LANE);
             case UNRECOGNIZED:
                 break;
             default:

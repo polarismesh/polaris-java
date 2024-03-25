@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * 单个服务实例查询请求
@@ -64,6 +65,13 @@ public class GetOneInstanceRequest extends RequestBaseEntity {
      * 主调方服务信息
      */
     private SourceService serviceInfo;
+
+    /**
+     * 北极星内部治理规则执行时，会识别规则中的参数来源类别，如果发现规则中的参数来源指定为外部数据源时，会调用本接口进行获取
+     *
+     * 可以实现该接口，实现规则中的参数来源于配置中心、数据库、环境变量等等
+     */
+    private Function<String, Optional<String>> externalParameterSupplier = s -> Optional.empty();
 
     public Criteria getCriteria() {
         return criteria;
@@ -122,6 +130,14 @@ public class GetOneInstanceRequest extends RequestBaseEntity {
 
     public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
         this.metadataFailoverType = metadataFailoverType;
+    }
+
+    public Function<String, Optional<String>> getExternalParameterSupplier() {
+        return externalParameterSupplier;
+    }
+
+    public void setExternalParameterSupplier(Function<String, Optional<String>> externalParameterSupplier) {
+        this.externalParameterSupplier = externalParameterSupplier;
     }
 
     @Override

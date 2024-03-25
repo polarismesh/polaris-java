@@ -43,6 +43,7 @@ public interface ServiceRouterConfig extends PluginConfig, Verifier {
 
     String DEFAULT_ROUTER_CANARY = "canaryRouter";
 
+    String DEFAULT_ROUTER_LANE = "laneRouter";
 
 
     /**

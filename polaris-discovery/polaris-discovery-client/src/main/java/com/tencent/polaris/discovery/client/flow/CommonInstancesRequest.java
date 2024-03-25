@@ -118,6 +118,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY);
         routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_SET);
         routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_CANARY);
+        routeInfo.disableRouter(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
 
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
