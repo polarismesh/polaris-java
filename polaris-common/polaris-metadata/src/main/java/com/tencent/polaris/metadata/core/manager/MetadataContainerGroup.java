@@ -29,11 +29,11 @@ public class MetadataContainerGroup {
 
     private final MetadataContainer customMetadataContainer;
 
-    public MetadataContainerGroup(String transitivePrefix) {
+    public MetadataContainerGroup(String transitivePrefix, boolean keyCaseSensitive) {
         assert null != transitivePrefix;
-        this.messageMetadataContainer = new MessageMetadataContainerImpl(transitivePrefix);
-        this.applicationMetadataContainer = new MetadataContainerImpl(transitivePrefix);
-        this.customMetadataContainer = new MetadataContainerImpl(transitivePrefix);
+        this.messageMetadataContainer = new MessageMetadataContainerImpl(transitivePrefix, keyCaseSensitive);
+        this.applicationMetadataContainer = new MetadataContainerImpl(transitivePrefix, keyCaseSensitive);
+        this.customMetadataContainer = new MetadataContainerImpl(transitivePrefix, keyCaseSensitive);
     }
 
     public MetadataContainer getMessageMetadataContainer() {
