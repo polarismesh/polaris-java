@@ -45,6 +45,14 @@ public class MetadataContext {
     }
 
     /**
+     * 只设置前缀构造器，严格区分大小写
+     * @param transitivePrefix 透传前缀标识，如果传入null，则不设置前缀标识
+     */
+    public MetadataContext(String transitivePrefix) {
+        this(transitivePrefix, true);
+    }
+
+    /**
      * 默认构造器。前缀标识为DEFAULT_TRANSITIVE_PREFIX，并且严格区分大小写
      */
     public MetadataContext() {
