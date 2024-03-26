@@ -26,17 +26,7 @@ public class MetadataContextHolder {
 
     private static Supplier<MetadataContext> initializer;
 
-    public static MetadataContext getOrCreate() {
-        MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
-        if (null != metadataContext) {
-            return metadataContext;
-        }
-        synchronized (MetadataContextHolder.class) {
-            return internalGetOrCreate();
-        }
-    }
-
-    private static MetadataContext internalGetOrCreate() {
+    private static MetadataContext getOrCreate() {
         MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
         if (null != metadataContext) {
             return metadataContext;
@@ -51,36 +41,23 @@ public class MetadataContextHolder {
     }
 
     public static void refresh(Consumer<MetadataContext> consumer) {
-        synchronized (MetadataContextHolder.class) {
-            internalRemove();
-            MetadataContext metadataManager = internalGetOrCreate();
-            if (null != consumer) {
-                consumer.accept(metadataManager);
-            }
+        remove();
+        MetadataContext metadataManager = getOrCreate();
+        if (null != consumer) {
+            consumer.accept(metadataManager);
         }
     }
 
     public static void remove() {
-        synchronized (MetadataContextHolder.class) {
-            internalRemove();
-        }
-    }
-
-    private static void internalRemove() {
         THREAD_LOCAL_CONTEXT.remove();
     }
 
-
     public static void set(MetadataContext metadataManager) {
-        synchronized (MetadataContextHolder.class) {
-            THREAD_LOCAL_CONTEXT.set(metadataManager);
-        }
+        THREAD_LOCAL_CONTEXT.set(metadataManager);
     }
 
     public static void setInitializer(Supplier<MetadataContext> initializer) {
-        synchronized (MetadataContextHolder.class) {
-            MetadataContextHolder.initializer = initializer;
-        }
+        MetadataContextHolder.initializer = initializer;
     }
 
 }
