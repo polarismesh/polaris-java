@@ -26,7 +26,7 @@ public class MetadataContextHolder {
 
     private static Supplier<MetadataContext> initializer;
 
-    private static MetadataContext getOrCreate() {
+    public static MetadataContext getOrCreate() {
         MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
         if (null != metadataContext) {
             return metadataContext;
