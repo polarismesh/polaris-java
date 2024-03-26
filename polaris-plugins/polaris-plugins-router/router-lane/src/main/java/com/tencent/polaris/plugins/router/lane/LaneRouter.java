@@ -178,14 +178,17 @@ public class LaneRouter extends AbstractServiceRouter {
         if (!targetRule.isPresent()) {
             return new RouteResult(redirectToBase(instances), RouteResult.State.Next);
         }
+        ServiceKey caller = routeInfo.getSourceService() == null ? null : routeInfo.getSourceService().getServiceKey();
+
         LaneProto.LaneRule laneRule = targetRule.get();
         // 尝试进行流量染色动作，该操作仅在当前 Caller 服务为泳道入口时操作
-        boolean stainOK = tryStainCurrentTraffic(manager, routeInfo.getSourceService().getServiceKey(), container, laneRule);
+        boolean stainOK = tryStainCurrentTraffic(manager, caller, container, laneRule);
         if (!stainOK) {
             // 如果染色失败，即当前 Caller 不是泳道入口，不需要进行染色，只需要将已有的泳道标签进行透传
             if (alreadyStain) {
                 calleeMsgContainer.setHeader(TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
             } else {
+                LOG.debug("current traffic not in lane, redirect to base, caller: {} callee: {}", caller, instances.getServiceKey());
                 // 如果当前自己不是泳道入口，并且没有发现已经染色的标签，不能走泳道路由，
                 return new RouteResult(redirectToBase(instances), RouteResult.State.Next);
             }
@@ -206,6 +209,7 @@ public class LaneRouter extends AbstractServiceRouter {
     private List<Instance> tryRedirectToLane(LaneRuleContainer container, LaneProto.LaneRule rule, ServiceInstances instances) {
         LaneProto.LaneGroup group = container.groups.get(rule.getGroupName());
         if (Objects.isNull(group)) {
+            LOG.debug("not found lane_group, redirect to base, lane_rule: {}, lane_group: {}, callee: {}", rule.getName(), rule.getGroupName(), instances.getServiceKey());
             // 泳道组不存在，直接认为不需要过滤实例, 默认转发至基线实例
             return redirectToBase(instances);
         }
@@ -221,6 +225,7 @@ public class LaneRouter extends AbstractServiceRouter {
 
         // 不在泳道内的服务，不需要进行实例过滤, 默认转发至基线实例
         if (!inLane) {
+            LOG.debug("current traffic not in lane, redirect to base, lane_rule: {}, lane_group: {}, callee: {}", rule.getName(), rule.getGroupName(), instances.getServiceKey());
             return redirectToBase(instances);
         }
 
@@ -246,6 +251,11 @@ public class LaneRouter extends AbstractServiceRouter {
     }
 
     private boolean tryStainCurrentTraffic(MetadataContext manager, ServiceKey caller, LaneRuleContainer container, LaneProto.LaneRule rule) {
+        if (Objects.isNull(caller)) {
+            LOG.debug("caller is null, stain current traffic ignore, lane_rule: {}, lane_group: {}", rule.getName(), rule.getGroupName());
+            return false;
+        }
+
         LaneProto.LaneGroup group = container.groups.get(rule.getGroupName());
         if (Objects.isNull(group)) {
             // 泳道规则存在，但是对应的泳道组却不存在，这种情况需要直接抛出异常
@@ -279,7 +289,7 @@ public class LaneRouter extends AbstractServiceRouter {
             LOG.debug("stain current traffic: {}, lane_rule: {}, lane_group: {}, caller: {}", needStain, rule.getName(), rule.getGroupName(), caller);
             return needStain;
         } catch (InvalidProtocolBufferException e) {
-            LOG.error("lane_rule: {}, lane_group: {} unpark traffic entry selector fail", rule.getName(), rule.getGroupName(), e);
+            LOG.error("lane_rule: {}, lane_group: {} unpack traffic entry selector fail", rule.getName(), rule.getGroupName(), e);
             throw new PolarisException(ErrorCode.INVALID_RULE);
         }
     }
