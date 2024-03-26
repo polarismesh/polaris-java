@@ -44,6 +44,6 @@ public class ExecutorWrapper<T> implements Executor {
     }
 
     public static ExecutorWrapper<MetadataContext> buildDefault(Executor executor) {
-        return new ExecutorWrapper<>(executor, MetadataContextHolder::get, MetadataContextHolder::set);
+        return new ExecutorWrapper<>(executor, MetadataContextHolder::getOrCreate, MetadataContextHolder::set);
     }
 }

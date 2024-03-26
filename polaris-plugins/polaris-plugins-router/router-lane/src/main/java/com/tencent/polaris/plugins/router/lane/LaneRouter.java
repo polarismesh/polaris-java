@@ -156,7 +156,7 @@ public class LaneRouter extends AbstractServiceRouter {
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
-        MetadataContext manager = MetadataContextHolder.getOrCreate(MetadataContext::new);
+        MetadataContext manager = MetadataContextHolder.getOrCreate();
         MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
         MessageMetadataContainer calleeMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
 

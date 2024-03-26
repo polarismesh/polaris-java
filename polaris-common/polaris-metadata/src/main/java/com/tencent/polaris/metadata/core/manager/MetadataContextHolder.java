@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.metadata.core.manager;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -26,41 +24,63 @@ public class MetadataContextHolder {
 
     private static final ThreadLocal<MetadataContext> THREAD_LOCAL_CONTEXT = new InheritableThreadLocal<>();
 
-    public static MetadataContext getOrCreate(Supplier<MetadataContext> initialize) {
+    private static Supplier<MetadataContext> initializer;
+
+    public static MetadataContext getOrCreate() {
         MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
         if (null != metadataContext) {
             return metadataContext;
         }
         synchronized (MetadataContextHolder.class) {
-            metadataContext = THREAD_LOCAL_CONTEXT.get();
-            if (null != metadataContext) {
-                return metadataContext;
-            }
-            if (null != initialize) {
-                metadataContext = initialize.get();
-            } else {
-                metadataContext = new MetadataContext();
-            }
-            THREAD_LOCAL_CONTEXT.set(metadataContext);
-            return metadataContext;
+            return internalGetOrCreate();
         }
     }
 
-    public static void refresh(Supplier<MetadataContext> initialize, Consumer<MetadataContext> consumer) {
-        remove();
-        MetadataContext metadataManager = getOrCreate(initialize);
-        consumer.accept(metadataManager);
+    private static MetadataContext internalGetOrCreate() {
+        MetadataContext metadataContext = THREAD_LOCAL_CONTEXT.get();
+        if (null != metadataContext) {
+            return metadataContext;
+        }
+        if (null != initializer) {
+            metadataContext = initializer.get();
+        } else {
+            metadataContext = new MetadataContext();
+        }
+        THREAD_LOCAL_CONTEXT.set(metadataContext);
+        return metadataContext;
     }
 
-    public static MetadataContext get() {
-        return THREAD_LOCAL_CONTEXT.get();
+    public static void refresh(Consumer<MetadataContext> consumer) {
+        synchronized (MetadataContextHolder.class) {
+            internalRemove();
+            MetadataContext metadataManager = internalGetOrCreate();
+            if (null != consumer) {
+                consumer.accept(metadataManager);
+            }
+        }
     }
 
     public static void remove() {
+        synchronized (MetadataContextHolder.class) {
+            internalRemove();
+        }
+    }
+
+    private static void internalRemove() {
         THREAD_LOCAL_CONTEXT.remove();
     }
 
+
     public static void set(MetadataContext metadataManager) {
-        THREAD_LOCAL_CONTEXT.set(metadataManager);
+        synchronized (MetadataContextHolder.class) {
+            THREAD_LOCAL_CONTEXT.set(metadataManager);
+        }
     }
+
+    public static void setInitializer(Supplier<MetadataContext> initializer) {
+        synchronized (MetadataContextHolder.class) {
+            MetadataContextHolder.initializer = initializer;
+        }
+    }
+
 }
