@@ -19,6 +19,11 @@ package com.tencent.polaris.metadata.core;
 
 public class Utils {
 
+    /**
+     * 默认不区分大小写
+     */
+    public static final boolean DEFAULT_KEY_CASE_SENSITIVE = false;
+
     public static String encapsulateMetadataKey(String prefix, String key) {
         if (null == prefix || prefix.isEmpty()) {
             return key;

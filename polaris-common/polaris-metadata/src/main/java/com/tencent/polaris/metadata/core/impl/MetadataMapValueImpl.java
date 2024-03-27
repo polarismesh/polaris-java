@@ -17,44 +17,55 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
-
 import com.tencent.polaris.metadata.core.MetadataMapValue;
 import com.tencent.polaris.metadata.core.MetadataStringValue;
 import com.tencent.polaris.metadata.core.MetadataValue;
 import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.Utils;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+
 public class MetadataMapValueImpl implements MetadataMapValue {
 
     private final Map<String, MetadataValue> mapValues = new ConcurrentHashMap<>();
 
+    private final Map<String, MetadataValue> normalizedMapValues = new ConcurrentHashMap<>();
+
     private final String transitivePrefix;
 
-    private final boolean keyCaseSensitive;
-
-    public MetadataMapValueImpl(String transitivePrefix, boolean keyCaseSensitive) {
+    public MetadataMapValueImpl(String transitivePrefix) {
         this.transitivePrefix = transitivePrefix;
-        this.keyCaseSensitive = keyCaseSensitive;
     }
 
     @Override
     public MetadataValue getMapValue(String key) {
-        return mapValues.get(normalizeKey(key));
+        return getMapValue(key, Utils.DEFAULT_KEY_CASE_SENSITIVE);
+    }
+
+    @Override
+    public MetadataValue getMapValue(String key, boolean keyCaseSensitive) {
+        if (keyCaseSensitive) {
+            return mapValues.get(key);
+        }
+        return normalizedMapValues.get(Utils.normalize(key));
     }
 
     @Override
     public void putMapStringValue(String key, String value, TransitiveType transitiveType) {
-        mapValues.put(normalizeKey(key), new MetadataStringValueImpl(transitiveType, value));
+        MetadataStringValueImpl metadataStringValue = new MetadataStringValueImpl(transitiveType, value);
+        mapValues.put(key, metadataStringValue);
+        normalizedMapValues.put(Utils.normalize(key), metadataStringValue);
     }
 
     @Override
     public <T> void putMetadataObjectValue(String key, T value) {
-        mapValues.put(normalizeKey(key), new MetadataObjectValueImpl<>(value));
+        MetadataObjectValueImpl<T> tMetadataObjectValue = new MetadataObjectValueImpl<>(value);
+        mapValues.put(key, tMetadataObjectValue);
+        normalizedMapValues.put(Utils.normalize(key), tMetadataObjectValue);
     }
 
     @Override
@@ -76,14 +87,14 @@ public class MetadataMapValueImpl implements MetadataMapValue {
                 if (metadataValue instanceof MetadataStringValue) {
                     MetadataStringValue metadataStringValue = (MetadataStringValue) metadataValue;
                     switch (metadataStringValue.getTransitiveType()) {
-                    case PASS_THROUGH:
-                        values.put(Utils.encapsulateMetadataKey(transitivePrefix, key), metadataStringValue.getStringValue());
-                        break;
-                    case DISPOSABLE:
-                        values.put(key, metadataStringValue.getStringValue());
-                        break;
-                    default:
-                        break;
+                        case PASS_THROUGH:
+                            values.put(Utils.encapsulateMetadataKey(transitivePrefix, key), metadataStringValue.getStringValue());
+                            break;
+                        case DISPOSABLE:
+                            values.put(key, metadataStringValue.getStringValue());
+                            break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -91,7 +102,4 @@ public class MetadataMapValueImpl implements MetadataMapValue {
         return values;
     }
 
-    private String normalizeKey(String key) {
-        return keyCaseSensitive ? key : Utils.normalize(key);
-    }
 }

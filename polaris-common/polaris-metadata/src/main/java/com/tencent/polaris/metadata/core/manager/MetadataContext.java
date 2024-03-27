@@ -32,31 +32,23 @@ public class MetadataContext {
 
     /**
      * 全参数构造器
+     *
      * @param transitivePrefix 透传前缀标识，如果传入null，则不设置前缀标识
-     * @param keyCaseSensitive 是否支持KEY值不区分大小写，如果设置为false，则会对KEY进行标准化
      */
-    public MetadataContext(String transitivePrefix, boolean keyCaseSensitive) {
+    public MetadataContext(String transitivePrefix) {
         if (transitivePrefix == null) {
             transitivePrefix = "";
         }
         this.transitivePrefix = transitivePrefix;
-        callerMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix, keyCaseSensitive);
-        calleeMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix, keyCaseSensitive);
-    }
-
-    /**
-     * 只设置前缀构造器，严格区分大小写
-     * @param transitivePrefix 透传前缀标识，如果传入null，则不设置前缀标识
-     */
-    public MetadataContext(String transitivePrefix) {
-        this(transitivePrefix, true);
+        callerMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix);
+        calleeMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix);
     }
 
     /**
      * 默认构造器。前缀标识为DEFAULT_TRANSITIVE_PREFIX，并且严格区分大小写
      */
     public MetadataContext() {
-        this(DEFAULT_TRANSITIVE_PREFIX, true);
+        this(DEFAULT_TRANSITIVE_PREFIX);
     }
 
     @SuppressWarnings("unchecked")
