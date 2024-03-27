@@ -24,8 +24,8 @@ import com.tencent.polaris.metadata.core.TransitiveType;
 
 public class MessageMetadataContainerImpl extends MetadataContainerImpl implements MessageMetadataContainer {
 
-    public MessageMetadataContainerImpl(String transitivePrefix, boolean keyCaseSensitive) {
-        super(transitivePrefix, keyCaseSensitive);
+    public MessageMetadataContainerImpl(String transitivePrefix) {
+        super(transitivePrefix);
     }
 
     @Override

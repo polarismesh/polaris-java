@@ -32,10 +32,19 @@ public interface MetadataContainer {
 
     /**
      * 根据键获取一级字符串型元数据原始值
+     * 默认以大小写不敏感进行查询。如果同时存在多个KEY，且多个KEY之间只有大小写区别，则只会返回最晚塞进去的KEY对应的值
      * @param key 元数据键
      * @return 字符串原始值
      */
     String getRawMetadataStringValue(String key);
+
+    /**
+     * 根据键获取一级字符串型元数据原始值
+     * @param key 元数据键
+     * @param keyCaseSensitive 查询时候是否KEY大小写不敏感
+     * @return 字符串原始值
+     */
+    String getRawMetadataStringValue(String key, boolean keyCaseSensitive);
 
     /**
      * 塞入二级元数据键值对
@@ -48,11 +57,21 @@ public interface MetadataContainer {
 
     /**
      * 获取原始二级元数据值
+     * 默认以大小写不敏感进行查询。如果同时存在多个KEY，且多个KEY之间只有大小写区别，则只会返回最晚塞进去的KEY对应的值
      * @param key 一级键
      * @param mapKey 二级键
      * @return 值
      */
     String getRawMetadataMapValue(String key, String mapKey);
+
+    /**
+     * 获取原始二级元数据值
+     * @param key 一级键
+     * @param mapKey 二级键
+     * @param keyCaseSensitive 查询时候是否KEY大小写不敏感
+     * @return 值
+     */
+    String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive);
 
     /**
      * 塞入对象型元数据键值对，对象型元数据不支持透传
@@ -73,11 +92,21 @@ public interface MetadataContainer {
 
     /**
      * 获取二级元数据值
+     * 默认以大小写不敏感进行查询。如果同时存在多个KEY，且多个KEY之间只有大小写区别，则只会返回最晚塞进去的KEY对应的值
      * @param key 一级键
      * @return 一级元数据值
      * @param <T> 类型可以为MetadataMapValue, MetadataObjectValue, MetadataStringValue
      */
     <T extends MetadataValue> T getMetadataValue(String key);
+
+    /**
+     * 获取二级元数据值
+     * @param key 一级键
+     * @param keyCaseSensitive 查询时候是否KEY大小写不敏感
+     * @return 一级元数据值
+     * @param <T> 类型可以为MetadataMapValue, MetadataObjectValue, MetadataStringValue
+     */
+    <T extends MetadataValue> T getMetadataValue(String key, boolean keyCaseSensitive);
 
     /**
      * 遍历元数据列表
@@ -95,10 +124,19 @@ public interface MetadataContainer {
 
     /**
      * 获取二级透传标签列表（包括pass_through和disposal），对于Pass_through会自动带入透传前缀（如有）
+     * 默认以大小写不敏感进行查询。如果同时存在多个KEY，且多个KEY之间只有大小写区别，则只会返回最晚塞进去的KEY对应的值
      * @param key 二级Map的键
      * @return 二级透传标签列表
      */
     Map<String, String> getMapTransitiveStringValues(String key);
+
+    /**
+     * 获取二级透传标签列表（包括pass_through和disposal），对于Pass_through会自动带入透传前缀（如有）
+     * @param key 二级Map的键
+     * @param keyCaseSensitive 查询时候是否KEY大小写不敏感
+     * @return 二级透传标签列表
+     */
+    Map<String, String> getMapTransitiveStringValues(String key, boolean keyCaseSensitive);
 
     /**
      * 设置元数据提供者

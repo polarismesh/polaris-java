@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
+import com.tencent.polaris.metadata.core.CaseSensitiveMetadataProvider;
 import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataMapValue;
 import com.tencent.polaris.metadata.core.MetadataProvider;
@@ -40,42 +41,58 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     private final Map<String, MetadataValue> values = new ConcurrentHashMap<>();
 
+    private final Map<String, MetadataValue> normalizedValues = new ConcurrentHashMap<>();
+
     private final String transitivePrefix;
 
-    private final boolean keyCaseSensitive;
-
-    private final AtomicReference<MetadataProvider> metadataProviderReference = new AtomicReference<>();
+    private final AtomicReference<ComposeMetadataProvider> metadataProviderReference = new AtomicReference<>();
 
     private final ContainerBasedMetadataProvider containerBasedMetadataProvider = new ContainerBasedMetadataProvider();
 
-    public MetadataContainerImpl(String transitivePrefix, boolean keyCaseSensitive) {
+    public MetadataContainerImpl(String transitivePrefix) {
         this.transitivePrefix = transitivePrefix;
-        this.keyCaseSensitive = keyCaseSensitive;
         metadataProviderReference.set(new ComposeMetadataProvider(
                 transitivePrefix, Collections.singletonList(containerBasedMetadataProvider)));
     }
 
     @Override
     public void putMetadataStringValue(String key, String value, TransitiveType transitiveType) {
-        values.put(normalizeKey(key), new MetadataStringValueImpl(transitiveType, value));
+        MetadataStringValueImpl metadataStringValue = new MetadataStringValueImpl(transitiveType, value);
+        values.put(key, metadataStringValue);
+        normalizedValues.put(Utils.normalize(key), metadataStringValue);
     }
 
     @Override
     public void putMetadataMapValue(String key, String mapKey, String value, TransitiveType transitiveType) {
-        MetadataValue metadataValue = values.computeIfAbsent(normalizeKey(key), new Function<String, MetadataValue>() {
+        MetadataValue metadataValue = normalizedValues.computeIfAbsent(Utils.normalize(key), new Function<String, MetadataValue>() {
             @Override
             public MetadataValue apply(String s) {
-                return new MetadataMapValueImpl(transitivePrefix, keyCaseSensitive);
+                return new MetadataMapValueImpl(transitivePrefix);
             }
         });
+        values.put(key, metadataValue);
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
         metadataMapValue.putMapStringValue(mapKey, value, transitiveType);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T extends MetadataValue> T getMetadataValue(String key) {
-        MetadataValue metadataValue = values.get(normalizeKey(key));
+        return getMetadataValue(key, Utils.DEFAULT_KEY_CASE_SENSITIVE);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends MetadataValue> T getMetadataValue(String key, boolean keyCaseSensitive) {
+        Map<String, MetadataValue> theValues;
+        String theKey;
+        if (keyCaseSensitive) {
+            theValues = values;
+            theKey = key;
+        } else {
+            theValues = normalizedValues;
+            theKey = Utils.normalize(key);
+        }
+        MetadataValue metadataValue = theValues.get(theKey);
         if (null == metadataValue) {
             return null;
         }
@@ -120,7 +137,12 @@ public class MetadataContainerImpl implements MetadataContainer {
 
     @Override
     public Map<String, String> getMapTransitiveStringValues(String key) {
-        MetadataMapValue metadataMapValue = getMetadataValue(key);
+        return getMapTransitiveStringValues(key, Utils.DEFAULT_KEY_CASE_SENSITIVE);
+    }
+
+    @Override
+    public Map<String, String> getMapTransitiveStringValues(String key, boolean keyCaseSensitive) {
+        MetadataMapValue metadataMapValue = getMetadataValue(key, keyCaseSensitive);
         if (null == metadataMapValue) {
             return Collections.emptyMap();
         }
@@ -138,7 +160,7 @@ public class MetadataContainerImpl implements MetadataContainer {
     }
 
     @Override
-    public MetadataProvider getMetadataProvider() {
+    public ComposeMetadataProvider getMetadataProvider() {
         return metadataProviderReference.get();
     }
 
@@ -149,33 +171,58 @@ public class MetadataContainerImpl implements MetadataContainer {
     }
 
     @Override
+    public String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+        ComposeMetadataProvider metadataProvider = getMetadataProvider();
+        return metadataProvider.getRawMetadataStringValue(key, keyCaseSensitive);
+    }
+
+    @Override
     public String getRawMetadataMapValue(String key, String mapKey) {
         MetadataProvider metadataProvider = getMetadataProvider();
         return metadataProvider.getRawMetadataMapValue(key, mapKey);
     }
 
     @Override
+    public String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+        ComposeMetadataProvider metadataProvider = getMetadataProvider();
+        return metadataProvider.getRawMetadataMapValue(key, mapKey, keyCaseSensitive);
+    }
+
+    @Override
     public <T> void putMetadataObjectValue(String key, T value) {
-        values.put(normalizeKey(key), new MetadataObjectValueImpl<>(value));
+        MetadataObjectValueImpl<T> tMetadataObjectValue = new MetadataObjectValueImpl<>(value);
+        values.put(key, tMetadataObjectValue);
+        normalizedValues.put(Utils.normalize(key), tMetadataObjectValue);
     }
 
     @Override
     public <T> void putMetadataMapObjectValue(String key, String mapKey, T value) {
-        MetadataValue metadataValue = values.computeIfAbsent(normalizeKey(key), new Function<String, MetadataValue>() {
+        MetadataValue metadataValue = normalizedValues.computeIfAbsent(Utils.normalize(key), new Function<String, MetadataValue>() {
             @Override
             public MetadataValue apply(String s) {
-                return new MetadataMapValueImpl(transitivePrefix, keyCaseSensitive);
+                return new MetadataMapValueImpl(transitivePrefix);
             }
         });
+        values.put(key, metadataValue);
         MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-        metadataMapValue.putMetadataObjectValue(normalizeKey(mapKey), value);
+        metadataMapValue.putMetadataObjectValue(mapKey, value);
     }
 
-    private class ContainerBasedMetadataProvider implements MetadataProvider {
+    private class ContainerBasedMetadataProvider implements CaseSensitiveMetadataProvider {
 
         @Override
         public String getRawMetadataStringValue(String key) {
-            MetadataValue metadataValue = getMetadataValue(key);
+            return getRawMetadataStringValue(key, Utils.DEFAULT_KEY_CASE_SENSITIVE);
+        }
+
+        @Override
+        public String getRawMetadataMapValue(String key, String mapKey) {
+            return getRawMetadataMapValue(key, mapKey, Utils.DEFAULT_KEY_CASE_SENSITIVE);
+        }
+
+        @Override
+        public String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+            MetadataValue metadataValue = getMetadataValue(key, keyCaseSensitive);
             if (metadataValue instanceof MetadataStringValue) {
                 return ((MetadataStringValue) metadataValue).getStringValue();
             }
@@ -183,11 +230,11 @@ public class MetadataContainerImpl implements MetadataContainer {
         }
 
         @Override
-        public String getRawMetadataMapValue(String key, String mapKey) {
-            MetadataValue metadataValue = getMetadataValue(key);
+        public String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+            MetadataValue metadataValue = getMetadataValue(key, keyCaseSensitive);
             if (metadataValue instanceof MetadataMapValue) {
                 MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;
-                MetadataValue mapValue = metadataMapValue.getMapValue(mapKey);
+                MetadataValue mapValue = metadataMapValue.getMapValue(mapKey, keyCaseSensitive);
                 if (mapValue instanceof MetadataStringValue) {
                     return ((MetadataStringValue) mapValue).getStringValue();
                 }
@@ -197,7 +244,4 @@ public class MetadataContainerImpl implements MetadataContainer {
         }
     }
 
-    private String normalizeKey(String key) {
-        return keyCaseSensitive ? key : Utils.normalize(key);
-    }
 }

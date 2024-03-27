@@ -23,11 +23,20 @@ import java.util.function.BiConsumer;
 public interface MetadataMapValue extends MetadataValue {
 
     /**
-     * 根据Map的元数据键，获取对应的元数据值
+     * 根据Map的元数据键，获取对应的元数据值，key默认大小写敏感匹配
+     * 默认以大小写不敏感进行查询。如果同时存在多个KEY，且多个KEY之间只有大小写区别，则只会返回最晚塞进去的KEY对应的值
      * @param key 元数据键
      * @return 对应的元数据值
      */
     MetadataValue getMapValue(String key);
+
+    /**
+     * 根据Map的元数据键，获取对应的元数据值，可以指定是否大小写敏感
+     * @param key 元数据键
+     * @param keyCaseSensitive 指定是否对KEY进行大小写敏感匹配
+     * @return 对应的元数据值
+     */
+    MetadataValue getMapValue(String key, boolean keyCaseSensitive);
 
     /**
      * 塞入元数据字符串键值对，用户可以为键值对设置透传类型
