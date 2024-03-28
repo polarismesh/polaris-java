@@ -36,3 +36,11 @@ global:
 2. Build a jar:
 - as provider: Execute command `mvn clean package` in project `quickstart-example-provider` to build a jar, then execute the jar with `java -jar ${jar-file}`
 - as consumer: Execute command `mvn clean package` in project `quickstart-example-consumer` to build a jar, then execute the jar with `java -jar ${jar-file}`
+
+### Verify
+
+```shell
+curl http://127.0.0.1:15700/echo?value=1
+
+echo: 1, from: %d, location: {zone=null, campus=null, region=null}
+```
