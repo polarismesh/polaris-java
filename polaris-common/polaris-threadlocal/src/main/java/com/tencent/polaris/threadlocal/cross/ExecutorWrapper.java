@@ -3,8 +3,8 @@
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
+ *  Licensed under the BSD 3-Clause License (the "License");
+ *  you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/BSD-3-Clause
@@ -15,14 +15,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core.transmit;
+package com.tencent.polaris.threadlocal.cross;
 
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import com.tencent.polaris.metadata.core.manager.MetadataContext;
-import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 
 public class ExecutorWrapper<T> implements Executor {
 
@@ -41,9 +38,5 @@ public class ExecutorWrapper<T> implements Executor {
     @Override
     public void execute(Runnable command) {
         executor.execute(new RunnableWrapper<>(command, contextGetter, contextSetter));
-    }
-
-    public static ExecutorWrapper<MetadataContext> buildDefault(Executor executor) {
-        return new ExecutorWrapper<>(executor, MetadataContextHolder::getOrCreate, MetadataContextHolder::set);
     }
 }
