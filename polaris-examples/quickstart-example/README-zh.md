@@ -37,3 +37,11 @@ global:
 
 - 启动被调方：找到 `quickstart-example-provider` 项目下，执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar quickstart-example-provider-${version}.jar`
 - 启动主调方：找到 `quickstart-example-consumer` 项目下，执行 `mvn clean package` 将工程编译打包，然后执行 `java -jar quickstart-example-consumer-${version}.jar`
+
+### 验证
+
+```shell
+curl http://127.0.0.1:18080/echo?value=1
+
+echo: 1, from: %d, location: {zone=null, campus=null, region=null}
+```
