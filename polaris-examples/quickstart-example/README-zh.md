@@ -41,7 +41,7 @@ global:
 ### 验证
 
 ```shell
-curl http://127.0.0.1:18080/echo?value=1
+curl http://127.0.0.1:15700/echo?value=1
 
 echo: 1, from: %d, location: {zone=null, campus=null, region=null}
 ```
