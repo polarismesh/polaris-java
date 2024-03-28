@@ -17,11 +17,23 @@
 
 package com.tencent.polaris.api.rpc;
 
-import com.tencent.polaris.metadata.core.transmit.ExecutorWrapper;
+import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
+import com.tencent.polaris.threadlocal.cross.ExecutorWrapper;
 
 import java.util.Objects;
-import java.util.concurrent.*;
-import java.util.function.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * 异步获取实例的应答
@@ -63,7 +75,7 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
 
     @Override
     public <U> CompletionStage<U> thenApplyAsync(Function<? super InstancesResponse, ? extends U> fn,
-            Executor executor) {
+                                                 Executor executor) {
         return completableFuture.thenApplyAsync(fn, wrapExecutor(executor));
     }
 
@@ -99,37 +111,38 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
 
     @Override
     public <U, V> CompletionStage<V> thenCombine(CompletionStage<? extends U> other,
-            BiFunction<? super InstancesResponse, ? super U, ? extends V> fn) {
+                                                 BiFunction<? super InstancesResponse, ? super U, ? extends V> fn) {
         return completableFuture.thenCombine(other, fn);
     }
 
     @Override
     public <U, V> CompletionStage<V> thenCombineAsync(CompletionStage<? extends U> other,
-            BiFunction<? super InstancesResponse, ? super U, ? extends V> fn) {
+                                                      BiFunction<? super InstancesResponse, ? super U, ? extends V> fn) {
         return completableFuture.thenCombineAsync(other, fn, wrapExecutor(defaultExecutor()));
     }
 
     @Override
     public <U, V> CompletionStage<V> thenCombineAsync(CompletionStage<? extends U> other,
-            BiFunction<? super InstancesResponse, ? super U, ? extends V> fn, Executor executor) {
+                                                      BiFunction<? super InstancesResponse, ? super U, ? extends V> fn, Executor executor) {
         return completableFuture.thenCombineAsync(other, fn, wrapExecutor(executor));
     }
 
     @Override
     public <U> CompletionStage<Void> thenAcceptBoth(CompletionStage<? extends U> other,
-            BiConsumer<? super InstancesResponse, ? super U> action) {
+                                                    BiConsumer<? super InstancesResponse, ? super U> action) {
         return completableFuture.thenAcceptBoth(other, action);
     }
 
     @Override
     public <U> CompletionStage<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
-            BiConsumer<? super InstancesResponse, ? super U> action) {
+                                                         BiConsumer<? super InstancesResponse, ? super U> action) {
         return completableFuture.thenAcceptBothAsync(other, action, wrapExecutor(defaultExecutor()));
     }
 
     @Override
     public <U> CompletionStage<Void> thenAcceptBothAsync(CompletionStage<? extends U> other,
-            BiConsumer<? super InstancesResponse, ? super U> action, Executor executor) {
+                                                         BiConsumer<? super InstancesResponse, ? super U> action,
+                                                         Executor executor) {
         return completableFuture.thenAcceptBothAsync(other, action, wrapExecutor(executor));
     }
 
@@ -150,37 +163,37 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
 
     @Override
     public <U> CompletionStage<U> applyToEither(CompletionStage<? extends InstancesResponse> other,
-            Function<? super InstancesResponse, U> fn) {
+                                                Function<? super InstancesResponse, U> fn) {
         return completableFuture.applyToEither(other, fn);
     }
 
     @Override
     public <U> CompletionStage<U> applyToEitherAsync(CompletionStage<? extends InstancesResponse> other,
-            Function<? super InstancesResponse, U> fn) {
+                                                     Function<? super InstancesResponse, U> fn) {
         return completableFuture.applyToEitherAsync(other, fn, wrapExecutor(defaultExecutor()));
     }
 
     @Override
     public <U> CompletionStage<U> applyToEitherAsync(CompletionStage<? extends InstancesResponse> other,
-            Function<? super InstancesResponse, U> fn, Executor executor) {
+                                                     Function<? super InstancesResponse, U> fn, Executor executor) {
         return completableFuture.applyToEitherAsync(other, fn, wrapExecutor(executor));
     }
 
     @Override
     public CompletionStage<Void> acceptEither(CompletionStage<? extends InstancesResponse> other,
-            Consumer<? super InstancesResponse> action) {
+                                              Consumer<? super InstancesResponse> action) {
         return completableFuture.acceptEither(other, action);
     }
 
     @Override
     public CompletionStage<Void> acceptEitherAsync(CompletionStage<? extends InstancesResponse> other,
-            Consumer<? super InstancesResponse> action) {
+                                                   Consumer<? super InstancesResponse> action) {
         return completableFuture.acceptEitherAsync(other, action, wrapExecutor(defaultExecutor()));
     }
 
     @Override
     public CompletionStage<Void> acceptEitherAsync(CompletionStage<? extends InstancesResponse> other,
-            Consumer<? super InstancesResponse> action, Executor executor) {
+                                                   Consumer<? super InstancesResponse> action, Executor executor) {
         return completableFuture.acceptEitherAsync(other, action, wrapExecutor(executor));
     }
 
@@ -212,7 +225,7 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
 
     @Override
     public <U> CompletionStage<U> thenComposeAsync(Function<? super InstancesResponse, ? extends CompletionStage<U>> fn,
-            Executor executor) {
+                                                   Executor executor) {
         return completableFuture.thenComposeAsync(fn, wrapExecutor(executor));
     }
 
@@ -251,7 +264,7 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
 
     @Override
     public <U> CompletionStage<U> handleAsync(BiFunction<? super InstancesResponse, Throwable, ? extends U> fn,
-            Executor executor) {
+                                              Executor executor) {
         return completableFuture.handleAsync(fn, wrapExecutor(executor));
     }
 
@@ -287,7 +300,7 @@ public class InstancesFuture implements Future<InstancesResponse>, CompletionSta
     }
 
     private Executor wrapExecutor(Executor executor) {
-        return ExecutorWrapper.buildDefault(executor);
+        return new ExecutorWrapper<>(executor, MetadataContextHolder::getOrCreate, MetadataContextHolder::set);
     }
 
     private Executor defaultExecutor() {
