@@ -1,0 +1,35 @@
+[
+{
+  "name":"com.tencent.polaris.plugins.stat.common.TestUtil",
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"suite","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.stat.common.model.StatInfoRevisionCollectorTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setUp","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testCollectStatInfo","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.stat.common.model.StatInfoStatefulCollectorTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testCollectStatInfo","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.stat.common.model.StatMetricTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testEquals","parameterTypes":[] }, {"name":"testIncValue","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.stat.common.util.SignatureUtilTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testLabelsToSignature1","parameterTypes":[] }]
+}
+]

@@ -1,0 +1,15 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.MockMaker\\E"
+  }, {
+    "pattern":"\\Qmockito-extensions/org.mockito.plugins.StackTraceCleanerProvider\\E"
+  }, {
+    "pattern":"\\Qorg/powermock/default.properties\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qpolaris-logback.xml\\E"
+  }]},
+  "bundles":[]
+}
