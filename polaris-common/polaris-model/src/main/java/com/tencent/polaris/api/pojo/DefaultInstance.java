@@ -213,19 +213,16 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof DefaultInstance)) {
-            return false;
-        }
-        DefaultInstance that = (DefaultInstance) o;
-        return id.equals(that.id);
+        if (this == o) return true;
+        if (!(o instanceof DefaultInstance)) return false;
+        if (!super.equals(o)) return false;
+        DefaultInstance instance = (DefaultInstance) o;
+        return Objects.equals(id, instance.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        return Objects.hash(super.hashCode(), id);
     }
 
     @Override
