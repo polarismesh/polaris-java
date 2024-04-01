@@ -15,35 +15,43 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core.transmit;
+package com.tencent.polaris.threadlocal.cross;
 
-import java.util.concurrent.Executor;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import com.tencent.polaris.metadata.core.manager.MetadataContext;
-import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
+public class CallableWrapper<U, T> implements Callable<U> {
 
-public class ExecutorWrapper<T> implements Executor {
+    private final Callable<U> callable;
 
-    private final Executor executor;
+    private final AtomicReference<T> contextRef;
 
     private final Supplier<T> contextGetter;
 
     private final Consumer<T> contextSetter;
 
-    public ExecutorWrapper(Executor executor, Supplier<T> contextGetter, Consumer<T> contextSetter) {
-        this.executor = executor;
+    public CallableWrapper(Callable<U> callable, Supplier<T> contextGetter, Consumer<T> contextSetter) {
+        assert null != callable && null != contextGetter && null != contextSetter;
+        this.callable = callable;
         this.contextGetter = contextGetter;
         this.contextSetter = contextSetter;
+        contextRef = new AtomicReference<>(contextGetter.get());
     }
 
     @Override
-    public void execute(Runnable command) {
-        executor.execute(new RunnableWrapper<>(command, contextGetter, contextSetter));
-    }
-
-    public static ExecutorWrapper<MetadataContext> buildDefault(Executor executor) {
-        return new ExecutorWrapper<>(executor, MetadataContextHolder::getOrCreate, MetadataContextHolder::set);
+    public U call() throws Exception {
+        // preserve
+        T latestContext = contextGetter.get();
+        // set context
+        T contextValue = contextRef.get();
+        contextSetter.accept(contextValue);
+        try {
+            return callable.call();
+        } finally {
+            // restore
+            contextSetter.accept(latestContext);
+        }
     }
 }

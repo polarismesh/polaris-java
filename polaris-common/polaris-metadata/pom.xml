@@ -14,4 +14,12 @@
     <name>Polaris Common Metadata</name>
     <description>Polaris Common Metadata JAR</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-threadlocal</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+
 </project>
