@@ -45,7 +45,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -54,7 +53,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -322,7 +320,7 @@ public class MessagePersistHandler {
             Map<String, Object> jsonMap = yaml.load(reader);
             ObjectMapper jsonWriter = new ObjectMapper();
             String jsonStr = jsonWriter.writeValueAsString(jsonMap);
-            parser.merge(jsonStr, builder);
+            parser.usingTypeRegistry(registry).merge(jsonStr, builder);
             return builder.build();
         } catch (IOException e) {
             LOG.debug("fail to read file {}", persistFile.getAbsoluteFile(), e);

@@ -203,7 +203,7 @@ public class GrpcUtil {
         throw exception;
     }
 
-    public static void checkGrpcUnImplement(Throwable t) throws PolarisException {
+    public static void checkGrpcException(Throwable t) throws PolarisException {
         if (t instanceof StatusRuntimeException) {
             StatusRuntimeException grpcEx = (StatusRuntimeException) t;
             Status.Code code = grpcEx.getStatus().getCode();

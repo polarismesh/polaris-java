@@ -367,6 +367,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to register host %s:%d service %s", req.getHost(), req.getPort(), serviceKey),
                     t);
@@ -517,6 +518,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to deregister id %s, host %s:%d service %s",
                             req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), t);
@@ -558,6 +560,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to heartbeat id %s, host %s:%d service %s",
                             req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), t);
@@ -605,6 +608,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("fail to report client host %s, version %s service %s",
                             req.getClientHost(), req.getVersion(), serviceKey), t);
@@ -668,7 +672,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("fail to report service contract, "
                     + "service %s", serviceKey), t);
         } finally {
@@ -706,7 +710,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             if (null != connection) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("fail to report service contract, "
                     + "service %s", serviceKey), t);
         } finally {
