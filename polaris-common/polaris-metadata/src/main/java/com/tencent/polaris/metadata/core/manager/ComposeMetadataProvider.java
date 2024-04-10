@@ -19,10 +19,11 @@ package com.tencent.polaris.metadata.core.manager;
 
 import java.util.List;
 
+import com.tencent.polaris.metadata.core.CaseSensitiveMetadataProvider;
 import com.tencent.polaris.metadata.core.MetadataProvider;
 import com.tencent.polaris.metadata.core.Utils;
 
-public class ComposeMetadataProvider implements MetadataProvider {
+public class ComposeMetadataProvider implements CaseSensitiveMetadataProvider {
 
     private final List<MetadataProvider> metadataProviders;
 
@@ -81,4 +82,41 @@ public class ComposeMetadataProvider implements MetadataProvider {
     }
 
 
+    @Override
+    public String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+        for (MetadataProvider metadataProvider : metadataProviders) {
+            if (metadataProvider instanceof CaseSensitiveMetadataProvider) {
+                CaseSensitiveMetadataProvider caseSensitiveMetadataProvider = (CaseSensitiveMetadataProvider) metadataProvider;
+                String rawMetadataStringValue = caseSensitiveMetadataProvider.getRawMetadataStringValue(key, keyCaseSensitive);
+                if (null != rawMetadataStringValue) {
+                    return rawMetadataStringValue;
+                }
+            } else if (keyCaseSensitive == Utils.DEFAULT_KEY_CASE_SENSITIVE){
+                String rawMetadataStringValue = metadataProvider.getRawMetadataStringValue(key);
+                if (null != rawMetadataStringValue) {
+                    return rawMetadataStringValue;
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+        for (MetadataProvider metadataProvider : metadataProviders) {
+            if (metadataProvider instanceof CaseSensitiveMetadataProvider) {
+                CaseSensitiveMetadataProvider caseSensitiveMetadataProvider = (CaseSensitiveMetadataProvider) metadataProvider;
+                String rawMetadataMapValue = caseSensitiveMetadataProvider.getRawMetadataMapValue(key, mapKey, keyCaseSensitive);
+                if (null != rawMetadataMapValue) {
+                    return rawMetadataMapValue;
+                }
+            } else if (keyCaseSensitive == Utils.DEFAULT_KEY_CASE_SENSITIVE){
+                String rawMetadataMapValue = metadataProvider.getRawMetadataMapValue(key, mapKey);
+                if (null != rawMetadataMapValue) {
+                    return rawMetadataMapValue;
+                }
+            }
+        }
+        return null;
+    }
 }
