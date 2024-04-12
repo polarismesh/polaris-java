@@ -60,6 +60,17 @@
                    value="%m|[%d{yyyy-MM-dd HH:mm:ss:SSS}]%n"/>
         </layout>
     </appender>
+    <appender name="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"
+              class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${polaris.log.home}/polaris-instance-heartbeat.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%m|[%d{yyyy-MM-dd HH:mm:ss:SSS}]%n"/>
+        </layout>
+    </appender>
 
     <logger name="com.tencent.polaris" additivity="false">
         <level value="INFO"/>
@@ -84,5 +95,9 @@
     <logger name="polaris-lossless-event" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="POLARIS_LOSSLESS_EVENT_LOG_FILE"/>
+    </logger>
+    <logger name="polaris-instance-heartbeat" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"/>
     </logger>
 </log4j:configuration>

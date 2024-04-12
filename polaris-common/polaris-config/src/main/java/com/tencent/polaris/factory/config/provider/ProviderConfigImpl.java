@@ -40,6 +40,8 @@ public class ProviderConfigImpl implements ProviderConfig {
      */
     private final static long DEFAULT_MIN_REGISTER_INTERVAL = 30 * 1000;
 
+    private final static int DEFAULT_HEARTBEAT_WORKER_SIZE = 4;
+
     @JsonProperty
     private RateLimitConfigImpl rateLimit;
 
@@ -56,6 +58,9 @@ public class ProviderConfigImpl implements ProviderConfig {
     private long minRegisterInterval;
 
     @JsonProperty
+    private int heartbeatWorkerSize;
+
+    @JsonProperty
     private LosslessConfigImpl lossless;
 
     @Override
@@ -66,6 +71,11 @@ public class ProviderConfigImpl implements ProviderConfig {
     @Override
     public long getMinRegisterInterval() {
         return minRegisterInterval;
+    }
+
+    @Override
+    public int getHeartbeatWorkerSize() {
+        return heartbeatWorkerSize;
     }
 
     @Override
@@ -126,6 +136,9 @@ public class ProviderConfigImpl implements ProviderConfig {
         }
         if (minRegisterInterval == 0) {
             minRegisterInterval = DEFAULT_MIN_REGISTER_INTERVAL;
+        }
+        if (heartbeatWorkerSize == 0) {
+            heartbeatWorkerSize = DEFAULT_HEARTBEAT_WORKER_SIZE;
         }
         if (null != defaultObject) {
             ProviderConfig providerConfig = (ProviderConfig) defaultObject;

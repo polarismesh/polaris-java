@@ -96,6 +96,25 @@
         </encoder>
     </appender>
 
+    <appender name="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/polaris-instance-heartbeat.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/polaris-instance-heartbeat.log.%i
+            </fileNamePattern>
+            <maxIndex>${polaris.instance.heartbeat.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${polaris.instance.heartbeat.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%m|%d{yyyy-MM-dd HH:mm:ss.SSS}%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"
             class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
@@ -134,5 +153,11 @@
             level="${polaris.lossless.event.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_LOSSLESS_EVENT_LOG_FILE"/>
+    </logger>
+
+    <logger name="polaris-instance-heartbeat"
+            level="${polaris.instance.heartbeat.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"/>
     </logger>
 </configuration>
