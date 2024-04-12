@@ -71,7 +71,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to load config file. namespace = %s, group = %s, file = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName()), t);
         } finally {
             if (connection != null) {
@@ -107,7 +107,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, "[Config] failed to watch config file", t);
         } finally {
             if (connection != null) {
@@ -137,7 +137,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to create config file. namespace = %s, group = %s, file = %s, content = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent()), t);
         } finally {
             if (connection != null) {
@@ -167,7 +167,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to update config file. namespace = %s, group = %s, file = %s, content = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(), configFile.getContent()), t);
         } finally {
             if (connection != null) {
@@ -197,7 +197,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to release config file. namespace = %s, group = %s, file = %s", configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName()), t);
         } finally {
             if (connection != null) {
@@ -226,7 +226,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
             if (connection != null) {
                 connection.reportFail(ErrorCode.NETWORK_ERROR);
             }
-            GrpcUtil.checkGrpcUnImplement(t);
+            GrpcUtil.checkGrpcException(t);
             throw new RetriableException(ErrorCode.NETWORK_ERROR, String.format("failed to upsert and publish config file. namespace = %s, group = %s, file = %s", request.getNamespace(), request.getFileGroup(), request.getFileName()), t);
         } finally {
             if (connection != null) {

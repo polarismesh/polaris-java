@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import com.tencent.polaris.logging.LoggingConsts;
 import org.slf4j.Logger;
 
 /**
@@ -38,7 +40,7 @@ import org.slf4j.Logger;
  */
 public class RegisterFlow {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RegisterFlow.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoggingConsts.LOGGING_HEARTBEAT_RECORD);
     /**
      * 异步注册header key
      */
@@ -48,8 +50,9 @@ public class RegisterFlow {
     private final ScheduledThreadPoolExecutor asyncRegisterExecutor;
 
     public RegisterFlow(SDKContext sdkContext) {
+        int threadSize = sdkContext.getConfig().getProvider().getHeartbeatWorkerSize();
         this.sdkContext = sdkContext;
-        this.asyncRegisterExecutor = new ScheduledThreadPoolExecutor(4, new NamedThreadFactory("async-register"));
+        this.asyncRegisterExecutor = new ScheduledThreadPoolExecutor(threadSize, new NamedThreadFactory("async-register"));
     }
 
     public InstanceRegisterResponse registerInstance(InstanceRegisterRequest request, RegisterFunction registerFunction,
@@ -75,7 +78,7 @@ public class RegisterFlow {
     private void doRunHeartbeat(RegisterState registerState, RegisterFunction registerFunction,
             HeartbeatFunction heartbeatFunction) {
         InstanceRegisterRequest registerRequest = registerState.getInstanceRegisterRequest();
-        LOG.debug("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
+        LOG.info("[AsyncHeartbeat]Instance heartbeat task started, namespace:{}, service:{}, host:{}, port:{}",
                 registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
                 registerRequest.getPort());
         try {
@@ -83,13 +86,12 @@ public class RegisterFlow {
             LOG.info("[AsyncHeartbeat]Instance heartbeat success, namespace:{}, service:{}, host:{}, port:{}",
                     registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
                     registerRequest.getPort());
-            return;
         } catch (PolarisException e) {
             registerState.incrementFailCount();
             LOG.error(
-                    "[AsyncHeartbeat]Instance heartbeat failed, namespace:{}, service:{}, host:{}, port:{}, serverErrCode:{}, heartbeat fail count:{}",
+                    "[AsyncHeartbeat]Instance heartbeat failed, namespace:{}, service:{}, host:{}, port:{}, heartbeat fail count:{}",
                     registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort(), e.getServerErrCode(), registerState.getHeartbeatFailCounter());
+                    registerRequest.getPort(), registerState.getHeartbeatFailCounter(), e);
         }
 
         long minRegisterInterval = sdkContext.getConfig().getProvider().getMinRegisterInterval();
@@ -106,9 +108,9 @@ public class RegisterFlow {
             registerState.resetFailCount();
         } catch (PolarisException e) {
             LOG.error(
-                    "[AsyncHeartbeat]Re-register instance failed, namespace:{}, service:{}, host:{}, port:{}, serverErrCode:{}",
+                    "[AsyncHeartbeat]Re-register instance failed, namespace:{}, service:{}, host:{}, port:{}, err:{}",
                     registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort(), e.getServerErrCode());
+                    registerRequest.getPort(), e);
         }
     }
 
