@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.config.consumer;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +70,13 @@ public interface ConsumerConfig extends Verifier {
      * @return SubscribeConfig
      */
     SubscribeConfig getSubscribe();
+
+    /**
+     * consumer.zeroProtection前缀开头的所有配置
+     *
+     * @return ZeroProtectionConfig
+     */
+    ZeroProtectionConfig getZeroProtection();
 
     /**
      * Configuration of prefix of "consumer.discoveries".

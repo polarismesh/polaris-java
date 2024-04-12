@@ -400,6 +400,8 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                     instance.setHost(host);
                     instance.setPort(service.getService().getPort());
                     instance.setMetadata(getMetadata(service));
+                    instance.setHealthy(true);
+                    instance.setIsolated(false);
                     instanceList.add(instance);
                 }
             }
