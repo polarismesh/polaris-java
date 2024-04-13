@@ -22,6 +22,10 @@ package com.tencent.polaris.api.pojo;
  */
 public interface BaseInstance {
 
+    default String getRegistry() {
+        return "polaris";
+    }
+
     String getNamespace();
 
     String getService();
