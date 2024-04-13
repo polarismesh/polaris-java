@@ -21,6 +21,8 @@ import java.util.Objects;
 
 public class DefaultBaseInstance implements BaseInstance {
 
+    private String registry;
+
     private String namespace;
 
     private String service;
@@ -66,16 +68,25 @@ public class DefaultBaseInstance implements BaseInstance {
     }
 
     @Override
+    public String getRegistry() {
+        return registry;
+    }
+
+    public void setRegistry(String registry) {
+        this.registry = registry;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof DefaultBaseInstance)) return false;
         DefaultBaseInstance that = (DefaultBaseInstance) o;
-        return port == that.port && Objects.equals(namespace, that.namespace) && Objects.equals(service, that.service) && Objects.equals(host, that.host);
+        return port == that.port && Objects.equals(registry, that.registry) && Objects.equals(namespace, that.namespace) && Objects.equals(service, that.service) && Objects.equals(host, that.host);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(namespace, service, host, port);
+        return Objects.hash(registry, namespace, service, host, port);
     }
 
     @Override
