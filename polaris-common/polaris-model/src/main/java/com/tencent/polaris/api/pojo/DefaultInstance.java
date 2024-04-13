@@ -228,7 +228,8 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
     @Override
     public String toString() {
         return "DefaultInstance{" +
-                "namespace='" + getNamespace() + '\'' +
+                "registry='" + getRegistry() + '\'' +
+                ", namespace='" + getNamespace() + '\'' +
                 ", service='" + getService() + '\'' +
                 ", revision='" + revision + '\'' +
                 ", circuitBreakerStatuses=" + circuitBreakerStatuses +
