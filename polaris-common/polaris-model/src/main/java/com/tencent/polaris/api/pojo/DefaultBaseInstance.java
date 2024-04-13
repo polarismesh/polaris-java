@@ -92,7 +92,8 @@ public class DefaultBaseInstance implements BaseInstance {
     @Override
     public String toString() {
         return "DefaultBaseInstance{" +
-                "namespace='" + namespace + '\'' +
+                "registry='" + registry + '\'' +
+                ", namespace='" + namespace + '\'' +
                 ", service='" + service + '\'' +
                 ", host='" + host + '\'' +
                 ", port=" + port +
