@@ -79,7 +79,6 @@ import static com.tencent.polaris.plugins.connector.common.constant.ConsulConsta
 import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.QUERY_TAG_KEY;
 import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.SERVICE_NAME_KEY;
 import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.TAGS_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.TOKEN_KEY;
 import static com.tencent.polaris.plugins.connector.consul.ConsulServerUtils.findHost;
 import static com.tencent.polaris.plugins.connector.consul.ConsulServerUtils.getMetadata;
 
@@ -201,8 +200,8 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 metadata.get(PREFER_IP_ADDRESS_KEY))) {
             consulContext.setPreferIpAddress(Boolean.parseBoolean(metadata.get(PREFER_IP_ADDRESS_KEY)));
         }
-        if (metadata.containsKey(TOKEN_KEY) && StringUtils.isNotBlank(metadata.get(TOKEN_KEY))) {
-            consulContext.setAclToken(metadata.get(TOKEN_KEY));
+        if (StringUtils.isNotBlank(connectorConfig.getToken())) {
+            consulContext.setAclToken(connectorConfig.getToken());
         }
         if (metadata.containsKey(TAGS_KEY) && StringUtils.isNotBlank(metadata.get(TAGS_KEY))) {
             try {
