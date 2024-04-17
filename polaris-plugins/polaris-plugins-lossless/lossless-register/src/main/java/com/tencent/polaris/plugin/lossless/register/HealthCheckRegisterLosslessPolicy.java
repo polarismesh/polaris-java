@@ -261,7 +261,7 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
                             "finalStatus from {} to {}", instances, lastFinalStatus, finalStatus);
                 }
                 HttpServerUtils.writeTextToHttpServer(
-                        exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 404);
+                        exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 503);
             }
         });
         return handlers;
