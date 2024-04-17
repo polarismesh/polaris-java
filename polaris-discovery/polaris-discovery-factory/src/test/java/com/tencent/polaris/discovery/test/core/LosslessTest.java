@@ -104,7 +104,7 @@ public class LosslessTest {
             System.out.println("[testLosslessRegisterWithoutHealthCheck] start to query status");
             try {
                 HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38080/online", "GET");
-                Assert.assertEquals(404, wrapper.getCode());
+                Assert.assertEquals(503, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
                 Assert.fail("e is " + e.getClass().getCanonicalName() + ", message " + e.getMessage());
@@ -150,7 +150,7 @@ public class LosslessTest {
             System.out.println("[testLosslessRegisterWithHealthCheck] start to query status");
             try {
                 HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38081/online", "GET");
-                Assert.assertEquals(404, wrapper.getCode());
+                Assert.assertEquals(503, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
                 Assert.fail("e is " + e.getClass().getCanonicalName() + ", message " + e.getMessage());
@@ -190,7 +190,7 @@ public class LosslessTest {
             System.out.println("[testLosslessDeregister] start to query status");
             try {
                 HttpInvokeUtils.ResponseWrapper wrapper = HttpInvokeUtils.sendRequest("http://127.0.0.1:38082/online", "GET");
-                Assert.assertEquals(404, wrapper.getCode());
+                Assert.assertEquals(503, wrapper.getCode());
                 Assert.assertEquals(RegisterStatus.UNREGISTERED.toString(), wrapper.getMessage());
             } catch (IOException e) {
                 Assert.fail("e is " + e.getClass().getCanonicalName() + ", message " + e.getMessage());
