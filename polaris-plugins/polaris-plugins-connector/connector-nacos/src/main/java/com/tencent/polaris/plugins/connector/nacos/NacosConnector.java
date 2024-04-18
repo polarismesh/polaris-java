@@ -362,10 +362,10 @@ public class NacosConnector extends DestroyableServerConnector {
                     instance.setRegion(region);
                 }
                 if (StringUtils.isNotEmpty(zone)) {
-                    instance.setRegion(zone);
+                    instance.setZone(zone);
                 }
                 if (StringUtils.isNotEmpty(campus)) {
-                    instance.setRegion(campus);
+                    instance.setCampus(campus);
                 }
 
                 instanceList.add(instance);
