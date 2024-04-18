@@ -67,7 +67,7 @@
                      fileName="${sys:polaris.log.home}/polaris-lossless-event.log"
                      filePattern="${sys:polaris.log.home}/polaris-lossless-event.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+                <Pattern>%m|%d{yyyy-MM-dd HH:mm:ss.SSS}%n</Pattern>
             </PatternLayout>
 
             <Policies>
