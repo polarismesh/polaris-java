@@ -18,10 +18,6 @@
 package com.tencent.polaris.logging.log4j2;
 
 import com.tencent.polaris.logging.AbstractPolarisLogging;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -30,15 +26,16 @@ import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
-import static com.tencent.polaris.logging.LoggingConsts.LOGGING_UPDATE_EVENT;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Map;
 
 public class Log4j2PolarisLogging extends AbstractPolarisLogging {
 
     private static final String LOG4J2_LOCATION = "classpath:polaris-log4j2.xml";
 
     private static final String FILE_PROTOCOL = "file";
-
-    private static final String LOGGER_PREFIX = "com.tencent.polaris";
 
     private final String location = getLocation(LOG4J2_LOCATION);
 
@@ -60,12 +57,7 @@ public class Log4j2PolarisLogging extends AbstractPolarisLogging {
             contextConfiguration.addAppender(appender);
         }
         Map<String, LoggerConfig> loggers = configuration.getLoggers();
-        for (String name : loggers.keySet()) {
-            if (name.startsWith(LOGGER_PREFIX) || name.contains(LOGGING_UPDATE_EVENT)) {
-                contextConfiguration.addLogger(name, loggers.get(name));
-            }
-        }
-
+        loggers.forEach(contextConfiguration::addLogger);
         loggerContext.updateLoggers();
     }
 

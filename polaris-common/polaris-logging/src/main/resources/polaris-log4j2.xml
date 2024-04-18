@@ -2,9 +2,6 @@
 
 <Configuration status="WARN">
     <Appenders>
-        <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
-        </Console>
         <RollingFile name="POLARIS_LOG_FILE" fileName="${sys:polaris.log.home}/polaris.log"
                 filePattern="${sys:polaris.log.home}/polaris.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
@@ -51,7 +48,7 @@
         </RollingFile>
 
         <RollingFile name="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"
-                fileName="${sys:polaris.log.home}/polaris-healthcheck-event"
+                fileName="${sys:polaris.log.home}/polaris-healthcheck-event.log"
                 filePattern="${sys:polaris.log.home}/polaris-healthcheck-event.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
@@ -67,10 +64,10 @@
         </RollingFile>
 
         <RollingFile name="POLARIS_LOSSLESS_EVENT_LOG_FILE"
-                     fileName="${sys:polaris.log.home}/polaris-lossless-event"
+                     fileName="${sys:polaris.log.home}/polaris-lossless-event.log"
                      filePattern="${sys:polaris.log.home}/polaris-lossless-event.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
-                <Pattern>%m|%d{yyyy-MM-dd HH:mm:ss.SSS}%n</Pattern>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
 
             <Policies>
@@ -83,10 +80,10 @@
         </RollingFile>
 
         <RollingFile name="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"
-                     fileName="${sys:polaris.log.home}/polaris-instance-heartbeat"
+                     fileName="${sys:polaris.log.home}/polaris-instance-heartbeat.log"
                      filePattern="${sys:polaris.log.home}/polaris-instance-heartbeat.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
-                <Pattern>%m|%d{yyyy-MM-dd HH:mm:ss.SSS}%n</Pattern>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
 
             <Policies>
@@ -100,9 +97,6 @@
     </Appenders>
 
     <Loggers>
-        <Root level="info">
-            <AppenderRef ref="Console"/>
-        </Root>
         <Logger name="com.tencent.polaris"
                 level="${sys:polaris.log.level:-info}"
                 additivity="false">
