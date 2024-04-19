@@ -64,6 +64,11 @@ public interface APIConfig extends Verifier {
     String getBindIP();
 
     /**
+     * 客户端上报开关
+     */
+    boolean isReportEnable();
+
+    /**
      * 客户端上报周期，默认30s
      *
      * @return long

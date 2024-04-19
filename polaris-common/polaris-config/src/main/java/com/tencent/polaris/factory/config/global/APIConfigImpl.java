@@ -44,6 +44,9 @@ public class APIConfigImpl implements APIConfig {
     private Long timeout;
 
     @JsonProperty
+    private Boolean reportEnable;
+
+    @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long reportInterval;
 
@@ -92,6 +95,18 @@ public class APIConfigImpl implements APIConfig {
 
     public void setTimeout(long timeout) {
         this.timeout = timeout;
+    }
+
+    @Override
+    public boolean isReportEnable() {
+        if (null == reportEnable) {
+            return true;
+        }
+        return reportEnable;
+    }
+
+    public void setReportEnable(boolean reportEnable) {
+        this.reportEnable = reportEnable;
     }
 
     @Override
@@ -145,6 +160,9 @@ public class APIConfigImpl implements APIConfig {
             if (null == reportInterval) {
                 setReportInterval(apiConfig.getReportInterval());
             }
+            if (null == reportInterval) {
+                setReportInterval(apiConfig.getReportInterval());
+            }
             if (null == retryInterval) {
                 setRetryInterval(apiConfig.getRetryInterval());
             }
@@ -159,6 +177,7 @@ public class APIConfigImpl implements APIConfig {
                 ", bindIf='" + bindIf + '\'' +
                 ", bindIP='" + bindIP + '\'' +
                 ", timeout=" + timeout +
+                ", reportEnable=" + reportEnable +
                 ", reportInterval=" + reportInterval +
                 ", retryInterval=" + retryInterval +
                 '}';

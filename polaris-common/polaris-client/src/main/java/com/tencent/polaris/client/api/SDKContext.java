@@ -49,6 +49,9 @@ import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.version.Version;
+import org.slf4j.Logger;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -56,20 +59,11 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Objects;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-
-import com.tencent.polaris.version.Version;
 
 /**
  * SDK初始化相关的上下文信息
@@ -341,28 +335,30 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
      * @param extensions extensions
      */
     private void reportClient(Extensions extensions) {
-        reportClientExecutorService.scheduleAtFixedRate(() -> {
-            ServerConnector serverConnector = extensions.getServerConnector();
-            ReportClientRequest reportClientRequest = new ReportClientRequest();
-            reportClientRequest.setClientHost(extensions.getValueContext().getHost());
-            reportClientRequest.setVersion(Version.VERSION);
-            List<StatReporter> statPlugins = extensions.getStatReporters();
-            List<ReporterMetaInfo> reporterMetaInfos = new ArrayList<>();
-            for (StatReporter statPlugin : statPlugins) {
-                ReporterMetaInfo reporterMetaInfo = statPlugin.metaInfo();
-                if (StringUtils.isNotBlank(reporterMetaInfo.getProtocol())) {
-                    reporterMetaInfos.add(reporterMetaInfo);
+        if (extensions.getConfiguration().getGlobal().getAPI().isReportEnable()) {
+            reportClientExecutorService.scheduleAtFixedRate(() -> {
+                ServerConnector serverConnector = extensions.getServerConnector();
+                ReportClientRequest reportClientRequest = new ReportClientRequest();
+                reportClientRequest.setClientHost(extensions.getValueContext().getHost());
+                reportClientRequest.setVersion(Version.VERSION);
+                List<StatReporter> statPlugins = extensions.getStatReporters();
+                List<ReporterMetaInfo> reporterMetaInfos = new ArrayList<>();
+                for (StatReporter statPlugin : statPlugins) {
+                    ReporterMetaInfo reporterMetaInfo = statPlugin.metaInfo();
+                    if (StringUtils.isNotBlank(reporterMetaInfo.getProtocol())) {
+                        reporterMetaInfos.add(reporterMetaInfo);
+                    }
                 }
-            }
-            reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
+                reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
 
-            try {
-                ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
-                LOG.debug("Report client success, response:{}", reportClientResponse);
-            } catch (PolarisException e) {
-                LOG.error("Report client failed.", e);
-            }
-        }, 0L, 60L, TimeUnit.SECONDS);
+                try {
+                    ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
+                    LOG.debug("Report client success, response:{}", reportClientResponse);
+                } catch (PolarisException e) {
+                    LOG.error("Report client failed.", e);
+                }
+            }, 0L, 60L, TimeUnit.SECONDS);
+        }
     }
 
     public Extensions getExtensions() {

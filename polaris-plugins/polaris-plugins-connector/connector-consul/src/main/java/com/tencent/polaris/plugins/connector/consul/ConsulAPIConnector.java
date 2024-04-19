@@ -32,7 +32,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.reflect.TypeToken;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
-import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
@@ -41,19 +40,8 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
-import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
-import com.tencent.polaris.api.plugin.server.ReportClientRequest;
-import com.tencent.polaris.api.plugin.server.ReportClientResponse;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
-import com.tencent.polaris.api.plugin.server.ServerConnector;
-import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
-import com.tencent.polaris.api.pojo.DefaultInstance;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.Services;
+import com.tencent.polaris.api.plugin.server.*;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServicesByProto;
@@ -64,21 +52,11 @@ import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.ecwid.consul.json.GsonFactory.getGson;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.CHECK_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.INSTANCE_ID_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.IP_ADDRESS_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.PREFER_IP_ADDRESS_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.QUERY_PASSING_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.QUERY_TAG_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.SERVICE_NAME_KEY;
-import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.TAGS_KEY;
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+import static com.tencent.polaris.plugins.connector.common.constant.ConsulConstant.MetadataMapKey.*;
 import static com.tencent.polaris.plugins.connector.consul.ConsulServerUtils.findHost;
 import static com.tencent.polaris.plugins.connector.consul.ConsulServerUtils.getMetadata;
 
@@ -123,7 +101,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public String getName() {
-        return DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+        return SERVER_CONNECTOR_CONSUL;
     }
 
     @Override
@@ -157,7 +135,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             List<ServerConnectorConfigImpl> serverConnectorConfigs = ctx.getConfig().getGlobal().getServerConnectors();
             if (CollectionUtils.isNotEmpty(serverConnectorConfigs)) {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectorConfigs) {
-                    if (DefaultPlugins.SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
+                    if (SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
                         mapper = new ObjectMapper();
                         initActually(ctx, serverConnectorConfig);
                     }
@@ -308,7 +286,15 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             consulContext.setServiceName(appName);
         }
         service.setName(consulContext.getServiceName());
-        service.setMeta(req.getMetadata());
+
+        // put extended metadata with key of "consul".
+        Map<String, String> meta = new HashMap<>(req.getMetadata());
+        for (Map.Entry<String, String> entry : req.getExtendedMetadata().entrySet()) {
+            if (entry.getKey().contains(SERVER_CONNECTOR_CONSUL)) {
+                meta.put(entry.getKey(), entry.getValue());
+            }
+        }
+        service.setMeta(meta);
         service.setTags(consulContext.getTags());
         if (null != req.getTtl()) {
             Check check = new Check();
