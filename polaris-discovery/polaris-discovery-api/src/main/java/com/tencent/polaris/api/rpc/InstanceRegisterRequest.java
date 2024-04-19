@@ -79,11 +79,11 @@ public class InstanceRegisterRequest extends CommonProviderBaseEntity {
         request.setMetadata(metadata);
     }
 
-    public Map<String, String> getExtendedMetadata() {
+    public Map<String, Map<String, String>> getExtendedMetadata() {
         return request.getExtendedMetadata();
     }
 
-    public void setExtendedMetadata(Map<String, String> extendedMetadata) {
+    public void setExtendedMetadata(Map<String, Map<String, String>> extendedMetadata) {
         request.setExtendedMetadata(extendedMetadata);
     }
 
