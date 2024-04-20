@@ -290,6 +290,33 @@ public class Extensions extends Destroyable {
 
     public void initHttpServer(Supplier plugins) {
         // 遍历插件并获取监听器
+        Map<Node, Map<String, HttpHandler>> allHandlers = buildHttpHandlers(plugins);
+        if (allHandlers == null) return;
+        //启动监听
+        httpServers = new HashMap<>();
+        for (Map.Entry<Node, Map<String, HttpHandler>> entry : allHandlers.entrySet()) {
+            Node node = entry.getKey();
+            Map<String, HttpHandler> handlers = entry.getValue();
+            try {
+                HttpServer httpServer = HttpServer.create(
+                        new InetSocketAddress(node.getHost(), node.getPort()), HTTP_SERVER_BACKLOG_SIZE);
+                for (Map.Entry<String, HttpHandler> handlerEntry : handlers.entrySet()) {
+                    httpServer.createContext(handlerEntry.getKey(), handlerEntry.getValue());
+                }
+                NamedThreadFactory threadFactory = new NamedThreadFactory("polaris-java-http");
+                ExecutorService executor = Executors.newFixedThreadPool(3, threadFactory);
+                httpServer.setExecutor(executor);
+                httpServers.put(node, httpServer);
+                startServer(threadFactory, httpServer);
+            } catch (IOException e) {
+                LOG.error("create polaris http server exception. host:{}, port:{}, path:{}",
+                        node.getHost(), node.getPort(), handlers.keySet(), e);
+                throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Create polaris http server failed!", e);
+            }
+        }
+    }
+
+    Map<Node, Map<String, HttpHandler>> buildHttpHandlers(Supplier plugins) {
         pluginToNodes = new HashMap<>();
         Map<Node, Boolean> nodeToDrift = new HashMap<>();
         Map<Node, Map<String, HttpHandler>> allHandlers = new HashMap<>();
@@ -314,30 +341,32 @@ public class Extensions extends Destroyable {
                 }
                 Node node = new Node(host, port);
                 if (!allHandlers.containsKey(node)) {
-                    allHandlers.put(node, handlers);
-                } else {
-                    Map<String, HttpHandler> existsHandlers = allHandlers.get(node);
-                    // validate duplicated paths
-                    for (String key : handlers.keySet()) {
-                        if (existsHandlers.containsKey(key)) {
-                            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                                    String.format("duplicated path %s in plugin %s", key, plugin.getName()));
+                    Node targetNode = null;
+                    for (Node existNode : allHandlers.keySet()) {
+                        if ((existNode.isAnyAddress() || node.isAnyAddress()) && existNode.getPort() == node.getPort()) {
+                            targetNode = existNode;
+                            break;
                         }
                     }
-                    existsHandlers.putAll(handlers);
-                }
-                pluginToNodes.put(plugin.getName(), node);
-                boolean allowPortDrift = httpServerAware.allowPortDrift();
-                if (!allowPortDrift) {
-                    nodeToDrift.put(node, allowPortDrift);
+                    if (null == targetNode) {
+                        allHandlers.put(node, handlers);
+                    } else {
+                        Node replcaceNode = null;
+                        if (!targetNode.isAnyAddress() && node.isAnyAddress()) {
+                            // make any address replace the specific address
+                            replcaceNode = node;
+                        }
+                        mergeHandlers(plugin, allHandlers, targetNode, handlers, replcaceNode);
+                    }
                 } else {
-                    nodeToDrift.putIfAbsent(node, allowPortDrift);
+                    mergeHandlers(plugin, allHandlers, node, handlers, null);
                 }
+                addNodeToDrift(plugin, node, httpServerAware, nodeToDrift);
             }
         }
         if (MapUtils.isEmpty(allHandlers)) {
             LOG.info("no http paths to exposed, will not listen on any ports");
-            return;
+            return null;
         }
         // 校验端口重复，并自动迁移
         for (Map.Entry<Node, Boolean> entry : nodeToDrift.entrySet()) {
@@ -374,27 +403,57 @@ public class Extensions extends Destroyable {
                 }
             }
         }
-        //启动监听
-        httpServers = new HashMap<>();
-        for (Map.Entry<Node, Map<String, HttpHandler>> entry : allHandlers.entrySet()) {
-            Node node = entry.getKey();
-            Map<String, HttpHandler> handlers = entry.getValue();
-            try {
-                HttpServer httpServer = HttpServer.create(
-                        new InetSocketAddress(node.getHost(), node.getPort()), HTTP_SERVER_BACKLOG_SIZE);
-                for (Map.Entry<String, HttpHandler> handlerEntry : handlers.entrySet()) {
-                    httpServer.createContext(handlerEntry.getKey(), handlerEntry.getValue());
-                }
-                NamedThreadFactory threadFactory = new NamedThreadFactory("polaris-java-http");
-                ExecutorService executor = Executors.newFixedThreadPool(3, threadFactory);
-                httpServer.setExecutor(executor);
-                httpServers.put(node, httpServer);
-                startServer(threadFactory, httpServer);
-            } catch (IOException e) {
-                LOG.error("create polaris http server exception. host:{}, port:{}, path:{}",
-                        node.getHost(), node.getPort(), handlers.keySet(), e);
-                throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Create polaris http server failed!", e);
+        return allHandlers;
+    }
+
+    private void addNodeToDrift(Plugin plugin, Node node, HttpServerAware httpServerAware, Map<Node, Boolean> nodeToDrift) {
+        boolean allowPortDrift = httpServerAware.allowPortDrift();
+        Node targetNode = null;
+        for (Node existNode : nodeToDrift.keySet()) {
+            if ((existNode.isAnyAddress() || node.isAnyAddress()) && existNode.getPort() == node.getPort()) {
+                targetNode = existNode;
+                break;
             }
+        }
+        if (null == targetNode) {
+            pluginToNodes.put(plugin.getName(), node);
+            if (!allowPortDrift) {
+                nodeToDrift.put(node, allowPortDrift);
+            }
+            else {
+                nodeToDrift.putIfAbsent(node, allowPortDrift);
+            }
+        } else {
+            boolean targetAllowDrift = !allowPortDrift ? allowPortDrift : nodeToDrift.get(targetNode);
+            if (targetNode.isAnyAddress()) {
+                nodeToDrift.put(targetNode, targetAllowDrift);
+                pluginToNodes.put(plugin.getName(), targetNode);
+            } else {
+                nodeToDrift.remove(targetNode);
+                nodeToDrift.put(node, targetAllowDrift);
+                for (Map.Entry<String, Node> entry: pluginToNodes.entrySet()) {
+                    if (entry.getValue().equals(targetNode)) {
+                        pluginToNodes.put(entry.getKey(), node);
+                    }
+                }
+                pluginToNodes.put(plugin.getName(), node);
+            }
+        }
+    }
+
+    private static void mergeHandlers(Plugin plugin, Map<Node, Map<String, HttpHandler>> allHandlers, Node existNode, Map<String, HttpHandler> handlers, Node replaceNode) {
+        Map<String, HttpHandler> existsHandlers = allHandlers.get(existNode);
+        // validate duplicated paths
+        for (String key : handlers.keySet()) {
+            if (existsHandlers.containsKey(key)) {
+                throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                        String.format("duplicated path %s in plugin %s", key, plugin.getName()));
+            }
+        }
+        existsHandlers.putAll(handlers);
+        if (null != replaceNode) {
+            allHandlers.remove(existNode);
+            allHandlers.put(replaceNode, existsHandlers);
         }
     }
 
