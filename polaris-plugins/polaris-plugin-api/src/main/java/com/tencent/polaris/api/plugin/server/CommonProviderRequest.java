@@ -151,7 +151,7 @@ public class CommonProviderRequest {
     }
 
     public void setExtendedMetadata(Map<String, Map<String, String>> extendedMetadata) {
-        this.extendedMetadata = extendedMetadata;
+        this.extendedMetadata.putAll(extendedMetadata);
     }
 
     public Integer getTtl() {
