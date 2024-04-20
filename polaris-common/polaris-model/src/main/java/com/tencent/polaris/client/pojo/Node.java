@@ -17,9 +17,17 @@
 
 package com.tencent.polaris.client.pojo;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Objects;
 
+import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 public class Node {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Node.class);
 
     private final String host;
 
@@ -64,5 +72,16 @@ public class Node {
                 "host='" + host + '\'' +
                 ", port=" + port +
                 '}';
+    }
+
+    public boolean isAnyAddress() {
+        InetAddress inetAddress;
+        try {
+            inetAddress = InetAddress.getByName(host);
+        } catch (UnknownHostException e) {
+            LOG.error("fail to parse host {}", host, e);
+            return false;
+        }
+        return inetAddress.isAnyLocalAddress();
     }
 }
