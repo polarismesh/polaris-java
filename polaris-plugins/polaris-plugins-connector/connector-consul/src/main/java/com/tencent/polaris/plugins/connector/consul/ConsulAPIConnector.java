@@ -289,7 +289,9 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
         // put extended metadata with key of "consul".
         Map<String, String> meta = new HashMap<>(req.getMetadata());
-        meta.putAll(req.getExtendedMetadata().get(SERVER_CONNECTOR_CONSUL));
+        if (req.getExtendedMetadata().containsKey(SERVER_CONNECTOR_CONSUL)) {
+            meta.putAll(req.getExtendedMetadata().get(SERVER_CONNECTOR_CONSUL));
+        }
         service.setMeta(meta);
         service.setTags(consulContext.getTags());
         if (null != req.getTtl()) {
