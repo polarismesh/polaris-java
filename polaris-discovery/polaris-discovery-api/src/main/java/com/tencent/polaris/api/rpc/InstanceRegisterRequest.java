@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
+
 import java.util.Map;
 
 /**
@@ -77,6 +78,15 @@ public class InstanceRegisterRequest extends CommonProviderBaseEntity {
     public void setMetadata(Map<String, String> metadata) {
         request.setMetadata(metadata);
     }
+
+    public Map<String, Map<String, String>> getExtendedMetadata() {
+        return request.getExtendedMetadata();
+    }
+
+    public void setExtendedMetadata(Map<String, Map<String, String>> extendedMetadata) {
+        request.setExtendedMetadata(extendedMetadata);
+    }
+
 
     public String getZone() {
         return request.getZone();

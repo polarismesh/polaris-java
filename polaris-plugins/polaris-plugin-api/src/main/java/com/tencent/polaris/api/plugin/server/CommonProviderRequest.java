@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.plugin.server;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class CommonProviderRequest {
@@ -42,6 +43,8 @@ public class CommonProviderRequest {
     private Integer priority;
 
     private Map<String, String> metadata;
+
+    private Map<String, Map<String, String>> extendedMetadata = new HashMap<>();
 
     private Integer ttl;
 
@@ -143,6 +146,17 @@ public class CommonProviderRequest {
         this.metadata = metadata;
     }
 
+    public Map<String, Map<String, String>> getExtendedMetadata() {
+        if (extendedMetadata == null) {
+            extendedMetadata = new HashMap<>();
+        }
+        return extendedMetadata;
+    }
+
+    public void setExtendedMetadata(Map<String, Map<String, String>> extendedMetadata) {
+        this.extendedMetadata = extendedMetadata;
+    }
+
     public Integer getTtl() {
         return ttl;
     }
@@ -205,6 +219,7 @@ public class CommonProviderRequest {
                 ", weight=" + weight +
                 ", priority=" + priority +
                 ", metadata=" + metadata +
+                ", extendedMetadata=" + extendedMetadata +
                 ", ttl=" + ttl +
                 ", targetServer=" + targetServer +
                 ", zone='" + zone + '\'' +
