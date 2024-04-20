@@ -44,7 +44,7 @@ public class CommonProviderRequest {
 
     private Map<String, String> metadata;
 
-    private final Map<String, Map<String, String>> extendedMetadata = new HashMap<>();
+    private Map<String, Map<String, String>> extendedMetadata = new HashMap<>();
 
     private Integer ttl;
 
@@ -147,11 +147,14 @@ public class CommonProviderRequest {
     }
 
     public Map<String, Map<String, String>> getExtendedMetadata() {
+        if (extendedMetadata == null) {
+            extendedMetadata = new HashMap<>();
+        }
         return extendedMetadata;
     }
 
     public void setExtendedMetadata(Map<String, Map<String, String>> extendedMetadata) {
-        this.extendedMetadata.putAll(extendedMetadata);
+        this.extendedMetadata = extendedMetadata;
     }
 
     public Integer getTtl() {
