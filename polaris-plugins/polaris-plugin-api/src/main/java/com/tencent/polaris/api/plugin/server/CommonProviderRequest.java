@@ -44,7 +44,7 @@ public class CommonProviderRequest {
 
     private Map<String, String> metadata;
 
-    private Map<String, Map<String, String>> extendedMetadata = new HashMap<>();
+    private final Map<String, Map<String, String>> extendedMetadata = new HashMap<>();
 
     private Integer ttl;
 
