@@ -49,7 +49,6 @@ public class QuotaResponse {
 
     public String getActiveRuleName() {
         String activeRuleName = this.getActiveRule().getName().getValue();
-
         return activeRuleName;
     }
 
