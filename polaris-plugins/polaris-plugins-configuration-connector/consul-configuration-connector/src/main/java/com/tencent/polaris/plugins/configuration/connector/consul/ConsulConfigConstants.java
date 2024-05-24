@@ -32,4 +32,6 @@ public interface ConsulConfigConstants {
      * 空值CONSUL Index常量，设为-1L时，Consul会立即返回
      */
     Long EMPTY_VALUE_CONSUL_INDEX = -1L;
+
+    String CONFIG_FILE_DELETED_MESSAGE = "config file deleted.";
 }

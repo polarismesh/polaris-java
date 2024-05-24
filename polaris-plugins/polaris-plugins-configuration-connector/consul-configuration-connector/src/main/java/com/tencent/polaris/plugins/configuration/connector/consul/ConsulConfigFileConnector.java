@@ -75,6 +75,8 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
 
     public final Map<String, Long> consulModifyIndexes = new ConcurrentHashMap<>();
 
+    public final Map<String, ConfigFileResponse> responseCache = new ConcurrentHashMap<>();
+
     private ConsulConfigContext consulConfigContext;
 
     /**
@@ -154,17 +156,25 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                     } catch (Exception exception) {
                         LOGGER.error("Watch consul config '{}' failed.", keyPrefix, exception);
                     }
-                }, consulConfigContext.getDelay(), consulConfigContext.getDelay(), TimeUnit.MICROSECONDS));
+                }, consulConfigContext.getDelay(), consulConfigContext.getDelay(), TimeUnit.MILLISECONDS));
+            }
+            if (responseCache.containsKey(keyPrefix)) {
+                ConfigFileResponse configFileResponse = responseCache.get(keyPrefix);
+                if (StringUtils.equals(configFileResponse.getMessage(), ConsulConfigConstants.CONFIG_FILE_DELETED_MESSAGE)) {
+                    responseCache.remove(keyPrefix);
+                }
+                return configFileResponse;
             }
             return getKVValues(configFile, keyPrefix);
         }
-        return new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "config file not found.", null);
+        return new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, ConsulConfigConstants.CONFIG_FILE_DELETED_MESSAGE, null);
     }
 
     private ConfigFileResponse getKVValues(ConfigFile configFile, String keyPrefix) {
         // 使用default值逻辑处理
         Long currentIndex = this.consulIndexes.getOrDefault(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
         Long currentModifyIndex = this.consulModifyIndexes.getOrDefault(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
+        LOGGER.debug("watching consul for keyPrefix '{}' with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);
 
         // use the consul ACL token if found
         String aclToken = consulConfigContext.getAclToken();
@@ -188,11 +198,17 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
     private ConfigFileResponse handleResponse(ConfigFile configFile, String keyPrefix, Long currentIndex,
                                               Long currentModifyIndex, Response<List<GetValue>> response) {
         if (response.getValue() == null) {
-            LOGGER.warn("watching consul for keyPrefix '{}' with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);
+            if (responseCache.containsKey(keyPrefix)) {
+                // 在Consul中不存在自定义KEY时，此处的逻辑可以避免response实时返回，不断的触发retry
+                this.consulIndexes.put(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
+                this.consulModifyIndexes.put(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
+                configFile.setVersion(response.getConsulIndex());
+                return new ConfigFileResponse(CodeProto.Code.ExecuteSuccess.getNumber(),
+                        ConsulConfigConstants.CONFIG_FILE_DELETED_MESSAGE, configFile);
+            }
             return new ConfigFileResponse(CodeProto.Code.NotFoundResource.getNumber(), "config file not found.", null);
         }
 
-        LOGGER.debug("watching consul for keyPrefix '{}' with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);
         int code = CodeProto.Code.ExecuteSuccess.getNumber();
         String message = "execute success";
         if (response.getValue() != null) {
@@ -204,9 +220,8 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
             if (newIndex != null && !newIndex.equals(currentIndex)) {
                 // 根据currentModifyIndex和newModifyIndex判断内容是否实际发生了变化
                 if (!newModifyIndex.equals(currentModifyIndex)) {
-                    LOGGER.info("KeyPrefix '{}' has new index {} and modify index {} with old index {} and old modify index {}",
+                    LOGGER.info("KeyPrefix '{}' has new index {} and new modify index {} with old index {} and old modify index {}",
                             keyPrefix, newIndex, newModifyIndex, currentIndex, currentModifyIndex);
-
                 } else if (LOGGER.isDebugEnabled()) {
                     code = CodeProto.Code.DataNoChange.getNumber();
                     message = "config data is no change";
@@ -215,6 +230,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                 }
                 // 在Consul中不存在自定义KEY时，此处的逻辑可以避免response实时返回，不断的触发retry
                 this.consulIndexes.put(keyPrefix, newIndex);
+                this.consulModifyIndexes.put(keyPrefix, newModifyIndex);
             } else if (LOGGER.isDebugEnabled()) {
                 code = CodeProto.Code.DataNoChange.getNumber();
                 message = "config data is no change";
@@ -255,11 +271,12 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
     public ConfigFileResponse watchConfigFiles(List<ConfigFile> configFiles) {
         try {
             while (true) {
-                RefreshEventData refreshEventData = blockingQueue.take();
+                RefreshEventData refreshEventData = blockingQueue.poll(30, TimeUnit.SECONDS);
                 Optional<ConfigFile> optional = configFiles.stream()
                         .filter(configFile -> StringUtils.equals(refreshEventData.getKeyPrefix(), ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile)))
                         .findFirst();
                 if (optional.isPresent()) {
+                    responseCache.put(refreshEventData.getKeyPrefix(), refreshEventData.getConfigFileResponse());
                     return refreshEventData.getConfigFileResponse();
                 }
             }
