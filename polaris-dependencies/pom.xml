@@ -206,6 +206,12 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>consul-configuration-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-connector-common -->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

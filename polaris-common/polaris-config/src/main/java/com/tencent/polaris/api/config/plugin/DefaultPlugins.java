@@ -65,4 +65,18 @@ public interface DefaultPlugins {
      */
     String CIRCUIT_BREAKER_COMPOSITE = "composite";
 
+    /**
+     * polaris 配置中心连接器插件名
+     */
+    String POLARIS_FILE_CONNECTOR_TYPE = "polaris";
+
+    /**
+     * 本地配置连接器插件名
+     */
+    String LOCAL_FILE_CONNECTOR_TYPE = "local";
+
+    /**
+     * consul 配置中心连接器插件名
+     */
+    String CONSUL_FILE_CONNECTOR_TYPE = "consul";
 }
