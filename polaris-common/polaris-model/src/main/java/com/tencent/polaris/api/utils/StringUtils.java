@@ -17,11 +17,7 @@
 
 package com.tencent.polaris.api.utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.*;
 
 public class StringUtils {
 
@@ -52,6 +48,10 @@ public class StringUtils {
 
     public static boolean equals(String str1, String str2) {
         return Objects.equals(str1, str2);
+    }
+
+    public static boolean equalsIgnoreCase(String str1, String str2) {
+        return equals(str1, str2) || (str1 != null && str1.equalsIgnoreCase(str2));
     }
 
     public static boolean isEmpty(String str) {
