@@ -199,10 +199,10 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                                               Long currentModifyIndex, Response<List<GetValue>> response) {
         if (response.getValue() == null) {
             if (responseCache.containsKey(keyPrefix)) {
-                // 在Consul中不存在自定义KEY时，此处的逻辑可以避免response实时返回，不断的触发retry
-                this.consulIndexes.put(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
+                Long newIndex = response.getConsulIndex();
+                this.consulIndexes.put(keyPrefix, newIndex);
                 this.consulModifyIndexes.put(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
-                configFile.setVersion(response.getConsulIndex());
+                configFile.setVersion(newIndex);
                 return new ConfigFileResponse(CodeProto.Code.ExecuteSuccess.getNumber(),
                         ConsulConfigConstants.CONFIG_FILE_DELETED_MESSAGE, configFile);
             }
@@ -272,12 +272,14 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
         try {
             while (true) {
                 RefreshEventData refreshEventData = blockingQueue.poll(30, TimeUnit.SECONDS);
-                Optional<ConfigFile> optional = configFiles.stream()
-                        .filter(configFile -> StringUtils.equals(refreshEventData.getKeyPrefix(), ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile)))
-                        .findFirst();
-                if (optional.isPresent()) {
-                    responseCache.put(refreshEventData.getKeyPrefix(), refreshEventData.getConfigFileResponse());
-                    return refreshEventData.getConfigFileResponse();
+                if (refreshEventData != null) {
+                    Optional<ConfigFile> optional = configFiles.stream()
+                            .filter(configFile -> StringUtils.equals(refreshEventData.getKeyPrefix(), ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile)))
+                            .findFirst();
+                    if (optional.isPresent()) {
+                        responseCache.put(refreshEventData.getKeyPrefix(), refreshEventData.getConfigFileResponse());
+                        return refreshEventData.getConfigFileResponse();
+                    }
                 }
             }
         } catch (InterruptedException e) {
