@@ -27,6 +27,8 @@ public interface ConsulConfigConstants {
     String WAIT_TIME_KEY = "waitTime";
 
     String DELAY_KEY = "delay";
+    
+    String CONSUL_ERROR_SLEEP_KEY = "consulErrorSleep";
 
     /**
      * 空值CONSUL Index常量，设为-1L时，Consul会立即返回

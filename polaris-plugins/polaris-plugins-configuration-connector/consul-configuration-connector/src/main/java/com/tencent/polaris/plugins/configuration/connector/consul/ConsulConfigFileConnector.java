@@ -41,6 +41,7 @@ import com.tencent.polaris.specification.api.v1.model.CodeProto;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,6 +118,16 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                         consulConfigContext.setDelay(delay);
                     } catch (Exception e) {
                         LOGGER.warn("delay string {} is not integer.", delayStr, e);
+                    }
+                }
+
+                String consulErrorSleepStr = metadata.get(ConsulConfigConstants.CONSUL_ERROR_SLEEP_KEY);
+                if (StringUtils.isNotBlank(consulErrorSleepStr)) {
+                    try {
+                        long consulErrorSleep = Long.parseLong(consulErrorSleepStr);
+                        consulConfigContext.setConsulErrorSleep(consulErrorSleep);
+                    } catch (Exception e) {
+                        LOGGER.warn("delay string {} is not integer.", consulErrorSleepStr, e);
                     }
                 }
 
@@ -238,7 +249,12 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
             }
         }
         transferFromGetValueList(configFile, response.getValue());
-        return new ConfigFileResponse(code, message, configFile);
+        ConfigFileResponse configFileResponse = new ConfigFileResponse(code, message, configFile);
+        // for first time
+        if (!responseCache.containsKey(keyPrefix)) {
+            responseCache.put(keyPrefix, configFileResponse);
+        }
+        return configFileResponse;
     }
 
     private void transferFromGetValueList(ConfigFile configFile, List<GetValue> getValueList) {
@@ -252,18 +268,29 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
         configFile.setContent(decodedValue);
         configFile.setMd5(DigestUtils.md5Hex(decodedValue));
         configFile.setVersion(firstValue.getModifyIndex());
+        configFile.setReleaseTime(new Date());
     }
 
     private void handleOperationException(String keyPrefix, Long currentIndex,
                                           Long currentModifyIndex, OperationException operationException) {
         LOGGER.error("KeyPrefix '{}' with operation exception with index {} and modify index {}.",
                 keyPrefix, currentIndex, currentModifyIndex, operationException);
+        try {
+            Thread.sleep(consulConfigContext.getConsulErrorSleep());
+        } catch (Exception e) {
+            LOGGER.error("error in sleep, msg: " + e.getMessage());
+        }
         throw ServerErrorResponseException.build(CodeProto.Code.ExecuteException.getNumber(), operationException.toString());
     }
 
     private void handleException(String keyPrefix, Long currentIndex, Long currentModifyIndex, Exception exception) {
         LOGGER.error("KeyPrefix '{}' with exception with index {} and modify index {}.",
                 keyPrefix, currentIndex, currentModifyIndex, exception);
+        try {
+            Thread.sleep(consulConfigContext.getConsulErrorSleep());
+        } catch (Exception e) {
+            LOGGER.error("error in sleep, msg: " + e.getMessage());
+        }
         throw ServerErrorResponseException.build(CodeProto.Code.ExecuteException.getNumber(), exception.toString());
     }
 

@@ -41,6 +41,8 @@ public class ConsulConfigContext {
      */
     private int delay = 1000;
 
+    private long consulErrorSleep = 60000L;
+
     private String aclToken = "";
 
     public ServerConnectorConfig getConnectorConfig() {
@@ -67,6 +69,14 @@ public class ConsulConfigContext {
         this.delay = delay;
     }
 
+    public long getConsulErrorSleep() {
+        return consulErrorSleep;
+    }
+
+    public void setConsulErrorSleep(long consulErrorSleep) {
+        this.consulErrorSleep = consulErrorSleep;
+    }
+
     public String getAclToken() {
         return aclToken;
     }
@@ -81,6 +91,7 @@ public class ConsulConfigContext {
                 "connectorConfig=" + connectorConfig +
                 ", waitTime=" + waitTime +
                 ", delay=" + delay +
+                ", consulErrorSleep=" + consulErrorSleep +
                 ", aclToken='" + aclToken + '\'' +
                 '}';
     }
