@@ -152,6 +152,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
         if (this.running.get()) {
             String keyPrefix = ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile);
             if (!watchFutures.containsKey(keyPrefix)) {
+                LOGGER.info("Start watching consul config for keyPrefix '{}'", keyPrefix);
                 this.watchFutures.put(keyPrefix, this.scheduledExecutorService.scheduleWithFixedDelay(() -> {
                     try {
                         ConfigFileResponse configFileResponse = getKVValues(configFile, keyPrefix);
@@ -185,7 +186,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
         // 使用default值逻辑处理
         Long currentIndex = this.consulIndexes.getOrDefault(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
         Long currentModifyIndex = this.consulModifyIndexes.getOrDefault(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
-        LOGGER.debug("watching consul for keyPrefix '{}' with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);
+        LOGGER.debug("Get consul config for keyPrefix '{}' with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);
 
         // use the consul ACL token if found
         String aclToken = consulConfigContext.getAclToken();
@@ -214,6 +215,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                 this.consulIndexes.put(keyPrefix, newIndex);
                 this.consulModifyIndexes.put(keyPrefix, ConsulConfigConstants.EMPTY_VALUE_CONSUL_INDEX);
                 configFile.setVersion(newIndex);
+                LOGGER.info("consul config file '{}' has been deleted.", keyPrefix);
                 return new ConfigFileResponse(CodeProto.Code.ExecuteSuccess.getNumber(),
                         ConsulConfigConstants.CONFIG_FILE_DELETED_MESSAGE, configFile);
             }
