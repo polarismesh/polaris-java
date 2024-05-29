@@ -356,9 +356,11 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         UrlParameters tokenParam = StringUtils.isNotBlank(token) ? new SingleUrlParameters("token", token) : null;
         UrlParameters tagParams = StringUtils.isNotBlank(tag) ? new SingleUrlParameters("tag", tag) : null;
         UrlParameters passingParams = onlyPassing ? new SingleUrlParameters("passing") : null;
+        UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
+
         try {
             HttpResponse rawResponse = consulRawClient.makeGetRequest("/v1/health/service/" + serviceId, tagParams,
-                    passingParams, QueryParams.DEFAULT, tokenParam);
+                    passingParams, QueryParams.DEFAULT, tokenParam, nsTypeParam);
             List<HealthService> value;
             if (rawResponse.getStatusCode() == 200) {
                 value = getGson().fromJson(rawResponse.getContent(),
