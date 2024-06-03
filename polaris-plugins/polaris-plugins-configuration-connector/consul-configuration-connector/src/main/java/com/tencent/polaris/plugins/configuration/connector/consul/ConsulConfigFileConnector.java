@@ -99,6 +99,11 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
 
             // init consul config context.
             consulConfigContext = new ConsulConfigContext();
+            // token
+            String tokenStr = connectorConfig.getToken();
+            if (StringUtils.isNotBlank(tokenStr)) {
+                consulConfigContext.setAclToken(tokenStr);
+            }
             Map<String, String> metadata = connectorConfig.getMetadata();
             if (CollectionUtils.isNotEmpty(metadata)) {
                 String waitTimeStr = metadata.get(ConsulConfigConstants.WAIT_TIME_KEY);
@@ -129,11 +134,6 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                     } catch (Exception e) {
                         LOGGER.warn("delay string {} is not integer.", consulErrorSleepStr, e);
                     }
-                }
-
-                String tokenStr = connectorConfig.getToken();
-                if (StringUtils.isNotBlank(tokenStr)) {
-                    consulConfigContext.setAclToken(tokenStr);
                 }
             }
 
