@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StringUtilsTest {
 
     @Test
-    public void testIsEmpty() {
+    public void testEqualsIgnoreCase() {
         assertThat(StringUtils.equalsIgnoreCase(null, null)).isTrue();
         assertThat(StringUtils.equalsIgnoreCase(null, "abc")).isFalse();
         assertThat(StringUtils.equalsIgnoreCase("abc", null)).isFalse();
