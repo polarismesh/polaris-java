@@ -201,6 +201,14 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                         }
                         Service.Builder newServiceBuilder = Service.newBuilder()
                                 .mergeFrom(newDiscoverResponseBuilder.getService());
+                        if (newDiscoverResponseBuilder.getService() != null) {
+                            if (StringUtils.isBlank(newDiscoverResponseBuilder.getService().getNamespace().getValue())) {
+                                newServiceBuilder.setNamespace(StringValue.of(serviceEventKey.getNamespace()));
+                            }
+                            if (StringUtils.isBlank(newDiscoverResponseBuilder.getService().getName().getValue())) {
+                                newServiceBuilder.setName(StringValue.of(serviceEventKey.getService()));
+                            }
+                        }
                         newServiceBuilder.setRevision(StringValue.of(compositeRevision.getCompositeRevisionString()));
                         newDiscoverResponseBuilder.setService(newServiceBuilder.build());
                         newDiscoverResponseBuilder.clearInstances();

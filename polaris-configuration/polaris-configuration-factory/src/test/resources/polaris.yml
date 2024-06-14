@@ -22,7 +22,7 @@ consumer:
 config:
   serverConnector:
     connectorType: polaris
-    #connectorType: localFile
+    #connectorType: local
     #persistEnable: true
     #fallbackToLocalCache: true
     #persistDir: test/custom/config

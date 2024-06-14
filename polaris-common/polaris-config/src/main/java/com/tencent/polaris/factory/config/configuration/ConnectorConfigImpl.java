@@ -10,6 +10,8 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.*;
+
 /**
  * 配置中心连接器配置
  *
@@ -17,122 +19,127 @@ import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
  */
 public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements ConnectorConfig {
 
-	@JsonProperty
-	private String connectorType;
+    @JsonProperty
+    private String connectorType;
 
-	@JsonProperty
-	private Boolean persistEnable = true;
+    @JsonProperty
+    private Boolean persistEnable = true;
 
-	@JsonProperty
-	private String persistDir;
+    @JsonProperty
+    private String persistDir;
 
-	@JsonProperty
-	private Integer persistMaxWriteRetry = 1;
+    @JsonProperty
+    private Integer persistMaxWriteRetry = 1;
 
-	@JsonProperty
-	private Integer persistMaxReadRetry = 0;
+    @JsonProperty
+    private Integer persistMaxReadRetry = 0;
 
-	@JsonProperty
-	private Boolean fallbackToLocalCache = true;
+    @JsonProperty
+    private Boolean fallbackToLocalCache = true;
 
-	@JsonProperty
-	@JsonDeserialize(using = TimeStrJsonDeserializer.class)
-	private Long persistRetryInterval = 1000L;
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long persistRetryInterval = 1000L;
 
-	@JsonProperty
-	private Integer configFileGroupThreadNum = 10;
+    @JsonProperty
+    private Integer configFileGroupThreadNum = 10;
 
-	@Override
-	public void verify() {
-		ConfigUtils.validateString(connectorType, "configConnectorType");
-		if (StringUtils.isBlank(persistDir)) {
-			persistDir = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
-		}
-		if (!DefaultValues.LOCAL_FILE_CONNECTOR_TYPE.equals(connectorType)) {
-			super.verify();
-		}
-	}
+    @Override
+    public void verify() {
+        ConfigUtils.validateString(connectorType, "configConnectorType");
+        if (StringUtils.isBlank(persistDir)) {
+            persistDir = DefaultValues.CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR;
+        }
+        if (!StringUtils.equals(connectorType, POLARIS_FILE_CONNECTOR_TYPE)
+                && !StringUtils.equals(connectorType, LOCAL_FILE_CONNECTOR_TYPE)
+                && !StringUtils.equals(connectorType, CONSUL_FILE_CONNECTOR_TYPE)) {
+            throw new IllegalArgumentException(String.format("Unsupported config data source []%s", connectorType));
+        }
+        if (!LOCAL_FILE_CONNECTOR_TYPE.equals(connectorType)) {
+            super.verify();
+        }
+    }
 
-	@Override
-	public void setDefault(Object defaultObject) {
-		if (defaultObject == null) {
-			return;
-		}
-		if (defaultObject instanceof ServerConnectorConfig) {
-			ServerConnectorConfig serverConnectorConfig = (ServerConnectorConfig) defaultObject;
-			super.setDefault(serverConnectorConfig);
-		}
-		if (defaultObject instanceof ConnectorConfig) {
-			ConnectorConfig connectorConfig = (ConnectorConfig) defaultObject;
-			if (connectorType == null) {
-				this.connectorType = connectorConfig.getConnectorType();
-			}
-		}
-	}
+    @Override
+    public void setDefault(Object defaultObject) {
+        if (defaultObject == null) {
+            return;
+        }
+        if (defaultObject instanceof ServerConnectorConfig) {
+            ServerConnectorConfig serverConnectorConfig = (ServerConnectorConfig) defaultObject;
+            super.setDefault(serverConnectorConfig);
+        }
+        if (defaultObject instanceof ConnectorConfig) {
+            ConnectorConfig connectorConfig = (ConnectorConfig) defaultObject;
+            if (connectorType == null) {
+                this.connectorType = connectorConfig.getConnectorType();
+            }
+        }
+    }
 
-	@Override
-	public String getConnectorType() {
-		return connectorType;
-	}
+    @Override
+    public String getConnectorType() {
+        return connectorType;
+    }
 
-	public void setConnectorType(String connectorType) {
-		this.connectorType = connectorType;
-	}
+    public void setConnectorType(String connectorType) {
+        this.connectorType = connectorType;
+    }
 
-	public Boolean getPersistEnable() {
-		return persistEnable;
-	}
+    public Boolean getPersistEnable() {
+        return persistEnable;
+    }
 
-	public void setPersistEnable(Boolean persistEnable) {
-		this.persistEnable = persistEnable;
-	}
+    public void setPersistEnable(Boolean persistEnable) {
+        this.persistEnable = persistEnable;
+    }
 
-	public String getPersistDir() {
-		return persistDir;
-	}
+    public String getPersistDir() {
+        return persistDir;
+    }
 
-	public void setPersistDir(String persistDir) {
-		this.persistDir = persistDir;
-	}
+    public void setPersistDir(String persistDir) {
+        this.persistDir = persistDir;
+    }
 
-	public Integer getPersistMaxWriteRetry() {
-		return persistMaxWriteRetry;
-	}
+    public Integer getPersistMaxWriteRetry() {
+        return persistMaxWriteRetry;
+    }
 
-	public void setPersistMaxWriteRetry(Integer persistMaxWriteRetry) {
-		this.persistMaxWriteRetry = persistMaxWriteRetry;
-	}
+    public void setPersistMaxWriteRetry(Integer persistMaxWriteRetry) {
+        this.persistMaxWriteRetry = persistMaxWriteRetry;
+    }
 
-	public Integer getPersistMaxReadRetry() {
-		return persistMaxReadRetry;
-	}
+    public Integer getPersistMaxReadRetry() {
+        return persistMaxReadRetry;
+    }
 
-	public void setPersistMaxReadRetry(Integer persistMaxReadRetry) {
-		this.persistMaxReadRetry = persistMaxReadRetry;
-	}
+    public void setPersistMaxReadRetry(Integer persistMaxReadRetry) {
+        this.persistMaxReadRetry = persistMaxReadRetry;
+    }
 
-	public Long getPersistRetryInterval() {
-		return persistRetryInterval;
-	}
+    public Long getPersistRetryInterval() {
+        return persistRetryInterval;
+    }
 
-	public void setPersistRetryInterval(Long persistRetryInterval) {
-		this.persistRetryInterval = persistRetryInterval;
-	}
+    public void setPersistRetryInterval(Long persistRetryInterval) {
+        this.persistRetryInterval = persistRetryInterval;
+    }
 
-	public Boolean getFallbackToLocalCache() {
-		return fallbackToLocalCache;
-	}
+    public Boolean getFallbackToLocalCache() {
+        return fallbackToLocalCache;
+    }
 
-	public void setFallbackToLocalCache(Boolean fallbackToLocalCache) {
-		this.fallbackToLocalCache = fallbackToLocalCache;
-	}
+    public void setFallbackToLocalCache(Boolean fallbackToLocalCache) {
+        this.fallbackToLocalCache = fallbackToLocalCache;
+    }
 
-	public Integer getConfigFileGroupThreadNum() {
-		return configFileGroupThreadNum;
-	}
+    public Integer getConfigFileGroupThreadNum() {
+        return configFileGroupThreadNum;
+    }
 
-	public void setConfigFileGroupThreadNum(Integer configFileGroupThreadNum) {
-		this.configFileGroupThreadNum = configFileGroupThreadNum;
-	}
+    public void setConfigFileGroupThreadNum(Integer configFileGroupThreadNum) {
+        this.configFileGroupThreadNum = configFileGroupThreadNum;
+    }
 
 }

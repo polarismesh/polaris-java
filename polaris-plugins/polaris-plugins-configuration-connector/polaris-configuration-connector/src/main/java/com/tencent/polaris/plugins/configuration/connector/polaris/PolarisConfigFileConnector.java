@@ -38,6 +38,8 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.POLARIS_FILE_CONNECTOR_TYPE;
+
 /**
  * @author lepdou 2022-03-02
  */
@@ -237,7 +239,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
 
     @Override
     public String getName() {
-        return "polaris";
+        return POLARIS_FILE_CONNECTOR_TYPE;
     }
 
     private ConfigFile transferFromDTO(ConfigFileProto.ClientConfigFileInfo configFileDTO) {

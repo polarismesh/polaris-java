@@ -31,18 +31,7 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
-import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
-import com.tencent.polaris.api.plugin.server.CommonServiceContractRequest;
-import com.tencent.polaris.api.plugin.server.InterfaceDescriptor;
-import com.tencent.polaris.api.plugin.server.ReportClientRequest;
-import com.tencent.polaris.api.plugin.server.ReportClientResponse;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
-import com.tencent.polaris.api.plugin.server.ServerConnector;
-import com.tencent.polaris.api.plugin.server.ServerEvent;
-import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
-import com.tencent.polaris.api.plugin.server.TargetServer;
+import com.tencent.polaris.api.plugin.server.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceKey;
@@ -58,36 +47,18 @@ import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskCo
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
-import com.tencent.polaris.specification.api.v1.service.manage.ClientProto;
+import com.tencent.polaris.specification.api.v1.service.manage.*;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.Client;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.StatInfo;
-import com.tencent.polaris.specification.api.v1.service.manage.PolarisGRPCGrpc;
-import com.tencent.polaris.specification.api.v1.service.manage.PolarisServiceContractGRPCGrpc;
-import com.tencent.polaris.specification.api.v1.service.manage.RequestProto;
 import com.tencent.polaris.specification.api.v1.service.manage.RequestProto.DiscoverRequest;
-import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
-import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
-import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.ExecuteSuccess;
@@ -400,6 +371,11 @@ public class GrpcConnector extends DestroyableServerConnector {
             instanceBuilder.setPriority(UInt32Value.newBuilder().setValue(req.getPriority()).build());
         }
         if (null != req.getMetadata()) {
+            for (Map.Entry<String, String> entry : req.getMetadata().entrySet()) {
+                if (StringUtils.isBlank(entry.getValue())) {
+                    entry.setValue("");
+                }
+            }
             instanceBuilder.putAllMetadata(req.getMetadata());
         }
         if (null != req.getTtl()) {
