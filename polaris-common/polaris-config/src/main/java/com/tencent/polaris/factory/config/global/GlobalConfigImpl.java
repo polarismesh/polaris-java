@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.global.LocationConfig;
+import com.tencent.polaris.api.config.global.TraceReporterConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
@@ -56,6 +57,8 @@ public class GlobalConfigImpl implements GlobalConfig {
     @JsonProperty
     private StatReporterConfigImpl statReporter;
 
+    @JsonProperty
+    private TraceReporterConfigImpl traceReporter;
 
     @JsonProperty
     private LocationConfigImpl location;
@@ -114,6 +117,11 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
+    public TraceReporterConfig getTraceReporter() {
+        return traceReporter;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(system, "system");
         ConfigUtils.validateNull(api, "api");
@@ -122,6 +130,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         validateMap.put("serverConnectors", serverConnectors);
         ConfigUtils.validateAllNull(validateMap);
         ConfigUtils.validateNull(statReporter, "statReporter");
+        ConfigUtils.validateNull(traceReporter,"traceReporter");
 
         system.verify();
         api.verify();
@@ -137,6 +146,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             serverConnectorConfigMap.put(serverConnector.getId(), serverConnector);
         }
         statReporter.verify();
+        traceReporter.verify();
     }
 
     @Override
@@ -152,6 +162,9 @@ public class GlobalConfigImpl implements GlobalConfig {
         }
         if (null == statReporter) {
             statReporter = new StatReporterConfigImpl();
+        }
+        if (null == traceReporter) {
+            traceReporter = new TraceReporterConfigImpl();
         }
         if (null == location) {
             location = new LocationConfigImpl();
@@ -175,6 +188,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 serverConnector.setDefault(globalConfig.getServerConnector());
             }
             statReporter.setDefault(globalConfig.getStatReporter());
+            traceReporter.setDefault(globalConfig.getTraceReporter());
             location.setDefault(globalConfig.getLocation());
         }
     }
@@ -188,6 +202,8 @@ public class GlobalConfigImpl implements GlobalConfig {
                 ", serverConnector=" + serverConnector +
                 ", serverConnectors=" + serverConnectors +
                 ", statReporter=" + statReporter +
+                ", traceReporter=" + traceReporter +
+                ", location=" + location +
                 '}';
     }
 }

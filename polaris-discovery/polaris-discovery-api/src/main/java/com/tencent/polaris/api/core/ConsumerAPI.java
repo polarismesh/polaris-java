@@ -77,7 +77,11 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @param req 请求
      * @return 单个服务实例
      * @throws PolarisException 错误码及错误信息
+     *
+     * @deprecated
+     *  * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#getOneInstance(com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest)} instead.
      */
+    @Deprecated
     InstancesResponse getOneInstance(GetOneInstanceRequest req) throws PolarisException;
 
     /**
@@ -86,7 +90,11 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @param req 请求
      * @return 过滤后的服务列表
      * @throws PolarisException 错误码及错误信息
+     *
+     * @deprecated
+     *  * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#getReachableInstances(com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest)} instead.
      */
+    @Deprecated
     InstancesResponse getInstances(GetInstancesRequest req) throws PolarisException;
 
     /**
@@ -121,7 +129,11 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      *
      * @param req 调用结果（包括成功失败，返回码，以及时延）
      * @throws PolarisException 错误码及错误信息
+     *
+     * @deprecated
+     *  * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#updateServiceCallResult(ServiceCallResult)} instead.
      */
+    @Deprecated
     void updateServiceCallResult(ServiceCallResult req) throws PolarisException;
 
     /**

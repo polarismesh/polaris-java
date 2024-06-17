@@ -97,6 +97,7 @@
         <assertj.version>3.16.1</assertj.version>
         <argLine>-Xmx2048m</argLine>
         <prometheus.version>0.11.0</prometheus.version>
+        <otel.version>1.38.0</otel.version>
         <maven.jar.plugin.version>3.0.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>

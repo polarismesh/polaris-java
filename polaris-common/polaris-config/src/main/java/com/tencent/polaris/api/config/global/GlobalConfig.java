@@ -43,14 +43,14 @@ public interface GlobalConfig extends Verifier {
     APIConfig getAPI();
 
     /**
-     * services.global.serverConnector前缀开头的所有配置项
+     * global.serverConnector前缀开头的所有配置项
      *
      * @return ServerConnectorConfig
      */
     ServerConnectorConfig getServerConnector();
 
     /**
-     * Configuration of prefix of "services.global.serverConnectors". This has higher priority over
+     * Configuration of prefix of "global.serverConnectors". This has higher priority over
      * ${@link GlobalConfig#getServerConnector()}.
      *
      * @return List of ServerConnectorConfig
@@ -58,11 +58,17 @@ public interface GlobalConfig extends Verifier {
     List<ServerConnectorConfigImpl> getServerConnectors();
 
     /**
-     * services.global.statReporter前缀开头的所有配置项
+     * Configuration of prefix of "global.statReporter"
      *
      * @return StatReporterConfig
      */
     StatReporterConfig getStatReporter();
+
+    /**
+     * Configuration of prefix of "global.traceReporter"
+     * @return
+     */
+    TraceReporterConfig getTraceReporter();
 
     /**
      * 获取地理位置提供者配置信息

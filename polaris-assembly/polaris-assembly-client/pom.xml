@@ -25,25 +25,5 @@
             <artifactId>polaris-discovery-client</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-circuitbreaker-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-ratelimit-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-router-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-configuration-client</artifactId>
-            <version>${project.version}</version>
-        </dependency>
     </dependencies>
 </project>

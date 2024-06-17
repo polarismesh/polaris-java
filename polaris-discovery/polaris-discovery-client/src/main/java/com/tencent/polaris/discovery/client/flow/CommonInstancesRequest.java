@@ -32,6 +32,7 @@ import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
 import com.tencent.polaris.api.rpc.GetInstancesRequest;
 import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
+import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
@@ -188,6 +189,25 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         routeInfo.setCanary(request.getCanary());
         routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
         criteria = null;
+        BaseFlow.buildFlowControlParam(request, configuration, this);
+    }
+
+    public CommonInstancesRequest(ServiceEventKey dstInstanceEventKey, ServiceEventKey dstRuleEventKey, ServiceEventKey srcRuleEventKey,
+            RouteInfo routeInfo, Criteria criteria, RequestBaseEntity request, Configuration configuration) {
+        this.srcRuleEventKey = srcRuleEventKey;
+        if (null != srcRuleEventKey) {
+            svcEventKeys.add(srcRuleEventKey);
+        }
+        this.dstInstanceEventKey = dstInstanceEventKey;
+        if (null != dstInstanceEventKey) {
+            svcEventKeys.add(dstInstanceEventKey);
+        }
+        this.dstRuleEventKey = dstRuleEventKey;
+        if (null != dstRuleEventKey) {
+            svcEventKeys.add(dstRuleEventKey);
+        }
+        this.routeInfo = routeInfo;
+        this.criteria = criteria;
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
 

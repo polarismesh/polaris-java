@@ -20,7 +20,7 @@ package com.tencent.polaris.api.plugin.stat;
 import com.tencent.polaris.api.plugin.Plugin;
 
 /**
- * 【扩展点接口】上报统计结果
+ * 【扩展点接口】上报统计监控
  *
  * @author andrewshan
  * @date 2019/8/21

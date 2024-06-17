@@ -26,18 +26,24 @@ import com.tencent.polaris.factory.ConfigAPIFactory;
 import java.util.Arrays;
 
 public class AssemblyAPIFactory {
-    
+
+    /**
+     * 创建服务集成的API对象，使用默认配置
+     *
+     * @return AssemblyAPI
+     * @throws PolarisException 内部错误
+     */
     public static AssemblyAPI createAssemblyAPI() throws PolarisException {
         Configuration configuration = ConfigAPIFactory.defaultConfig();
         return createAssemblyAPIByConfig(configuration);
     }
 
     /**
-     * 创建服务熔断的API对象
+     * 创建服务集成的API对象，根据SDK上下文
      *
      * @param sdkContext SDK上下文信息
-     * @return 熔断API
-     * @throws PolarisException 校验失败
+     * @return AssemblyAPI
+     * @throws PolarisException 校验失败或者内部错误
      */
     public static AssemblyAPI createAssemblyAPIByContext(SDKContext sdkContext) throws PolarisException {
         DefaultAssemblyAPI defaultAssemblyAPI = new DefaultAssemblyAPI(sdkContext);
@@ -45,6 +51,12 @@ public class AssemblyAPIFactory {
         return defaultAssemblyAPI;
     }
 
+    /**
+     * 根据配置对象创建服务集成的API对象
+     * @param config 配置对象
+     * @return AssemblyAPI
+     * @throws PolarisException 校验失败或者内部错误
+     */
     public static AssemblyAPI createAssemblyAPIByConfig(Configuration config) throws PolarisException {
         SDKContext context = SDKContext.initContextByConfig(config);
         return createAssemblyAPIByContext(context);

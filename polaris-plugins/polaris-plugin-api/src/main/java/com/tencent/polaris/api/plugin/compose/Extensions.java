@@ -44,6 +44,7 @@ import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
+import com.tencent.polaris.api.plugin.stat.TraceReporter;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -84,6 +85,9 @@ public class Extensions extends Destroyable {
     private CircuitBreaker resourceBreaker;
 
     private final List<StatReporter> statReporters = new ArrayList<>();
+
+	private TraceReporter traceReporter;
+
     private Supplier plugins;
 
     //系统服务的路由链
@@ -191,6 +195,9 @@ public class Extensions extends Destroyable {
         // 加载监控上报
         loadStatReporters(plugins);
 
+		// 加载调用链上报
+		loadTraceReporter(plugins);
+
         // 加载优雅上下线插件
         loadLosslessPolicies(config, plugins);
 
@@ -273,6 +280,15 @@ public class Extensions extends Destroyable {
             }
         }
     }
+
+	private void loadTraceReporter(Supplier plugins) throws PolarisException {
+		if (configuration.getGlobal().getTraceReporter().isEnable()) {
+			Collection<Plugin> reporters = plugins.getPlugins(PluginTypes.TRACE_REPORTER.getBaseType());
+			if (CollectionUtils.isNotEmpty(reporters)) {
+				traceReporter = (TraceReporter) reporters.iterator().next();
+			}
+		}
+	}
 
     private void loadLosslessPolicies(Configuration config, Supplier plugins) throws PolarisException {
         if (!config.getProvider().getLossless().isEnable()) {
@@ -545,6 +561,10 @@ public class Extensions extends Destroyable {
     public List<LosslessPolicy> getLosslessPolicies() {
         return losslessPolicies;
     }
+
+	public TraceReporter getTraceReporter() {
+		return traceReporter;
+	}
 
     @Override
     protected void doDestroy() {

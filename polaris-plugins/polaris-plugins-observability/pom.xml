@@ -18,6 +18,7 @@
     <modules>
         <module>stat-prometheus</module>
         <module>stat-common</module>
+	<module>trace-otel</module>
     </modules>
 
     <dependencies>

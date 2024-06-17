@@ -34,6 +34,7 @@ import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
+import com.tencent.polaris.api.plugin.stat.TraceReporter;
 import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
 
 /**
@@ -91,9 +92,14 @@ public enum PluginTypes {
     WEIGHT_ADJUSTER(new PluginType(WeightAdjuster.class, 2)),
 
     /**
-     * 统计上报扩展点
+     * 统计监控上报扩展点
      */
     STAT_REPORTER(new PluginType(StatReporter.class, 2)),
+
+    /**
+     * 调用链上报扩展点
+     */
+    TRACE_REPORTER(new PluginType(TraceReporter.class, 2)),
 
     /**
      * 限流器扩展点
