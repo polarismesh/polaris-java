@@ -32,6 +32,7 @@ import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.SourceService;
+import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -63,6 +64,27 @@ public class DefaultAssemblyFlow implements AssemblyFlow {
         this.sdkContext = sdkContext;
         this.extensions = sdkContext.getExtensions();
         serviceCallResultListeners = ServiceCallResultListener.getServiceCallResultListeners(sdkContext);
+    }
+
+    @Override
+    public void initService(ServiceKey serviceKey) {
+        CommonInstancesRequest commonInstancesRequest = buildCommonInstancesRequest(serviceKey, sdkContext.getConfig());
+        BaseFlow.syncGetResources(extensions, false, commonInstancesRequest, commonInstancesRequest);
+    }
+
+    private static CommonInstancesRequest buildCommonInstancesRequest(ServiceKey serviceKey, Configuration configuration) {
+        ServiceKey dstSvcKey = new ServiceKey(serviceKey.getNamespace(), serviceKey.getService());
+        ServiceEventKey dstInstanceEventKey = new ServiceEventKey(dstSvcKey, ServiceEventKey.EventType.INSTANCE);
+        ServiceEventKey dstRuleEventKey = new ServiceEventKey(dstSvcKey, ServiceEventKey.EventType.ROUTING);
+        ServiceInfo dstServiceInfo = new ServiceInfo();
+        dstServiceInfo.setNamespace(serviceKey.getNamespace());
+        dstServiceInfo.setService(serviceKey.getService());
+        RequestBaseEntity requestBaseEntity = new RequestBaseEntity();
+        requestBaseEntity.setService(serviceKey.getService());
+        requestBaseEntity.setNamespace(serviceKey.getNamespace());
+        RouteInfo routeInfo = new RouteInfo(null, dstServiceInfo, "", configuration.getProvider().getService());
+        return new CommonInstancesRequest(dstInstanceEventKey, dstRuleEventKey, null, routeInfo,
+                null, requestBaseEntity, configuration);
     }
 
     @Override
