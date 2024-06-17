@@ -73,6 +73,12 @@ global:
     serverSwitchInterval: 10m
     #描述：重连间隔时间
     reconnectInterval: 500ms
+  # 调用链上报相关的配置
+  traceReporter:
+    #描述: 是否启动调用链上报
+    enable: false
+    #描述: 调用链实现
+    reporter: otel
   #描述: 监控及日志数据上报相关配置
   statReporter:
     #描述: 是否启用上报

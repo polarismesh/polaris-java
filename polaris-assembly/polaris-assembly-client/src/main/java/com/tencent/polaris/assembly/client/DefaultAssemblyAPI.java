@@ -17,15 +17,17 @@
 
 package com.tencent.polaris.assembly.client;
 
+import java.util.List;
+
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.assembly.api.AssemblyAPI;
-import com.tencent.polaris.assembly.api.pojo.AfterRequest;
-import com.tencent.polaris.assembly.api.pojo.BeforeRequest;
-import com.tencent.polaris.assembly.api.pojo.BeforeResponse;
 import com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest;
-import com.tencent.polaris.assembly.api.pojo.ServiceCallResult;
+import com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest;
+import com.tencent.polaris.assembly.api.pojo.TraceAttributes;
+import com.tencent.polaris.assembly.api.pojo.Validator;
 import com.tencent.polaris.assembly.flow.AssemblyFlow;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
@@ -44,37 +46,32 @@ public class DefaultAssemblyAPI extends BaseEngine implements AssemblyAPI {
     }
 
     @Override
-    public BeforeResponse beforeCallService(BeforeRequest beforeRequest) {
-        return assemblyFlow.beforeCallService(beforeRequest);
-    }
-
-    @Override
-    public void afterCallService(AfterRequest afterRequest) {
-        assemblyFlow.afterCallService(afterRequest);
-    }
-
-    @Override
-    public BeforeResponse beforeProcess(BeforeRequest beforeRequest) {
-        return assemblyFlow.beforeProcess(beforeRequest);
-    }
-
-    @Override
-    public void afterProcess(AfterRequest afterRequest) {
-        assemblyFlow.afterProcess(afterRequest);
-    }
-
-    @Override
-    public void initService(ServiceKey serviceKey) {
-        assemblyFlow.initService(serviceKey);
+    public List<Instance> getReachableInstances(GetReachableInstancesRequest request) {
+        checkAvailable("AssemblyAPI");
+        Validator.validateGetReachableInstancesRequest(request);
+        return assemblyFlow.getReachableInstances(request);
     }
 
     @Override
     public Instance getOneInstance(GetOneInstanceRequest request) {
+        checkAvailable("AssemblyAPI");
+        Validator.validateGetOneInstanceRequest(request);
         return assemblyFlow.getOneInstance(request);
     }
 
     @Override
     public void updateServiceCallResult(ServiceCallResult result) {
+        checkAvailable("AssemblyAPI");
+        Validator.validateServiceCallResult(result);
         assemblyFlow.updateServiceCallResult(result);
+    }
+
+    @Override
+    public void updateTraceAttributes(TraceAttributes traceAttributes) {
+        checkAvailable("AssemblyAPI");
+        if (CollectionUtils.isEmpty(traceAttributes.getAttributes())) {
+            return;
+        }
+        assemblyFlow.updateTraceAttributes(traceAttributes);
     }
 }

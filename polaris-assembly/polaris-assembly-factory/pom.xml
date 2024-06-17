@@ -20,30 +20,70 @@
             <artifactId>polaris-assembly-client</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- getReachableInstances & getOneInstance 的基础依赖 -->
+        <!--依赖connector插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-discovery-factory</artifactId>
+            <artifactId>connector-composite</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--依赖resCache插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>registry-memory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--依赖flowCache插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>flow-cache-expired</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--依赖基础router插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>router-isolated</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-circuitbreaker-factory</artifactId>
+            <artifactId>router-healthy</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <!--依赖负载均衡插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>loadbalancer-random</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- updateServiceCallResult 的基础依赖 -->
+        <!--依赖监控上报插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>stat-prometheus</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- updateTraceAttributes 的基础依赖 -->
+        <!--依赖调用链上报插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>trace-otel</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!--测试依赖插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-ratelimit-factory</artifactId>
+            <artifactId>polaris-test-mock-discovery</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-router-factory</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-configuration-factory</artifactId>
-            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

@@ -17,43 +17,12 @@
 
 package com.tencent.polaris.assembly.flow;
 
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.assembly.api.pojo.AfterRequest;
-import com.tencent.polaris.assembly.api.pojo.BeforeRequest;
-import com.tencent.polaris.assembly.api.pojo.BeforeResponse;
-import com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest;
-import com.tencent.polaris.assembly.api.pojo.ServiceCallResult;
+import com.tencent.polaris.assembly.api.AssemblyAPI;
 import com.tencent.polaris.client.flow.AbstractFlow;
 
-public interface AssemblyFlow extends AbstractFlow {
-
-    default BeforeResponse beforeCallService(BeforeRequest beforeRequest) {
-        return null;
-    }
-
-    default void afterCallService(AfterRequest afterRequest) {
-
-    }
-
-    default BeforeResponse beforeProcess(BeforeRequest beforeRequest) {
-        return null;
-    }
-
-    default void afterProcess(AfterRequest afterRequest) {
-
-    }
-
-    default void initService(ServiceKey serviceKey) {
-
-    }
-
-    default Instance getOneInstance(GetOneInstanceRequest request) {
-        return null;
-    }
-
-    default void updateServiceCallResult(ServiceCallResult result) {
-
-    }
+/**
+ * flow extension for AssemblyAPI
+ */
+public interface AssemblyFlow extends AbstractFlow, AssemblyAPI {
 
 }

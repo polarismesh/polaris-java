@@ -17,47 +17,48 @@
 
 package com.tencent.polaris.circuitbreaker.factory.test;
 
-import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
-import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
-import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
-
-import com.google.protobuf.util.JsonFormat;
-import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.config.plugin.DefaultPlugins;
-import com.tencent.polaris.api.core.ConsumerAPI;
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.InstancesResponse;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
-import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
-import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
-import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
-import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
-import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
-import com.tencent.polaris.client.util.Utils;
-import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
-import com.tencent.polaris.factory.config.ConfigurationImpl;
-import com.tencent.polaris.logging.LoggerFactory;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
-import com.tencent.polaris.test.common.TestUtils;
-import com.tencent.polaris.test.mock.discovery.NamingServer;
-import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+
+import com.google.protobuf.util.JsonFormat;
+import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
+import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.assembly.api.AssemblyAPI;
+import com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest;
+import com.tencent.polaris.assembly.factory.AssemblyAPIFactory;
+import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
+import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
+import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
+import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
+import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
+import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.factory.config.ConfigurationImpl;
+import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
+import com.tencent.polaris.test.common.TestUtils;
+import com.tencent.polaris.test.mock.discovery.NamingServer;
+import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
+
+import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
+import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
+import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 /**
  * CircuitBreakerTest.java
@@ -120,20 +121,20 @@ public class CircuitBreakerTest {
     @Test
     public void testUpdateServiceCallResult() {
         Configuration configuration = TestUtils.configWithEnvAddress();
-        try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+        try (AssemblyAPI assemblyAPI = AssemblyAPIFactory.createAssemblyAPIByConfig(configuration)) {
             Utils.sleepUninterrupted(10000);
             int index = 1;
-            GetInstancesRequest req = new GetInstancesRequest();
+            GetReachableInstancesRequest req = new GetReachableInstancesRequest();
             req.setNamespace(NAMESPACE_TEST);
             req.setService(SERVICE_CIRCUIT_BREAKER);
-            InstancesResponse instances = consumerAPI.getInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.getInstances().length);
-            Instance instanceToLimit = instances.getInstances()[index];
+            List<Instance> instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT, instances.size());
+            Instance instanceToLimit = instances.get(index);
             ServiceCallResult result = instanceToResult(instanceToLimit);
             result.setRetCode(-1);
             result.setDelay(1000L);
             result.setRetStatus(RetStatus.RetFail);
-            consumerAPI.updateServiceCallResult(result);
+            assemblyAPI.updateServiceCallResult(result);
         }
     }
 
@@ -142,42 +143,41 @@ public class CircuitBreakerTest {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ((ConfigurationImpl) configuration).getConsumer().getCircuitBreaker().setChain(
                 Collections.singletonList(DefaultPlugins.CIRCUIT_BREAKER_ERROR_COUNT));
-        try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+        try (AssemblyAPI assemblyAPI = AssemblyAPIFactory.createAssemblyAPIByConfig(configuration)) {
             Utils.sleepUninterrupted(10000);
-            Assert.assertNotNull(consumerAPI);
-            GetInstancesRequest getInstancesRequest = new GetInstancesRequest();
-            getInstancesRequest.setNamespace(NAMESPACE_TEST);
-            getInstancesRequest.setService(SERVICE_CIRCUIT_BREAKER);
-            InstancesResponse instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT, instances.getInstances().length);
-            Instance instanceToLimit = instances.getInstances()[1];
+            Assert.assertNotNull(assemblyAPI);
+            GetReachableInstancesRequest req = new GetReachableInstancesRequest();
+            req.setNamespace(NAMESPACE_TEST);
+            req.setService(SERVICE_CIRCUIT_BREAKER);
+            List<Instance> instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT, instances.size());
+            Instance instanceToLimit = instances.get(1);
             //report 60 fail in 500ms
             for (int i = 0; i < 60; ++i) {
                 ServiceCallResult result = instanceToResult(instanceToLimit);
                 result.setRetCode(-1);
                 result.setDelay(1000L);
                 result.setRetStatus(RetStatus.RetFail);
-                consumerAPI.updateServiceCallResult(result);
+                assemblyAPI.updateServiceCallResult(result);
                 if (i % 10 == 0) {
                     Utils.sleepUninterrupted(1);
                 }
             }
             Utils.sleepUninterrupted(3000);
-            instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT - 1, instances.getInstances().length);
-            Instance[] instanceArray = instances.getInstances();
+            instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT - 1, instances.size());
             boolean exists = false;
-            for (int i = 0; i < instanceArray.length; ++i) {
-                if (instanceArray[i].getId().equals(instanceToLimit.getId())) {
+            for (Instance instance : instances) {
+                if (instance.getId().equals(instanceToLimit.getId())) {
                     exists = true;
                 }
             }
             Assert.assertFalse(exists);
             LOG.info("start to test half open by error rate");
             Utils.sleepUninterrupted(10000);
-            instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT, instances.getInstances().length);
-            for (Instance instance : instances.getInstances()) {
+            instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT, instances.size());
+            for (Instance instance : instances) {
                 CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
                 if (null != circuitBreakerStatus
                         && circuitBreakerStatus.getStatus() == CircuitBreakerStatus.Status.HALF_OPEN) {
@@ -191,14 +191,14 @@ public class CircuitBreakerTest {
                 ServiceCallResult result = instanceToResult(instanceToLimit);
                 result.setRetCode(-1);
                 result.setRetStatus(RetStatus.RetSuccess);
-                consumerAPI.updateServiceCallResult(result);
+                assemblyAPI.updateServiceCallResult(result);
                 Utils.sleepUninterrupted(200);
-                consumerAPI.updateServiceCallResult(result);
+                assemblyAPI.updateServiceCallResult(result);
             }
             LOG.info("start to test half open to close");
             Utils.sleepUninterrupted(1000);
-            instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT, instances.getInstances().length);
+            instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT, instances.size());
         }
     }
 
@@ -207,13 +207,13 @@ public class CircuitBreakerTest {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ((ConfigurationImpl) configuration).getConsumer().getCircuitBreaker().setChain(
                 Collections.singletonList(DefaultPlugins.CIRCUIT_BREAKER_ERROR_RATE));
-        try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
-            GetInstancesRequest getInstancesRequest = new GetInstancesRequest();
-            getInstancesRequest.setNamespace(NAMESPACE_TEST);
-            getInstancesRequest.setService(SERVICE_CIRCUIT_BREAKER);
-            InstancesResponse instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT, instances.getInstances().length);
-            Instance instanceToLimit = instances.getInstances()[1];
+        try (AssemblyAPI assemblyAPI = AssemblyAPIFactory.createAssemblyAPIByConfig(configuration)) {
+            GetReachableInstancesRequest req = new GetReachableInstancesRequest();
+            req.setNamespace(NAMESPACE_TEST);
+            req.setService(SERVICE_CIRCUIT_BREAKER);
+            List<Instance> instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT, instances.size());
+            Instance instanceToLimit = instances.get(1);
             //report 60 fail in 500ms
             for (int i = 0; i < 60; ++i) {
                 ServiceCallResult result = instanceToResult(instanceToLimit);
@@ -226,16 +226,15 @@ public class CircuitBreakerTest {
                     result.setRetCode(-1);
                     result.setRetStatus(RetStatus.RetFail);
                 }
-                consumerAPI.updateServiceCallResult(result);
+                assemblyAPI.updateServiceCallResult(result);
                 Utils.sleepUninterrupted(1);
             }
             Utils.sleepUninterrupted(1000);
-            instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT - 1, instances.getInstances().length);
-            Instance[] instanceArray = instances.getInstances();
+            instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT - 1, instances.size());
             boolean exists = false;
-            for (int i = 0; i < instanceArray.length; ++i) {
-                if (instanceArray[i].getId().equals(instanceToLimit.getId())) {
+            for (Instance instance : instances) {
+                if (instance.getId().equals(instanceToLimit.getId())) {
                     exists = true;
                 }
             }
@@ -248,14 +247,14 @@ public class CircuitBreakerTest {
                 ServiceCallResult result = instanceToResult(instanceToLimit);
                 result.setRetCode(-1);
                 result.setRetStatus(RetStatus.RetSuccess);
-                consumerAPI.updateServiceCallResult(result);
+                assemblyAPI.updateServiceCallResult(result);
                 Utils.sleepUninterrupted(200);
-                consumerAPI.updateServiceCallResult(result);
+                assemblyAPI.updateServiceCallResult(result);
             }
             LOG.info("start to test half open to close");
             Utils.sleepUninterrupted(1000);
-            instances = consumerAPI.getInstances(getInstancesRequest);
-            Assert.assertEquals(MAX_COUNT, instances.getInstances().length);
+            instances = assemblyAPI.getReachableInstances(req);
+            Assert.assertEquals(MAX_COUNT, instances.size());
         }
     }
 

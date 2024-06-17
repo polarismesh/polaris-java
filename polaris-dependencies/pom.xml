@@ -287,6 +287,11 @@
                 <artifactId>stat-prometheus</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>trace-otel</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- polaris-plugins-ratelimiter-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

@@ -87,10 +87,28 @@
             <artifactId>circuitbreaker-composite</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <!--依赖监控上报插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>stat-prometheus</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!--健康检查插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>healthchecker-http</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>healthchecker-tcp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>healthchecker-udp</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -109,7 +127,7 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-discovery-factory</artifactId>
+            <artifactId>polaris-assembly-factory</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

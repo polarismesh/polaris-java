@@ -24,6 +24,8 @@ import com.tencent.polaris.api.utils.StringUtils;
 
 public class CommonValidator {
 
+    public static final int MAX_PORT = 65536;
+
     /**
      * 校验命名空间和服务名
      *
