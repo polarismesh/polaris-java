@@ -168,6 +168,20 @@ public class AssemblyTest {
 		commonTestSyncGetReachableInstances(Operation.HAS_UNHEALTHY);
 	}
 
+	@Test
+	public void testInitService() {
+		ValidParam validParam = validParams.get(Operation.ALL_HEALTHY);
+		Configuration configuration = TestUtils.configWithEnvAddress();
+		try (AssemblyAPI assemblyAPI = AssemblyAPIFactory.createAssemblyAPIByConfig(configuration)) {
+			try {
+				Thread.sleep(3000);
+			} catch (InterruptedException e) {
+				LOG.error("test fail: testInitService", e);
+			}
+			assemblyAPI.initService(new ServiceKey(NAMESPACE_TEST, validParam.getServiceName()));
+		}
+	}
+
 	private void commonTestSyncGetOneInstance(Operation operation) {
 		ValidParam validParam = validParams.get(operation);
 		Configuration configuration = TestUtils.configWithEnvAddress();
