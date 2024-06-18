@@ -1,0 +1,21 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qpolaris-logback.xml\\E"
+  }, {
+    "pattern":"\\Qroute-rules/isolated-rule.json\\E"
+  }, {
+    "pattern":"\\Qroute-rules/match-function-in-rule.json\\E"
+  }, {
+    "pattern":"\\Qroute-rules/match-function-not_equals-rule.json\\E"
+  }, {
+    "pattern":"\\Qroute-rules/match-function-not_in-rule.json\\E"
+  }, {
+    "pattern":"\\Qroute-rules/match-function-regx-rule.json\\E"
+  }, {
+    "pattern":"\\Qroute-rules/multi-labels-rule.json\\E"
+  }]},
+  "bundles":[]
+}
