@@ -24,6 +24,9 @@ import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.server.TargetServer;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.List;
 
 /**
@@ -33,6 +36,8 @@ import java.util.List;
  * @date 2019/8/21
  */
 public abstract class BaseEngine extends Destroyable {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(BaseEngine.class);
 
     private static final String CTX_KEY_ENGINE = "key_engine";
 
@@ -61,10 +66,20 @@ public abstract class BaseEngine extends Destroyable {
     protected abstract void subInit() throws PolarisException;
 
     protected void checkAvailable(String apiName) throws PolarisException {
+        checkAvailable(apiName, true);
+    }
+
+    protected boolean checkAvailable(String apiName, boolean withException) {
         if (isDestroyed()) {
-            throw new PolarisException(ErrorCode.INVALID_STATE,
-                    String.format("%s: api instance has been destroyed", apiName));
+            String errMsg = String.format("%s: api instance has been destroyed", apiName);
+            if (withException) {
+                throw new PolarisException(ErrorCode.INVALID_STATE, errMsg);
+            } else {
+                LOGGER.error(errMsg);
+                return false;
+            }
         }
+        return true;
     }
 
     /**

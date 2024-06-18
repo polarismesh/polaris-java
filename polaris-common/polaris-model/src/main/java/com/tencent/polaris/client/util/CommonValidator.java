@@ -34,12 +34,25 @@ public class CommonValidator {
      * @throws PolarisException 异常
      */
     public static void validateNamespaceService(String namespace, String service) throws PolarisException {
+        validateNamespaceService(namespace, service, true);
+    }
+
+    public static String validateNamespaceService(String namespace, String service, boolean withException) throws PolarisException {
         if (StringUtils.isBlank(namespace)) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "namespace can not be blank");
+            if (withException) {
+                throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "namespace can not be blank");
+            } else {
+                return "namespace can not be blank";
+            }
         }
         if (StringUtils.isBlank(service)) {
-            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service can not be blank");
+            if (withException) {
+                throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "service can not be blank");
+            } else {
+                return "service can not be blank";
+            }
         }
+        return null;
     }
 
     public static void validateService(ServiceKey service) {

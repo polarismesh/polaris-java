@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.assembly.api.pojo;
+package com.tencent.polaris.assembly.client;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -23,6 +23,8 @@ import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest;
+import com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest;
 import com.tencent.polaris.client.util.CommonValidator;
 
 public class Validator {
@@ -63,17 +65,21 @@ public class Validator {
 	 * @param serviceCallResult 调用结果
 	 * @throws PolarisException 校验失败会抛出异常
 	 */
-	public static void validateServiceCallResult(ServiceCallResult serviceCallResult) throws PolarisException {
-		CommonValidator.validateNamespaceService(serviceCallResult.getNamespace(), serviceCallResult.getService());
+	public static String validateServiceCallResult(ServiceCallResult serviceCallResult) {
+		String errMsg = CommonValidator.validateNamespaceService(serviceCallResult.getNamespace(), serviceCallResult.getService(), false);
+		if (null != errMsg) {
+			return errMsg;
+		}
 		if (null == serviceCallResult.getRetStatus()) {
-			throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "retStatus can not be blank");
+			return "retStatus can not be blank";
 		}
 		if (null != serviceCallResult.getDelay() && serviceCallResult.getDelay() < 0) {
-			throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "delay can not be less than 0");
+			return "delay can not be less than 0";
 		}
 		if (!RetStatus.RetReject.equals(serviceCallResult.getRetStatus())) {
-			validateHostPort(serviceCallResult.getHost(), serviceCallResult.getPort());
+			return validateHostPort(serviceCallResult.getHost(), serviceCallResult.getPort());
 		}
+		return null;
 	}
 
 	/**
@@ -82,17 +88,17 @@ public class Validator {
 	 * @param port 端口类型
 	 * @throws PolarisException 校验失败异常
 	 */
-	private static void validateHostPort(String host, Integer port) throws PolarisException {
+	private static String validateHostPort(String host, Integer port) throws PolarisException {
 		if (StringUtils.isBlank(host)) {
-			throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "host can not be blank");
+			return "host can not be blank";
 		}
 		if (port == null) {
-			throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "port can not be null");
+			return "port can not be null";
 		}
 		if (port <= 0 || port >= CommonValidator.MAX_PORT) {
-			throw new PolarisException(
-					ErrorCode.API_INVALID_ARGUMENT, "port value should be in range (0, 65536).");
+			return "port value should be in range (0, 65536).";
 		}
+		return null;
 	}
 
 
