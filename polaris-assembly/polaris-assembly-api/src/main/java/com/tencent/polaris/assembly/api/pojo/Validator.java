@@ -20,6 +20,7 @@ package com.tencent.polaris.assembly.api.pojo;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.CommonValidator;
@@ -34,6 +35,16 @@ public class Validator {
 	 */
 	public static void validateGetOneInstanceRequest(GetOneInstanceRequest request) throws PolarisException {
 		CommonValidator.validateNamespaceService(request.getNamespace(), request.getService());
+	}
+
+	/**
+	 * 校验服务名和命名空间
+	 *
+	 * @param serviceKey 请求对象
+	 * @throws PolarisException 校验失败会抛出异常
+	 */
+	public static void validateServiceKey(ServiceKey serviceKey) throws PolarisException {
+		CommonValidator.validateNamespaceService(serviceKey.getNamespace(), serviceKey.getService());
 	}
 
 	/**

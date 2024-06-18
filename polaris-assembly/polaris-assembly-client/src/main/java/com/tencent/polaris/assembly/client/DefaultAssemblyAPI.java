@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.assembly.api.AssemblyAPI;
@@ -43,6 +44,13 @@ public class DefaultAssemblyAPI extends BaseEngine implements AssemblyAPI {
     @Override
     protected void subInit() throws PolarisException {
         assemblyFlow = sdkContext.getOrInitFlow(AssemblyFlow.class);
+    }
+
+    @Override
+    public void initService(ServiceKey serviceKey) {
+        checkAvailable("AssemblyAPI");
+        Validator.validateServiceKey(serviceKey);
+        assemblyFlow.initService(serviceKey);
     }
 
     @Override

@@ -21,12 +21,19 @@ import java.io.Closeable;
 import java.util.List;
 
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest;
 import com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest;
 import com.tencent.polaris.assembly.api.pojo.TraceAttributes;
 
 public interface AssemblyAPI extends AutoCloseable, Closeable {
+
+    /**
+     * 初始化服务实例列表，避免在服务调用的时候进行拉取，可有效减少调用时延。
+     * @param serviceKey 服务名和命名空间
+     */
+    void initService(ServiceKey serviceKey);
 
     /**
      * 获取路由后的服务实例列表，贯穿服务发现、服务路由的逻辑

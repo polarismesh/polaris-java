@@ -117,7 +117,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
-    public TraceReporterConfig getTraceReporter() {
+    public TraceReporterConfigImpl getTraceReporter() {
         return traceReporter;
     }
 
