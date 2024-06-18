@@ -73,31 +73,31 @@
     </appender>
 
     <logger name="com.tencent.polaris" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_LOG_FILE"/>
     </logger>
     <logger name="polaris-update-event" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.update.event.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
     </logger>
     <logger name="polaris-update-event-async" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.update.event.async.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"/>
     </logger>
     <logger name="polaris-circuitbreaker-event" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.circuitbreaker.event.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
     </logger>
     <logger name="polaris-healthcheck-event" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.healthcheck.event.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"/>
     </logger>
     <logger name="polaris-lossless-event" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.lossless.event.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_LOSSLESS_EVENT_LOG_FILE"/>
     </logger>
     <logger name="polaris-instance-heartbeat" additivity="false">
-        <level value="INFO"/>
+        <level value="${polaris.instance.heartbeat.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"/>
     </logger>
 </log4j:configuration>
