@@ -26,11 +26,16 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
+import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.logging.PolarisLogging;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageBuilder;
 import io.opentelemetry.api.trace.Span;
+import org.slf4j.Logger;
 
 public class OtelTraceReporter implements TraceReporter {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PolarisLogging.class);
 
 	@Override
 	public String getName() {
@@ -59,12 +64,14 @@ public class OtelTraceReporter implements TraceReporter {
 
 	@Override
 	public void setSpanAttributes(Map<String, String> attributes) {
+		LOGGER.debug("OtelTraceReporter: setSpanAttributes: {}", attributes);
 		Span span = Span.current();
 		attributes.forEach(span::setAttribute);
 	}
 
 	@Override
 	public void setBaggageAttributes(Map<String, String> attributes) {
+		LOGGER.debug("OtelTraceReporter: setBaggageAttributes: {}", attributes);
 		BaggageBuilder builder = Baggage.current().toBuilder();
 		attributes.forEach(builder::put);
 		builder.build().makeCurrent();
