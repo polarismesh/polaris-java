@@ -43,11 +43,11 @@ public class TraceReporterConfigImpl implements TraceReporterConfig {
 		return reporter;
 	}
 
-	void setEnable(Boolean enable) {
+	public void setEnable(Boolean enable) {
 		this.enable = enable;
 	}
 
-	void setReporter(String reporter) {
+	public void setReporter(String reporter) {
 		this.reporter = reporter;
 	}
 
