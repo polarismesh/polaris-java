@@ -96,7 +96,7 @@ public class Validator {
 			return "port can not be null";
 		}
 		if (port <= 0 || port >= CommonValidator.MAX_PORT) {
-			return "port value should be in range (0, 65536).";
+			return "port value " + port + " should be in range (0, 65536).";
 		}
 		return null;
 	}
