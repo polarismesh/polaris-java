@@ -28,12 +28,15 @@ import com.tencent.polaris.assembly.api.AssemblyAPI;
 import com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest;
 import com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest;
 import com.tencent.polaris.assembly.api.pojo.TraceAttributes;
-import com.tencent.polaris.assembly.api.pojo.Validator;
 import com.tencent.polaris.assembly.flow.AssemblyFlow;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 public class DefaultAssemblyAPI extends BaseEngine implements AssemblyAPI {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAssemblyAPI.class);
 
     private AssemblyFlow assemblyFlow;
 
@@ -69,14 +72,22 @@ public class DefaultAssemblyAPI extends BaseEngine implements AssemblyAPI {
 
     @Override
     public void updateServiceCallResult(ServiceCallResult result) {
-        checkAvailable("AssemblyAPI");
-        Validator.validateServiceCallResult(result);
+        if (!checkAvailable("AssemblyAPI", false)) {
+            return;
+        }
+        String errMsg = Validator.validateServiceCallResult(result);
+        if (null != errMsg) {
+            LOGGER.error("fail to validate updateServiceCallResult: " + errMsg);
+            return;
+        }
         assemblyFlow.updateServiceCallResult(result);
     }
 
     @Override
     public void updateTraceAttributes(TraceAttributes traceAttributes) {
-        checkAvailable("AssemblyAPI");
+        if (!checkAvailable("AssemblyAPI", false)) {
+            return;
+        }
         if (CollectionUtils.isEmpty(traceAttributes.getAttributes())) {
             return;
         }
