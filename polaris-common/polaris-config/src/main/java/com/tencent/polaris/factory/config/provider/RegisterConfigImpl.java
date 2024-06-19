@@ -113,4 +113,15 @@ public class RegisterConfigImpl implements RegisterConfig {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "RegisterConfigImpl{" +
+                "namespace='" + namespace + '\'' +
+                ", service='" + service + '\'' +
+                ", serverConnectorId='" + serverConnectorId + '\'' +
+                ", enable=" + enable +
+                ", reportServiceContractEnable=" + reportServiceContractEnable +
+                '}';
+    }
 }

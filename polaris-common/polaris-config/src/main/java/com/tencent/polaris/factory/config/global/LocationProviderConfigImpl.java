@@ -66,4 +66,12 @@ public class LocationProviderConfigImpl implements LocationProviderConfig {
 	public void setDefault(Object defaultObject) {
 
 	}
+
+	@Override
+	public String toString() {
+		return "LocationProviderConfigImpl{" +
+				"type='" + type + '\'' +
+				", options=" + options +
+				'}';
+	}
 }

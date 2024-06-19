@@ -35,4 +35,11 @@ public class RuleBasedRouterConfig implements Verifier {
     public void setFailoverType(RuleBasedRouterFailoverType failoverType) {
         this.failoverType = failoverType;
     }
+
+    @Override
+    public String toString() {
+        return "RuleBasedRouterConfig{" +
+                "failoverType=" + failoverType +
+                '}';
+    }
 }

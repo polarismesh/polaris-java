@@ -164,4 +164,17 @@ public class ProviderConfigImpl implements ProviderConfig {
     public void setService(ServiceConfigImpl service) {
         this.service = service;
     }
+
+    @Override
+    public String toString() {
+        return "ProviderConfigImpl{" +
+                "rateLimit=" + rateLimit +
+                ", registers=" + registers +
+                ", service=" + service +
+                ", registerConfigMap=" + registerConfigMap +
+                ", minRegisterInterval=" + minRegisterInterval +
+                ", heartbeatWorkerSize=" + heartbeatWorkerSize +
+                ", lossless=" + lossless +
+                '}';
+    }
 }

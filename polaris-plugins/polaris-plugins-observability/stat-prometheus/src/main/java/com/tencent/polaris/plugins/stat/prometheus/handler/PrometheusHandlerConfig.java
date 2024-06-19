@@ -165,4 +165,17 @@ public class PrometheusHandlerConfig implements Verifier {
     public void setOpenGzip(Boolean openGzip) {
         this.openGzip = openGzip;
     }
+
+    @Override
+    public String toString() {
+        return "PrometheusHandlerConfig{" +
+                "host='" + host + '\'' +
+                ", port=" + port +
+                ", path='" + path + '\'' +
+                ", type='" + type + '\'' +
+                ", address='" + address + '\'' +
+                ", pushInterval=" + pushInterval +
+                ", openGzip=" + openGzip +
+                '}';
+    }
 }

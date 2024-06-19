@@ -66,4 +66,11 @@ public class LocationConfigImpl implements LocationConfig {
 			}
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "LocationConfigImpl{" +
+				"providers=" + providers +
+				'}';
+	}
 }
