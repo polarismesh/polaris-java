@@ -60,4 +60,12 @@ public class ServiceConfigImpl implements ServiceConfig {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "ServiceConfigImpl{" +
+                "namespace='" + namespace + '\'' +
+                ", name='" + name + '\'' +
+                '}';
+    }
 }

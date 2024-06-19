@@ -185,4 +185,19 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
 			setDefaultPluginConfig(rateLimitConfig);
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "RateLimitConfigImpl{" +
+				"enable=" + enable +
+				", limiterService='" + limiterService + '\'' +
+				", limiterNamespace='" + limiterNamespace + '\'' +
+				", limiterAddresses=" + limiterAddresses +
+				", maxWindowCount=" + maxWindowCount +
+				", fallbackOnExceedWindowCount=" + fallbackOnExceedWindowCount +
+				", remoteSyncTimeoutMilli=" + remoteSyncTimeoutMilli +
+				", maxQueuingTime=" + maxQueuingTime +
+				", reportMetrics=" + reportMetrics +
+				'}';
+	}
 }

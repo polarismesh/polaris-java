@@ -129,7 +129,7 @@ public class PluginConfigImpl implements PluginConfig {
     public Map<String, Verifier> getPluginConfigs() throws PolarisException {
         synchronized (lock) {
             Map<String, Verifier> values = new HashMap<>();
-            if (plugin.size() == 0) {
+            if (plugin.isEmpty()) {
                 return values;
             }
             if (CollectionUtils.isNotEmpty(pluginConfigs)) {
@@ -143,8 +143,6 @@ public class PluginConfigImpl implements PluginConfig {
                 String pluginName = entry.getKey();
                 Class<? extends Verifier> clazz = PluginConfigImpl.pluginConfigClazz.get(pluginName);
                 if (null == clazz) {
-//                    throw new PolarisException(ErrorCode.INVALID_CONFIG,
-//                            String.format("unknown plugin config type for plugin %s", pluginName));
                     continue;
                 }
                 try {
@@ -197,10 +195,6 @@ public class PluginConfigImpl implements PluginConfig {
      * @return 配置对象
      */
     private static Verifier getConfigByName(Class<? extends Verifier> pluginConfigClazz) {
-//        Class<? extends Verifier> pluginConfigClazz = PluginConfigImpl.pluginConfigClazz.get(pluginName);
-//        if (null == pluginConfigClazz) {
-//            return null;
-//        }
         try {
             return pluginConfigClazz.newInstance();
         } catch (Exception e) {
@@ -208,25 +202,11 @@ public class PluginConfigImpl implements PluginConfig {
         }
     }
 
-//    protected void setDefault(String routeName) {
-//        Verifier defaultConfig = getConfigByName(routeName);
-//        if (null != defaultConfig) {
-//            overwriteDefaultConfigWithUserConfig(routeName, defaultConfig);
-//        }
-//    }
-//
-//    private <T> void overwriteDefaultConfigWithUserConfig(String routerName,
-//            T defaultRouterConfig) {
-//        synchronized (lock) {
-//            Map<String, Object> userConfig = plugin.get(routerName);
-//            if (userConfig == null) {
-//                userConfig = new HashMap<>();
-//            }
-//            //使用默认的转成map是为了方便和用户配置的merge
-//            Map<String, Object> defaultConfigMap = mapper.convertValue(defaultRouterConfig, Map.class);
-//            //使用用户的配置覆盖默认
-//            defaultConfigMap.putAll(userConfig);
-//            plugin.put(routerName, defaultConfigMap);
-//        }
-//    }
+    @Override
+    public String toString() {
+        return "PluginConfigImpl{" +
+                "plugin=" + plugin +
+                ", pluginConfigs=" + pluginConfigs +
+                '}';
+    }
 }

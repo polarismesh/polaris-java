@@ -56,4 +56,11 @@ public class SubscribeConfigImpl  extends PluginConfigImpl implements SubscribeC
     public int getCallbackConcurrency() {
         return callbackConcurrency;
     }
+
+    @Override
+    public String toString() {
+        return "SubscribeConfigImpl{" +
+                "callbackConcurrency=" + callbackConcurrency +
+                '}';
+    }
 }

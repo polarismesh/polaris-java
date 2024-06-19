@@ -40,4 +40,11 @@ public class MetadataRouterConfig implements Verifier {
     public void setMetadataFailOverType(FailOverType metadataFailoverType) {
         this.metadataFailOverType = metadataFailoverType;
     }
+
+    @Override
+    public String toString() {
+        return "MetadataRouterConfig{" +
+                "metadataFailOverType=" + metadataFailOverType +
+                '}';
+    }
 }

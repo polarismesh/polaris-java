@@ -74,4 +74,12 @@ public class StatReporterConfigImpl extends PluginConfigImpl implements StatRepo
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "StatReporterConfigImpl{" +
+                "enable=" + enable +
+                ", chain=" + chain +
+                '}';
+    }
 }

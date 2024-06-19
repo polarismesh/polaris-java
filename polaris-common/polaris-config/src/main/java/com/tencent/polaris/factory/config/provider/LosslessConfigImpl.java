@@ -120,4 +120,15 @@ public class LosslessConfigImpl implements LosslessConfig {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "LosslessConfigImpl{" +
+                "enable=" + enable +
+                ", host='" + host + '\'' +
+                ", port=" + port +
+                ", delayRegisterInterval=" + delayRegisterInterval +
+                ", healthCheckInterval=" + healthCheckInterval +
+                '}';
+    }
 }
