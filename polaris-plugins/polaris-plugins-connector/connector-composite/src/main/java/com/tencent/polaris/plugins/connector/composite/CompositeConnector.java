@@ -25,15 +25,7 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
-import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
-import com.tencent.polaris.api.plugin.server.CommonServiceContractRequest;
-import com.tencent.polaris.api.plugin.server.ReportClientRequest;
-import com.tencent.polaris.api.plugin.server.ReportClientResponse;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
-import com.tencent.polaris.api.plugin.server.ServerConnector;
-import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
+import com.tencent.polaris.api.plugin.server.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
@@ -42,6 +34,7 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
 import com.tencent.polaris.plugins.connector.composite.zero.TestConnectivityTask;
 import com.tencent.polaris.plugins.connector.composite.zero.TestConnectivityTaskManager;
@@ -269,14 +262,16 @@ public class CompositeConnector extends DestroyableServerConnector {
 
     @Override
     protected void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
-        LOG.debug("[ServerConnector]task for service {} has been scheduled discover", updateTask);
-        sendDiscoverExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
+        LOG.debug("[CompositeServerConnector]task for service {} has been scheduled discover", updateTask);
+        if (updateTask.setStatus(ServiceUpdateTaskConstant.Status.READY, ServiceUpdateTaskConstant.Status.RUNNING)) {
+            sendDiscoverExecutor.schedule(updateTask, delayMs, TimeUnit.MILLISECONDS);
+        }
     }
 
     protected boolean submitTestConnectivityTask(ServiceUpdateTask updateTask,
                                                  ResponseProto.DiscoverResponse discoverResponse) {
         if (updateTask instanceof CompositeServiceUpdateTask && isZeroProtectionEnabled() && isNeedTestConnectivity()) {
-            LOG.debug("[ServerConnector]task for service {} has been scheduled test connectivity.",
+            LOG.debug("[CompositeServerConnector]task for service {} has been scheduled test connectivity.",
                     updateTask.getServiceEventKey());
             return testConnectivityTaskManager.submitTask(new TestConnectivityTask((CompositeServiceUpdateTask) updateTask,
                     discoverResponse, zeroProtectionConfig));

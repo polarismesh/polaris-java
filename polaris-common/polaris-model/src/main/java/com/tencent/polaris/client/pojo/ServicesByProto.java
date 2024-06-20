@@ -25,6 +25,7 @@ import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,6 +37,8 @@ public class ServicesByProto implements Services, RegistryCacheValue {
 
     private final List<ServiceInfo> services;
 
+    private final List<ServiceProto.Service> originServicesList;
+
     private final boolean initialized;
 
     private final boolean loadedFromFile;
@@ -45,14 +48,12 @@ public class ServicesByProto implements Services, RegistryCacheValue {
     private ServiceKey svcKey;
 
     public ServicesByProto() {
-        this.services = Collections.emptyList();
-        this.initialized = false;
-        this.loadedFromFile = false;
-        this.hashCode = 0;
+        this(Collections.emptyList());
     }
 
     public ServicesByProto(List<ServiceInfo> services) {
         this.services = services;
+        this.originServicesList = Collections.emptyList();
         this.initialized = true;
         this.loadedFromFile = false;
         this.hashCode = 0;
@@ -62,6 +63,7 @@ public class ServicesByProto implements Services, RegistryCacheValue {
         List<ServiceProto.Service> tmpServices = response.getServicesList();
 
         this.services = new ArrayList<>();
+        this.originServicesList = new ArrayList<>();
         this.svcKey = new ServiceKey("", "");
 
         if (CollectionUtils.isNotEmpty(tmpServices)) {
@@ -74,6 +76,7 @@ public class ServicesByProto implements Services, RegistryCacheValue {
                         .metadata(service.getMetadataMap())
                         .revision(service.getRevision().getValue())
                         .build());
+                originServicesList.add(service);
             });
         }
 
@@ -115,6 +118,10 @@ public class ServicesByProto implements Services, RegistryCacheValue {
         return services;
     }
 
+    public List<ServiceProto.Service> getOriginServicesList() {
+        return originServicesList;
+    }
+
     public int getHashCode() {
         return hashCode;
     }
@@ -122,11 +129,12 @@ public class ServicesByProto implements Services, RegistryCacheValue {
     @Override
     public String toString() {
         return "ServicesByProto{" +
-                "svcKey=" + svcKey +
-                ", services=" + services +
+                "services=" + services +
+                ", originServicesList=" + originServicesList +
                 ", initialized=" + initialized +
                 ", loadedFromFile=" + loadedFromFile +
                 ", hashCode=" + hashCode +
+                ", svcKey=" + svcKey +
                 '}';
     }
 }

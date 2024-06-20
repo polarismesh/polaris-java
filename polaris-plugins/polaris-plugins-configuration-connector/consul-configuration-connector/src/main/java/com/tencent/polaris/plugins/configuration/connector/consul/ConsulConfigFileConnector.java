@@ -235,7 +235,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                 if (!newModifyIndex.equals(currentModifyIndex)) {
                     LOGGER.info("KeyPrefix '{}' has new index {} and new modify index {} with old index {} and old modify index {}",
                             keyPrefix, newIndex, newModifyIndex, currentIndex, currentModifyIndex);
-                } else if (LOGGER.isDebugEnabled()) {
+                } else {
                     code = CodeProto.Code.DataNoChange.getNumber();
                     message = "config data is no change";
                     LOGGER.debug("KeyPrefix '{}' not modified with new index {}, index {} and modify index {}",
@@ -244,7 +244,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                 // 在Consul中不存在自定义KEY时，此处的逻辑可以避免response实时返回，不断的触发retry
                 this.consulIndexes.put(keyPrefix, newIndex);
                 this.consulModifyIndexes.put(keyPrefix, newModifyIndex);
-            } else if (LOGGER.isDebugEnabled()) {
+            } else {
                 code = CodeProto.Code.DataNoChange.getNumber();
                 message = "config data is no change";
                 LOGGER.debug("KeyPrefix '{}' unchanged with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);

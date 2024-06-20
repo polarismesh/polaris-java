@@ -27,9 +27,10 @@ import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
+import org.slf4j.Logger;
+
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
 
 public class GrpcServiceUpdateTask extends ServiceUpdateTask {
 
@@ -51,6 +52,7 @@ public class GrpcServiceUpdateTask extends ServiceUpdateTask {
         execute(this);
     }
 
+    @Override
     public void execute(ServiceUpdateTask serviceUpdateTask) {
         try {
             if (serviceUpdateTask.getTaskType() == Type.FIRST) {

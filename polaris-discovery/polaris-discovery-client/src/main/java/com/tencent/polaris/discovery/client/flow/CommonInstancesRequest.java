@@ -20,22 +20,13 @@ package com.tencent.polaris.discovery.client.flow;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.SourceService;
-import com.tencent.polaris.api.rpc.Criteria;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
-import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -67,7 +58,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     /**
      * 构造函数
      *
-     * @param request 请求
+     * @param request       请求
      * @param configuration 配置
      */
     public CommonInstancesRequest(GetAllInstancesRequest request, Configuration configuration) {
@@ -84,7 +75,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     /**
      * 构造函数，获取健康的全部实例。只保留：isolatedRouter，recoverRouter
      *
-     * @param request 请求
+     * @param request       请求
      * @param configuration 配置
      */
     public CommonInstancesRequest(GetHealthyInstancesRequest request, Configuration configuration) {
@@ -92,9 +83,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         dstInstanceEventKey = new ServiceEventKey(dstSvcKey, EventType.INSTANCE);
         svcEventKeys.add(dstInstanceEventKey);
 
-        dstRuleEventKey = new ServiceEventKey(dstSvcKey, EventType.ROUTING);
-        svcEventKeys.add(dstRuleEventKey);
-
+        dstRuleEventKey = null;
         srcRuleEventKey = null;
 
         ServiceInfo dstServiceInfo = new ServiceInfo();
@@ -127,7 +116,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     /**
      * 构造函数
      *
-     * @param request 请求
+     * @param request       请求
      * @param configuration 配置
      */
     public CommonInstancesRequest(GetOneInstanceRequest request, Configuration configuration) {
@@ -160,7 +149,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     /**
      * 构造函数
      *
-     * @param request 请求
+     * @param request       请求
      * @param configuration 配置
      */
     public CommonInstancesRequest(GetInstancesRequest request, Configuration configuration) {
@@ -193,7 +182,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     }
 
     public CommonInstancesRequest(ServiceEventKey dstInstanceEventKey, ServiceEventKey dstRuleEventKey, ServiceEventKey srcRuleEventKey,
-            RouteInfo routeInfo, Criteria criteria, RequestBaseEntity request, Configuration configuration) {
+                                  RouteInfo routeInfo, Criteria criteria, RequestBaseEntity request, Configuration configuration) {
         this.srcRuleEventKey = srcRuleEventKey;
         if (null != srcRuleEventKey) {
             svcEventKeys.add(srcRuleEventKey);

@@ -29,6 +29,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.SERVER_CONNECTOR_TYPE;
+
 /**
  * Copy from spring-cloud-consul-discovery.
  * {@link org.springframework.cloud.consul.discovery.ConsulServerUtils}
@@ -76,6 +79,7 @@ public class ConsulServerUtils {
                 metadata.put(entry.getKey(), entry.getValue());
             }
         }
+        metadata.put(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_CONSUL);
         return metadata;
     }
 
