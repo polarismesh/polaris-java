@@ -48,12 +48,16 @@ public class ServicesByProto implements Services, RegistryCacheValue {
     private ServiceKey svcKey;
 
     public ServicesByProto() {
-        this(Collections.emptyList());
+        this.services = Collections.emptyList();
+        this.originServicesList = Collections.emptyList();
+        this.initialized = false;
+        this.loadedFromFile = false;
+        this.hashCode = 0;
     }
 
     public ServicesByProto(List<ServiceInfo> services) {
         this.services = services;
-        this.originServicesList = Collections.emptyList();
+        this.originServicesList = new ArrayList<>();
         this.initialized = true;
         this.loadedFromFile = false;
         this.hashCode = 0;
@@ -80,7 +84,7 @@ public class ServicesByProto implements Services, RegistryCacheValue {
             });
         }
 
-        this.hashCode = Objects.hash(response.getServicesList());
+        this.hashCode = Objects.hash(tmpServices);
         this.initialized = true;
         this.loadedFromFile = loadFromFile;
     }

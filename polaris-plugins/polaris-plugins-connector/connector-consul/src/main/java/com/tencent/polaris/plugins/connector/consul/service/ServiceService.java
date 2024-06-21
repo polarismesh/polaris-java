@@ -30,9 +30,7 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
-import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.ConsulContext;
@@ -64,7 +62,6 @@ public class ServiceService extends ConsulService {
 
     @Override
     public void sendRequest(ServiceUpdateTask serviceUpdateTask) {
-        Services services = new ServicesByProto(new ArrayList<>());
         try {
             Long index = catalogConsulIndex.get();
             QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), index);
