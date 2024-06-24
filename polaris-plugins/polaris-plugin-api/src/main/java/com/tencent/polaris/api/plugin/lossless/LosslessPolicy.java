@@ -36,7 +36,11 @@ public interface LosslessPolicy extends Plugin, SortableAware {
 
     String OFFLINE_PATH = "/offline";
 
+    String REPS_TEXT_ONLY_LOCALHOST = "only localhost can call this path";
+
     String REPS_TEXT_NO_ACTION = "no action";
+
+    String REPS_TEXT_NO_POLICY = "no policy";
 
     String REPS_TEXT_OK = "ok";
 
@@ -44,19 +48,22 @@ public interface LosslessPolicy extends Plugin, SortableAware {
 
     /**
      * build or modify the instance properties
+     *
      * @param instanceProperties properties, for the callback register to set into instance
      */
     void buildInstanceProperties(InstanceProperties instanceProperties);
 
     /**
      * do lossless register
-     * @param instance instance to lossless register
+     *
+     * @param instance           instance to lossless register
      * @param instanceProperties properties, for the callback register to set into instance
      */
     void losslessRegister(BaseInstance instance, InstanceProperties instanceProperties);
 
     /**
      * do lossless deregister
+     *
      * @param instance instance to lossless deregister
      */
     void losslessDeregister(BaseInstance instance);
