@@ -41,10 +41,7 @@ import com.tencent.polaris.specification.api.v1.model.CodeProto;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -87,6 +84,9 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
+        if (!Objects.equals(ctx.getConfig().getConfigFile().getServerConnector().getConnectorType(), CONSUL_FILE_CONNECTOR_TYPE)) {
+            return;
+        }
         if (!initialized) {
             // init consul client
             ConnectorConfigImpl connectorConfig = ctx.getConfig().getConfigFile().getServerConnector();
