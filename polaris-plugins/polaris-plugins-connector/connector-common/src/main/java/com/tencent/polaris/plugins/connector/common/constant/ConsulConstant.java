@@ -33,7 +33,7 @@ public interface ConsulConstant {
         String IP_ADDRESS_KEY = "IP_ADDRESS_KEY";
 
         String PREFER_IP_ADDRESS_KEY = "PREFER_IP_ADDRESS_KEY";
-        
+
         String TAGS_KEY = "TAGS_KEY";
 
         String CHECK_KEY = "CHECK_KEY";
@@ -41,6 +41,10 @@ public interface ConsulConstant {
         String QUERY_TAG_KEY = "QUERY_TAG_KEY";
 
         String QUERY_PASSING_KEY = "QUERY_PASSING_KEY";
+
+        String WAIT_TIME_KEY = "waitTime";
+
+        String CONSUL_ERROR_SLEEP_KEY = "consulErrorSleep";
     }
 
 }

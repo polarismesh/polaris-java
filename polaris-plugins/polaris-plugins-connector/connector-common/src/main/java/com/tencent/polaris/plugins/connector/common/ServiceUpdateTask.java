@@ -25,10 +25,11 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Type;
+import org.slf4j.Logger;
+
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
 
 /**
  * Abstract service update task class.
@@ -86,6 +87,10 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
         return taskStatus.compareAndSet(last, current);
     }
 
+    public void setLastUpdateTime(long currentTime) {
+        lastUpdateTime.set(currentTime);
+    }
+
     public Type getTaskType() {
         return taskType.get();
     }
@@ -105,10 +110,17 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
 
     /**
      * Business to be executed.
-     *
-     * @throws Throwable
      */
-    protected abstract void execute() throws Throwable;
+    public void execute() {
+
+    }
+
+    /**
+     * Business with serviceUpdateTask to be executed.
+     */
+    public void execute(ServiceUpdateTask serviceUpdateTask) {
+
+    }
 
     /**
      * Throwable to be handled.
@@ -149,13 +161,18 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "ServiceUpdateTask{" +
-                "taskType=" + taskType.get() +
+                "serviceEventHandler=" + serviceEventHandler +
+                ", serverConnector=" + serverConnector +
+                ", targetClusterType=" + targetClusterType.get() +
+                ", taskType=" + taskType.get() +
                 ", taskStatus=" + taskStatus.get() +
                 ", serviceEventKey=" + serviceEventKey +
-                ", targetClusterType=" + targetClusterType.get() +
+                ", lastUpdateTime=" + lastUpdateTime +
+                ", successUpdates=" + successUpdates +
+                ", refreshIntervalMs=" + refreshIntervalMs +
+                ", eventHandler=" + eventHandler +
                 '}';
     }
 

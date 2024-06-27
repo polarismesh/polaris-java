@@ -23,6 +23,8 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 
 import java.util.Optional;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
+
 /**
  * 服务变更事件
  *
@@ -44,16 +46,23 @@ public class ServerEvent {
     private Object value;
     /**
      * Polaris的版本号
-     *
+     * <p>
      * 如果修改了value中的版本号，那么将原来Polaris的版本号保存在这里,
      * 主要用于 CompositeServiceUpdateTask。
      */
     private Optional<String> polarisRevision = Optional.empty();
 
+    private String connectorType;
+
     public ServerEvent(ServiceEventKey serviceEventKey, Object value, PolarisException error) {
+        this(serviceEventKey, value, error, SERVER_CONNECTOR_GRPC);
+    }
+
+    public ServerEvent(ServiceEventKey serviceEventKey, Object value, PolarisException error, String connectorType) {
         this.serviceEventKey = serviceEventKey;
         this.value = value;
         this.error = error;
+        this.connectorType = connectorType;
     }
 
     public ServiceEventKey getServiceEventKey() {
@@ -82,5 +91,13 @@ public class ServerEvent {
 
     public void setError(PolarisException error) {
         this.error = error;
+    }
+
+    public String getConnectorType() {
+        return connectorType;
+    }
+
+    public void setConnectorType(String connectorType) {
+        this.connectorType = connectorType;
     }
 }

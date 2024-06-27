@@ -52,6 +52,16 @@ public class ConsulContext {
 
     private Boolean queryPassing;
 
+    private long consulErrorSleep;
+
+    /**
+     * The number of seconds to wait (or block) for watch query, defaults to 55.
+     * Needs to be less than default ConsulClient (defaults to 60). To increase
+     * ConsulClient timeout create a ConsulClient bean with a custom ConsulRawClient
+     * with a custom HttpClient.
+     */
+    private int waitTime;
+
     public ConsulContext() {
         serviceName = "";
         instanceId = "";
@@ -63,6 +73,8 @@ public class ConsulContext {
         checkId = "";
         queryTag = "";
         queryPassing = true;
+        consulErrorSleep = 60000L;
+        waitTime = 55;
     }
 
     public ServerConnectorConfig getConnectorConfig() {
@@ -151,5 +163,21 @@ public class ConsulContext {
 
     public void setQueryPassing(Boolean queryPassing) {
         this.queryPassing = queryPassing;
+    }
+
+    public long getConsulErrorSleep() {
+        return consulErrorSleep;
+    }
+
+    public void setConsulErrorSleep(long consulErrorSleep) {
+        this.consulErrorSleep = consulErrorSleep;
+    }
+
+    public int getWaitTime() {
+        return waitTime;
+    }
+
+    public void setWaitTime(int waitTime) {
+        this.waitTime = waitTime;
     }
 }
