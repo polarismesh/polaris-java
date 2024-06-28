@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.consul.service;
 
-import com.ecwid.consul.ConsulException;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.ConsulRawClient;
 import com.ecwid.consul.v1.QueryParams;
@@ -110,17 +109,18 @@ public class ServiceService extends ConsulService {
             if (!svcDeleted) {
                 serviceUpdateTask.addUpdateTaskSet();
             }
-        } catch (ConsulException e) {
-            LOG.error("Get services sync failed. Will sleep for {} ms.", consulContext.getConsulErrorSleep(), e);
+        } catch (Throwable throwable) {
+            LOG.error("Get services sync failed. Will sleep for {} ms.", consulContext.getConsulErrorSleep(), throwable);
             try {
                 Thread.sleep(consulContext.getConsulErrorSleep());
             } catch (Exception e1) {
-                LOG.error("error in sleep, msg: " + e.getMessage());
+                LOG.error("error in sleep, msg: {}", e1.getMessage());
             }
             PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
                     "Get services sync failed.");
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error, SERVER_CONNECTOR_CONSUL);
             serviceUpdateTask.notifyServerEvent(serverEvent);
+            serviceUpdateTask.retry();
         }
     }
 }
