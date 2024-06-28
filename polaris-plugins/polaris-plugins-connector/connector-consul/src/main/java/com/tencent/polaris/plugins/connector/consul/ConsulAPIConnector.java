@@ -399,11 +399,6 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public void retryServiceUpdateTask(ServiceUpdateTask updateTask) {
-        // do nothing
-    }
-
-    @Override
     protected void submitServiceHandler(ServiceUpdateTask updateTask, long delayMs) {
         // do nothing
     }
