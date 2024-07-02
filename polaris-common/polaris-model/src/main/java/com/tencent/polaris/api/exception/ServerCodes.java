@@ -36,6 +36,11 @@ public interface ServerCodes {
     int DATA_NO_CHANGE = 200001;
 
     /**
+     * 代表数据不需要变更
+     */
+    int NO_NEED_UPDATE = 200002;
+
+    /**
      * 资源已经存在，无需重复注册
      */
     int EXISTED_RESOURCE = 400201;
