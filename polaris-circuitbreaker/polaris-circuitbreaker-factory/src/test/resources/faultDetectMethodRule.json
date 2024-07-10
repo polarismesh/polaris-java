@@ -1,0 +1,31 @@
+{
+  "id": "fd2",
+  "name": "testfd1",
+  "description": "ffff2",
+  "targetService": {
+    "namespace": "Test",
+    "service": "SvcCbMethodDetect",
+    "method": {
+      "type": "REGEX",
+      "value": "/test1/path/.*"
+    }
+  },
+  "interval": 30,
+  "timeout": 60,
+  "port": 0,
+  "protocol": "HTTP",
+  "httpConfig": {
+    "method": "GET",
+    "url": "/health",
+    "headers": []
+  },
+  "tcpConfig": {
+    "send": "",
+    "receive": []
+  },
+  "udpConfig": {
+    "send": "",
+    "receive": []
+  },
+  "revision": "10b120c08706429f8fdc3fb44a53125c"
+}

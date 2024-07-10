@@ -20,63 +20,61 @@ package com.tencent.polaris.plugins.circuitbraker.composite.trigger;
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.plugins.circuitbreaker.composite.HealthCheckInstanceProvider;
+import com.tencent.polaris.plugins.circuitbreaker.composite.PolarisCircuitBreaker;
 import com.tencent.polaris.plugins.circuitbreaker.composite.ResourceHealthChecker;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.DestinationService;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.regex.Pattern;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class ResourceHealthCheckerTest {
 
-    @Test
-    public void testSelectFdRule() {
-        FaultDetector.Builder cbBuilder = FaultDetector.newBuilder();
-        // match one service rules
-        FaultDetectRule.Builder builder = FaultDetectRule.newBuilder();
-        builder.setName("test_cb_default_svc1");
-        builder.setTargetService(
-                FaultDetectRule.DestinationService.newBuilder().setNamespace("default").setService("svc1").build());
-        builder.setProtocol(Protocol.HTTP);
-        cbBuilder.addRules(builder.build());
+	@Test
+	public void testSelectFdRule() {
+		// match one service rules
+		FaultDetectRule.Builder builderDefaultSvc1 = FaultDetectRule.newBuilder();
+		builderDefaultSvc1.setId("test_cb_default_svc1");
+		builderDefaultSvc1.setName("test_cb_default_svc1");
+		builderDefaultSvc1.setTargetService(
+				FaultDetectRule.DestinationService.newBuilder().setNamespace("default").setService("svc1").build());
+		builderDefaultSvc1.setProtocol(Protocol.HTTP);
 
-        builder = FaultDetectRule.newBuilder();
-        builder.setName("test_cb_default_svc_foo1");
-        builder.setTargetService(
-                DestinationService.newBuilder().setNamespace("default").setService("svc1").setMethod(
-                        MatchString.newBuilder().setValue(StringValue.newBuilder().setValue("foo1").build()).build())
-                        .build());
-        builder.setProtocol(Protocol.TCP);
-        cbBuilder.addRules(builder.build());
+		FaultDetectRule.Builder builderDefaultSvcFoo1 = FaultDetectRule.newBuilder();
+		builderDefaultSvcFoo1.setId("test_cb_default_svc_foo1");
+		builderDefaultSvcFoo1.setName("test_cb_default_svc_foo1");
+		builderDefaultSvcFoo1.setTargetService(
+				DestinationService.newBuilder().setNamespace("default").setService("svc1").setMethod(
+								MatchString.newBuilder().setValue(StringValue.newBuilder().setValue("foo1").build()).build())
+						.build());
+		builderDefaultSvcFoo1.setProtocol(Protocol.TCP);
 
-        builder = FaultDetectRule.newBuilder();
-        builder.setName("test_cb_all_ns_all_svc");
-        builder.setTargetService(
-                FaultDetectRule.DestinationService.newBuilder().setNamespace("*").setService("*").build());
-        builder.setProtocol(Protocol.HTTP);
-        cbBuilder.addRules(builder.build());
+		FaultDetectRule.Builder builderAllNsAllSvc = FaultDetectRule.newBuilder();
+		builderAllNsAllSvc.setName("test_cb_all_ns_all_svc");
+		builderAllNsAllSvc.setTargetService(
+				FaultDetectRule.DestinationService.newBuilder().setNamespace("*").setService("*").build());
+		builderAllNsAllSvc.setProtocol(Protocol.HTTP);
 
-        cbBuilder.setRevision("xxxxxyyyyyy");
+		HealthCheckInstanceProvider healthCheckInstanceProvider = () -> null;
 
-        FaultDetector allRules = cbBuilder.build();
+		ResourceHealthChecker resourceHealthCheckerDefaultSvc1 = new ResourceHealthChecker(builderDefaultSvc1.build(),
+				healthCheckInstanceProvider, new PolarisCircuitBreaker());
+		ResourceHealthChecker resourceHealthCheckerDefaultSvcFoo1 = new ResourceHealthChecker(builderDefaultSvcFoo1.build(),
+				healthCheckInstanceProvider, new PolarisCircuitBreaker());
+		ResourceHealthChecker resourceHealthCheckerAllNsAllSvc = new ResourceHealthChecker(builderAllNsAllSvc.build(),
+				healthCheckInstanceProvider, new PolarisCircuitBreaker());
 
-        ServiceResource svcResource = new ServiceResource(new ServiceKey("default", "svc1"));
-        Function<String, Pattern> regexToPattern = new Function<String, Pattern>() {
-            @Override
-            public Pattern apply(String s) {
-                return Pattern.compile(s);
-            }
-        };
-        Map<String, FaultDetectRule> protocolFaultDetectRuleMap = ResourceHealthChecker
-                .selectFaultDetectRules(svcResource, allRules, regexToPattern);
-        Assert.assertEquals(1, protocolFaultDetectRuleMap.size());
-        FaultDetectRule faultDetectRule = protocolFaultDetectRuleMap.get(Protocol.HTTP.name());
-        Assert.assertEquals("test_cb_default_svc1", faultDetectRule.getName());
+		ServiceResource svcResource = new ServiceResource(new ServiceKey("default", "svc1"));
+		resourceHealthCheckerDefaultSvc1.addResource(svcResource);
+		Assert.assertTrue(resourceHealthCheckerDefaultSvc1.getResources().contains(svcResource));
 
-    }
+		resourceHealthCheckerDefaultSvcFoo1.addResource(svcResource);
+		Assert.assertFalse(resourceHealthCheckerDefaultSvcFoo1.getResources().contains(svcResource));
+
+		resourceHealthCheckerAllNsAllSvc.addResource(svcResource);
+		Assert.assertTrue(resourceHealthCheckerAllNsAllSvc.getResources().contains(svcResource));
+	}
+
 }

@@ -17,12 +17,15 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class CounterOptions {
+
+    private CircuitBreakerConfig circuitBreakerConfig;
 
     private Resource resource;
 
@@ -64,5 +67,13 @@ public class CounterOptions {
     public void setStatusChangeHandler(
             StatusChangeHandler statusChangeHandler) {
         this.statusChangeHandler = statusChangeHandler;
+    }
+
+    public CircuitBreakerConfig getCircuitBreakerConfig() {
+        return circuitBreakerConfig;
+    }
+
+    public void setCircuitBreakerConfig(CircuitBreakerConfig circuitBreakerConfig) {
+        this.circuitBreakerConfig = circuitBreakerConfig;
     }
 }

@@ -4,7 +4,7 @@
   "name": "test",
   "namespace": "TestCircuitBreakerRule",
   "enable": true,
-  "revision": "10b120c08706429f8fdc3fb44a53224b",
+  "revision": "10b120c08706429f8fdd3fb44a53224b",
   "ctime": "1754-08-31 06:49:24",
   "mtime": "2023-02-21 17:35:31",
   "etime": "",
@@ -16,8 +16,8 @@
       "namespace": "*"
     },
     "destination": {
-      "service": "SvcCbMethodDetect",
-      "namespace": "Test",
+      "service": "*",
+      "namespace": "*",
       "method": null
     }
   },
@@ -34,10 +34,7 @@
   "triggerCondition": [
     {
       "triggerType": "CONSECUTIVE_ERROR",
-      "errorCount": 1,
-      "errorPercent": 1,
-      "interval": 5,
-      "minimumRequest": 5
+      "errorCount": 500
     }
   ],
   "maxEjectionPercent": 0,
@@ -46,7 +43,7 @@
     "consecutiveSuccess": 3
   },
   "faultDetectConfig": {
-    "enable": true
+    "enable": false
   },
   "fallbackConfig": {
     "enable": false,

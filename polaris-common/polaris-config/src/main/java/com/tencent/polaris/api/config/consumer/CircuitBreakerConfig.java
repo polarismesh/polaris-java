@@ -71,6 +71,11 @@ public interface CircuitBreakerConfig extends PluginConfig, Verifier {
      */
     int getSuccessCountAfterHalfOpen();
 
+    /**
+     * 错误率熔断统计时长
+     * @return 统计时长，单位毫秒
+     */
+    long getErrorRateInterval();
 
     /**
      * 熔断规则远程拉取开关
@@ -78,4 +83,12 @@ public interface CircuitBreakerConfig extends PluginConfig, Verifier {
      * @return true if 启用远程拉取
      */
     boolean isEnableRemotePull();
+
+    /**
+     * 熔断计数器淘汰时长
+     * @return 0 if 用不淘汰
+     */
+    long getCountersExpireInterval();
+
+
 }

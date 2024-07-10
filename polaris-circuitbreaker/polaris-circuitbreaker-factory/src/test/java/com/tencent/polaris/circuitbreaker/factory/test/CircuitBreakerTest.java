@@ -261,28 +261,31 @@ public class CircuitBreakerTest {
     @Test
     public void testFunctionalDecorator() {
         Configuration configuration = TestUtils.configWithEnvAddress();
-        CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configuration);
-        FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "'");
-        FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
-        Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
-            if (num % 2 == 0) {
-                throw new IllegalArgumentException("invoke failed");
-            } else {
-                System.out.println("invoke success");
+        try (CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configuration)) {
+            FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
+                    new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "'");
+            FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
+            Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
+                if (num % 2 == 0) {
+                    throw new IllegalArgumentException("invoke failed");
+                }
+                else {
+                    System.out.println("invoke success");
+                }
+            });
+            try {
+                integerConsumer.accept(1);
+                Utils.sleepUninterrupted(1000);
+                integerConsumer.accept(2);
+                Utils.sleepUninterrupted(1000);
             }
-        });
-        try {
-            integerConsumer.accept(1);
-            Utils.sleepUninterrupted(1000);
-            integerConsumer.accept(2);
-            Utils.sleepUninterrupted(1000);
-        } catch (Exception e) {
-            if (!(e instanceof IllegalArgumentException)) {
-                throw e;
+            catch (Exception e) {
+                if (!(e instanceof IllegalArgumentException)) {
+                    throw e;
+                }
             }
+            Assert.assertThrows(CallAbortedException.class, () -> integerConsumer.accept(3));
         }
-        Assert.assertThrows(CallAbortedException.class, () -> integerConsumer.accept(3));
     }
 
 }

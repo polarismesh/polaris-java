@@ -1,0 +1,27 @@
+{
+  "id": "fd1",
+  "name": "testfd",
+  "description": "ffff1",
+  "targetService": {
+    "namespace": "Test",
+    "service": "SvcCbMethodDetect"
+  },
+  "interval": 30,
+  "timeout": 60,
+  "port": 0,
+  "protocol": "HTTP",
+  "httpConfig": {
+    "method": "GET",
+    "url": "/health",
+    "headers": []
+  },
+  "tcpConfig": {
+    "send": "",
+    "receive": []
+  },
+  "udpConfig": {
+    "send": "",
+    "receive": []
+  },
+  "revision": "10b120c08706429f8fdc3fb44a53225c"
+}

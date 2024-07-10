@@ -17,12 +17,15 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.SliceWindow;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.TimeRange;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
 import org.slf4j.Logger;
 
 public class ErrRateCounter extends TriggerCounter {
@@ -41,9 +44,12 @@ public class ErrRateCounter extends TriggerCounter {
 
     private int errorPercent;
 
+    private CircuitBreakerConfig circuitBreakerConfig;
+
     public ErrRateCounter(String ruleName, CounterOptions counterOptions) {
         super(ruleName, counterOptions);
         executorService = counterOptions.getExecutorService();
+        circuitBreakerConfig = counterOptions.getCircuitBreakerConfig();
     }
 
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
@@ -51,7 +57,7 @@ public class ErrRateCounter extends TriggerCounter {
     @Override
     protected void init() {
         LOG.info("[CircuitBreaker][Counter] errRateCounter {} initialized, resource {}", ruleName, resource);
-        int interval = triggerCondition.getInterval();
+        long interval = CircuitBreakerUtils.getErrorRateIntervalSec(triggerCondition, circuitBreakerConfig);
         metricWindowMs = interval * 1000L;
         errorPercent = triggerCondition.getErrorPercent();
         minimumRequest = triggerCondition.getMinimumRequest();
@@ -79,7 +85,7 @@ public class ErrRateCounter extends TriggerCounter {
         }
     }
 
-    private static long getBucketIntervalMs(int interval) {
+    private static long getBucketIntervalMs(long interval) {
         long metricWindowMs = interval * 1000L;
         double bucketIntervalMs = (double) metricWindowMs / (double) BUCKET_COUNT;
         return (long) Math.ceil(bucketIntervalMs);
