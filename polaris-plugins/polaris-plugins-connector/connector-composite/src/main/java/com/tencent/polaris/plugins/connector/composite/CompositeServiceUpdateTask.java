@@ -32,12 +32,15 @@ import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
+import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceInstancesResponse;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
 import com.tencent.polaris.plugins.connector.composite.zero.InstanceListMeta;
+import com.tencent.polaris.plugins.connector.consul.ConsulServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.grpc.GrpcServiceUpdateTask;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
@@ -45,10 +48,13 @@ import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Inst
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
+import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.ORDER_LIST;
+import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.SERVER_CONNECTOR_TYPE;
 
 /**
  * Scheduled task for updating service information.
@@ -62,19 +68,48 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
 
     private final InstanceListMeta instanceListMeta = new InstanceListMeta();
 
+    private boolean isAsync = false;
+
+    private String mainConnectorType = SERVER_CONNECTOR_GRPC;
+
+    private boolean ifMainConnectorTypeSet = false;
+
+    private final Map<String, ServiceUpdateTask> subServiceUpdateTaskMap = new ConcurrentHashMap<>();
+
     public CompositeServiceUpdateTask(ServiceEventHandler handler, DestroyableServerConnector connector) {
         super(handler, connector);
+        CompositeConnector compositeConnector = (CompositeConnector) connector;
+        for (DestroyableServerConnector sc : compositeConnector.getServerConnectors()) {
+            if (SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+                subServiceUpdateTaskMap.put(SERVER_CONNECTOR_GRPC, new GrpcServiceUpdateTask(serviceEventHandler, sc));
+                isAsync = true;
+                mainConnectorType = SERVER_CONNECTOR_GRPC;
+                ifMainConnectorTypeSet = true;
+            }
+            if (SERVER_CONNECTOR_CONSUL.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+                subServiceUpdateTaskMap.put(SERVER_CONNECTOR_CONSUL, new ConsulServiceUpdateTask(serviceEventHandler, sc));
+                isAsync = true;
+                if (!ifMainConnectorTypeSet) {
+                    mainConnectorType = sc.getName();
+                    ifMainConnectorTypeSet = true;
+                }
+            }
+        }
     }
 
     @Override
-    protected void execute() {
-        CompositeConnector connector = (CompositeConnector) serverConnector;
-        for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-            if (SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
-                GrpcServiceUpdateTask grpcServiceUpdateTask = new GrpcServiceUpdateTask(serviceEventHandler, sc);
-                grpcServiceUpdateTask.execute(this);
-                return;
+    public void execute() {
+        for (ServiceUpdateTask serviceUpdateTask : subServiceUpdateTaskMap.values()) {
+            if ((serviceUpdateTask.getTaskType() == ServiceUpdateTaskConstant.Type.FIRST && serviceUpdateTask.getTaskStatus() == Status.READY)
+                    || serviceUpdateTask.needUpdate()) {
+                serviceUpdateTask.setStatus(ServiceUpdateTaskConstant.Status.READY, ServiceUpdateTaskConstant.Status.RUNNING);
+                serviceUpdateTask.execute(this);
             }
+        }
+        if (isAsync && ifMainConnectorTypeSet
+                && (StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_GRPC)
+                || (serviceEventKey.getEventType().equals(EventType.INSTANCE) || serviceEventKey.getEventType().equals(EventType.SERVICE)))) {
+            return;
         }
         boolean svcDeleted = this.notifyServerEvent(
                 new ServerEvent(serviceEventKey, DiscoverResponse.newBuilder().build(), null));
@@ -91,113 +126,138 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     @Override
     public boolean notifyServerEvent(ServerEvent serverEvent) {
         taskStatus.compareAndSet(Status.RUNNING, Status.READY);
-        lastUpdateTime.set(System.currentTimeMillis());
+        long currentTimeStamp = System.currentTimeMillis();
+        lastUpdateTime.set(currentTimeStamp);
+        LOG.debug("[CompositeServerConnector]task for service {} has been notified", this);
+        String serverEventConnectorType = serverEvent.getConnectorType();
+        ServiceUpdateTask subTask = subServiceUpdateTaskMap.get(serverEventConnectorType);
+        if (subTask != null) {
+            subTask.setStatus(Status.RUNNING, Status.READY);
+            subTask.setLastUpdateTime(currentTimeStamp);
+            LOG.debug("[CompositeServerConnector]subtask {} for service {} has been notified", serverEventConnectorType, this);
+        }
         boolean shouldTest = false;
-        try {
-            if (serverEvent.getValue() instanceof DiscoverResponse) {
-                DiscoverResponse discoverResponse = (DiscoverResponse) serverEvent.getValue();
-                DiscoverResponse.Builder newDiscoverResponseBuilder = DiscoverResponse.newBuilder()
-                        .mergeFrom(discoverResponse);
-                CompositeConnector connector = (CompositeConnector) serverConnector;
+        if (null == serverEvent.getError()) {
+            try {
+                if (serverEvent.getValue() instanceof DiscoverResponse) {
+                    DiscoverResponse discoverResponse = (DiscoverResponse) serverEvent.getValue();
+                    DiscoverResponse.Builder newDiscoverResponseBuilder = DiscoverResponse.newBuilder()
+                            .mergeFrom(discoverResponse);
+                    CompositeConnector connector = (CompositeConnector) serverConnector;
 
-                if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
-                    // Get instance information list except polaris.
-                    List<DefaultInstance> extendInstanceList = new ArrayList<>();
-                    CompositeRevision compositeRevision = new CompositeRevision();
-                    compositeRevision.setRevision(SERVER_CONNECTOR_GRPC,
-                            discoverResponse.getService().getRevision().getValue());
-                    for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                        if (!SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
-                            ServiceInstancesResponse serviceInstancesResponse = sc.syncGetServiceInstances(this);
-                            if (serviceInstancesResponse != null) {
-                                compositeRevision.setRevision(sc.getName(), serviceInstancesResponse.getRevision());
-                                extendInstanceList.addAll(serviceInstancesResponse.getServiceInstanceList());
+                    if (EventType.INSTANCE.equals(serviceEventKey.getEventType())) {
+                        // load current instance map split by connector type.
+                        CompositeRevision compositeRevision = new CompositeRevision();
+                        Object value = getEventHandler().getValue();
+                        Map<String, List<Instance>> instancesMap = new HashMap<>();
+                        if (taskType.get() == ServiceUpdateTaskConstant.Type.LONG_RUNNING && value instanceof ServiceInstancesByProto) {
+                            ServiceInstancesByProto cacheValue = (ServiceInstancesByProto) value;
+                            compositeRevision = CompositeRevision.of(cacheValue.getRevision());
+                            List<Instance> oldInstancesList = cacheValue.getOriginInstancesList();
+                            for (Instance oldInstance : oldInstancesList) {
+                                String serverConnectorType = oldInstance.getMetadataOrDefault(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_GRPC);
+                                if (!instancesMap.containsKey(serverConnectorType)) {
+                                    instancesMap.put(serverConnectorType, new ArrayList<>());
+                                }
+                                instancesMap.get(serverConnectorType).add(oldInstance);
                             }
                         }
-                    }
 
-                    // Merge instance information list if needed.
-                    if (CollectionUtils.isNotEmpty(extendInstanceList)) {
+                        // 按照事件来源更新对应的revision
+                        compositeRevision.setRevision(serverEventConnectorType, discoverResponse.getService().getRevision().getValue());
+                        // 按照事件来源更新对应的列表
+                        List<Instance> serverEventInstancesList = instancesMap.computeIfAbsent(serverEventConnectorType, key -> new ArrayList<>());
+                        serverEventInstancesList.clear();
+                        serverEventInstancesList.addAll(discoverResponse.getInstancesList());
                         // 由于合并多个发现结果会修改版本号，所以将 polaris 的版本号保存一份
-                        serverEvent.setPolarisRevision(discoverResponse.getService().getRevision().getValue());
-                        if (discoverResponse.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
-                            // 将 NO_CHANGE 响应转为 SUCCESS 响应，用于多个发现结果的合并
-                            newDiscoverResponseBuilder
-                                    .setCode(UInt32Value.newBuilder().setValue(ServerCodes.EXECUTE_SUCCESS).build());
-                            Object value = getEventHandler().getValue();
-                            if (value instanceof ServiceInstancesByProto) {
-                                // Add local cache when DATA_NO_CHANGE
-                                ServiceInstancesByProto cacheValue = (ServiceInstancesByProto) value;
-                                newDiscoverResponseBuilder.clearInstances();
-                                newDiscoverResponseBuilder.addAllInstances(cacheValue.getOriginInstancesList());
+                        if (StringUtils.equals(serverEvent.getConnectorType(), SERVER_CONNECTOR_GRPC)) {
+                            serverEvent.setPolarisRevision(discoverResponse.getService().getRevision().getValue());
+                        }
+
+                        // Get instance information list except polaris.
+                        for (DestroyableServerConnector sc : connector.getServerConnectors()) {
+                            if (!SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+                                ServiceInstancesResponse serviceInstancesResponse = sc.syncGetServiceInstances(this);
+                                if (serviceInstancesResponse != null) {
+                                    compositeRevision.setRevision(sc.getName(), serviceInstancesResponse.getRevision());
+                                    List<DefaultInstance> tempServiceInstanceList = serviceInstancesResponse.getServiceInstanceList();
+                                    if (CollectionUtils.isNotEmpty(tempServiceInstanceList)) {
+                                        // 将 NO_CHANGE 响应转为 SUCCESS 响应，用于多个发现结果的合并
+                                        newDiscoverResponseBuilder
+                                                .setCode(UInt32Value.newBuilder().setValue(ServerCodes.EXECUTE_SUCCESS).build());
+                                    }
+                                    List<Instance> tempServerEventInstancesList = instancesMap.computeIfAbsent(sc.getName(), key -> new ArrayList<>());
+                                    tempServerEventInstancesList.clear();
+                                    for (DefaultInstance e : tempServiceInstanceList) {
+                                        Instance.Builder instanceBuilder = Instance.newBuilder()
+                                                .setNamespace(StringValue.of(serviceEventKey.getNamespace()))
+                                                .setService(StringValue.of(e.getService()))
+                                                .setHost(StringValue.of(e.getHost()))
+                                                .setPort(UInt32Value.of(e.getPort()))
+                                                .setHealthy(BoolValue.of(e.isHealthy()))
+                                                .setIsolate(BoolValue.of(e.isIsolated()));
+                                        // set Id
+                                        if (StringUtils.isNotBlank(e.getId())) {
+                                            instanceBuilder.setId(StringValue.of(e.getId()));
+                                        } else {
+                                            String id =
+                                                    e.getService() + "-" + e.getHost().replace(".", "-") + "-" + e.getPort();
+                                            instanceBuilder.setId(StringValue.of(id));
+                                            LOG.info("Instance with name {} host {} port {} doesn't have id.", e.getService()
+                                                    , e.getHost(), e.getPort());
+                                        }
+                                        // set location
+                                        ModelProto.Location.Builder locationBuilder = ModelProto.Location.newBuilder();
+                                        if (StringUtils.isNotBlank(e.getRegion())) {
+                                            locationBuilder.setRegion(StringValue.of(e.getRegion()));
+                                        }
+                                        if (StringUtils.isNotBlank(e.getZone())) {
+                                            locationBuilder.setZone(StringValue.of(e.getZone()));
+                                        }
+                                        if (StringUtils.isNotBlank(e.getCampus())) {
+                                            locationBuilder.setCampus(StringValue.of(e.getCampus()));
+                                        }
+                                        instanceBuilder.setLocation(locationBuilder.build());
+                                        // set metadata
+                                        if (CollectionUtils.isNotEmpty(e.getMetadata())) {
+                                            instanceBuilder.putAllMetadata(e.getMetadata());
+                                        }
+                                        // set Protocol
+                                        if (StringUtils.isNotBlank(e.getProtocol())) {
+                                            instanceBuilder.setProtocol(StringValue.of(e.getProtocol()));
+                                        }
+                                        // set Version
+                                        if (StringUtils.isNotBlank(e.getVersion())) {
+                                            instanceBuilder.setVersion(StringValue.of(e.getVersion()));
+                                        }
+                                        tempServerEventInstancesList.add(instanceBuilder.build());
+                                    }
+                                }
                             }
                         }
-                        List<Instance> polarisInstanceList = newDiscoverResponseBuilder.getInstancesList();
-                        List<Instance.Builder> finalInstanceBuilderList = new ArrayList<>();
-                        for (Instance i : polarisInstanceList) {
-                            finalInstanceBuilderList.add(Instance.newBuilder().mergeFrom(i));
-                        }
-                        for (DefaultInstance e : extendInstanceList) {
-                            boolean needAdd = true;
-                            // 看看北极星的实例列表是否存在
-                            for (Instance.Builder f : finalInstanceBuilderList) {
-                                if (StringUtils.equals(e.getHost(), f.getHost().getValue()) && e.getPort() == f.getPort()
-                                        .getValue()) {
-                                    // 北极星服务实例状态和拓展服务实例状态，有一个可用即可用
-                                    f.setHealthy(BoolValue.of(e.isHealthy() || f.getHealthy().getValue()));
-                                    f.setIsolate(BoolValue.of(e.isIsolated() && f.getIsolate().getValue()));
-                                    needAdd = false;
-                                    break;
+
+                        // Merge instance information list if needed.
+                        newDiscoverResponseBuilder.clearInstances();
+                        List<Instance> finalInstanceList = new ArrayList<>(instancesMap.get(serverEventConnectorType));
+                        for (String type : ORDER_LIST) {
+                            if (!StringUtils.equals(type, serverEventConnectorType)) {
+                                List<Instance> instances = instancesMap.get(type);
+                                if (CollectionUtils.isNotEmpty(instances)) {
+                                    for (Instance newInstance : instances) {
+                                        boolean needAdd = true;
+                                        for (Instance existInstance : finalInstanceList) {
+                                            if (StringUtils.equals(newInstance.getHost().getValue(), existInstance.getHost().getValue()) &&
+                                                    Objects.equals(newInstance.getPort().getValue(), existInstance.getPort().getValue())) {
+                                                needAdd = false;
+                                                break;
+                                            }
+                                        }
+                                        if (needAdd) {
+                                            finalInstanceList.add(newInstance);
+                                        }
+                                    }
                                 }
                             }
-                            if (needAdd) {
-                                Instance.Builder instanceBuilder = Instance.newBuilder()
-                                        .setNamespace(StringValue.of(serviceEventKey.getNamespace()))
-                                        .setService(StringValue.of(e.getService()))
-                                        .setHost(StringValue.of(e.getHost()))
-                                        .setPort(UInt32Value.of(e.getPort()))
-                                        .setHealthy(BoolValue.of(e.isHealthy()))
-                                        .setIsolate(BoolValue.of(e.isIsolated()));
-                                // set Id
-                                if (StringUtils.isNotBlank(e.getId())) {
-                                    instanceBuilder.setId(StringValue.of(e.getId()));
-                                } else {
-                                    String id =
-                                            e.getService() + "-" + e.getHost().replace(".", "-") + "-" + e.getPort();
-                                    instanceBuilder.setId(StringValue.of(id));
-                                    LOG.info("Instance with name {} host {} port {} doesn't have id.", e.getService()
-                                            , e.getHost(), e.getPort());
-                                }
-                                // set location
-                                ModelProto.Location.Builder locationBuilder = ModelProto.Location.newBuilder();
-                                if (StringUtils.isNotBlank(e.getRegion())) {
-                                    locationBuilder.setRegion(StringValue.of(e.getRegion()));
-                                }
-                                if (StringUtils.isNotBlank(e.getZone())) {
-                                    locationBuilder.setZone(StringValue.of(e.getZone()));
-                                }
-                                if (StringUtils.isNotBlank(e.getCampus())) {
-                                    locationBuilder.setCampus(StringValue.of(e.getCampus()));
-                                }
-                                instanceBuilder.setLocation(locationBuilder.build());
-                                // set metadata
-                                if (CollectionUtils.isNotEmpty(e.getMetadata())) {
-                                    instanceBuilder.putAllMetadata(e.getMetadata());
-                                }
-                                // set Protocol
-                                if (StringUtils.isNotBlank(e.getProtocol())) {
-                                    instanceBuilder.setProtocol(StringValue.of(e.getProtocol()));
-                                }
-                                // set Version
-                                if (StringUtils.isNotBlank(e.getVersion())) {
-                                    instanceBuilder.setVersion(StringValue.of(e.getVersion()));
-                                }
-                                finalInstanceBuilderList.add(instanceBuilder);
-                            }
-                        }
-                        List<Instance> finalInstanceList = new ArrayList<>();
-                        for (Instance.Builder i : finalInstanceBuilderList) {
-                            finalInstanceList.add(i.build());
                         }
                         Service.Builder newServiceBuilder = Service.newBuilder()
                                 .mergeFrom(newDiscoverResponseBuilder.getService());
@@ -211,83 +271,125 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                         }
                         newServiceBuilder.setRevision(StringValue.of(compositeRevision.getCompositeRevisionString()));
                         newDiscoverResponseBuilder.setService(newServiceBuilder.build());
-                        newDiscoverResponseBuilder.clearInstances();
                         newDiscoverResponseBuilder.addAllInstances(finalInstanceList);
-                    }
 
-                    // zero instance protect.
-                    if (!newDiscoverResponseBuilder.getInstancesList().isEmpty()) {
-                        serverEvent.setError(null);
-                    } else if (newDiscoverResponseBuilder.getCode().getValue() != ServerCodes.DATA_NO_CHANGE && connector.isZeroProtectionEnabled()) {
-                        Object value = getEventHandler().getValue();
-                        if (value instanceof ServiceInstancesByProto) {
-                            ServiceInstancesByProto cacheValue = (ServiceInstancesByProto) value;
-                            newDiscoverResponseBuilder.setCode(UInt32Value.of(ServerCodes.DATA_NO_CHANGE));
-                            Service.Builder newServiceBuilder = Service.newBuilder()
-                                    .mergeFrom(newDiscoverResponseBuilder.getService());
-                            newServiceBuilder.setRevision(StringValue.of(cacheValue.getRevision()));
-                            newDiscoverResponseBuilder.setService(newServiceBuilder.build());
-                            newDiscoverResponseBuilder.clearInstances();
-                            newDiscoverResponseBuilder.addAllInstances(cacheValue.getOriginInstancesList());
-                            if (CollectionUtils.isNotEmpty(cacheValue.getOriginInstancesList())) {
-                                shouldTest = true;
+                        // zero instance protect.
+                        if (!newDiscoverResponseBuilder.getInstancesList().isEmpty()) {
+                            serverEvent.setError(null);
+                        } else if (newDiscoverResponseBuilder.getCode().getValue() != ServerCodes.DATA_NO_CHANGE && connector.isZeroProtectionEnabled()) {
+                            if (value instanceof ServiceInstancesByProto) {
+                                ServiceInstancesByProto cacheValue = (ServiceInstancesByProto) value;
+                                newDiscoverResponseBuilder.setCode(UInt32Value.of(ServerCodes.DATA_NO_CHANGE));
+                                newServiceBuilder = Service.newBuilder()
+                                        .mergeFrom(newDiscoverResponseBuilder.getService());
+                                newServiceBuilder.setRevision(StringValue.of(cacheValue.getRevision()));
+                                newDiscoverResponseBuilder.setService(newServiceBuilder.build());
+                                newDiscoverResponseBuilder.clearInstances();
+                                newDiscoverResponseBuilder.addAllInstances(cacheValue.getOriginInstancesList());
+                                if (CollectionUtils.isNotEmpty(cacheValue.getOriginInstancesList())) {
+                                    shouldTest = true;
+                                }
+                                serverEvent.setError(null);
                             }
+                        }
+                        instanceListMeta.setLastRevision(newDiscoverResponseBuilder.getService().getRevision().getValue());
+                    } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
+                        // load current instance map split by connector type.
+                        CompositeRevision compositeRevision = new CompositeRevision();
+                        Object value = getEventHandler().getValue();
+                        Map<String, List<Service>> servicesMap = new HashMap<>();
+                        if (taskType.get() == ServiceUpdateTaskConstant.Type.LONG_RUNNING && value instanceof ServicesByProto) {
+                            ServicesByProto cacheValue = (ServicesByProto) value;
+                            compositeRevision = CompositeRevision.of(cacheValue.getRevision());
+                            List<Service> oldInstancesList = cacheValue.getOriginServicesList();
+                            for (Service oldService : oldInstancesList) {
+                                String serverConnectorType = oldService.getMetadataOrDefault(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_GRPC);
+                                if (!servicesMap.containsKey(serverConnectorType)) {
+                                    servicesMap.put(serverConnectorType, new ArrayList<>());
+                                }
+                                servicesMap.get(serverConnectorType).add(oldService);
+                            }
+                        }
+
+                        // 按照事件来源更新对应的revision
+                        compositeRevision.setRevision(serverEventConnectorType, discoverResponse.getService().getRevision().getValue());
+                        // 按照事件来源更新对应的列表
+                        List<Service> serverEventServicesList = servicesMap.computeIfAbsent(serverEventConnectorType, key -> new ArrayList<>());
+                        serverEventServicesList.clear();
+                        serverEventServicesList.addAll(discoverResponse.getServicesList());
+                        // 由于合并多个发现结果会修改版本号，所以将 polaris 的版本号保存一份
+                        if (StringUtils.equals(serverEvent.getConnectorType(), SERVER_CONNECTOR_GRPC)) {
+                            serverEvent.setPolarisRevision(discoverResponse.getService().getRevision().getValue());
+                        }
+
+                        // Get service information list except polaris.
+                        for (DestroyableServerConnector sc : connector.getServerConnectors()) {
+                            if (!SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+                                Services services = sc.syncGetServices(this);
+                                if (services != null) {
+                                    compositeRevision.setRevision(sc.getName(), services.getRevision());
+                                    List<ServiceInfo> tempServiceList = services.getServices();
+                                    List<Service> tempServerEventServicesList = servicesMap.computeIfAbsent(sc.getName(), key -> new ArrayList<>());
+                                    tempServerEventServicesList.clear();
+                                    for (ServiceInfo serviceInfo : tempServiceList) {
+                                        Service service = Service.newBuilder()
+                                                .setNamespace(StringValue.of(serviceEventKey.getNamespace()))
+                                                .setName(StringValue.of(serviceInfo.getService()))
+                                                .build();
+                                        tempServerEventServicesList.add(service);
+                                    }
+                                }
+                            }
+                        }
+                        // Merge service information list if needed.
+                        newDiscoverResponseBuilder.clearServices();
+                        List<Service> finalServiceList = new ArrayList<>(servicesMap.get(serverEventConnectorType));
+                        for (String type : ORDER_LIST) {
+                            if (!StringUtils.equals(type, serverEventConnectorType)) {
+                                List<Service> services = servicesMap.get(type);
+                                if (CollectionUtils.isNotEmpty(services)) {
+                                    for (Service newService : services) {
+                                        boolean needAdd = true;
+                                        for (Service existService : finalServiceList) {
+                                            if (StringUtils.equals(newService.getName().getValue(), existService.getName().getValue())) {
+                                                needAdd = false;
+                                                break;
+                                            }
+                                        }
+                                        if (needAdd) {
+                                            finalServiceList.add(newService);
+                                        }
+                                    }
+                                }
+                                newDiscoverResponseBuilder.addAllServices(finalServiceList);
+                            }
+                        }
+                        if (!newDiscoverResponseBuilder.getServicesList().isEmpty()) {
                             serverEvent.setError(null);
                         }
                     }
-                    instanceListMeta.setLastRevision(newDiscoverResponseBuilder.getService().getRevision().getValue());
-                } else if (EventType.SERVICE.equals(serviceEventKey.getEventType())) {
-                    // Get service information list except polaris.
-                    List<ServiceInfo> extendServiceList = new ArrayList<>();
-                    for (DestroyableServerConnector sc : connector.getServerConnectors()) {
-                        if (!SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
-                            Services services = sc.syncGetServices(this);
-                            if (extendServiceList.isEmpty()) {
-                                extendServiceList.addAll(services.getServices());
-                            } else {
-                                // TODO 多数据源合并去重
-                            }
-                        }
+                    DiscoverResponse response = newDiscoverResponseBuilder.build();
+                    if (EventType.INSTANCE.equals(serviceEventKey.getEventType()) && shouldTest) {
+                        connector.submitTestConnectivityTask(this, response);
                     }
-                    // Merge service information list
-                    List<Service> polarisServiceList = discoverResponse.getServicesList();
-                    for (ServiceInfo i : extendServiceList) {
-                        boolean needAdd = true;
-                        for (Service j : polarisServiceList) {
-                            if (i.getService().equals(j.getName().getValue())) {
-                                needAdd = false;
-                                break;
-                            }
-                        }
-                        if (needAdd) {
-                            Service service = Service.newBuilder()
-                                    .setNamespace(StringValue.of(serviceEventKey.getNamespace()))
-                                    .setName(StringValue.of(i.getService()))
-                                    .build();
-                            newDiscoverResponseBuilder.addServices(service);
-                        }
-                    }
-                    if (!newDiscoverResponseBuilder.getServicesList().isEmpty()) {
-                        serverEvent.setError(null);
-                    }
+                    serverEvent.setValue(response);
                 }
-                DiscoverResponse response = newDiscoverResponseBuilder.build();
-                if (EventType.INSTANCE.equals(serviceEventKey.getEventType()) && shouldTest) {
-                    connector.submitTestConnectivityTask(this, response);
-                }
-                serverEvent.setValue(response);
+            } catch (PolarisException e) {
+                LOG.error("Merge other server response failed.", e);
+                serverEvent.setError(e);
+            } catch (Throwable throwable) {
+                LOG.error("Merge other server response failed.", throwable);
+                serverEvent.setError(new PolarisException(ErrorCode.INTERNAL_ERROR));
             }
-        } catch (PolarisException e) {
-            LOG.error("Merge other server response failed.", e);
-            serverEvent.setError(e);
-        } catch (Throwable throwable) {
-            LOG.error("Merge other server response failed.", throwable);
-            serverEvent.setError(new PolarisException(ErrorCode.INTERNAL_ERROR));
         }
         if (null == serverEvent.getError()) {
             successUpdates.addAndGet(1);
         }
-        return getEventHandler().onEventUpdate(serverEvent);
+        boolean svcDeleted = getEventHandler().onEventUpdate(serverEvent);
+        if (!svcDeleted && subTask != null) {
+            subTask.setType(ServiceUpdateTaskConstant.Type.FIRST, ServiceUpdateTaskConstant.Type.LONG_RUNNING);
+        }
+        return svcDeleted;
     }
 
     public boolean notifyServerEventWithRevisionChecking(ServerEvent serverEvent, String revision) {

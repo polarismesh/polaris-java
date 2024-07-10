@@ -32,7 +32,6 @@ import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.lossless.RegisterStatus;
 import com.tencent.polaris.api.pojo.BaseInstance;
-import com.tencent.polaris.api.rpc.BaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.Event;
 import com.tencent.polaris.client.util.HttpServerUtils;
@@ -93,8 +92,8 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
             InetSocketAddress remoteAddress = exchange.getRemoteAddress();
             LOG.info("[LosslessDeregister] received lossless deregister request from {}", remoteAddress);
             if (!remoteAddress.getAddress().isLoopbackAddress()) {
-                exchange.sendResponseHeaders(403, 0);
-                exchange.close();
+                LOG.warn("[LosslessDeRegister] only loop-back address (like localhost or 127.0.0.1) can call this path");
+                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_ONLY_LOCALHOST, 403);
                 return;
             }
             Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
@@ -106,8 +105,8 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
 
             List<LosslessPolicy> losslessPolicies = extensions.getLosslessPolicies();
             if (CollectionUtils.isEmpty(losslessPolicies)) {
-                LOG.warn("lossless is disabled, no losslessDeregister will do");
-                exchange.sendResponseHeaders(500, 0);
+                LOG.warn("[LosslessDeRegister] lossless is disabled, no losslessDeregister will do");
+                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_POLICY, 500);
                 exchange.close();
                 return;
             }

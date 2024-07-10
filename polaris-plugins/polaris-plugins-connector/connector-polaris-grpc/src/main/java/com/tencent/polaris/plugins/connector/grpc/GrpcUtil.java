@@ -193,7 +193,7 @@ public class GrpcUtil {
             return;
         }
         int respCode = response.getCode().getValue();
-        if (respCode == ServerCodes.EXECUTE_SUCCESS || respCode == ServerCodes.EXISTED_RESOURCE) {
+        if (respCode == ServerCodes.EXECUTE_SUCCESS || respCode == ServerCodes.EXISTED_RESOURCE || respCode == ServerCodes.NO_NEED_UPDATE) {
             return;
         }
         String info = response.getInfo().getValue();

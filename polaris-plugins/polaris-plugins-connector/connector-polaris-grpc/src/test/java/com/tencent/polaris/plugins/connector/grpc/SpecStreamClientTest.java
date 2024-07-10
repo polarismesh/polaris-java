@@ -125,7 +125,7 @@ public class SpecStreamClientTest extends TestCase {
         }
 
         @Override
-        protected void execute() throws Throwable {
+        public void execute() {
 
         }
 

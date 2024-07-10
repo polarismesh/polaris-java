@@ -28,7 +28,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
-import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.RetriableException;
@@ -37,19 +36,8 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.server.CommonProviderRequest;
-import com.tencent.polaris.api.plugin.server.CommonProviderResponse;
-import com.tencent.polaris.api.plugin.server.ReportClientRequest;
-import com.tencent.polaris.api.plugin.server.ReportClientResponse;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
-import com.tencent.polaris.api.plugin.server.ReportServiceContractResponse;
-import com.tencent.polaris.api.plugin.server.ServerConnector;
-import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
-import com.tencent.polaris.api.pojo.DefaultInstance;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.Services;
+import com.tencent.polaris.api.plugin.server.*;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServicesByProto;
@@ -61,21 +49,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 import static com.alibaba.nacos.api.common.Constants.GROUP;
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
+import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.SERVER_CONNECTOR_TYPE;
 
 /**
  * An implement of {@link ServerConnector} to connect to Nacos Server.
@@ -140,7 +121,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
     @Override
     public String getName() {
-        return DefaultPlugins.SERVER_CONNECTOR_NACOS;
+        return SERVER_CONNECTOR_NACOS;
     }
 
     @Override
@@ -154,7 +135,7 @@ public class NacosConnector extends DestroyableServerConnector {
             List<ServerConnectorConfigImpl> serverConnectorConfigs = ctx.getConfig().getGlobal().getServerConnectors();
             if (CollectionUtils.isNotEmpty(serverConnectorConfigs)) {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectorConfigs) {
-                    if (DefaultPlugins.SERVER_CONNECTOR_NACOS.equals(serverConnectorConfig.getProtocol())) {
+                    if (SERVER_CONNECTOR_NACOS.equals(serverConnectorConfig.getProtocol())) {
                         initActually(ctx, serverConnectorConfig);
                     }
                 }
@@ -357,6 +338,7 @@ public class NacosConnector extends DestroyableServerConnector {
                 String region = instance.getMetadata().getOrDefault("region", "");
                 String zone = instance.getMetadata().getOrDefault("zone", "");
                 String campus = instance.getMetadata().getOrDefault("campus", "");
+                instance.getMetadata().put(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_NACOS);
 
                 if (StringUtils.isNotEmpty(region)) {
                     instance.setRegion(region);
@@ -411,6 +393,8 @@ public class NacosConnector extends DestroyableServerConnector {
                 ServiceInfo serviceInfo = new ServiceInfo();
                 serviceInfo.setNamespace(namespace);
                 serviceInfo.setService(name);
+                serviceInfo.setMetadata(new HashMap<>());
+                serviceInfo.getMetadata().put(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_NACOS);
                 services.getServices().add(serviceInfo);
             });
 

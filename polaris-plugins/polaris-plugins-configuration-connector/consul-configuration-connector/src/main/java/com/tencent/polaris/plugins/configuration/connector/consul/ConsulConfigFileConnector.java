@@ -41,10 +41,7 @@ import com.tencent.polaris.specification.api.v1.model.CodeProto;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -87,6 +84,9 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
+        if (!Objects.equals(ctx.getConfig().getConfigFile().getServerConnector().getConnectorType(), CONSUL_FILE_CONNECTOR_TYPE)) {
+            return;
+        }
         if (!initialized) {
             // init consul client
             ConnectorConfigImpl connectorConfig = ctx.getConfig().getConfigFile().getServerConnector();
@@ -235,7 +235,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                 if (!newModifyIndex.equals(currentModifyIndex)) {
                     LOGGER.info("KeyPrefix '{}' has new index {} and new modify index {} with old index {} and old modify index {}",
                             keyPrefix, newIndex, newModifyIndex, currentIndex, currentModifyIndex);
-                } else if (LOGGER.isDebugEnabled()) {
+                } else {
                     code = CodeProto.Code.DataNoChange.getNumber();
                     message = "config data is no change";
                     LOGGER.debug("KeyPrefix '{}' not modified with new index {}, index {} and modify index {}",
@@ -244,7 +244,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                 // 在Consul中不存在自定义KEY时，此处的逻辑可以避免response实时返回，不断的触发retry
                 this.consulIndexes.put(keyPrefix, newIndex);
                 this.consulModifyIndexes.put(keyPrefix, newModifyIndex);
-            } else if (LOGGER.isDebugEnabled()) {
+            } else {
                 code = CodeProto.Code.DataNoChange.getNumber();
                 message = "config data is no change";
                 LOGGER.debug("KeyPrefix '{}' unchanged with index {} and modify index {}", keyPrefix, currentIndex, currentModifyIndex);

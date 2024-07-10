@@ -17,13 +17,9 @@
 
 package com.tencent.polaris.plugins.connector.composite;
 
-import com.google.common.collect.Lists;
 import com.tencent.polaris.api.utils.StringUtils;
-import java.util.List;
 
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
+import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.ORDER_LIST;
 
 /**
  * Revision handler for multi-discovery server.
@@ -31,8 +27,6 @@ import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNEC
  * @author Haotian Zhang
  */
 public class CompositeRevision {
-
-    private static final List<String> ORDER_LIST = Lists.newArrayList(SERVER_CONNECTOR_GRPC, SERVER_CONNECTOR_CONSUL, SERVER_CONNECTOR_NACOS);
 
     private static final String BIG_SEPARATOR = ";";
 
@@ -43,13 +37,20 @@ public class CompositeRevision {
     /**
      * Set revision of corresponding server connector by name.
      *
-     * @param name name of server connector
+     * @param name     name of server connector
      * @param revision revision
      */
     public void setRevision(String name, String revision) {
         if (ORDER_LIST.contains(name)) {
             content[ORDER_LIST.indexOf(name)] = revision;
         }
+    }
+
+    public String getRevision(String name) {
+        if (ORDER_LIST.contains(name)) {
+            return content[ORDER_LIST.indexOf(name)];
+        }
+        return "";
     }
 
     /**
@@ -68,5 +69,19 @@ public class CompositeRevision {
             }
         }
         return revision.toString();
+    }
+
+    public static CompositeRevision of(String revision) {
+        CompositeRevision compositeRevision = new CompositeRevision();
+        String[] bigs = revision.split(BIG_SEPARATOR);
+        for (String big : bigs) {
+            if (StringUtils.isNotBlank(big)) {
+                String[] lils = big.split(LIL_SEPARATOR);
+                if (lils.length == 2) {
+                    compositeRevision.content[ORDER_LIST.indexOf(lils[0])] = lils[1];
+                }
+            }
+        }
+        return compositeRevision;
     }
 }

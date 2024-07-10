@@ -30,10 +30,9 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
-import com.tencent.polaris.client.pojo.ServiceRuleByProto;
-import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -41,7 +40,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
 
 /**
  * 服务缓存的封装类型
@@ -97,7 +95,7 @@ public class CacheObject implements EventHandler {
     }
 
     public CacheObject(CacheHandler cacheHandler, ServiceEventKey svcEventKey, InMemoryRegistry registry,
-            Message initValue) {
+                       Message initValue) {
         this.svcEventKey = svcEventKey;
         this.registry = registry;
         this.cacheHandler = cacheHandler;
@@ -236,6 +234,9 @@ public class CacheObject implements EventHandler {
                 notifyEvent(null);
             }
             notifyEvent(error);
+        }
+        if (svcDeleted) {
+            LOG.info("{} is deleted", svcEventKey);
         }
         return svcDeleted;
     }
