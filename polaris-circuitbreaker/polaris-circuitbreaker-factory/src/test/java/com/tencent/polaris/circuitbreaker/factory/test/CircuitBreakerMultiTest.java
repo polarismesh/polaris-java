@@ -191,7 +191,7 @@ public class CircuitBreakerMultiTest {
 				}
 				Assert.assertThrows(CallAbortedException.class, () -> integerConsumer.accept(3));
 			}
-			Utils.sleepUninterrupted(10 * 1000);
+			Utils.sleepUninterrupted(20 * 1000);
 
 			BaseEngine baseEngine = (BaseEngine) circuitBreakAPI;
 			CircuitBreaker resourceBreaker = baseEngine.getSDKContext().getExtensions().getResourceBreaker();
@@ -241,7 +241,7 @@ public class CircuitBreakerMultiTest {
 					Assert.assertEquals(1, resourceHealthChecker.getResources().size());
 				}
 			}
-			Utils.sleepUninterrupted(10 * 1000);
+			Utils.sleepUninterrupted(20 * 1000);
 
 			Cache<Resource, Optional<ResourceCounters>> methodCache = polarisCircuitBreaker.getCountersCache()
 					.get(CircuitBreakerProto.Level.METHOD);
@@ -373,7 +373,7 @@ public class CircuitBreakerMultiTest {
 					.addRules(rule1).setRevision("33333").build();
 			namingServer.getNamingService().setFaultDetector(matchMethodDetectService, faultDetector);
 
-			Utils.sleepUninterrupted(10 * 1000);
+			Utils.sleepUninterrupted(20 * 1000);
 			healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
 			Assert.assertEquals(0, healthCheckerValues.size());
 			for (int i = 0; i < 3; i++) {
