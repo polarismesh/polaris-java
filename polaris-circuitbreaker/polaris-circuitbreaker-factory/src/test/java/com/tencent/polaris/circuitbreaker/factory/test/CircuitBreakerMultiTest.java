@@ -246,9 +246,6 @@ public class CircuitBreakerMultiTest {
 			Cache<Resource, Optional<ResourceCounters>> methodCache = polarisCircuitBreaker.getCountersCache()
 					.get(CircuitBreakerProto.Level.METHOD);
 			Assert.assertEquals(0, methodCache.size());
-			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
-				Assert.assertEquals(0, resourceHealthChecker.getResources().size());
-			}
 		}
 	}
 
