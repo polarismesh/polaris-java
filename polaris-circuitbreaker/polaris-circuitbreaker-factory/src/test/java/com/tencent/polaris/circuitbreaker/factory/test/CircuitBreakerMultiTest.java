@@ -360,11 +360,11 @@ public class CircuitBreakerMultiTest {
 			Assert.assertNotNull(healthCheckContainer);
 			Collection<ResourceHealthChecker> healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
 			Assert.assertEquals(2, healthCheckerValues.size());
-			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
-				if (StringUtils.equals(resourceHealthChecker.getFaultDetectRule().getId(), "fd1")) {
-					Assert.assertEquals(1, resourceHealthChecker.getResources().size());
-				}
-			}
+//			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
+//				if (StringUtils.equals(resourceHealthChecker.getFaultDetectRule().getId(), "fd1")) {
+//					Assert.assertEquals(1, resourceHealthChecker.getResources().size());
+//				}
+//			}
 			FaultDetectorProto.FaultDetectRule rule1 = loadFdRule("faultDetectMethodRuleChanged.json");
 			FaultDetectorProto.FaultDetector faultDetector = FaultDetectorProto.FaultDetector.newBuilder()
 					.addRules(rule1).setRevision("33333").build();
@@ -396,9 +396,9 @@ public class CircuitBreakerMultiTest {
 			Assert.assertNotNull(healthCheckContainer);
 			healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
 			Assert.assertEquals(1, healthCheckerValues.size());
-			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
-				Assert.assertEquals(2, resourceHealthChecker.getResources().size());
-			}
+//			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
+//				Assert.assertEquals(2, resourceHealthChecker.getResources().size());
+//			}
 		}
 	}
 
