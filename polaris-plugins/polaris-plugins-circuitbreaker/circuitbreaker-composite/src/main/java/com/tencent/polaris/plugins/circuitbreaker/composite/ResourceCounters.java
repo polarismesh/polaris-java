@@ -127,7 +127,6 @@ public class ResourceCounters implements StatusChangeHandler {
 			counterOptions.setTriggerCondition(triggerCondition);
 			counterOptions.setStatusChangeHandler(this);
 			counterOptions.setExecutorService(stateChangeExecutors);
-			counterOptions.setCircuitBreakerConfig(circuitBreakerConfig);
 			switch (triggerCondition.getTriggerType()) {
 			case ERROR_RATE:
 				counters.add(new ErrRateCounter(currentActiveRule.getName(), counterOptions));

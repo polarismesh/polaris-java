@@ -46,10 +46,6 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
 
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
-    private Long errorRateInterval;
-
-    @JsonProperty
-    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long sleepWindow;
 
     @JsonProperty
@@ -102,18 +98,6 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     @Override
     public int getSuccessCountAfterHalfOpen() {
         return successCountAfterHalfOpen;
-    }
-
-    @Override
-    public long getErrorRateInterval() {
-        if (null == errorRateInterval) {
-            return 0;
-        }
-        return errorRateInterval;
-    }
-
-    void setErrorRateInterval(long errorRateInterval) {
-        this.errorRateInterval = errorRateInterval;
     }
 
     @Override
@@ -176,7 +160,6 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
         ConfigUtils.validateInterval(checkPeriod, "circuitBreaker.checkPeriod");
         ConfigUtils.validateInterval(sleepWindow, "circuitBreaker.sleepWindow");
         ConfigUtils.validateInterval(countersExpireInterval, "circuitBreaker.countersExpireInterval");
-        ConfigUtils.validateInterval(errorRateInterval, "circuitBreaker.errorRateInterval");
         ConfigUtils.validatePositive(requestCountAfterHalfOpen, "circuitBreaker.requestCountAfterHalfOpen");
         ConfigUtils.validatePositive(successCountAfterHalfOpen, "circuitBreaker.successCountAfterHalfOpen");
         ConfigUtils.validateNull(enableRemotePull, "circuitBreaker.enableRemotePull");
@@ -201,9 +184,6 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
             }
             if (null == countersExpireInterval) {
                 setCountersExpireInterval(circuitBreakerConfig.getCountersExpireInterval());
-            }
-            if (null == errorRateInterval) {
-                setErrorRateInterval(circuitBreakerConfig.getErrorRateInterval());
             }
             if (null == requestCountAfterHalfOpen) {
                 setRequestCountAfterHalfOpen(circuitBreakerConfig.getRequestCountAfterHalfOpen());

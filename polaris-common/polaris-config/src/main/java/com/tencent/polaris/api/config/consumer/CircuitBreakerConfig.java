@@ -72,12 +72,6 @@ public interface CircuitBreakerConfig extends PluginConfig, Verifier {
     int getSuccessCountAfterHalfOpen();
 
     /**
-     * 错误率熔断统计时长
-     * @return 统计时长，单位毫秒
-     */
-    long getErrorRateInterval();
-
-    /**
      * 熔断规则远程拉取开关
      *
      * @return true if 启用远程拉取

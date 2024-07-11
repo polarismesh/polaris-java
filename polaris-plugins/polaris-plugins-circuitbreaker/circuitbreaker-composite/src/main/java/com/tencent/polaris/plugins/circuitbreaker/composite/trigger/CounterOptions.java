@@ -17,63 +17,53 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
-import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
+import java.util.concurrent.ScheduledExecutorService;
+
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
-import java.util.concurrent.ScheduledExecutorService;
 
 public class CounterOptions {
 
-    private CircuitBreakerConfig circuitBreakerConfig;
+	private Resource resource;
 
-    private Resource resource;
+	private TriggerCondition triggerCondition;
 
-    private TriggerCondition triggerCondition;
+	private ScheduledExecutorService executorService;
 
-    private ScheduledExecutorService executorService;
+	private StatusChangeHandler statusChangeHandler;
 
-    private StatusChangeHandler statusChangeHandler;
+	public Resource getResource() {
+		return resource;
+	}
 
-    public Resource getResource() {
-        return resource;
-    }
+	public void setResource(Resource resource) {
+		this.resource = resource;
+	}
 
-    public void setResource(Resource resource) {
-        this.resource = resource;
-    }
+	public TriggerCondition getTriggerCondition() {
+		return triggerCondition;
+	}
 
-    public TriggerCondition getTriggerCondition() {
-        return triggerCondition;
-    }
+	public void setTriggerCondition(
+			TriggerCondition triggerCondition) {
+		this.triggerCondition = triggerCondition;
+	}
 
-    public void setTriggerCondition(
-            TriggerCondition triggerCondition) {
-        this.triggerCondition = triggerCondition;
-    }
+	public ScheduledExecutorService getExecutorService() {
+		return executorService;
+	}
 
-    public ScheduledExecutorService getExecutorService() {
-        return executorService;
-    }
+	public void setExecutorService(ScheduledExecutorService executorService) {
+		this.executorService = executorService;
+	}
 
-    public void setExecutorService(ScheduledExecutorService executorService) {
-        this.executorService = executorService;
-    }
+	public StatusChangeHandler getStatusChangeHandler() {
+		return statusChangeHandler;
+	}
 
-    public StatusChangeHandler getStatusChangeHandler() {
-        return statusChangeHandler;
-    }
-
-    public void setStatusChangeHandler(
-            StatusChangeHandler statusChangeHandler) {
-        this.statusChangeHandler = statusChangeHandler;
-    }
-
-    public CircuitBreakerConfig getCircuitBreakerConfig() {
-        return circuitBreakerConfig;
-    }
-
-    public void setCircuitBreakerConfig(CircuitBreakerConfig circuitBreakerConfig) {
-        this.circuitBreakerConfig = circuitBreakerConfig;
-    }
+	public void setStatusChangeHandler(
+			StatusChangeHandler statusChangeHandler) {
+		this.statusChangeHandler = statusChangeHandler;
+	}
 }

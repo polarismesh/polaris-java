@@ -22,6 +22,8 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 
 public class CircuitBreakerUtils {
 
+	public static long DEFAULT_ERROR_RATE_INTERVAL_MS = 60 * 1000;
+
 	public static boolean checkRule(CircuitBreakerProto.CircuitBreakerRule rule) {
 		return checkLevel(rule.getLevel());
 	}
@@ -41,11 +43,10 @@ public class CircuitBreakerUtils {
 		return sleepWindow;
 	}
 
-	public static long getErrorRateIntervalSec(CircuitBreakerProto.TriggerCondition triggerCondition,
-			CircuitBreakerConfig circuitBreakerConfig) {
+	public static long getErrorRateIntervalSec(CircuitBreakerProto.TriggerCondition triggerCondition) {
 		long interval = triggerCondition.getInterval();
 		if (interval == 0) {
-			interval = circuitBreakerConfig.getErrorRateInterval() / 1000;
+			interval = DEFAULT_ERROR_RATE_INTERVAL_MS / 1000;
 		}
 		return interval;
 	}
