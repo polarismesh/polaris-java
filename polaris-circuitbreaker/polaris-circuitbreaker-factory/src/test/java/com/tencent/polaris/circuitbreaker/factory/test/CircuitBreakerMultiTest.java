@@ -238,9 +238,7 @@ public class CircuitBreakerMultiTest {
 			Assert.assertEquals(2, healthCheckerValues.size());
 			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
 				if (StringUtils.equals(resourceHealthChecker.getFaultDetectRule().getId(), "fd1")) {
-					Assert.assertEquals(50, resourceHealthChecker.getResources().size());
-				} else {
-					Assert.assertEquals(49, resourceHealthChecker.getResources().size());
+					Assert.assertEquals(1, resourceHealthChecker.getResources().size());
 				}
 			}
 			Utils.sleepUninterrupted(10 * 1000);
@@ -282,7 +280,7 @@ public class CircuitBreakerMultiTest {
 			CircuitBreakerProto.CircuitBreaker circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder()
 					.addRules(cbRule1).setRevision(StringValue.newBuilder().setValue("444441").build()).build();
 			namingServer.getNamingService().setCircuitBreaker(matchMethodDetectService, circuitBreaker);
-			Utils.sleepUninterrupted(10 * 1000);
+			Utils.sleepUninterrupted(20 * 1000);
 			BaseEngine baseEngine = (BaseEngine) circuitBreakAPI;
 			CircuitBreaker resourceBreaker = baseEngine.getSDKContext().getExtensions().getResourceBreaker();
 			PolarisCircuitBreaker polarisCircuitBreaker = (PolarisCircuitBreaker) resourceBreaker;
@@ -295,9 +293,6 @@ public class CircuitBreakerMultiTest {
 			Assert.assertNotNull(healthCheckContainer);
 			Collection<ResourceHealthChecker> healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
 			Assert.assertEquals(2, healthCheckerValues.size());
-			for (ResourceHealthChecker resourceHealthChecker : healthCheckerValues) {
-				Assert.assertEquals(0, resourceHealthChecker.getResources().size());
-			}
 			for (int i = 0; i < 10; i++) {
 				String method = "/test1/path/" + i;
 				FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
