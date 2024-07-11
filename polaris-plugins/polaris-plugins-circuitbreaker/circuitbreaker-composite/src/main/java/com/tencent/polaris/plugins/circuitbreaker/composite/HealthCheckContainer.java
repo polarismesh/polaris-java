@@ -100,28 +100,12 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 		return Collections.unmodifiableCollection(healthCheckers.values());
 	}
 
-	public void updateFaultDetectRule(FaultDetectorProto.FaultDetector faultDetector) {
+	public void updateFaultDetectRule() {
 		synchronized (updateLock) {
-			for (FaultDetectorProto.FaultDetectRule faultDetectRule : faultDetector.getRulesList()) {
-				ResourceHealthChecker resourceHealthChecker = healthCheckers.remove(faultDetectRule.getId());
-				if (null != resourceHealthChecker) {
-					resourceHealthChecker.stop();
-				}
-				resourceHealthChecker = new ResourceHealthChecker(faultDetectRule, this, polarisCircuitBreaker);
-				resourceHealthChecker.start();
-				healthCheckers.put(faultDetectRule.getId(), resourceHealthChecker);
+			for (ResourceHealthChecker resourceHealthChecker : healthCheckers.values()) {
+				resourceHealthChecker.stop();
 			}
-		}
-	}
-
-	public void deleteFaultDetectRule(FaultDetectorProto.FaultDetector faultDetector) {
-		synchronized (updateLock) {
-			for (FaultDetectorProto.FaultDetectRule faultDetectRule : faultDetector.getRulesList()) {
-				ResourceHealthChecker resourceHealthChecker = healthCheckers.remove(faultDetectRule.getId());
-				if (null != resourceHealthChecker) {
-					resourceHealthChecker.stop();
-				}
-			}
+			healthCheckers.clear();
 		}
 	}
 

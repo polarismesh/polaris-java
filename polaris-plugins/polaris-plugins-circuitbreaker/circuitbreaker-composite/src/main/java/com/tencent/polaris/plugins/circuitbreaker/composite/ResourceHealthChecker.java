@@ -41,6 +41,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.composite.utils.MatchUtils;
@@ -259,6 +260,9 @@ public class ResourceHealthChecker {
 			return false;
 		}
 		if (resource.getLevel() == CircuitBreakerProto.Level.METHOD) {
+			if (!targetService.hasMethod() || StringUtils.isBlank(targetService.getMethod().getValue().getValue())) {
+				return false;
+			}
 			return MatchUtils.matchMethod(resource, targetService.getMethod(), regexToPattern);
 		}
 		else {

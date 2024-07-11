@@ -1,24 +1,27 @@
 {
   "@type": "type.googleapis.com/v1.CircuitBreakerRule",
-  "id": "5f1601f01823474d9be39c0bbb26ab87",
+  "id": "5f1601f01823474d9be39c0bb126ab87",
   "name": "test",
-  "namespace": "TestCircuitBreakerRule",
+  "namespace": "TestCircuitBreakerRule1",
   "enable": true,
-  "revision": "10b120c08706429f8fdd3fb44a53224b",
+  "revision": "10b120c08706429f85dc3fb44a53224c",
   "ctime": "1754-08-31 06:49:24",
   "mtime": "2023-02-21 17:35:31",
   "etime": "",
   "description": "",
-  "level": "SERVICE",
+  "level": "METHOD",
   "ruleMatcher": {
     "source": {
       "service": "*",
       "namespace": "*"
     },
     "destination": {
-      "service": "*",
-      "namespace": "*",
-      "method": null
+      "service": "SvcCbMethodDetect",
+      "namespace": "Test",
+      "method": {
+        "type": "REGEX",
+        "value": "/test1/path/.*"
+      }
     }
   },
   "errorConditions": [
@@ -34,7 +37,7 @@
   "triggerCondition": [
     {
       "triggerType": "CONSECUTIVE_ERROR",
-      "errorCount": 1
+      "errorCount": 2
     }
   ],
   "maxEjectionPercent": 0,

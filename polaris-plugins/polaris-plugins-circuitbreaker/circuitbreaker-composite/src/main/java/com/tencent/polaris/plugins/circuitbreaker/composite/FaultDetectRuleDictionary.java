@@ -49,55 +49,26 @@ public class FaultDetectRuleDictionary {
 	 */
 	public void onFaultDetectRuleChanged(ServiceKey svcKey, FaultDetectorProto.FaultDetector faultDetector) {
 		synchronized (updateLock) {
-			Map<String, FaultDetectorProto.FaultDetectRule> changedRules = new HashMap<>();
-			for (FaultDetectorProto.FaultDetectRule faultDetectRule : faultDetector.getRulesList()) {
-				changedRules.put(faultDetectRule.getId(), faultDetectRule);
-			}
-			List<FaultDetectorProto.FaultDetectRule> faultDetectRules = serviceRules.get(svcKey);
-			List<FaultDetectorProto.FaultDetectRule> rules = faultDetectRules == null ? Collections.emptyList() : faultDetectRules;
-			List<FaultDetectorProto.FaultDetectRule> newRules = new ArrayList<>();
-			for (FaultDetectorProto.FaultDetectRule rule : rules) {
-				FaultDetectorProto.FaultDetectRule faultDetectRule = changedRules.get(rule.getId());
-				if (null != faultDetectRule) {
-					newRules.add(faultDetectRule);
-				}
-				else {
-					newRules.add(rule);
-				}
-			}
+			List<FaultDetectorProto.FaultDetectRule> newRules = new ArrayList<>(faultDetector.getRulesList());
 			serviceRules.put(svcKey, newRules);
 		}
 	}
 
-	void onFaultDetectRuleDeleted(ServiceKey svcKey, FaultDetectorProto.FaultDetector faultDetector) {
+	void onFaultDetectRuleDeleted(ServiceKey svcKey) {
 		synchronized (updateLock) {
-			List<FaultDetectorProto.FaultDetectRule> faultDetectRules = serviceRules.get(svcKey);
-			if (CollectionUtils.isEmpty(faultDetectRules)) {
-				return;
-			}
-			Map<String, FaultDetectorProto.FaultDetectRule> changedRules = new HashMap<>();
-			for (FaultDetectorProto.FaultDetectRule faultDetectRule : faultDetector.getRulesList()) {
-				changedRules.put(faultDetectRule.getId(), faultDetectRule);
-			}
-			List<FaultDetectorProto.FaultDetectRule> newRules = new ArrayList<>();
-			for (FaultDetectorProto.FaultDetectRule rule : faultDetectRules) {
-				if (!changedRules.containsKey(rule.getId())) {
-					newRules.add(rule);
-				}
-			}
-			serviceRules.put(svcKey, newRules);
+			serviceRules.remove(svcKey);
 		}
 	}
 
 	public void putServiceRule(ServiceKey serviceKey, ServiceRule serviceRule) {
-		if (null == serviceRule || null == serviceRule.getRule()) {
-			synchronized (updateLock) {
+		synchronized (updateLock) {
+			if (null == serviceRule || null == serviceRule.getRule()) {
 				serviceRules.remove(serviceKey);
+				return;
 			}
-			return;
+			FaultDetectorProto.FaultDetector faultDetector = (FaultDetectorProto.FaultDetector) serviceRule.getRule();
+			List<FaultDetectorProto.FaultDetectRule> rules = faultDetector.getRulesList();
+			serviceRules.put(serviceKey, rules);
 		}
-		FaultDetectorProto.FaultDetector faultDetector = (FaultDetectorProto.FaultDetector) serviceRule.getRule();
-		List<FaultDetectorProto.FaultDetectRule> rules = faultDetector.getRulesList();
-		serviceRules.put(serviceKey, rules);
 	}
 }

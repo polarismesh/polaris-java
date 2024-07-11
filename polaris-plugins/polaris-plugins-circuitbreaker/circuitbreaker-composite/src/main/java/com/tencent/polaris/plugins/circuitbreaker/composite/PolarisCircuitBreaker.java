@@ -117,7 +117,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		doReport(resourceStat, true);
 	}
 
-	ResourceCounters getOrInitResourceCounters(Resource resource) throws ExecutionException {
+	private ResourceCounters getOrInitResourceCounters(Resource resource) throws ExecutionException {
 		Optional<ResourceCounters> resourceCounters = getResourceCounters(resource);
 		if (null == resourceCounters) {
 			synchronized (countersCache) {
@@ -386,8 +386,9 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 	}
 
 	void onCircuitBreakerRuleChanged(ServiceKey serviceKey) {
+		circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
 		synchronized (countersCache) {
-			circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
+			LOG.info("onCircuitBreakerRuleChanged: clear service {} from ResourceCounters", serviceKey);
 			for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
 				Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
 				for (Resource resource : cacheValue.asMap().keySet()) {
@@ -396,6 +397,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 					}
 					HealthCheckContainer healthCheckContainer = healthCheckCache.get(serviceKey);
 					if (null != healthCheckContainer) {
+						LOG.info("onCircuitBreakerRuleChanged: clear resource {} from healthCheckContainer", resource);
 						healthCheckContainer.removeResource(resource);
 					}
 				}
@@ -409,11 +411,22 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 			return;
 		}
 		FaultDetectorProto.FaultDetector faultDetector = (FaultDetectorProto.FaultDetector) serviceRule.getRule();
+		faultDetectRuleDictionary.onFaultDetectRuleChanged(svcKey, faultDetector);
 		HealthCheckContainer healthCheckContainer = healthCheckCache.get(svcKey);
 		if (null != healthCheckContainer) {
-			healthCheckContainer.updateFaultDetectRule(faultDetector);
+			healthCheckContainer.updateFaultDetectRule();
+			LOG.info("onFaultDetectRuleChanged: clear healthCheckContainer for service: {}", svcKey);
+			healthCheckCache.remove(svcKey);
 		}
-		faultDetectRuleDictionary.onFaultDetectRuleChanged(svcKey, faultDetector);
+		LOG.info("onFaultDetectRuleChanged: clear service {} from ResourceCounters", svcKey);
+		for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
+			Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
+			for (Resource resource : cacheValue.asMap().keySet()) {
+				if (resource.getService().equals(svcKey)) {
+					cacheValue.invalidate(resource);
+				}
+			}
+		}
 	}
 
 	void onFaultDetectRuleDeleted(ServiceKey svcKey, RegistryCacheValue newValue) {
@@ -421,11 +434,10 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		if (null == serviceRule.getRule()) {
 			return;
 		}
-		FaultDetectorProto.FaultDetector faultDetector = (FaultDetectorProto.FaultDetector) serviceRule.getRule();
+		faultDetectRuleDictionary.onFaultDetectRuleDeleted(svcKey);
 		HealthCheckContainer healthCheckContainer = healthCheckCache.get(svcKey);
 		if (null != healthCheckContainer) {
-			healthCheckContainer.deleteFaultDetectRule(faultDetector);
+			healthCheckContainer.updateFaultDetectRule();
 		}
-		faultDetectRuleDictionary.onFaultDetectRuleDeleted(svcKey, faultDetector);
 	}
 }
