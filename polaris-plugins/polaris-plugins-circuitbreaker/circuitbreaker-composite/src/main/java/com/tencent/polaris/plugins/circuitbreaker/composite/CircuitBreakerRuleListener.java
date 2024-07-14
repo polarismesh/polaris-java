@@ -42,8 +42,9 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
             return;
         }
         LOG.info("[CircuitBreaker] onResourceAdd {}", svcEventKey);
-        onChanged(svcEventKey);
-        if (svcEventKey.getEventType() == EventType.FAULT_DETECTING) {
+        if (svcEventKey.getEventType() == EventType.CIRCUIT_BREAKING) {
+            polarisCircuitBreaker.onCircuitBreakerRuleAdded(svcEventKey.getServiceKey());
+        } else if (svcEventKey.getEventType() == EventType.FAULT_DETECTING) {
             polarisCircuitBreaker.onFaultDetectRuleChanged(svcEventKey.getServiceKey(), newValue);
         }
     }

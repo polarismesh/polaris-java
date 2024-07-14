@@ -99,6 +99,8 @@ public class ResourceCounters implements StatusChangeHandler {
 
 	private final CircuitBreakerConfig circuitBreakerConfig;
 
+	private AtomicBoolean reloadFaultDetect = new AtomicBoolean(false);
+
 	public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
 			ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
 		this.currentActiveRule = currentActiveRule;
@@ -369,6 +371,14 @@ public class ResourceCounters implements StatusChangeHandler {
 				LOG.info("circuit breaker report encountered exception, e: {}", ex.getMessage());
 			}
 		}
+	}
+
+	public void setReloadFaultDetect(boolean param) {
+		reloadFaultDetect.set(param);
+	}
+
+	public boolean checkReloadFaultDetect() {
+		return reloadFaultDetect.compareAndSet(true, false);
 	}
 
 	public void setDestroyed(boolean value) {

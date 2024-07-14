@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.InstanceResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
@@ -54,17 +55,13 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 
 	private final long expireIntervalMilli;
 
-	private final ScheduledFuture<?> future;
-
-	private final PolarisCircuitBreaker polarisCircuitBreaker;
-
 	public HealthCheckContainer(ServiceKey serviceKey,
 			List<FaultDetectorProto.FaultDetectRule> faultDetectRules, PolarisCircuitBreaker polarisCircuitBreaker) {
 		long checkPeriod = polarisCircuitBreaker.getCheckPeriod();
 		expireIntervalMilli = polarisCircuitBreaker.getHealthCheckInstanceExpireInterval();
 		this.serviceKey = serviceKey;
 		LOG.info("schedule expire task: service {}, interval {}", serviceKey, checkPeriod);
-		future = polarisCircuitBreaker.getHealthCheckExecutors().scheduleWithFixedDelay(new Runnable() {
+		polarisCircuitBreaker.getHealthCheckExecutors().scheduleWithFixedDelay(new Runnable() {
 			@Override
 			public void run() {
 				cleanInstances();
@@ -77,18 +74,18 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 				healthCheckers.put(faultDetectRule.getId(), resourceHealthChecker);
 			}
 		}
-		this.polarisCircuitBreaker = polarisCircuitBreaker;
 	}
 
 	public void addInstance(InstanceResource instanceResource) {
-		ResourceHealthChecker.ProtocolInstance protocolInstance = instances.get(instanceResource.getNode());
-		if (null == protocolInstance) {
-			instances.put(instanceResource.getNode(),
-					new ResourceHealthChecker.ProtocolInstance(HealthCheckUtils.parseProtocol(instanceResource.getProtocol()),
-							instanceResource));
-			return;
-		}
-		protocolInstance.doReport();
+		ResourceHealthChecker.ProtocolInstance instance = instances.computeIfAbsent(instanceResource.getNode(), new Function<Node, ResourceHealthChecker.ProtocolInstance>() {
+			@Override
+			public ResourceHealthChecker.ProtocolInstance apply(Node node) {
+				HC_EVENT_LOG.info("add fault detect instance {}, service {}", instanceResource.getNode(), serviceKey);
+				return new ResourceHealthChecker.ProtocolInstance(HealthCheckUtils.parseProtocol(instanceResource.getProtocol()),
+						instanceResource);
+			}
+		});
+		instance.doReport();
 	}
 
 	@Override
@@ -122,11 +119,6 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 								serviceKey, node, lastReportMilli);
 			}
 		}
-	}
-
-	public void stop() {
-		LOG.info("health check container for service {} has stopped", serviceKey);
-		future.cancel(true);
 	}
 
 	public void addResource(Resource resource) {

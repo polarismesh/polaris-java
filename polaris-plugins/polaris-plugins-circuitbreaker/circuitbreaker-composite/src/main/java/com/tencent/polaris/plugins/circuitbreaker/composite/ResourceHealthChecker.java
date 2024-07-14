@@ -164,47 +164,48 @@ public class ResourceHealthChecker {
 		if (started.compareAndSet(false, true)) {
 			Runnable checkTask = createCheckTask();
 			FaultDetectRule faultDetectRule = getFaultDetectRule();
-			LOG.info("schedule task: protocol {}, interval {}, rule {}", faultDetectRule.getProtocol(),
+			HC_EVENT_LOG.info("schedule health check task: protocol {}, interval {}, rule {}", faultDetectRule.getProtocol(),
 					faultDetectRule.getInterval(), faultDetectRule.getName());
 			this.future = checkScheduler
 					.scheduleWithFixedDelay(checkTask, DEFAULT_CHECK_INTERVAL, DEFAULT_CHECK_INTERVAL, TimeUnit.SECONDS);
 		}
 	}
 
+	private boolean matchInstanceToResource(Instance instance, Resource resource) {
+		if (resource.getLevel() != CircuitBreakerProto.Level.INSTANCE) {
+			return true;
+		}
+		InstanceResource instanceResource = (InstanceResource) resource;
+		return StringUtils.equals(instance.getHost(), instanceResource.getHost()) && instance.getPort() == instanceResource.getPort();
+	}
+
 	private boolean doCheck(Instance instance, Protocol protocol, FaultDetectRule faultDetectRule) {
 		HealthChecker healthChecker = healthCheckers.get(protocol.name().toLowerCase());
 		if (null == healthChecker) {
-			HC_EVENT_LOG.info("plugin not found, skip health check for instance {}:{}, protocol {}",
+			LOG.info("plugin not found, skip health check for instance {}:{}, protocol {}",
 					instance.getHost(), instance.getPort(), protocol);
 			return false;
 		}
 		DetectResult detectResult = healthChecker.detectInstance(instance, faultDetectRule);
+		HC_EVENT_LOG.info("health check for instance {}:{}, protocol {}, result: code {}, delay {}ms, status {}, rule {}",
+				instance.getHost(), instance.getPort(), protocol, detectResult.getStatusCode(),
+				detectResult.getDelay(), detectResult.getRetStatus(), faultDetectRule.getName());
 		Set<Resource> copiedResources = new HashSet<>(resources.keySet());
 		for (Resource resource : copiedResources) {
-			if (!matchRuleToResource(resource)) {
+			if (!matchInstanceToResource(instance, resource)) {
 				continue;
 			}
-			ResourceStat resourceStat = new ResourceStat(resource, detectResult.getStatusCode(), detectResult.getDelay(),
-					detectResult.getRetStatus());
-			HC_EVENT_LOG
-					.info("health check for instance {}:{}, resource {}, protocol {}, result: code {}, delay {}ms, status {}",
-							instance.getHost(), instance.getPort(), resource, protocol, detectResult.getStatusCode(),
-							detectResult.getDelay(), detectResult.getRetStatus());
+			ResourceStat resourceStat = new ResourceStat(
+					resource, detectResult.getStatusCode(), detectResult.getDelay(), detectResult.getRetStatus());
+			HC_EVENT_LOG.info("report health check to resource {}, status code {}, delay {}", resource,
+					detectResult.getStatusCode(), detectResult.getDelay());
 			polarisCircuitBreaker.doReport(resourceStat, false);
 		}
 		return detectResult.getRetStatus() == RetStatus.RetSuccess;
 	}
 
-	private boolean matchRuleToResource(Resource resource) {
-		if (resource.getLevel() != CircuitBreakerProto.Level.METHOD) {
-			return true;
-		}
-		FaultDetectRule faultDetectRule = getFaultDetectRule();
-		return MatchUtils.matchMethod(resource, faultDetectRule.getTargetService().getMethod(), regexToPattern);
-	}
-
 	public void stop() {
-		LOG.info("health checker for rule {} has stopped", faultDetectRule.getName());
+		HC_EVENT_LOG.info("health checker has stopped, rule {}", faultDetectRule.getName());
 		stopped.set(true);
 		if (null != future) {
 			future.cancel(true);
@@ -273,12 +274,17 @@ public class ResourceHealthChecker {
 
 	public void addResource(Resource resource) {
 		if (matchResource(resource, regexToPattern)) {
-			resources.put(resource, PLACE_HOLDER_RESOURCE);
+			if (null == resources.putIfAbsent(resource, PLACE_HOLDER_RESOURCE)) {
+				HC_EVENT_LOG.info("add fault detect resource {}, rule {}", resource, faultDetectRule.getName());
+			}
 		}
 	}
 
 	public void removeResource(Resource resource) {
-		resources.remove(resource);
+		if (null != resources.remove(resource)) {
+			HC_EVENT_LOG.info("remove fault detect resource {}, rule {}", resource, faultDetectRule.getName());
+
+		}
 	}
 
 	public Collection<Resource> getResources() {
