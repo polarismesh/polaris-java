@@ -197,6 +197,9 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
         try {
             Response<List<GetValue>> response = this.consulClient.getKVValues(keyPrefix, aclToken,
                     new QueryParams(consulConfigContext.getWaitTime(), currentIndex));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("consul config response for  keyPrefix '{}' is {}", keyPrefix, response);
+            }
             ConfigFile resultConfigFile = new ConfigFile(configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
             return handleResponse(resultConfigFile, keyPrefix, currentIndex, currentModifyIndex, response);
         } catch (OperationException operationException) {
@@ -299,22 +302,20 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
     @Override
     public ConfigFileResponse watchConfigFiles(List<ConfigFile> configFiles) {
         try {
-            while (true) {
-                RefreshEventData refreshEventData = blockingQueue.poll(30, TimeUnit.SECONDS);
-                if (refreshEventData != null) {
-                    Optional<ConfigFile> optional = configFiles.stream()
-                            .filter(configFile -> StringUtils.equals(refreshEventData.getKeyPrefix(), ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile)))
-                            .findFirst();
-                    if (optional.isPresent()) {
-                        responseCache.put(refreshEventData.getKeyPrefix(), refreshEventData.getConfigFileResponse());
-                        return refreshEventData.getConfigFileResponse();
-                    }
+            RefreshEventData refreshEventData = blockingQueue.poll(30, TimeUnit.SECONDS);
+            if (refreshEventData != null) {
+                Optional<ConfigFile> optional = configFiles.stream()
+                        .filter(configFile -> StringUtils.equals(refreshEventData.getKeyPrefix(), ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile)))
+                        .findFirst();
+                if (optional.isPresent()) {
+                    responseCache.put(refreshEventData.getKeyPrefix(), refreshEventData.getConfigFileResponse());
+                    return refreshEventData.getConfigFileResponse();
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             LOGGER.warn("watch consul config file interrupt.", e);
         }
-        return null;
+        return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "config data is no change", null);
     }
 
     @Override
