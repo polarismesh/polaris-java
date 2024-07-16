@@ -64,9 +64,12 @@ public interface ConfigFileConnector extends Plugin {
     ConfigFileResponse releaseConfigFile(ConfigFile configFile);
 
     /**
-     *
      * @param request {@link ConfigPublishFile}
      * @return {@link ConfigFileResponse}
      */
     ConfigFileResponse upsertAndPublishConfigFile(ConfigPublishFile request);
+
+    default boolean isNotifiedVersionIncreaseStrictly() {
+        return true;
+    }
 }

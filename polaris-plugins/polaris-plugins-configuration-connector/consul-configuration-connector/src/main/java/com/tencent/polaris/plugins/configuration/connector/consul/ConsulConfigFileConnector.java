@@ -364,6 +364,11 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
     }
 
     @Override
+    public boolean isNotifiedVersionIncreaseStrictly() {
+        return false;
+    }
+
+    @Override
     public ConfigFileResponse createConfigFile(ConfigFile configFile) {
         throw new UnsupportedOperationException("not support createConfigFile");
     }

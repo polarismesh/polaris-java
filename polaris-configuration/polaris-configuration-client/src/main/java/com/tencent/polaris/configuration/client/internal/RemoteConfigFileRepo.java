@@ -19,10 +19,10 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
@@ -157,8 +157,13 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     ConfigFile pulledConfigFile = response.getConfigFile();
 
                     //本地配置文件落后，更新内存缓存
-                    if (remoteConfigFile.get() == null ||
-                            pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion()) {
+                    boolean shouldUpdateLocalCache;
+                    if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
+                        shouldUpdateLocalCache = pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion();
+                    } else {
+                        shouldUpdateLocalCache = pulledConfigFile.getVersion() != remoteConfigFile.get().getVersion();
+                    }
+                    if (remoteConfigFile.get() == null || shouldUpdateLocalCache) {
                         ConfigFile copiedConfigFile = deepCloneConfigFile(pulledConfigFile);
                         remoteConfigFile.set(copiedConfigFile);
 
@@ -224,8 +229,14 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     public void onLongPollNotified(long newVersion) {
-        if (remoteConfigFile.get() != null && remoteConfigFile.get().getVersion() >= newVersion) {
-            return;
+        if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
+            if (remoteConfigFile.get() != null && remoteConfigFile.get().getVersion() >= newVersion) {
+                return;
+            }
+        } else {
+            if (remoteConfigFile.get() != null && remoteConfigFile.get().getVersion() == newVersion) {
+                return;
+            }
         }
 
         notifiedVersion.set(newVersion);
@@ -246,7 +257,13 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     remoteConfigFile.get() != null ? remoteConfigFile.get().getVersion() : INIT_VERSION;
 
             //版本落后，需要重新拉取
-            if (notifiedVersion.get() > pulledVersion) {
+            boolean shouldRetry;
+            if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
+                shouldRetry = notifiedVersion.get() > pulledVersion;
+            } else {
+                shouldRetry = notifiedVersion.get() != pulledVersion;
+            }
+            if (shouldRetry) {
                 LOGGER.info("[Config] notified version greater than pulled version, will pull config file."
                                 + "file = {}, notified version = {}, pulled version = {}", getConfigFileMetadata(),
                         notifiedVersion, pulledVersion);
