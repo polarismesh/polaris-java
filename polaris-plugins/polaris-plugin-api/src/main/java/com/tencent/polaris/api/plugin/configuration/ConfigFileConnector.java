@@ -69,6 +69,11 @@ public interface ConfigFileConnector extends Plugin {
      */
     ConfigFileResponse upsertAndPublishConfigFile(ConfigPublishFile request);
 
+    /**
+     * 是否严格限制NotifiedVersion增长才更新配置。
+     *
+     * @return boolean
+     */
     default boolean isNotifiedVersionIncreaseStrictly() {
         return true;
     }
