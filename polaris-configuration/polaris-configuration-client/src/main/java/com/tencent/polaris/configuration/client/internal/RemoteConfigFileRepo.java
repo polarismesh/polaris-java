@@ -159,11 +159,11 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     //本地配置文件落后，更新内存缓存
                     boolean shouldUpdateLocalCache;
                     if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
-                        shouldUpdateLocalCache = pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion();
+                        shouldUpdateLocalCache = remoteConfigFile.get() == null || pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion();
                     } else {
-                        shouldUpdateLocalCache = pulledConfigFile.getVersion() != remoteConfigFile.get().getVersion();
+                        shouldUpdateLocalCache = remoteConfigFile.get() == null || pulledConfigFile.getVersion() != remoteConfigFile.get().getVersion();
                     }
-                    if (remoteConfigFile.get() == null || shouldUpdateLocalCache) {
+                    if (shouldUpdateLocalCache) {
                         ConfigFile copiedConfigFile = deepCloneConfigFile(pulledConfigFile);
                         remoteConfigFile.set(copiedConfigFile);
 
