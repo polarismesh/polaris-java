@@ -254,7 +254,7 @@ public class ResourceHealthChecker {
 		}
 	}
 
-	private boolean matchResource(Resource resource, Function<String, Pattern> regexToPattern) {
+	public boolean matchResource(Resource resource) {
 		FaultDetectRule faultDetectRule = getFaultDetectRule();
 		FaultDetectorProto.FaultDetectRule.DestinationService targetService = faultDetectRule.getTargetService();
 		if (!MatchUtils.matchService(resource.getService(), targetService.getNamespace(), targetService.getService())) {
@@ -273,10 +273,8 @@ public class ResourceHealthChecker {
 	}
 
 	public void addResource(Resource resource) {
-		if (matchResource(resource, regexToPattern)) {
-			if (null == resources.putIfAbsent(resource, PLACE_HOLDER_RESOURCE)) {
-				HC_EVENT_LOG.info("add fault detect resource {}, rule {}", resource, faultDetectRule.getName());
-			}
+		if (null == resources.putIfAbsent(resource, PLACE_HOLDER_RESOURCE)) {
+			HC_EVENT_LOG.info("add fault detect resource {}, rule {}", resource, faultDetectRule.getName());
 		}
 	}
 

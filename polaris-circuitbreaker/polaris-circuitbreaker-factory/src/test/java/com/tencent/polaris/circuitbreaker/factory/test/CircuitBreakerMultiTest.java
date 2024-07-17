@@ -371,8 +371,8 @@ public class CircuitBreakerMultiTest {
 			namingServer.getNamingService().setFaultDetector(matchMethodDetectService, faultDetector);
 
 			Utils.sleepUninterrupted(20 * 1000);
-			healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
-			Assert.assertEquals(0, healthCheckerValues.size());
+			healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
+			Assert.assertNull(healthCheckContainer);
 			for (int i = 0; i < 3; i++) {
 				String method = "";
 				if (i > 0) {

@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -49,11 +50,13 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 	private final Object updateLock = new Object();
 
 	// key is ruleId, value is checker
-	private final Map<String, ResourceHealthChecker> healthCheckers = new ConcurrentHashMap<>();
+	private final List<ResourceHealthChecker> healthCheckers = new ArrayList<>();
 
 	private final Map<Node, ResourceHealthChecker.ProtocolInstance> instances = new ConcurrentHashMap<>();
 
 	private final long expireIntervalMilli;
+
+	private final ScheduledFuture<?> future;
 
 	public HealthCheckContainer(ServiceKey serviceKey,
 			List<FaultDetectorProto.FaultDetectRule> faultDetectRules, PolarisCircuitBreaker polarisCircuitBreaker) {
@@ -61,7 +64,7 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 		expireIntervalMilli = polarisCircuitBreaker.getHealthCheckInstanceExpireInterval();
 		this.serviceKey = serviceKey;
 		LOG.info("schedule expire task: service {}, interval {}", serviceKey, checkPeriod);
-		polarisCircuitBreaker.getHealthCheckExecutors().scheduleWithFixedDelay(new Runnable() {
+		future = polarisCircuitBreaker.getHealthCheckExecutors().scheduleWithFixedDelay(new Runnable() {
 			@Override
 			public void run() {
 				cleanInstances();
@@ -71,7 +74,7 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 			for (FaultDetectorProto.FaultDetectRule faultDetectRule : faultDetectRules) {
 				ResourceHealthChecker resourceHealthChecker = new ResourceHealthChecker(faultDetectRule, this, polarisCircuitBreaker);
 				resourceHealthChecker.start();
-				healthCheckers.put(faultDetectRule.getId(), resourceHealthChecker);
+				healthCheckers.add(resourceHealthChecker);
 			}
 		}
 	}
@@ -94,16 +97,7 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 	}
 
 	public Collection<ResourceHealthChecker> getHealthCheckerValues() {
-		return Collections.unmodifiableCollection(healthCheckers.values());
-	}
-
-	public void updateFaultDetectRule() {
-		synchronized (updateLock) {
-			for (ResourceHealthChecker resourceHealthChecker : healthCheckers.values()) {
-				resourceHealthChecker.stop();
-			}
-			healthCheckers.clear();
-		}
+		return Collections.unmodifiableCollection(healthCheckers);
 	}
 
 	public void cleanInstances() {
@@ -121,10 +115,24 @@ public class HealthCheckContainer implements HealthCheckInstanceProvider {
 		}
 	}
 
+	public void stop() {
+		LOG.info("health check container for service {} has stopped", serviceKey);
+		synchronized (updateLock) {
+			for (ResourceHealthChecker resourceHealthChecker : healthCheckers) {
+				resourceHealthChecker.stop();
+			}
+		}
+		future.cancel(true);
+	}
+
 	public void addResource(Resource resource) {
 		synchronized (updateLock) {
 			for (ResourceHealthChecker resourceHealthChecker : getHealthCheckerValues()) {
-				resourceHealthChecker.addResource(resource);
+				if (resourceHealthChecker.matchResource(resource)) {
+					resourceHealthChecker.addResource(resource);
+					// 每个资源只匹配优先级最高的探测规则
+					break;
+				}
 			}
 		}
 	}

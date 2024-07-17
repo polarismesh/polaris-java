@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import com.google.common.cache.Cache;
@@ -307,7 +308,8 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		serviceResourceProvider = new DefaultServiceResourceProvider(extensions);
 		extensions.getLocalRegistry().registerResourceListener(new CircuitBreakerRuleListener(this));
 		healthCheckers = extensions.getAllHealthCheckers();
-		long expireIntervalMilli = extensions.getConfiguration().getConsumer().getCircuitBreaker().getCountersExpireInterval();
+		long expireIntervalMilli = extensions.getConfiguration().getConsumer().getCircuitBreaker()
+				.getCountersExpireInterval();
 		expiredCleanupExecutors.scheduleWithFixedDelay(new Runnable() {
 			@Override
 			public void run() {
@@ -443,12 +445,14 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		}
 		FaultDetectorProto.FaultDetector faultDetector = (FaultDetectorProto.FaultDetector) serviceRule.getRule();
 		faultDetectRuleDictionary.onFaultDetectRuleChanged(svcKey, faultDetector);
-		HealthCheckContainer healthCheckContainer = healthCheckCache.get(svcKey);
-		if (null != healthCheckContainer) {
-			healthCheckContainer.updateFaultDetectRule();
-			LOG.info("onFaultDetectRuleChanged: clear healthCheckContainer for service: {}", svcKey);
-			healthCheckCache.remove(svcKey);
-		}
+		healthCheckCache.computeIfPresent(svcKey, new BiFunction<ServiceKey, HealthCheckContainer, HealthCheckContainer>() {
+			@Override
+			public HealthCheckContainer apply(ServiceKey serviceKey, HealthCheckContainer healthCheckContainer) {
+				LOG.info("onFaultDetectRuleChanged: clear healthCheckContainer for service: {}", svcKey);
+				healthCheckContainer.stop();
+				return null;
+			}
+		});
 		synchronized (countersCache) {
 			for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
 				Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
@@ -473,9 +477,13 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 			return;
 		}
 		faultDetectRuleDictionary.onFaultDetectRuleDeleted(svcKey);
-		HealthCheckContainer healthCheckContainer = healthCheckCache.get(svcKey);
-		if (null != healthCheckContainer) {
-			healthCheckContainer.updateFaultDetectRule();
-		}
+		healthCheckCache.computeIfPresent(svcKey, new BiFunction<ServiceKey, HealthCheckContainer, HealthCheckContainer>() {
+			@Override
+			public HealthCheckContainer apply(ServiceKey serviceKey, HealthCheckContainer healthCheckContainer) {
+				LOG.info("onFaultDetectRuleDeleted: clear healthCheckContainer for service: {}", svcKey);
+				healthCheckContainer.stop();
+				return null;
+			}
+		});
 	}
 }
