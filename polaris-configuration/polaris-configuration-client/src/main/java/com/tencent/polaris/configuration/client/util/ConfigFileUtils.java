@@ -17,8 +17,14 @@
 
 package com.tencent.polaris.configuration.client.util;
 
+import com.google.common.collect.Maps;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 
 /**
  * @author lepdou 2022-03-04
@@ -35,5 +41,20 @@ public class ConfigFileUtils {
         if (StringUtils.isBlank(configFileMetadata.getFileName())) {
             throw new IllegalArgumentException("file name cannot be empty.");
         }
+    }
+
+    public static Set<String> stringPropertyNames(Properties properties) {
+        if (properties == null) {
+            return Collections.emptySet();
+        }
+        Map<String, Object> map = Maps.newLinkedHashMapWithExpectedSize(properties.size());
+        for (Map.Entry<Object, Object> e : properties.entrySet()) {
+            Object k = e.getKey();
+            Object v = e.getValue();
+            if (k instanceof String) {
+                map.put((String) k, v);
+            }
+        }
+        return map.keySet();
     }
 }

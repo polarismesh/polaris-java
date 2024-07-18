@@ -23,29 +23,20 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
-import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.configuration.api.core.ChangeType;
-import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
-import com.tencent.polaris.configuration.api.core.ConfigKVFile;
-import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeEvent;
-import com.tencent.polaris.configuration.api.core.ConfigKVFileChangeListener;
-import com.tencent.polaris.configuration.api.core.ConfigPropertyChangeInfo;
+import com.tencent.polaris.configuration.api.core.*;
+import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 import com.tencent.polaris.configuration.client.util.ConvertFunctions;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
 
 /**
  * The properties file.
@@ -71,7 +62,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
     private final AtomicLong cacheVersion;
 
     public ConfigPropertiesFile(String namespace, String fileGroup, String fileName,
-            ConfigFileRepo configFileRepo, ConfigFileConfig configFileConfig) {
+                                ConfigFileRepo configFileRepo, ConfigFileConfig configFileConfig) {
         super(namespace, fileGroup, fileName, configFileRepo, configFileConfig);
 
         arrayCache = Maps.newConcurrentMap();
@@ -313,7 +304,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
     @Override
     public Set<String> getPropertyNames() {
-        return stringPropertyNames(properties.get());
+        return ConfigFileUtils.stringPropertyNames(properties.get());
     }
 
     @Override
@@ -424,7 +415,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
     }
 
     private <T> T getValueAndStoreToCache(String key, Function<String, T> parser, Cache<String, T> cache,
-            T defaultValue) {
+                                          T defaultValue) {
         long currentCacheVersion = cacheVersion.get();
         String value = getProperty(key, null);
 
@@ -462,20 +453,5 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
             }
             cacheVersion.incrementAndGet();
         }
-    }
-
-    private Set<String> stringPropertyNames(Properties properties) {
-        if (properties == null) {
-            return Collections.emptySet();
-        }
-        Map<String, Object> map = Maps.newLinkedHashMapWithExpectedSize(properties.size());
-        for (Map.Entry<Object, Object> e : properties.entrySet()) {
-            Object k = e.getKey();
-            Object v = e.getValue();
-            if (k instanceof String) {
-                map.put((String) k, v);
-            }
-        }
-        return map.keySet();
     }
 }
