@@ -29,7 +29,7 @@ public class NamedThreadFactory implements ThreadFactory {
     private final AtomicInteger idx = new AtomicInteger(0);
 
     public NamedThreadFactory(String component) {
-        this(component, false);
+        this(component, true);
     }
 
     public NamedThreadFactory(String component, boolean daemon) {

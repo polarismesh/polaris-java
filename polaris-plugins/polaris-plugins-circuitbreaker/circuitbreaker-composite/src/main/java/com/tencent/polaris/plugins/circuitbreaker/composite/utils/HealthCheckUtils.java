@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.circuitbreaker.composite;
+package com.tencent.polaris.plugins.circuitbreaker.composite.utils;
 
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule.Protocol;
@@ -26,11 +26,6 @@ public class HealthCheckUtils {
      * instance expire interval = multiple * check expire period
      */
     public static int CHECK_PERIOD_MULTIPLE = 20;
-
-    /**
-     * default check expire period
-     */
-    public static int DEFAULT_CHECK_INTERVAL = 60 * 1000;
 
     /**
      * parse protocol string to enum

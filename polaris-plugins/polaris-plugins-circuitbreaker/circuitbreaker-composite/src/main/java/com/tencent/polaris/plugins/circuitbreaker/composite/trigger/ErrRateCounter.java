@@ -23,6 +23,8 @@ import com.tencent.polaris.plugins.circuitbreaker.common.stat.TimeRange;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
 import org.slf4j.Logger;
 
 public class ErrRateCounter extends TriggerCounter {
@@ -51,7 +53,7 @@ public class ErrRateCounter extends TriggerCounter {
     @Override
     protected void init() {
         LOG.info("[CircuitBreaker][Counter] errRateCounter {} initialized, resource {}", ruleName, resource);
-        int interval = triggerCondition.getInterval();
+        long interval = CircuitBreakerUtils.getErrorRateIntervalSec(triggerCondition);
         metricWindowMs = interval * 1000L;
         errorPercent = triggerCondition.getErrorPercent();
         minimumRequest = triggerCondition.getMinimumRequest();
@@ -79,7 +81,7 @@ public class ErrRateCounter extends TriggerCounter {
         }
     }
 
-    private static long getBucketIntervalMs(int interval) {
+    private static long getBucketIntervalMs(long interval) {
         long metricWindowMs = interval * 1000L;
         double bucketIntervalMs = (double) metricWindowMs / (double) BUCKET_COUNT;
         return (long) Math.ceil(bucketIntervalMs);

@@ -17,13 +17,11 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
-import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.registry.AbstractResourceEventListener;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.Map;
 import org.slf4j.Logger;
 
 public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
@@ -44,7 +42,11 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
             return;
         }
         LOG.info("[CircuitBreaker] onResourceAdd {}", svcEventKey);
-        doSchedule(svcEventKey);
+        if (svcEventKey.getEventType() == EventType.CIRCUIT_BREAKING) {
+            polarisCircuitBreaker.onCircuitBreakerRuleAdded(svcEventKey.getServiceKey());
+        } else if (svcEventKey.getEventType() == EventType.FAULT_DETECTING) {
+            polarisCircuitBreaker.onFaultDetectRuleChanged(svcEventKey.getServiceKey(), newValue);
+        }
     }
 
     @Override
@@ -55,24 +57,9 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
             return;
         }
         LOG.info("[CircuitBreaker] onResourceUpdated {}", svcEventKey);
-        doSchedule(svcEventKey);
-    }
-
-    private void doSchedule(ServiceEventKey svcEventKey) {
-        for (Map.Entry<Resource, CircuitBreakerRuleContainer> entry : polarisCircuitBreaker.getContainers()
-                .entrySet()) {
-            if (entry.getKey().getService().equals(svcEventKey.getServiceKey())) {
-                switch (svcEventKey.getEventType()) {
-                    case CIRCUIT_BREAKING:
-                        entry.getValue().scheduleCircuitBreaker();
-                        break;
-                    case FAULT_DETECTING:
-                        entry.getValue().scheduleHealthCheck();
-                        break;
-                    default:
-                        break;
-                }
-            }
+        onChanged(svcEventKey);
+        if (svcEventKey.getEventType() == EventType.FAULT_DETECTING) {
+            polarisCircuitBreaker.onFaultDetectRuleChanged(svcEventKey.getServiceKey(), newValue);
         }
     }
 
@@ -83,7 +70,18 @@ public class CircuitBreakerRuleListener extends AbstractResourceEventListener {
             return;
         }
         LOG.info("[CircuitBreaker] onResourceDeleted {}", svcEventKey);
-        doSchedule(svcEventKey);
+        onChanged(svcEventKey);
+        if (svcEventKey.getEventType() == EventType.FAULT_DETECTING) {
+            polarisCircuitBreaker.onFaultDetectRuleDeleted(svcEventKey.getServiceKey(), oldValue);
+        }
     }
+
+    private void onChanged(ServiceEventKey svcEventKey) {
+        if (svcEventKey.getEventType() == EventType.CIRCUIT_BREAKING) {
+            polarisCircuitBreaker.onCircuitBreakerRuleChanged(svcEventKey.getServiceKey());
+        }
+    }
+
+
 
 }
