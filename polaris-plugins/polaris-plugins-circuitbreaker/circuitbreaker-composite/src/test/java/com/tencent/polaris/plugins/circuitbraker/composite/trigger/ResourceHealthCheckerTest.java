@@ -67,14 +67,9 @@ public class ResourceHealthCheckerTest {
 				healthCheckInstanceProvider, new PolarisCircuitBreaker());
 
 		ServiceResource svcResource = new ServiceResource(new ServiceKey("default", "svc1"));
-		resourceHealthCheckerDefaultSvc1.addResource(svcResource);
-		Assert.assertTrue(resourceHealthCheckerDefaultSvc1.getResources().contains(svcResource));
-
-		resourceHealthCheckerDefaultSvcFoo1.addResource(svcResource);
-		Assert.assertFalse(resourceHealthCheckerDefaultSvcFoo1.getResources().contains(svcResource));
-
-		resourceHealthCheckerAllNsAllSvc.addResource(svcResource);
-		Assert.assertTrue(resourceHealthCheckerAllNsAllSvc.getResources().contains(svcResource));
+		Assert.assertTrue(resourceHealthCheckerDefaultSvc1.matchResource(svcResource));
+		Assert.assertFalse(resourceHealthCheckerDefaultSvcFoo1.matchResource(svcResource));
+		Assert.assertTrue(resourceHealthCheckerAllNsAllSvc.matchResource(svcResource));
 	}
 
 }
