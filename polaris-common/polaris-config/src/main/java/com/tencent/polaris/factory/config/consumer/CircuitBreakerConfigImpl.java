@@ -57,6 +57,10 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     @JsonProperty
     private Boolean enableRemotePull;
 
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long countersExpireInterval;
+
     @Override
     public boolean isEnable() {
         if (null == enable) {
@@ -128,6 +132,18 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
         return enableRemotePull;
     }
 
+    @Override
+    public long getCountersExpireInterval() {
+        if (null == countersExpireInterval) {
+            return 0;
+        }
+        return countersExpireInterval;
+    }
+
+    public void setCountersExpireInterval(long countersExpireInterval) {
+        this.countersExpireInterval = countersExpireInterval;
+    }
+
     public void setEnableRemotePull(boolean enableRemotePull) {
         this.enableRemotePull = enableRemotePull;
     }
@@ -143,6 +159,7 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
         }
         ConfigUtils.validateInterval(checkPeriod, "circuitBreaker.checkPeriod");
         ConfigUtils.validateInterval(sleepWindow, "circuitBreaker.sleepWindow");
+        ConfigUtils.validateInterval(countersExpireInterval, "circuitBreaker.countersExpireInterval");
         ConfigUtils.validatePositive(requestCountAfterHalfOpen, "circuitBreaker.requestCountAfterHalfOpen");
         ConfigUtils.validatePositive(successCountAfterHalfOpen, "circuitBreaker.successCountAfterHalfOpen");
         ConfigUtils.validateNull(enableRemotePull, "circuitBreaker.enableRemotePull");
@@ -165,6 +182,9 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
             if (null == sleepWindow) {
                 setSleepWindow(circuitBreakerConfig.getSleepWindow());
             }
+            if (null == countersExpireInterval) {
+                setCountersExpireInterval(circuitBreakerConfig.getCountersExpireInterval());
+            }
             if (null == requestCountAfterHalfOpen) {
                 setRequestCountAfterHalfOpen(circuitBreakerConfig.getRequestCountAfterHalfOpen());
             }
@@ -181,7 +201,6 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "CircuitBreakerConfigImpl{" +
                 "enable=" + enable +
@@ -191,6 +210,7 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
                 ", requestCountAfterHalfOpen=" + requestCountAfterHalfOpen +
                 ", successCountAfterHalfOpen=" + successCountAfterHalfOpen +
                 ", enableRemotePull=" + enableRemotePull +
-                "} " + super.toString();
+                ", countersExpireInterval=" + countersExpireInterval +
+                '}';
     }
 }

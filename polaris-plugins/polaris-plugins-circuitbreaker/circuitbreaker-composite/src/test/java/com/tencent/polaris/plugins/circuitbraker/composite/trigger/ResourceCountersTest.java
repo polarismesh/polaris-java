@@ -26,6 +26,8 @@ import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.factory.ConfigAPIFactory;
+import com.tencent.polaris.plugins.circuitbreaker.composite.PolarisCircuitBreaker;
 import com.tencent.polaris.plugins.circuitbreaker.composite.ResourceCounters;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreakerRule;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.ErrorCondition;
@@ -64,8 +66,9 @@ public class ResourceCountersTest {
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
-        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), scheduledExecutorService,
-                null);
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        polarisCircuitBreaker.setCircuitBreakerConfig(ConfigAPIFactory.defaultConfig().getConsumer().getCircuitBreaker());
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), scheduledExecutorService, polarisCircuitBreaker);
         CheckSet checkSet = new CheckSet();
         Resource methodResource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
         for (int i = 0; i < 5; i++) {
@@ -118,7 +121,10 @@ public class ResourceCountersTest {
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         Resource resource = new InstanceResource(
                 new ServiceKey("test", "TestSvc"), "127.0.0.1", 8088, null, "http");
-        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
+
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        polarisCircuitBreaker.setCircuitBreakerConfig(ConfigAPIFactory.defaultConfig().getConsumer().getCircuitBreaker());
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, polarisCircuitBreaker);
         ResourceStat stat1 = new ResourceStat(resource, 500, 100, RetStatus.RetUnknown);
         RetStatus nextStatus = resourceCounters.parseRetStatus(stat1);
         Assert.assertEquals(RetStatus.RetFail, nextStatus);
@@ -137,7 +143,7 @@ public class ResourceCountersTest {
                 TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
 
-        resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
+        resourceCounters = new ResourceCounters(resource, builder.build(), null, polarisCircuitBreaker);
         nextStatus = resourceCounters.parseRetStatus(stat3);
         Assert.assertEquals(RetStatus.RetSuccess, nextStatus);
     }
@@ -154,7 +160,10 @@ public class ResourceCountersTest {
                 TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(1).setSleepWindow(5).build());
         Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
-        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, null);
+
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        polarisCircuitBreaker.setCircuitBreakerConfig(ConfigAPIFactory.defaultConfig().getConsumer().getCircuitBreaker());
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(), null, polarisCircuitBreaker);
         resourceCounters.setDestroyed(true);
         resourceCounters.report(new ResourceStat(resource, 500, 1000));
         resourceCounters.closeToOpen("cb_rule_status");

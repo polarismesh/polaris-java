@@ -14,4 +14,11 @@
     <name>Polaris Test Common</name>
     <description>Polaris Test Common JAR</description>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-plugin-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>
