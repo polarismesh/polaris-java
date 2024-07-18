@@ -17,18 +17,18 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.control.Destroyable;
-import com.tencent.polaris.api.plugin.configuration.ConfigPublishFile;
-import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.configuration.ConfigPublishFile;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKVFile;
-import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.configuration.api.rpc.ConfigPublishRequest;
 import com.tencent.polaris.configuration.api.rpc.CreateConfigFileRequest;
 import com.tencent.polaris.configuration.api.rpc.ReleaseConfigFileRequest;
@@ -119,6 +119,17 @@ public class ConfigFileManager {
         return configFile;
     }
 
+    public ConfigKVFile removeConfigKVFile(ConfigFileMetadata configFileMetadata) {
+        ConfigKVFile configFile = null;
+        synchronized (this) {
+            configFile = configPropertiesFileCache.get(configFileMetadata);
+            if (configFile != null) {
+                configFile = configPropertiesFileCache.remove(configFileMetadata);
+            }
+        }
+        return configFile;
+    }
+
     public ConfigFileResponse createConfigFile(CreateConfigFileRequest request) {
         com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
                 new com.tencent.polaris.api.plugin.configuration.ConfigFile(request.getNamespace(),
@@ -161,7 +172,7 @@ public class ConfigFileManager {
     public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
 
         ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain,
-                connector, configFileMetadata, persistentHandler);
+                connector, configFileMetadata, persistentHandler, this);
 
         return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName(), configFileRepo,
@@ -170,7 +181,7 @@ public class ConfigFileManager {
 
     public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
         ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain,
-                connector, configFileMetadata, persistentHandler);
+                connector, configFileMetadata, persistentHandler, this);
         switch (format) {
             case Properties: {
                 return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),

@@ -27,6 +27,7 @@ import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +56,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
     private final boolean fallbackToLocalCache;
+    private final ConfigFileManager configFileManager;
+    private final ConfigFileLongPullService pullService;
 
     private String token;
 
@@ -67,7 +70,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                                 ConfigFileFilterChain configFileFilterChain,
                                 ConfigFileConnector connector,
                                 ConfigFileMetadata configFileMetadata,
-                                ConfigFilePersistentHandler handler) {
+                                ConfigFilePersistentHandler handler, ConfigFileManager configFileManager) {
         super(sdkContext, configFileMetadata);
         //保证线程池正常初始化
         createPullExecutorService();
@@ -77,6 +80,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
         this.configFileFilterChain = configFileFilterChain;
+        this.configFileManager = configFileManager;
+        this.pullService = pullService;
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
@@ -188,7 +193,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     //删除配置文件
                     if (remoteConfigFile.get() != null) {
                         remoteConfigFile.set(null);
-
+                        ConfigKVFile configKVFile = configFileManager.removeConfigKVFile(configFileMetadata);
+                        pullService.removeConfigFile(this);
                         //删除配置文件也需要触发通知
                         fireChangeEvent(null);
                     }

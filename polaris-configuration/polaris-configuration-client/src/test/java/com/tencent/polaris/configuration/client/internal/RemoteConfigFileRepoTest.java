@@ -88,7 +88,7 @@ public class RemoteConfigFileRepoTest {
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
-                        configFileMetadata, configFilePersistHandler);
+                        configFileMetadata, configFilePersistHandler, new ConfigFileManager());
 
         verify(configFileFilterChain).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
@@ -108,7 +108,7 @@ public class RemoteConfigFileRepoTest {
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
-                        configFileMetadata, configFilePersistHandler);
+                        configFileMetadata, configFilePersistHandler, new ConfigFileManager());
 
         verify(configFileFilterChain).execute(any(), any());
         verify(configFileLongPollingService).addConfigFile(remoteConfigFileRepo);
@@ -127,7 +127,7 @@ public class RemoteConfigFileRepoTest {
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
-                        configFileMetadata, configFilePersistHandler);
+                        configFileMetadata, configFilePersistHandler, new ConfigFileManager());
 
         //重试三次
         verify(configFileFilterChain, times(3)).execute(any(), any());
@@ -145,7 +145,7 @@ public class RemoteConfigFileRepoTest {
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
-                        configFileMetadata, configFilePersistHandler);
+                        configFileMetadata, configFilePersistHandler, new ConfigFileManager());
 
         //重试三次
         verify(configFileFilterChain, times(3)).execute(any(), any());
@@ -171,7 +171,7 @@ public class RemoteConfigFileRepoTest {
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
-                        configFileMetadata, configFilePersistHandler);
+                        configFileMetadata, configFilePersistHandler, new ConfigFileManager());
 
         AtomicInteger cbCnt = new AtomicInteger();
         //增加两个listener
