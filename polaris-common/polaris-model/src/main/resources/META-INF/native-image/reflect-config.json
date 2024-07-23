@@ -1,0 +1,16 @@
+[
+{
+  "name":"com.tencent.polaris.api.pojo.ServiceEventKeyTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"verifyCase1","parameterTypes":[] }, {"name":"verifyCase2","parameterTypes":[] }, {"name":"verifyCase3","parameterTypes":[] }, {"name":"verifyCase4","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.api.utils.RuleUtilsTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testMatchMetadata","parameterTypes":[] }]
+}
+]

@@ -1,0 +1,541 @@
+[
+{
+  "name":"com.tencent.polaris.api.config.Configuration",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.configuration.ConfigFileConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.configuration.ConfigFilterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.configuration.ConnectorConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.CircuitBreakerConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.ConsumerConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.DiscoveryConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.LoadBalanceConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.LocalCacheConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.OutlierDetectionConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.OutlierDetectionConfig$When",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.ServiceRouterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.SubscribeConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.APIConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.ClusterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.FlowCacheConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.FlowConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.GlobalConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.LocationConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.LocationProviderConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.ServerConnectorConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.StatReporterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.SystemConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.plugin.PluginConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.ProviderConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.RateLimitConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.RateLimitConfig$Fallback",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.RegisterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.ServiceConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.verify.Verifier",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.plugin.route.LocationLevel",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.circuitbreaker.factory.test.CircuitBreakerTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"after","parameterTypes":[] }, {"name":"before","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"testCircuitBreakByErrorCount","parameterTypes":[] }, {"name":"testCircuitBreakByErrorRate","parameterTypes":[] }, {"name":"testFunctionalDecorator","parameterTypes":[] }, {"name":"testUpdateServiceCallResult","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.ConfigurationImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getConfigFile","parameterTypes":[] }, {"name":"getConsumer","parameterTypes":[] }, {"name":"getGlobal","parameterTypes":[] }, {"name":"getProvider","parameterTypes":[] }, {"name":"setConsumer","parameterTypes":["com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl"] }, {"name":"setGlobal","parameterTypes":["com.tencent.polaris.factory.config.global.GlobalConfigImpl"] }, {"name":"setProvider","parameterTypes":["com.tencent.polaris.factory.config.provider.ProviderConfigImpl"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getConfigFilterConfig","parameterTypes":[] }, {"name":"getPropertiesValueCacheSize","parameterTypes":[] }, {"name":"getPropertiesValueExpireTime","parameterTypes":[] }, {"name":"getServerConnector","parameterTypes":[] }, {"name":"setPropertiesValueCacheSize","parameterTypes":["int"] }, {"name":"setPropertiesValueExpireTime","parameterTypes":["long"] }, {"name":"setServerConnector","parameterTypes":["com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.configuration.ConfigFilterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getChain","parameterTypes":[] }, {"name":"getPluginConfigs","parameterTypes":[] }, {"name":"isEnable","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getConfigFileGroupThreadNum","parameterTypes":[] }, {"name":"getConnectorType","parameterTypes":[] }, {"name":"getFallbackToLocalCache","parameterTypes":[] }, {"name":"getPersistDir","parameterTypes":[] }, {"name":"getPersistEnable","parameterTypes":[] }, {"name":"getPersistMaxReadRetry","parameterTypes":[] }, {"name":"getPersistMaxWriteRetry","parameterTypes":[] }, {"name":"getPersistRetryInterval","parameterTypes":[] }, {"name":"setConnectorType","parameterTypes":["java.lang.String"] }, {"name":"setFallbackToLocalCache","parameterTypes":["java.lang.Boolean"] }, {"name":"setPersistDir","parameterTypes":["java.lang.String"] }, {"name":"setPersistEnable","parameterTypes":["java.lang.Boolean"] }, {"name":"setPersistMaxReadRetry","parameterTypes":["java.lang.Integer"] }, {"name":"setPersistMaxWriteRetry","parameterTypes":["java.lang.Integer"] }, {"name":"setPersistRetryInterval","parameterTypes":["java.lang.Long"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.CircuitBreakerConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getChain","parameterTypes":[] }, {"name":"getCheckPeriod","parameterTypes":[] }, {"name":"getRequestCountAfterHalfOpen","parameterTypes":[] }, {"name":"getSleepWindow","parameterTypes":[] }, {"name":"getSuccessCountAfterHalfOpen","parameterTypes":[] }, {"name":"isEnable","parameterTypes":[] }, {"name":"isEnableRemotePull","parameterTypes":[] }, {"name":"setChain","parameterTypes":["java.util.List"] }, {"name":"setCheckPeriod","parameterTypes":["long"] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setEnableRemotePull","parameterTypes":["boolean"] }, {"name":"setRequestCountAfterHalfOpen","parameterTypes":["int"] }, {"name":"setSleepWindow","parameterTypes":["long"] }, {"name":"setSuccessCountAfterHalfOpen","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getCircuitBreaker","parameterTypes":[] }, {"name":"getDiscoveries","parameterTypes":[] }, {"name":"getLoadbalancer","parameterTypes":[] }, {"name":"getLocalCache","parameterTypes":[] }, {"name":"getOutlierDetection","parameterTypes":[] }, {"name":"getServiceRouter","parameterTypes":[] }, {"name":"getSubscribe","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.DiscoveryConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["java.lang.Boolean"] }, {"name":"setServerConnectorId","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.LoadBalanceConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }, {"name":"setType","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.LocalCacheConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getPersistDir","parameterTypes":[] }, {"name":"getPersistMaxReadRetry","parameterTypes":[] }, {"name":"getPersistMaxWriteRetry","parameterTypes":[] }, {"name":"getPersistRetryInterval","parameterTypes":[] }, {"name":"getServiceExpireTime","parameterTypes":[] }, {"name":"getServiceListRefreshInterval","parameterTypes":[] }, {"name":"getServiceRefreshInterval","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }, {"name":"isPersistEnable","parameterTypes":[] }, {"name":"isServiceExpireEnable","parameterTypes":[] }, {"name":"setPersistDir","parameterTypes":["java.lang.String"] }, {"name":"setPersistEnable","parameterTypes":["java.lang.Boolean"] }, {"name":"setPersistMaxReadRetry","parameterTypes":["int"] }, {"name":"setPersistMaxWriteRetry","parameterTypes":["int"] }, {"name":"setPersistRetryInterval","parameterTypes":["long"] }, {"name":"setServiceExpireEnable","parameterTypes":["boolean"] }, {"name":"setServiceExpireTime","parameterTypes":["long"] }, {"name":"setServiceListRefreshInterval","parameterTypes":["java.lang.Long"] }, {"name":"setServiceRefreshInterval","parameterTypes":["long"] }, {"name":"setType","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.OutlierDetectionConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getChain","parameterTypes":[] }, {"name":"getCheckPeriod","parameterTypes":[] }, {"name":"getWhen","parameterTypes":[] }, {"name":"setChain","parameterTypes":["java.util.List"] }, {"name":"setCheckPeriod","parameterTypes":["long"] }, {"name":"setWhen","parameterTypes":["com.tencent.polaris.api.config.consumer.OutlierDetectionConfig$When"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.ServiceRouterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getAfterChain","parameterTypes":[] }, {"name":"getBeforeChain","parameterTypes":[] }, {"name":"getChain","parameterTypes":[] }, {"name":"setAfterChain","parameterTypes":["java.util.List"] }, {"name":"setBeforeChain","parameterTypes":["java.util.List"] }, {"name":"setChain","parameterTypes":["java.util.List"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.SubscribeConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getCallbackConcurrency","parameterTypes":[] }, {"name":"setCallbackConcurrency","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.APIConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getBindIP","parameterTypes":[] }, {"name":"getBindIf","parameterTypes":[] }, {"name":"getMaxRetryTimes","parameterTypes":[] }, {"name":"getReportInterval","parameterTypes":[] }, {"name":"getRetryInterval","parameterTypes":[] }, {"name":"getTimeout","parameterTypes":[] }, {"name":"setMaxRetryTimes","parameterTypes":["int"] }, {"name":"setReportInterval","parameterTypes":["long"] }, {"name":"setRetryInterval","parameterTypes":["long"] }, {"name":"setTimeout","parameterTypes":["long"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.ClusterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getLbPolicy","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getRefreshInterval","parameterTypes":[] }, {"name":"getRouters","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"isSameAsBuiltin","parameterTypes":[] }, {"name":"setLbPolicy","parameterTypes":["java.lang.String"] }, {"name":"setRefreshInterval","parameterTypes":["long"] }, {"name":"setRouters","parameterTypes":["java.util.List"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.FlowCacheConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getExpireInterval","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"isEnable","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setExpireInterval","parameterTypes":["long"] }, {"name":"setName","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.FlowConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"setName","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.GlobalConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getAPI","parameterTypes":[] }, {"name":"getLocation","parameterTypes":[] }, {"name":"getServerConnector","parameterTypes":[] }, {"name":"getServerConnectors","parameterTypes":[] }, {"name":"getStatReporter","parameterTypes":[] }, {"name":"getSystem","parameterTypes":[] }, {"name":"setServerConnector","parameterTypes":["com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.LocationConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getProviders","parameterTypes":[] }, {"name":"setProviders","parameterTypes":["java.util.List"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.LocationProviderConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getOptions","parameterTypes":[] }, {"name":"getTye","parameterTypes":[] }, {"name":"setOptions","parameterTypes":["java.util.Map"] }, {"name":"setType","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getAddresses","parameterTypes":[] }, {"name":"getCertFile","parameterTypes":[] }, {"name":"getConnectTimeout","parameterTypes":[] }, {"name":"getConnectionIdleTimeout","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getKeyFile","parameterTypes":[] }, {"name":"getMessageTimeout","parameterTypes":[] }, {"name":"getMetadata","parameterTypes":[] }, {"name":"getProtocol","parameterTypes":[] }, {"name":"getReconnectInterval","parameterTypes":[] }, {"name":"getServerSwitchInterval","parameterTypes":[] }, {"name":"getTrustedCAFile","parameterTypes":[] }, {"name":"setAddresses","parameterTypes":["java.util.List"] }, {"name":"setConnectTimeout","parameterTypes":["java.lang.Long"] }, {"name":"setConnectionIdleTimeout","parameterTypes":["java.lang.Long"] }, {"name":"setId","parameterTypes":["java.lang.String"] }, {"name":"setMessageTimeout","parameterTypes":["java.lang.Long"] }, {"name":"setProtocol","parameterTypes":["java.lang.String"] }, {"name":"setReconnectInterval","parameterTypes":["java.lang.Long"] }, {"name":"setServerSwitchInterval","parameterTypes":["java.lang.Long"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.StatReporterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getChain","parameterTypes":[] }, {"name":"isEnable","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["boolean"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.SystemConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getConfigCluster","parameterTypes":[] }, {"name":"getDiscoverCluster","parameterTypes":[] }, {"name":"getFlow","parameterTypes":[] }, {"name":"getFlowCache","parameterTypes":[] }, {"name":"getHealthCheckCluster","parameterTypes":[] }, {"name":"getMonitorCluster","parameterTypes":[] }, {"name":"getVariables","parameterTypes":[] }, {"name":"setFlow","parameterTypes":["com.tencent.polaris.factory.config.global.FlowConfigImpl"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.plugin.PluginConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"getPlugin","parameterTypes":[] }, {"name":"getPluginConfigs","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.ProviderConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getMinRegisterInterval","parameterTypes":[] }, {"name":"getRateLimit","parameterTypes":[] }, {"name":"getRegisters","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.RateLimitConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getFallbackOnExceedWindowCount","parameterTypes":[] }, {"name":"getLimiterAddresses","parameterTypes":[] }, {"name":"getLimiterNamespace","parameterTypes":[] }, {"name":"getLimiterService","parameterTypes":[] }, {"name":"getMaxQueuingTime","parameterTypes":[] }, {"name":"getMaxWindowCount","parameterTypes":[] }, {"name":"getRemoteSyncTimeoutMilli","parameterTypes":[] }, {"name":"isEnable","parameterTypes":[] }, {"name":"isReportMetrics","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setFallbackOnExceedWindowCount","parameterTypes":["com.tencent.polaris.api.config.provider.RateLimitConfig$Fallback"] }, {"name":"setLimiterNamespace","parameterTypes":["java.lang.String"] }, {"name":"setLimiterService","parameterTypes":["java.lang.String"] }, {"name":"setMaxQueuingTime","parameterTypes":["java.lang.Long"] }, {"name":"setMaxWindowCount","parameterTypes":["int"] }, {"name":"setRemoteSyncTimeoutMilli","parameterTypes":["long"] }, {"name":"setReportMetrics","parameterTypes":["boolean"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.RegisterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setServerConnectorId","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.ServiceConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getName","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.util.TimeStrJsonDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugin.location.base.BaseLocationProvider$GetOption",
+  "allDeclaredFields":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbreaker.errcount.Config",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getContinuousErrorThreshold","parameterTypes":[] }, {"name":"setContinuousErrorThreshold","parameterTypes":["java.lang.Integer"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.circuitbreaker.errrate.Config",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getErrorRateThreshold","parameterTypes":[] }, {"name":"getMetricNumBuckets","parameterTypes":[] }, {"name":"getRequestVolumeThreshold","parameterTypes":[] }, {"name":"setErrorRateThreshold","parameterTypes":["java.lang.Integer"] }, {"name":"setMetricNumBuckets","parameterTypes":["java.lang.Integer"] }, {"name":"setRequestVolumeThreshold","parameterTypes":["java.lang.Integer"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.outlier.detector.http.Config",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getPath","parameterTypes":[] }, {"name":"getTimeout","parameterTypes":[] }, {"name":"setPath","parameterTypes":["java.lang.String"] }, {"name":"setTimeout","parameterTypes":["java.lang.Long"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.outlier.detector.tcp.Config",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getReceive","parameterTypes":[] }, {"name":"getSend","parameterTypes":[] }, {"name":"setReceive","parameterTypes":["java.lang.String"] }, {"name":"setSend","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.outlier.detector.udp.Config",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getReceive","parameterTypes":[] }, {"name":"getSend","parameterTypes":[] }, {"name":"getTimeout","parameterTypes":[] }, {"name":"setReceive","parameterTypes":["java.lang.String"] }, {"name":"setSend","parameterTypes":["java.lang.String"] }, {"name":"setTimeout","parameterTypes":["java.lang.Long"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.router.healthy.RecoverRouterConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"isExcludeCircuitBreakInstances","parameterTypes":[] }, {"name":"setExcludeCircuitBreakInstances","parameterTypes":["java.lang.Boolean"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.router.metadata.FailOverType",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.plugins.router.metadata.MetadataRouterConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getMetadataFailOverType","parameterTypes":[] }, {"name":"setMetadataFailOverType","parameterTypes":["com.tencent.polaris.plugins.router.metadata.FailOverType"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.router.nearby.NearbyRouterConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getMatchLevel","parameterTypes":[] }, {"name":"getMaxMatchLevel","parameterTypes":[] }, {"name":"getUnhealthyPercentToDegrade","parameterTypes":[] }, {"name":"isEnableDegradeByUnhealthyPercent","parameterTypes":[] }, {"name":"isEnableReportLocalAddress","parameterTypes":[] }, {"name":"isStrictNearby","parameterTypes":[] }, {"name":"setEnableDegradeByUnhealthyPercent","parameterTypes":["java.lang.Boolean"] }, {"name":"setEnableReportLocalAddress","parameterTypes":["java.lang.Boolean"] }, {"name":"setMatchLevel","parameterTypes":["com.tencent.polaris.api.plugin.route.LocationLevel"] }, {"name":"setMaxMatchLevel","parameterTypes":["com.tencent.polaris.api.plugin.route.LocationLevel"] }, {"name":"setStrictNearby","parameterTypes":["java.lang.Boolean"] }, {"name":"setUnhealthyPercentToDegrade","parameterTypes":["java.lang.Integer"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.router.rule.RuleBasedRouterConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getFailoverType","parameterTypes":[] }, {"name":"setFailoverType","parameterTypes":["com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"getAddress","parameterTypes":[] }, {"name":"getHost","parameterTypes":[] }, {"name":"getPath","parameterTypes":[] }, {"name":"getPort","parameterTypes":[] }, {"name":"getPushInterval","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }, {"name":"isOpenGzip","parameterTypes":[] }, {"name":"setAddress","parameterTypes":["java.lang.String"] }, {"name":"setHost","parameterTypes":["java.lang.String"] }, {"name":"setOpenGzip","parameterTypes":["java.lang.Boolean"] }, {"name":"setPath","parameterTypes":["java.lang.String"] }, {"name":"setPort","parameterTypes":["java.lang.Integer"] }, {"name":"setPushInterval","parameterTypes":["java.lang.Long"] }, {"name":"setType","parameterTypes":["java.lang.String"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$CircuitBreakerRule",
+  "methods":[{"name":"getCtime","parameterTypes":[] }, {"name":"getCtimeBytes","parameterTypes":[] }, {"name":"getDescription","parameterTypes":[] }, {"name":"getDescriptionBytes","parameterTypes":[] }, {"name":"getEnable","parameterTypes":[] }, {"name":"getErrorConditions","parameterTypes":["int"] }, {"name":"getErrorConditionsCount","parameterTypes":[] }, {"name":"getErrorConditionsList","parameterTypes":[] }, {"name":"getEtime","parameterTypes":[] }, {"name":"getEtimeBytes","parameterTypes":[] }, {"name":"getFallbackConfig","parameterTypes":[] }, {"name":"getFaultDetectConfig","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getIdBytes","parameterTypes":[] }, {"name":"getLevel","parameterTypes":[] }, {"name":"getLevelValue","parameterTypes":[] }, {"name":"getMaxEjectionPercent","parameterTypes":[] }, {"name":"getMtime","parameterTypes":[] }, {"name":"getMtimeBytes","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getNameBytes","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBytes","parameterTypes":[] }, {"name":"getRecoverCondition","parameterTypes":[] }, {"name":"getRevision","parameterTypes":[] }, {"name":"getRevisionBytes","parameterTypes":[] }, {"name":"getRuleMatcher","parameterTypes":[] }, {"name":"getTriggerCondition","parameterTypes":["int"] }, {"name":"getTriggerConditionCount","parameterTypes":[] }, {"name":"getTriggerConditionList","parameterTypes":[] }, {"name":"hasFallbackConfig","parameterTypes":[] }, {"name":"hasFaultDetectConfig","parameterTypes":[] }, {"name":"hasRecoverCondition","parameterTypes":[] }, {"name":"hasRuleMatcher","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$CircuitBreakerRule$Builder",
+  "methods":[{"name":"addErrorConditions","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$ErrorCondition"] }, {"name":"addTriggerCondition","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$TriggerCondition"] }, {"name":"clearCtime","parameterTypes":[] }, {"name":"clearDescription","parameterTypes":[] }, {"name":"clearEnable","parameterTypes":[] }, {"name":"clearErrorConditions","parameterTypes":[] }, {"name":"clearEtime","parameterTypes":[] }, {"name":"clearFallbackConfig","parameterTypes":[] }, {"name":"clearFaultDetectConfig","parameterTypes":[] }, {"name":"clearId","parameterTypes":[] }, {"name":"clearLevel","parameterTypes":[] }, {"name":"clearMaxEjectionPercent","parameterTypes":[] }, {"name":"clearMtime","parameterTypes":[] }, {"name":"clearName","parameterTypes":[] }, {"name":"clearNamespace","parameterTypes":[] }, {"name":"clearRecoverCondition","parameterTypes":[] }, {"name":"clearRevision","parameterTypes":[] }, {"name":"clearRuleMatcher","parameterTypes":[] }, {"name":"clearTriggerCondition","parameterTypes":[] }, {"name":"getCtime","parameterTypes":[] }, {"name":"getCtimeBytes","parameterTypes":[] }, {"name":"getDescription","parameterTypes":[] }, {"name":"getDescriptionBytes","parameterTypes":[] }, {"name":"getEnable","parameterTypes":[] }, {"name":"getErrorConditions","parameterTypes":["int"] }, {"name":"getErrorConditionsBuilder","parameterTypes":["int"] }, {"name":"getErrorConditionsCount","parameterTypes":[] }, {"name":"getErrorConditionsList","parameterTypes":[] }, {"name":"getEtime","parameterTypes":[] }, {"name":"getEtimeBytes","parameterTypes":[] }, {"name":"getFallbackConfig","parameterTypes":[] }, {"name":"getFallbackConfigBuilder","parameterTypes":[] }, {"name":"getFaultDetectConfig","parameterTypes":[] }, {"name":"getFaultDetectConfigBuilder","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getIdBytes","parameterTypes":[] }, {"name":"getLevel","parameterTypes":[] }, {"name":"getLevelValue","parameterTypes":[] }, {"name":"getMaxEjectionPercent","parameterTypes":[] }, {"name":"getMtime","parameterTypes":[] }, {"name":"getMtimeBytes","parameterTypes":[] }, {"name":"getName","parameterTypes":[] }, {"name":"getNameBytes","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBytes","parameterTypes":[] }, {"name":"getRecoverCondition","parameterTypes":[] }, {"name":"getRecoverConditionBuilder","parameterTypes":[] }, {"name":"getRevision","parameterTypes":[] }, {"name":"getRevisionBytes","parameterTypes":[] }, {"name":"getRuleMatcher","parameterTypes":[] }, {"name":"getRuleMatcherBuilder","parameterTypes":[] }, {"name":"getTriggerCondition","parameterTypes":["int"] }, {"name":"getTriggerConditionBuilder","parameterTypes":["int"] }, {"name":"getTriggerConditionCount","parameterTypes":[] }, {"name":"getTriggerConditionList","parameterTypes":[] }, {"name":"hasFallbackConfig","parameterTypes":[] }, {"name":"hasFaultDetectConfig","parameterTypes":[] }, {"name":"hasRecoverCondition","parameterTypes":[] }, {"name":"hasRuleMatcher","parameterTypes":[] }, {"name":"setCtime","parameterTypes":["java.lang.String"] }, {"name":"setCtimeBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setDescription","parameterTypes":["java.lang.String"] }, {"name":"setDescriptionBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setErrorConditions","parameterTypes":["int","com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$ErrorCondition"] }, {"name":"setEtime","parameterTypes":["java.lang.String"] }, {"name":"setEtimeBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setFallbackConfig","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackConfig"] }, {"name":"setFaultDetectConfig","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FaultDetectConfig"] }, {"name":"setId","parameterTypes":["java.lang.String"] }, {"name":"setIdBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setLevel","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$Level"] }, {"name":"setLevelValue","parameterTypes":["int"] }, {"name":"setMaxEjectionPercent","parameterTypes":["int"] }, {"name":"setMtime","parameterTypes":["java.lang.String"] }, {"name":"setMtimeBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setName","parameterTypes":["java.lang.String"] }, {"name":"setNameBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setNamespace","parameterTypes":["java.lang.String"] }, {"name":"setNamespaceBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setRecoverCondition","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RecoverCondition"] }, {"name":"setRevision","parameterTypes":["java.lang.String"] }, {"name":"setRevisionBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setRuleMatcher","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher"] }, {"name":"setTriggerCondition","parameterTypes":["int","com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$TriggerCondition"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$ErrorCondition",
+  "methods":[{"name":"getCondition","parameterTypes":[] }, {"name":"getInputType","parameterTypes":[] }, {"name":"getInputTypeValue","parameterTypes":[] }, {"name":"hasCondition","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$ErrorCondition$Builder",
+  "methods":[{"name":"clearCondition","parameterTypes":[] }, {"name":"clearInputType","parameterTypes":[] }, {"name":"getCondition","parameterTypes":[] }, {"name":"getConditionBuilder","parameterTypes":[] }, {"name":"getInputType","parameterTypes":[] }, {"name":"getInputTypeValue","parameterTypes":[] }, {"name":"hasCondition","parameterTypes":[] }, {"name":"setCondition","parameterTypes":["com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString"] }, {"name":"setInputType","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$ErrorCondition$InputType"] }, {"name":"setInputTypeValue","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$ErrorCondition$InputType",
+  "methods":[{"name":"getValueDescriptor","parameterTypes":[] }, {"name":"valueOf","parameterTypes":["com.google.protobuf.Descriptors$EnumValueDescriptor"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackConfig",
+  "methods":[{"name":"getEnable","parameterTypes":[] }, {"name":"getResponse","parameterTypes":[] }, {"name":"hasResponse","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackConfig$Builder",
+  "methods":[{"name":"clearEnable","parameterTypes":[] }, {"name":"clearResponse","parameterTypes":[] }, {"name":"getEnable","parameterTypes":[] }, {"name":"getResponse","parameterTypes":[] }, {"name":"getResponseBuilder","parameterTypes":[] }, {"name":"hasResponse","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setResponse","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackResponse"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackResponse",
+  "methods":[{"name":"getBody","parameterTypes":[] }, {"name":"getBodyBytes","parameterTypes":[] }, {"name":"getCode","parameterTypes":[] }, {"name":"getHeaders","parameterTypes":["int"] }, {"name":"getHeadersCount","parameterTypes":[] }, {"name":"getHeadersList","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackResponse$Builder",
+  "methods":[{"name":"addHeaders","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackResponse$MessageHeader"] }, {"name":"clearBody","parameterTypes":[] }, {"name":"clearCode","parameterTypes":[] }, {"name":"clearHeaders","parameterTypes":[] }, {"name":"getBody","parameterTypes":[] }, {"name":"getBodyBytes","parameterTypes":[] }, {"name":"getCode","parameterTypes":[] }, {"name":"getHeaders","parameterTypes":["int"] }, {"name":"getHeadersBuilder","parameterTypes":["int"] }, {"name":"getHeadersCount","parameterTypes":[] }, {"name":"getHeadersList","parameterTypes":[] }, {"name":"setBody","parameterTypes":["java.lang.String"] }, {"name":"setBodyBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setCode","parameterTypes":["int"] }, {"name":"setHeaders","parameterTypes":["int","com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackResponse$MessageHeader"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FallbackResponse$MessageHeader",
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FaultDetectConfig",
+  "methods":[{"name":"getEnable","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$FaultDetectConfig$Builder",
+  "methods":[{"name":"clearEnable","parameterTypes":[] }, {"name":"getEnable","parameterTypes":[] }, {"name":"setEnable","parameterTypes":["boolean"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$Level",
+  "methods":[{"name":"getValueDescriptor","parameterTypes":[] }, {"name":"valueOf","parameterTypes":["com.google.protobuf.Descriptors$EnumValueDescriptor"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RecoverCondition",
+  "methods":[{"name":"getConsecutiveSuccess","parameterTypes":[] }, {"name":"getSleepWindow","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RecoverCondition$Builder",
+  "methods":[{"name":"clearConsecutiveSuccess","parameterTypes":[] }, {"name":"clearSleepWindow","parameterTypes":[] }, {"name":"getConsecutiveSuccess","parameterTypes":[] }, {"name":"getSleepWindow","parameterTypes":[] }, {"name":"setConsecutiveSuccess","parameterTypes":["int"] }, {"name":"setSleepWindow","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher",
+  "methods":[{"name":"getDestination","parameterTypes":[] }, {"name":"getSource","parameterTypes":[] }, {"name":"hasDestination","parameterTypes":[] }, {"name":"hasSource","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$Builder",
+  "methods":[{"name":"clearDestination","parameterTypes":[] }, {"name":"clearSource","parameterTypes":[] }, {"name":"getDestination","parameterTypes":[] }, {"name":"getDestinationBuilder","parameterTypes":[] }, {"name":"getSource","parameterTypes":[] }, {"name":"getSourceBuilder","parameterTypes":[] }, {"name":"hasDestination","parameterTypes":[] }, {"name":"hasSource","parameterTypes":[] }, {"name":"setDestination","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$DestinationService"] }, {"name":"setSource","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$SourceService"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$DestinationService",
+  "methods":[{"name":"getMethod","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBytes","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"getServiceBytes","parameterTypes":[] }, {"name":"hasMethod","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$DestinationService$Builder",
+  "methods":[{"name":"clearMethod","parameterTypes":[] }, {"name":"clearNamespace","parameterTypes":[] }, {"name":"clearService","parameterTypes":[] }, {"name":"getMethod","parameterTypes":[] }, {"name":"getMethodBuilder","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBytes","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"getServiceBytes","parameterTypes":[] }, {"name":"hasMethod","parameterTypes":[] }, {"name":"setMethod","parameterTypes":["com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString"] }, {"name":"setNamespace","parameterTypes":["java.lang.String"] }, {"name":"setNamespaceBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setService","parameterTypes":["java.lang.String"] }, {"name":"setServiceBytes","parameterTypes":["com.google.protobuf.ByteString"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$SourceService",
+  "methods":[{"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBytes","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"getServiceBytes","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$RuleMatcher$SourceService$Builder",
+  "methods":[{"name":"clearNamespace","parameterTypes":[] }, {"name":"clearService","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBytes","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"getServiceBytes","parameterTypes":[] }, {"name":"setNamespace","parameterTypes":["java.lang.String"] }, {"name":"setNamespaceBytes","parameterTypes":["com.google.protobuf.ByteString"] }, {"name":"setService","parameterTypes":["java.lang.String"] }, {"name":"setServiceBytes","parameterTypes":["com.google.protobuf.ByteString"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$TriggerCondition",
+  "methods":[{"name":"getErrorCount","parameterTypes":[] }, {"name":"getErrorPercent","parameterTypes":[] }, {"name":"getInterval","parameterTypes":[] }, {"name":"getMinimumRequest","parameterTypes":[] }, {"name":"getTriggerType","parameterTypes":[] }, {"name":"getTriggerTypeValue","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$TriggerCondition$Builder",
+  "methods":[{"name":"clearErrorCount","parameterTypes":[] }, {"name":"clearErrorPercent","parameterTypes":[] }, {"name":"clearInterval","parameterTypes":[] }, {"name":"clearMinimumRequest","parameterTypes":[] }, {"name":"clearTriggerType","parameterTypes":[] }, {"name":"getErrorCount","parameterTypes":[] }, {"name":"getErrorPercent","parameterTypes":[] }, {"name":"getInterval","parameterTypes":[] }, {"name":"getMinimumRequest","parameterTypes":[] }, {"name":"getTriggerType","parameterTypes":[] }, {"name":"getTriggerTypeValue","parameterTypes":[] }, {"name":"setErrorCount","parameterTypes":["int"] }, {"name":"setErrorPercent","parameterTypes":["int"] }, {"name":"setInterval","parameterTypes":["int"] }, {"name":"setMinimumRequest","parameterTypes":["int"] }, {"name":"setTriggerType","parameterTypes":["com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$TriggerCondition$TriggerType"] }, {"name":"setTriggerTypeValue","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto$TriggerCondition$TriggerType",
+  "methods":[{"name":"getValueDescriptor","parameterTypes":[] }, {"name":"valueOf","parameterTypes":["com.google.protobuf.Descriptors$EnumValueDescriptor"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.model.ModelProto$Location",
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString",
+  "methods":[{"name":"getType","parameterTypes":[] }, {"name":"getTypeValue","parameterTypes":[] }, {"name":"getValue","parameterTypes":[] }, {"name":"getValueType","parameterTypes":[] }, {"name":"getValueTypeValue","parameterTypes":[] }, {"name":"hasValue","parameterTypes":[] }, {"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString$Builder",
+  "methods":[{"name":"clearType","parameterTypes":[] }, {"name":"clearValue","parameterTypes":[] }, {"name":"clearValueType","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }, {"name":"getTypeValue","parameterTypes":[] }, {"name":"getValue","parameterTypes":[] }, {"name":"getValueBuilder","parameterTypes":[] }, {"name":"getValueType","parameterTypes":[] }, {"name":"getValueTypeValue","parameterTypes":[] }, {"name":"hasValue","parameterTypes":[] }, {"name":"setType","parameterTypes":["com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString$MatchStringType"] }, {"name":"setTypeValue","parameterTypes":["int"] }, {"name":"setValue","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setValueType","parameterTypes":["com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString$ValueType"] }, {"name":"setValueTypeValue","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString$MatchStringType",
+  "methods":[{"name":"getValueDescriptor","parameterTypes":[] }, {"name":"valueOf","parameterTypes":["com.google.protobuf.Descriptors$EnumValueDescriptor"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.model.ModelProto$MatchString$ValueType",
+  "methods":[{"name":"getValueDescriptor","parameterTypes":[] }, {"name":"valueOf","parameterTypes":["com.google.protobuf.Descriptors$EnumValueDescriptor"] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.service.manage.ServiceProto$HealthCheck",
+  "methods":[{"name":"newBuilder","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.service.manage.ServiceProto$Instance",
+  "methods":[{"name":"getCtime","parameterTypes":[] }, {"name":"getDefaultInstance","parameterTypes":[] }, {"name":"getEnableHealthCheck","parameterTypes":[] }, {"name":"getHealthCheck","parameterTypes":[] }, {"name":"getHealthy","parameterTypes":[] }, {"name":"getHost","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getIsolate","parameterTypes":[] }, {"name":"getLocation","parameterTypes":[] }, {"name":"getLogicSet","parameterTypes":[] }, {"name":"getMtime","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getPort","parameterTypes":[] }, {"name":"getPriority","parameterTypes":[] }, {"name":"getProtocol","parameterTypes":[] }, {"name":"getRevision","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"getServiceToken","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }, {"name":"getVpcId","parameterTypes":[] }, {"name":"getWeight","parameterTypes":[] }, {"name":"hasCtime","parameterTypes":[] }, {"name":"hasEnableHealthCheck","parameterTypes":[] }, {"name":"hasHealthCheck","parameterTypes":[] }, {"name":"hasHealthy","parameterTypes":[] }, {"name":"hasHost","parameterTypes":[] }, {"name":"hasId","parameterTypes":[] }, {"name":"hasIsolate","parameterTypes":[] }, {"name":"hasLocation","parameterTypes":[] }, {"name":"hasLogicSet","parameterTypes":[] }, {"name":"hasMtime","parameterTypes":[] }, {"name":"hasNamespace","parameterTypes":[] }, {"name":"hasPort","parameterTypes":[] }, {"name":"hasPriority","parameterTypes":[] }, {"name":"hasProtocol","parameterTypes":[] }, {"name":"hasRevision","parameterTypes":[] }, {"name":"hasService","parameterTypes":[] }, {"name":"hasServiceToken","parameterTypes":[] }, {"name":"hasVersion","parameterTypes":[] }, {"name":"hasVpcId","parameterTypes":[] }, {"name":"hasWeight","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.specification.api.v1.service.manage.ServiceProto$Instance$Builder",
+  "methods":[{"name":"clearCtime","parameterTypes":[] }, {"name":"clearEnableHealthCheck","parameterTypes":[] }, {"name":"clearHealthCheck","parameterTypes":[] }, {"name":"clearHealthy","parameterTypes":[] }, {"name":"clearHost","parameterTypes":[] }, {"name":"clearId","parameterTypes":[] }, {"name":"clearIsolate","parameterTypes":[] }, {"name":"clearLocation","parameterTypes":[] }, {"name":"clearLogicSet","parameterTypes":[] }, {"name":"clearMtime","parameterTypes":[] }, {"name":"clearNamespace","parameterTypes":[] }, {"name":"clearPort","parameterTypes":[] }, {"name":"clearPriority","parameterTypes":[] }, {"name":"clearProtocol","parameterTypes":[] }, {"name":"clearRevision","parameterTypes":[] }, {"name":"clearService","parameterTypes":[] }, {"name":"clearServiceToken","parameterTypes":[] }, {"name":"clearVersion","parameterTypes":[] }, {"name":"clearVpcId","parameterTypes":[] }, {"name":"clearWeight","parameterTypes":[] }, {"name":"getCtime","parameterTypes":[] }, {"name":"getCtimeBuilder","parameterTypes":[] }, {"name":"getEnableHealthCheck","parameterTypes":[] }, {"name":"getEnableHealthCheckBuilder","parameterTypes":[] }, {"name":"getHealthCheck","parameterTypes":[] }, {"name":"getHealthCheckBuilder","parameterTypes":[] }, {"name":"getHealthy","parameterTypes":[] }, {"name":"getHealthyBuilder","parameterTypes":[] }, {"name":"getHost","parameterTypes":[] }, {"name":"getHostBuilder","parameterTypes":[] }, {"name":"getId","parameterTypes":[] }, {"name":"getIdBuilder","parameterTypes":[] }, {"name":"getIsolate","parameterTypes":[] }, {"name":"getIsolateBuilder","parameterTypes":[] }, {"name":"getLocation","parameterTypes":[] }, {"name":"getLocationBuilder","parameterTypes":[] }, {"name":"getLogicSet","parameterTypes":[] }, {"name":"getLogicSetBuilder","parameterTypes":[] }, {"name":"getMtime","parameterTypes":[] }, {"name":"getMtimeBuilder","parameterTypes":[] }, {"name":"getNamespace","parameterTypes":[] }, {"name":"getNamespaceBuilder","parameterTypes":[] }, {"name":"getPort","parameterTypes":[] }, {"name":"getPortBuilder","parameterTypes":[] }, {"name":"getPriority","parameterTypes":[] }, {"name":"getPriorityBuilder","parameterTypes":[] }, {"name":"getProtocol","parameterTypes":[] }, {"name":"getProtocolBuilder","parameterTypes":[] }, {"name":"getRevision","parameterTypes":[] }, {"name":"getRevisionBuilder","parameterTypes":[] }, {"name":"getService","parameterTypes":[] }, {"name":"getServiceBuilder","parameterTypes":[] }, {"name":"getServiceToken","parameterTypes":[] }, {"name":"getServiceTokenBuilder","parameterTypes":[] }, {"name":"getVersion","parameterTypes":[] }, {"name":"getVersionBuilder","parameterTypes":[] }, {"name":"getVpcId","parameterTypes":[] }, {"name":"getVpcIdBuilder","parameterTypes":[] }, {"name":"getWeight","parameterTypes":[] }, {"name":"getWeightBuilder","parameterTypes":[] }, {"name":"hasCtime","parameterTypes":[] }, {"name":"hasEnableHealthCheck","parameterTypes":[] }, {"name":"hasHealthCheck","parameterTypes":[] }, {"name":"hasHealthy","parameterTypes":[] }, {"name":"hasHost","parameterTypes":[] }, {"name":"hasId","parameterTypes":[] }, {"name":"hasIsolate","parameterTypes":[] }, {"name":"hasLocation","parameterTypes":[] }, {"name":"hasLogicSet","parameterTypes":[] }, {"name":"hasMtime","parameterTypes":[] }, {"name":"hasNamespace","parameterTypes":[] }, {"name":"hasPort","parameterTypes":[] }, {"name":"hasPriority","parameterTypes":[] }, {"name":"hasProtocol","parameterTypes":[] }, {"name":"hasRevision","parameterTypes":[] }, {"name":"hasService","parameterTypes":[] }, {"name":"hasServiceToken","parameterTypes":[] }, {"name":"hasVersion","parameterTypes":[] }, {"name":"hasVpcId","parameterTypes":[] }, {"name":"hasWeight","parameterTypes":[] }, {"name":"setCtime","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setEnableHealthCheck","parameterTypes":["com.google.protobuf.BoolValue"] }, {"name":"setHealthCheck","parameterTypes":["com.tencent.polaris.specification.api.v1.service.manage.ServiceProto$HealthCheck"] }, {"name":"setHealthy","parameterTypes":["com.google.protobuf.BoolValue"] }, {"name":"setHost","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setId","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setIsolate","parameterTypes":["com.google.protobuf.BoolValue"] }, {"name":"setLocation","parameterTypes":["com.tencent.polaris.specification.api.v1.model.ModelProto$Location"] }, {"name":"setLogicSet","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setMtime","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setNamespace","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setPort","parameterTypes":["com.google.protobuf.UInt32Value"] }, {"name":"setPriority","parameterTypes":["com.google.protobuf.UInt32Value"] }, {"name":"setProtocol","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setRevision","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setService","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setServiceToken","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setVersion","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setVpcId","parameterTypes":["com.google.protobuf.StringValue"] }, {"name":"setWeight","parameterTypes":["com.google.protobuf.UInt32Value"] }]
+}
+]
