@@ -213,7 +213,9 @@ consumer:
     enable: true
     #描述: 故障检测周期，根据周期内故障进行熔断
     checkPeriod: 1m
-    #描述: 首次熔断时间，后续熔断时间=重试次数*sleepWindow
+    #描述：错误率统计时长
+    errorRateInterval: 60s
+    #描述: 熔断后等待时长
     sleepWindow: 30s
     #描述: 熔断器半开后最大允许的请求数
     requestCountAfterHalfOpen: 3
@@ -221,6 +223,8 @@ consumer:
     successCountAfterHalfOpen: 3
     #描述: 熔断规则远程拉取开关
     enableRemotePull: true
+    #描述：熔断计数器淘汰周期（距离上一次请求上报）
+    countersExpireInterval: 300s
     #描述:熔断策略，SDK会根据策略名称加载对应的熔断器插件（已注册的熔断器插件名）
     chain:
       - composite
