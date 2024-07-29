@@ -21,26 +21,35 @@ import java.util.List;
 
 public class ConfigFileGroupChangedEvent {
     private final ConfigFileGroupMetadata configFileGroupMetadata;
-    private final List<ConfigFileMetadata> configFileMetadataList;
+    private final List<ConfigFileMetadata> oldConfigFileMetadataList;
+    private final List<ConfigFileMetadata> newConfigFileMetadataList;
 
-    public ConfigFileGroupChangedEvent(ConfigFileGroupMetadata configFileGroupMetadata, List<ConfigFileMetadata> configFileMetadataList) {
+    public ConfigFileGroupChangedEvent(ConfigFileGroupMetadata configFileGroupMetadata,
+                                       List<ConfigFileMetadata> oldConfigFileMetadataList,
+                                       List<ConfigFileMetadata> newConfigFileMetadataList) {
         this.configFileGroupMetadata = configFileGroupMetadata;
-        this.configFileMetadataList = configFileMetadataList;
+        this.oldConfigFileMetadataList = oldConfigFileMetadataList;
+        this.newConfigFileMetadataList = newConfigFileMetadataList;
     }
 
     public ConfigFileGroupMetadata getConfigFileGroupMetadata() {
         return configFileGroupMetadata;
     }
 
-    public List<ConfigFileMetadata> getConfigFileMetadataList() {
-        return configFileMetadataList;
+    public List<ConfigFileMetadata> getOldConfigFileMetadataList() {
+        return oldConfigFileMetadataList;
+    }
+
+    public List<ConfigFileMetadata> getNewConfigFileMetadataList() {
+        return newConfigFileMetadataList;
     }
 
     @Override
     public String toString() {
         return "ConfigFileGroupChangedEvent{" +
                 "configFileGroupMetadata=" + configFileGroupMetadata +
-                ", configFileMetadataList=" + configFileMetadataList +
+                ", oldConfigFileMetadataList=" + oldConfigFileMetadataList +
+                ", newConfigFileMetadataList=" + newConfigFileMetadataList +
                 '}';
     }
 }

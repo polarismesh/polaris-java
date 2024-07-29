@@ -19,14 +19,15 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ServerCodes;
-import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.configuration.api.core.ConfigKVFile;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +56,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
     private final boolean fallbackToLocalCache;
+    private final ConfigFileManager configFileManager;
+    private final ConfigFileLongPullService pullService;
 
     private String token;
 
@@ -67,7 +70,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                                 ConfigFileFilterChain configFileFilterChain,
                                 ConfigFileConnector connector,
                                 ConfigFileMetadata configFileMetadata,
-                                ConfigFilePersistentHandler handler) {
+                                ConfigFilePersistentHandler handler, ConfigFileManager configFileManager) {
         super(sdkContext, configFileMetadata);
         //保证线程池正常初始化
         createPullExecutorService();
@@ -77,6 +80,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
         this.configFileFilterChain = configFileFilterChain;
+        this.configFileManager = configFileManager;
+        this.pullService = pullService;
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
@@ -157,8 +162,13 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     ConfigFile pulledConfigFile = response.getConfigFile();
 
                     //本地配置文件落后，更新内存缓存
-                    if (remoteConfigFile.get() == null ||
-                            pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion()) {
+                    boolean shouldUpdateLocalCache;
+                    if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
+                        shouldUpdateLocalCache = remoteConfigFile.get() == null || pulledConfigFile.getVersion() >= remoteConfigFile.get().getVersion();
+                    } else {
+                        shouldUpdateLocalCache = remoteConfigFile.get() == null || pulledConfigFile.getVersion() != remoteConfigFile.get().getVersion();
+                    }
+                    if (shouldUpdateLocalCache) {
                         ConfigFile copiedConfigFile = deepCloneConfigFile(pulledConfigFile);
                         remoteConfigFile.set(copiedConfigFile);
 
@@ -183,7 +193,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     //删除配置文件
                     if (remoteConfigFile.get() != null) {
                         remoteConfigFile.set(null);
-
+                        ConfigKVFile configKVFile = configFileManager.removeConfigKVFile(configFileMetadata);
+                        pullService.removeConfigFile(this);
                         //删除配置文件也需要触发通知
                         fireChangeEvent(null);
                     }
@@ -224,8 +235,14 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     public void onLongPollNotified(long newVersion) {
-        if (remoteConfigFile.get() != null && remoteConfigFile.get().getVersion() >= newVersion) {
-            return;
+        if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
+            if (remoteConfigFile.get() != null && remoteConfigFile.get().getVersion() >= newVersion) {
+                return;
+            }
+        } else {
+            if (remoteConfigFile.get() != null && remoteConfigFile.get().getVersion() == newVersion) {
+                return;
+            }
         }
 
         notifiedVersion.set(newVersion);
@@ -246,7 +263,13 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     remoteConfigFile.get() != null ? remoteConfigFile.get().getVersion() : INIT_VERSION;
 
             //版本落后，需要重新拉取
-            if (notifiedVersion.get() > pulledVersion) {
+            boolean shouldRetry;
+            if (configFileConnector.isNotifiedVersionIncreaseStrictly()) {
+                shouldRetry = notifiedVersion.get() > pulledVersion;
+            } else {
+                shouldRetry = notifiedVersion.get() != pulledVersion;
+            }
+            if (shouldRetry) {
                 LOGGER.info("[Config] notified version greater than pulled version, will pull config file."
                                 + "file = {}, notified version = {}, pulled version = {}", getConfigFileMetadata(),
                         notifiedVersion, pulledVersion);

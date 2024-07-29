@@ -26,7 +26,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
-
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -36,10 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * @author lepdou 2022-03-08
@@ -50,14 +47,18 @@ public class ConfigFileLongPollingServiceTest {
     @Mock
     private ConfigFileConnector configFileConnector;
     @Mock
-    private SDKContext          sdkContext;
+    private SDKContext sdkContext;
 
+    @Before
+    public void setUp() throws Exception {
+        when(configFileConnector.isNotifiedVersionIncreaseStrictly()).thenReturn(true);
+    }
 
     @Test
     public void testNotReceivedPushEvent() throws InterruptedException {
         //初始化 LongPollingService
         ConfigFileLongPullService longPollingService =
-            new ConfigFileLongPullService(sdkContext, configFileConnector);
+                new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -67,13 +68,13 @@ public class ConfigFileLongPollingServiceTest {
 
         //第一次收到变更事件,第二次也没有变化
         when(configFileConnector.watchConfigFiles(anyList()))
-            .then(invocation -> {
-                return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "", null);
-            })
-            .then(invocation -> {
-                TimeUnit.SECONDS.sleep(6);
-                return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "", null);
-            });
+                .then(invocation -> {
+                    return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "", null);
+                })
+                .then(invocation -> {
+                    TimeUnit.SECONDS.sleep(6);
+                    return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "", null);
+                });
 
         //因为LongPolling会在 5s 后开始执行
         TimeUnit.SECONDS.sleep(7);
@@ -88,7 +89,7 @@ public class ConfigFileLongPollingServiceTest {
     public void testReceivedPushEvent() throws InterruptedException {
         //初始化 LongPollingService
         ConfigFileLongPullService longPollingService =
-            new ConfigFileLongPullService(sdkContext, configFileConnector);
+                new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -98,7 +99,7 @@ public class ConfigFileLongPollingServiceTest {
 
         //构造监听响应对象
         ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
-                                               ConfigFileTestUtils.testFileName);
+                ConfigFileTestUtils.testFileName);
         String content = "hello world";
         long version = 100;
         configFile.setContent(content);
@@ -124,7 +125,7 @@ public class ConfigFileLongPollingServiceTest {
     public void testThrowRetryException() throws InterruptedException {
         //初始化 LongPollingService
         ConfigFileLongPullService longPollingService =
-            new ConfigFileLongPullService(sdkContext, configFileConnector);
+                new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -134,7 +135,7 @@ public class ConfigFileLongPollingServiceTest {
 
         //模拟抛异常
         when(configFileConnector.watchConfigFiles(anyList()))
-            .thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
+                .thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
 
         //因为LongPolling会在 5s 后开始执行
         TimeUnit.SECONDS.sleep(7);
@@ -149,7 +150,7 @@ public class ConfigFileLongPollingServiceTest {
     public void testSecondReceivedVersionLessThanFirstReceived() throws InterruptedException {
         //初始化 LongPollingService
         ConfigFileLongPullService longPollingService =
-            new ConfigFileLongPullService(sdkContext, configFileConnector);
+                new ConfigFileLongPullService(sdkContext, configFileConnector);
 
         RemoteConfigFileRepo remoteConfigFileRepo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -159,28 +160,28 @@ public class ConfigFileLongPollingServiceTest {
 
         //第一次版本号为100，第二次版本号为99
         when(configFileConnector.watchConfigFiles(anyList()))
-            .then(invocation -> {
-                ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
-                                                       ConfigFileTestUtils.testFileName);
-                String content = "hello world";
-                long version = 100;
-                configFile.setContent(content);
-                configFile.setVersion(version);
-                return new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
-            })
-            .then(invocation -> {
-                ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
-                                                       ConfigFileTestUtils.testFileName);
-                String content = "hello world";
-                long version = 99;
-                configFile.setContent(content);
-                configFile.setVersion(version);
-                return new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
-            })
-            .then(invocation -> {
-                TimeUnit.SECONDS.sleep(30);
-                return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "", null);
-            });
+                .then(invocation -> {
+                    ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
+                            ConfigFileTestUtils.testFileName);
+                    String content = "hello world";
+                    long version = 100;
+                    configFile.setContent(content);
+                    configFile.setVersion(version);
+                    return new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
+                })
+                .then(invocation -> {
+                    ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
+                            ConfigFileTestUtils.testFileName);
+                    String content = "hello world";
+                    long version = 99;
+                    configFile.setContent(content);
+                    configFile.setVersion(version);
+                    return new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
+                })
+                .then(invocation -> {
+                    TimeUnit.SECONDS.sleep(30);
+                    return new ConfigFileResponse(ServerCodes.DATA_NO_CHANGE, "", null);
+                });
 
         //因为LongPolling会在 5s 后开始执行
         TimeUnit.SECONDS.sleep(7);
