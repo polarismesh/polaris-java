@@ -42,6 +42,11 @@
             <version>${javax.annotation.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15to18</artifactId>
+            <version>${bouncycastle.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -166,6 +171,11 @@
                                     <shadedPattern>shade.polaris.io.netty</shadedPattern>
                                 </relocation>
                             </relocations>
+                            <artifactSet>
+                                <excludes>
+                                    <exclude>org.bouncycastle:*</exclude>
+                                </excludes>
+                            </artifactSet>
                         </configuration>
                     </execution>
                 </executions>
