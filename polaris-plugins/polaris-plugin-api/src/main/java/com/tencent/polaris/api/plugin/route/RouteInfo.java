@@ -17,23 +17,15 @@
 package com.tencent.polaris.api.plugin.route;
 
 import com.tencent.polaris.api.config.provider.ServiceConfig;
-import com.tencent.polaris.api.pojo.RouteArgument;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceMetadata;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.SourceService;
-import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -71,6 +63,8 @@ public class RouteInfo {
     //各个路由插件依赖的 metadata 参数
     private final Map<String, Map<String, String>> routerMetadata = new HashMap<>();
 
+    private MetadataContainerGroup metadataContainerGroup;
+
     private Function<String, Optional<String>> externalParameterSupplier = s -> Optional.empty();
 
     /**
@@ -85,15 +79,15 @@ public class RouteInfo {
     /**
      * 构造器
      *
-     * @param sourceService 源服务
+     * @param sourceService   源服务
      * @param sourceRouteRule 源规则
-     * @param destService 目标服务
-     * @param destRouteRule 目标规则
-     * @param method 接口名
-     * @param serviceConfig 配置的当前服务名
+     * @param destService     目标服务
+     * @param destRouteRule   目标规则
+     * @param method          接口名
+     * @param serviceConfig   配置的当前服务名
      */
     public RouteInfo(SourceService sourceService, ServiceRule sourceRouteRule,
-            ServiceMetadata destService, ServiceRule destRouteRule, String method, ServiceConfig serviceConfig) {
+                     ServiceMetadata destService, ServiceRule destRouteRule, String method, ServiceConfig serviceConfig) {
         if (isEmptyService(sourceService) && !isEmptyService(serviceConfig)) {
             this.sourceService = new SourceService();
             this.sourceService.setNamespace(serviceConfig.getNamespace());
@@ -127,11 +121,11 @@ public class RouteInfo {
      * 构造器
      *
      * @param sourceService 源服务
-     * @param destService 目标服务
-     * @param method 接口名
+     * @param destService   目标服务
+     * @param method        接口名
      */
     public RouteInfo(SourceService sourceService, ServiceMetadata destService, String method,
-            ServiceConfig serviceConfig) {
+                     ServiceConfig serviceConfig) {
         this(sourceService, null, destService, null, method, serviceConfig);
     }
 
@@ -296,4 +290,11 @@ public class RouteInfo {
         return StringUtils.isBlank(serviceConfig.getNamespace()) && StringUtils.isBlank(serviceConfig.getName());
     }
 
+    public MetadataContainerGroup getMetadataContainerGroup() {
+        return metadataContainerGroup;
+    }
+
+    public void setMetadataContainerGroup(MetadataContainerGroup metadataContainerGroup) {
+        this.metadataContainerGroup = metadataContainerGroup;
+    }
 }

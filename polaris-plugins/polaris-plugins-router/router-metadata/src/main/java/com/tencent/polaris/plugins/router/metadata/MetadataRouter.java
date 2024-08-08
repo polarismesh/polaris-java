@@ -33,18 +33,16 @@ import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 正常场景：选出的实例子集不为空，那么优先返回健康子集，如果全部不健康则进行全死全活返回不健康子集。
- *
+ * <p>
  * 异常场景：需要根据GetOneInstanceRequest的请求策略进行降级决策
- *
+ * <p>
  * 不降级（默认）：返回未找到实例错误
  * 返回所有节点：优先返回服务下的健康子集，如果全部不健康则全死全活返回不健康子集
  * 返回实例元数据不包含请求metadata的key的节点：优先返回筛选出的健康子集，如果全部不健康则返回不健康子集
@@ -59,6 +57,8 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
     public static final String ROUTER_TYPE_METADATA = "metadataRoute";
 
     private static final String KEY_METADATA_FAILOVER_TYPE = "internal-metadata-failover-type";
+
+    public static final String KEY_METADATA_KEYS = "metadataRouteKeys";
 
     private static final Map<String, FailOverType> valueToFailoverType = new HashMap<>();
 
@@ -188,6 +188,18 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
         if (MapUtils.isNotEmpty(metadata)) {
             return metadata;
         }
-        return routeInfo.getRouterMetadata(ROUTER_TYPE_METADATA);
+        metadata = new HashMap<>(routeInfo.getRouterMetadata(ROUTER_TYPE_METADATA));
+        if (routeInfo.getMetadataContainerGroup() != null && routeInfo.getMetadataContainerGroup().getCustomMetadataContainer() != null) {
+            String metadataRouteKeys = routeInfo.getMetadataContainerGroup().getCustomMetadataContainer().getRawMetadataMapValue(ROUTER_TYPE_METADATA, KEY_METADATA_KEYS);
+            if (StringUtils.isNotBlank(metadataRouteKeys)) {
+                String[] keysArr = metadataRouteKeys.split(",");
+                Set<String> keysSet = new HashSet<>(Arrays.asList(keysArr));
+                for (String key : keysSet) {
+                    String value = routeInfo.getMetadataContainerGroup().getCustomMetadataContainer().getRawMetadataStringValue(key);
+                    metadata.put(key, value);
+                }
+            }
+        }
+        return metadata;
     }
 }

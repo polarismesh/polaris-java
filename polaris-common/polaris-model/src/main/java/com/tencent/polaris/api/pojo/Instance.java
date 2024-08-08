@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.pojo;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -81,6 +82,10 @@ public interface Instance extends BaseInstance, Comparable<Instance> {
     int getWeight();
 
     String getLogicSet();
+
+    default Map<String, String> getServiceMetadata() {
+        return new HashMap<>();
+    }
 
     static Instance createDefaultInstance(String instId, String namespace, String service, String host, int port) {
         DefaultInstance defaultInstance = new DefaultInstance();

@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.StringUtils;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -54,6 +55,8 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
     private int weight;
 
     private String logicSet;
+
+    private Map<String, String> serviceMetadata = new HashMap<>();
 
     @Override
     public String getRevision() {
@@ -185,6 +188,14 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
         this.logicSet = logicSet;
     }
 
+    public Map<String, String> getServiceMetadata() {
+        return serviceMetadata;
+    }
+
+    public void setServiceMetadata(Map<String, String> serviceMetadata) {
+        this.serviceMetadata = serviceMetadata;
+    }
+
     @Override
     public CircuitBreakerStatus getCircuitBreakerStatus() {
         return circuitBreakerStatuses.get(StatusDimension.EMPTY_DIMENSION);
@@ -248,6 +259,7 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
                 ", priority=" + priority +
                 ", weight=" + weight +
                 ", logicSet='" + logicSet + '\'' +
+                ", serviceMetadata=" + serviceMetadata +
                 '}';
     }
 }

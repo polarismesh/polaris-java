@@ -68,8 +68,6 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
 
     private final InstanceListMeta instanceListMeta = new InstanceListMeta();
 
-    private boolean isAsync = false;
-
     private String mainConnectorType = SERVER_CONNECTOR_GRPC;
 
     private boolean ifMainConnectorTypeSet = false;
@@ -82,13 +80,11 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
         for (DestroyableServerConnector sc : compositeConnector.getServerConnectors()) {
             if (SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                 subServiceUpdateTaskMap.put(SERVER_CONNECTOR_GRPC, new GrpcServiceUpdateTask(serviceEventHandler, sc));
-                isAsync = true;
                 mainConnectorType = SERVER_CONNECTOR_GRPC;
                 ifMainConnectorTypeSet = true;
             }
             if (SERVER_CONNECTOR_CONSUL.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                 subServiceUpdateTaskMap.put(SERVER_CONNECTOR_CONSUL, new ConsulServiceUpdateTask(serviceEventHandler, sc));
-                isAsync = true;
                 if (!ifMainConnectorTypeSet) {
                     mainConnectorType = sc.getName();
                     ifMainConnectorTypeSet = true;
@@ -98,17 +94,30 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     }
 
     @Override
+    public boolean needUpdate() {
+        boolean compositeNeedUpdate = super.needUpdate();
+        boolean subNeedUpdate = false;
+        for (ServiceUpdateTask serviceUpdateTask : subServiceUpdateTaskMap.values()) {
+            subNeedUpdate = subNeedUpdate || serviceUpdateTask.needUpdate();
+        }
+        return compositeNeedUpdate && subNeedUpdate;
+    }
+
+    @Override
     public void execute() {
+        boolean isServiceUpdateTaskExecuted = false;
         for (ServiceUpdateTask serviceUpdateTask : subServiceUpdateTaskMap.values()) {
             if ((serviceUpdateTask.getTaskType() == ServiceUpdateTaskConstant.Type.FIRST && serviceUpdateTask.getTaskStatus() == Status.READY)
                     || serviceUpdateTask.needUpdate()) {
+                isServiceUpdateTaskExecuted = true;
                 serviceUpdateTask.setStatus(ServiceUpdateTaskConstant.Status.READY, ServiceUpdateTaskConstant.Status.RUNNING);
                 serviceUpdateTask.execute(this);
             }
         }
-        if (isAsync && ifMainConnectorTypeSet
+        // TODO 全部规则实现完后改成StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_CONSUL)
+        if (ifMainConnectorTypeSet && isServiceUpdateTaskExecuted
                 && (StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_GRPC)
-                || (serviceEventKey.getEventType().equals(EventType.INSTANCE) || serviceEventKey.getEventType().equals(EventType.SERVICE)))) {
+                || (serviceEventKey.getEventType().equals(EventType.INSTANCE) || serviceEventKey.getEventType().equals(EventType.SERVICE) || serviceEventKey.getEventType().equals(EventType.ROUTING)))) {
             return;
         }
         boolean svcDeleted = this.notifyServerEvent(
