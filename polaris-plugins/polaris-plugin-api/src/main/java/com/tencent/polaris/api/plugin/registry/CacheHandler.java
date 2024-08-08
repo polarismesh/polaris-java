@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.plugin.registry;
 
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 
@@ -63,12 +64,13 @@ public interface CacheHandler {
     /**
      * 将服务端原始消息转换为缓存对象
      *
-     * @param oldValue 旧值
-     * @param newValue 新原始消息
+     * @param oldValue      旧值
+     * @param newValue      新原始消息
      * @param isCacheLoaded 是否从本地缓存加载
+     * @param flowCache     缓存
      * @return 新缓存值
      */
-    RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded);
+    RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded, FlowCache flowCache);
 
 }
 

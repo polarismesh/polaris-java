@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.grpc.codec;
 
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
@@ -41,7 +42,7 @@ public class FaultDetectCacheHandler extends AbstractCacheHandler {
     }
 
     @Override
-    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded) {
+    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded, FlowCache flowCache) {
         DiscoverResponse discoverResponse = (DiscoverResponse) newValue;
         FaultDetector faultDetector = discoverResponse.getFaultDetector();
         String revision = "";

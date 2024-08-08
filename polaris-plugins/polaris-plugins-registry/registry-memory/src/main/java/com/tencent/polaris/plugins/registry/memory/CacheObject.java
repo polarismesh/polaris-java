@@ -102,7 +102,7 @@ public class CacheObject implements EventHandler {
         long nowMs = System.currentTimeMillis();
         createTime = nowMs;
         setLastAccessTimeMs(nowMs);
-        RegistryCacheValue registryCacheValue = cacheHandler.messageToCacheValue(null, initValue, true);
+        RegistryCacheValue registryCacheValue = cacheHandler.messageToCacheValue(null, initValue, true, registry.getFlowCache());
         value.set(registryCacheValue);
     }
 
@@ -214,7 +214,7 @@ public class CacheObject implements EventHandler {
             if (cachedStatus == CachedStatus.CacheChanged || cachedStatus == CachedStatus.CacheNotExists) {
                 LOG.info("OnServiceUpdate: cache {} is pending to update", svcEventKey);
                 this.registry.saveMessageToFile(serviceEventKey, (Message) message);
-                RegistryCacheValue newCachedValue = cacheHandler.messageToCacheValue(cachedValue, message, false);
+                RegistryCacheValue newCachedValue = cacheHandler.messageToCacheValue(cachedValue, message, false, registry.getFlowCache());
                 if (setValue(newCachedValue, event.getPolarisRevision()) && cachedStatus == CachedStatus.CacheChanged) {
                     for (ResourceEventListener listener : resourceEventListeners) {
                         listener.onResourceUpdated(svcEventKey, cachedValue, newCachedValue);

@@ -25,4 +25,7 @@ public interface RouterConstants {
 
     //金丝雀路由
     String CANARY_KEY = "canary";
+
+    // 服务路由容错
+    String ROUTER_FAULT_TOLERANCE_ENABLE = "internal-enable-router-faulttolerance";
 }

@@ -18,6 +18,7 @@
 package com.tencent.polaris.ratelimit.client.codec;
 
 import com.google.protobuf.StringValue;
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
@@ -32,6 +33,7 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Ma
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument.Type;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -54,7 +56,7 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
     }
 
     @Override
-    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded) {
+    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded, FlowCache flowCache) {
         DiscoverResponse discoverResponse = (DiscoverResponse) newValue;
         RateLimit rateLimit = discoverResponse.getRateLimit();
         String revision = getRevision(discoverResponse);

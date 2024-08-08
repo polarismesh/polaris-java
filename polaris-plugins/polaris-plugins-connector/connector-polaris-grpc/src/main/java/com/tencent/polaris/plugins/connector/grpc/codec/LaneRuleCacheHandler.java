@@ -17,15 +17,13 @@
 
 package com.tencent.polaris.plugins.connector.grpc.codec;
 
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
-import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
-
-import java.util.List;
 
 public class LaneRuleCacheHandler extends AbstractCacheHandler {
     @Override
@@ -40,7 +38,7 @@ public class LaneRuleCacheHandler extends AbstractCacheHandler {
     }
 
     @Override
-    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded) {
+    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded, FlowCache flowCache) {
         ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) newValue;
         String revision = discoverResponse.getService().getRevision().getValue();
         return new ServiceRuleByProto(discoverResponse, revision, isCacheLoaded, getTargetEventType());

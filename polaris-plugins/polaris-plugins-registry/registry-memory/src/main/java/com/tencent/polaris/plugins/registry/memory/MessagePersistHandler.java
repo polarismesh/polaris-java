@@ -31,14 +31,7 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.channels.FileChannel;
@@ -225,8 +218,14 @@ public class MessagePersistHandler {
             String jsonStr = printer.usingTypeRegistry(registry).print(message);
             JsonNode jsonNodeTree = new ObjectMapper().readTree(jsonStr);
             String jsonAsYaml = new YAMLMapper().writeValueAsString(jsonNodeTree);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("start write file {} with content: {}.", persistTmpFile.getAbsolutePath(), jsonAsYaml);
+            }
             outputFile.write(jsonAsYaml.getBytes(StandardCharsets.UTF_8));
             outputFile.flush();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("write file {} with content: {} finished.", persistTmpFile.getAbsolutePath(), jsonAsYaml);
+            }
         }
     }
 
@@ -282,7 +281,7 @@ public class MessagePersistHandler {
     /**
      * 遍历缓存目录并加载之前缓存的服务信息
      *
-     * @param eventKey 消息对象
+     * @param eventKey        消息对象
      * @param builderSupplier
      * @return 服务标识-消息对象的集合
      */

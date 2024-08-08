@@ -17,230 +17,246 @@
 
 package com.tencent.polaris.router.api.rpc;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
+
+import java.util.*;
+import java.util.function.Function;
 
 /**
  * 路由处理请求
  */
 public class ProcessRoutersRequest extends RequestBaseEntity {
 
-	private SourceService sourceService;
+    private SourceService sourceService;
 
-	private RouterNamesGroup routers;
+    private RouterNamesGroup routers;
 
-	private ServiceInstances dstInstances;
+    private ServiceInstances dstInstances;
 
-	private String method;
+    private String method;
 
-	//各个路由插件依赖的 metadata 参数
-	private Map<String, Set<RouteArgument>> routerArgument;
-	//元数据路由降级策略
-	private MetadataFailoverType metadataFailoverType;
+    //各个路由插件依赖的 metadata 参数
+    private Map<String, Set<RouteArgument>> routerArgument;
 
-	/**
-	 * 北极星内部治理规则执行时，会识别规则中的参数来源类别，如果发现规则中的参数来源指定为外部数据源时，会调用本接口进行获取
-	 *
-	 * 可以实现该接口，实现规则中的参数来源于配置中心、数据库、环境变量等等
-	 */
-	private Function<String, Optional<String>> externalParameterSupplier = s -> Optional.empty();
+    private MetadataContainerGroup metadataContainerGroup;
 
-	public Function<String, Optional<String>> getExternalParameterSupplier() {
-		return externalParameterSupplier;
-	}
+    //元数据路由降级策略
+    private MetadataFailoverType metadataFailoverType;
+    // 规则路由降级策略
+    private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
 
-	public void setExternalParameterSupplier(Function<String, Optional<String>> externalParameterSupplier) {
-		this.externalParameterSupplier = externalParameterSupplier;
-	}
+    /**
+     * 北极星内部治理规则执行时，会识别规则中的参数来源类别，如果发现规则中的参数来源指定为外部数据源时，会调用本接口进行获取
+     * <p>
+     * 可以实现该接口，实现规则中的参数来源于配置中心、数据库、环境变量等等
+     */
+    private Function<String, Optional<String>> externalParameterSupplier = s -> Optional.empty();
 
-	public ServiceInfo getSourceService() {
-		return sourceService;
-	}
+    public Function<String, Optional<String>> getExternalParameterSupplier() {
+        return externalParameterSupplier;
+    }
 
-	public void setSourceService(ServiceInfo serviceInfo) {
-		this.sourceService = new SourceService();
-		this.sourceService.setService(serviceInfo.getService());
-		this.sourceService.setNamespace(serviceInfo.getNamespace());
+    public void setExternalParameterSupplier(Function<String, Optional<String>> externalParameterSupplier) {
+        this.externalParameterSupplier = externalParameterSupplier;
+    }
 
-		Optional.ofNullable(serviceInfo.getMetadata()).orElse(new HashMap<>())
-				.forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
+    public ServiceInfo getSourceService() {
+        return sourceService;
+    }
 
-		buildRouterArgumentsBySourceService();
-	}
+    public void setSourceService(ServiceInfo serviceInfo) {
+        this.sourceService = new SourceService();
+        this.sourceService.setService(serviceInfo.getService());
+        this.sourceService.setNamespace(serviceInfo.getNamespace());
 
-	public String getMethod() {
-		return method;
-	}
+        Optional.ofNullable(serviceInfo.getMetadata()).orElse(new HashMap<>())
+                .forEach((key, value) -> sourceService.appendArguments(RouteArgument.fromLabel(key, value)));
 
-	public void setMethod(String method) {
-		this.method = method;
-	}
+        buildRouterArgumentsBySourceService();
+    }
 
-	public RouterNamesGroup getRouters() {
-		return routers;
-	}
+    public String getMethod() {
+        return method;
+    }
 
-	public void setRouters(RouterNamesGroup routers) {
-		this.routers = routers;
-	}
+    public void setMethod(String method) {
+        this.method = method;
+    }
 
-	public ServiceInstances getDstInstances() {
-		return dstInstances;
-	}
+    public RouterNamesGroup getRouters() {
+        return routers;
+    }
 
-	public void setDstInstances(ServiceInstances dstInstances) {
-		this.dstInstances = dstInstances;
-	}
+    public void setRouters(RouterNamesGroup routers) {
+        this.routers = routers;
+    }
 
-	public void putRouterArgument(String routerType, Set<RouteArgument> arguments) {
-		if (CollectionUtils.isEmpty(arguments)) {
-			return;
-		}
-		if (routerArgument == null) {
-			routerArgument = new HashMap<>();
-		}
+    public ServiceInstances getDstInstances() {
+        return dstInstances;
+    }
 
-		routerArgument.put(routerType, arguments);
-	}
+    public void setDstInstances(ServiceInstances dstInstances) {
+        this.dstInstances = dstInstances;
+    }
 
-	public Set<RouteArgument> getRouterArguments(String routerType) {
-		buildRouterArgumentsBySourceService();
-		Set<RouteArgument> arguments = routerArgument.get(routerType);
-		if (CollectionUtils.isEmpty(arguments)) {
-			return Collections.emptySet();
-		}
+    public void putRouterArgument(String routerType, Set<RouteArgument> arguments) {
+        if (CollectionUtils.isEmpty(arguments)) {
+            return;
+        }
+        if (routerArgument == null) {
+            routerArgument = new HashMap<>();
+        }
 
-		return Collections.unmodifiableSet(arguments);
-	}
+        routerArgument.put(routerType, arguments);
+    }
 
-	public Map<String, Set<RouteArgument>> getRouterArguments() {
-		buildRouterArgumentsBySourceService();
-		Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
-		return Collections.unmodifiableMap(routerArgument);
-	}
+    public Set<RouteArgument> getRouterArguments(String routerType) {
+        buildRouterArgumentsBySourceService();
+        Set<RouteArgument> arguments = routerArgument.get(routerType);
+        if (CollectionUtils.isEmpty(arguments)) {
+            return Collections.emptySet();
+        }
 
-	public MetadataFailoverType getMetadataFailoverType() {
-		return metadataFailoverType;
-	}
+        return Collections.unmodifiableSet(arguments);
+    }
 
-	public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
-		this.metadataFailoverType = metadataFailoverType;
-	}
+    public Map<String, Set<RouteArgument>> getRouterArguments() {
+        buildRouterArgumentsBySourceService();
+        Map<String, Set<RouteArgument>> routerArgument = new HashMap<>(this.routerArgument);
+        return Collections.unmodifiableMap(routerArgument);
+    }
 
-	private void buildRouterArgumentsBySourceService() {
-		if (CollectionUtils.isEmpty(routerArgument)) {
-			routerArgument = new HashMap<>();
-		}
-		if (Objects.isNull(sourceService)) {
-			return;
-		}
-		Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
-		arguments.addAll(sourceService.getArguments());
-	}
+    public MetadataFailoverType getMetadataFailoverType() {
+        return metadataFailoverType;
+    }
 
-	@Deprecated
-	public void putRouterMetadata(String routerType, Map<String, String> metadata) {
-		if (MapUtils.isEmpty(metadata)) {
-			return;
-		}
-		if (routerArgument == null) {
-			routerArgument = new HashMap<>();
-		}
+    public void setMetadataFailoverType(MetadataFailoverType metadataFailoverType) {
+        this.metadataFailoverType = metadataFailoverType;
+    }
 
-		Set<RouteArgument> arguments = new HashSet<>();
-		metadata.forEach((key, value) -> arguments.add(RouteArgument.fromLabel(key, value)));
+    public RuleBasedRouterFailoverType getRuleBasedRouterFailoverType() {
+        return ruleBasedRouterFailoverType;
+    }
 
-		routerArgument.put(routerType, arguments);
-	}
+    public void setRuleBasedRouterFailoverType(RuleBasedRouterFailoverType ruleBasedRouterFailoverType) {
+        this.ruleBasedRouterFailoverType = ruleBasedRouterFailoverType;
+    }
 
-	@Deprecated
-	public void addRouterMetadata(String routerType, Map<String, String> metadata) {
-		if (MapUtils.isEmpty(metadata)) {
-			return;
-		}
+    public MetadataContainerGroup getMetadataContainerGroup() {
+        return metadataContainerGroup;
+    }
 
-		if (routerArgument == null) {
-			routerArgument = new HashMap<>();
-		}
+    public void setMetadataContainerGroup(MetadataContainerGroup metadataContainerGroup) {
+        this.metadataContainerGroup = metadataContainerGroup;
+    }
 
-		Set<RouteArgument> arguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
-		metadata.forEach((key, value) -> arguments.add(RouteArgument.fromLabel(key, value)));
-	}
+    private void buildRouterArgumentsBySourceService() {
+        if (CollectionUtils.isEmpty(routerArgument)) {
+            routerArgument = new HashMap<>();
+        }
+        if (Objects.isNull(sourceService)) {
+            return;
+        }
+        Set<RouteArgument> arguments = routerArgument.computeIfAbsent("ruleRouter", k -> new HashSet<>());
+        arguments.addAll(sourceService.getArguments());
+    }
 
-	@Deprecated
-	public Map<String, String> getRouterMetadata(String routerType) {
-		buildRouterArgumentsBySourceService();
-		Set<RouteArgument> arguments = routerArgument.get(routerType);
-		if (CollectionUtils.isEmpty(arguments)) {
-			return Collections.emptyMap();
-		}
+    @Deprecated
+    public void putRouterMetadata(String routerType, Map<String, String> metadata) {
+        if (MapUtils.isEmpty(metadata)) {
+            return;
+        }
+        if (routerArgument == null) {
+            routerArgument = new HashMap<>();
+        }
 
-		Map<String, String> metadata = new HashMap<>();
-		arguments.forEach(argument -> argument.toLabel(metadata));
+        Set<RouteArgument> arguments = new HashSet<>();
+        metadata.forEach((key, value) -> arguments.add(RouteArgument.fromLabel(key, value)));
 
-		return Collections.unmodifiableMap(metadata);
-	}
+        routerArgument.put(routerType, arguments);
+    }
 
-	@Deprecated
-	public Map<String, Map<String, String>> getRouterMetadata() {
-		buildRouterArgumentsBySourceService();
+    @Deprecated
+    public void addRouterMetadata(String routerType, Map<String, String> metadata) {
+        if (MapUtils.isEmpty(metadata)) {
+            return;
+        }
 
-		Map<String, Map<String, String>> ret = new HashMap<>();
+        if (routerArgument == null) {
+            routerArgument = new HashMap<>();
+        }
 
-		routerArgument.forEach((routerType, arguments) -> {
-			Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
-			arguments.forEach(argument -> argument.toLabel(entry));
-		});
+        Set<RouteArgument> arguments = routerArgument.computeIfAbsent(routerType, k -> new HashSet<>());
+        metadata.forEach((key, value) -> arguments.add(RouteArgument.fromLabel(key, value)));
+    }
 
-		return ret;
-	}
+    @Deprecated
+    public Map<String, String> getRouterMetadata(String routerType) {
+        buildRouterArgumentsBySourceService();
+        Set<RouteArgument> arguments = routerArgument.get(routerType);
+        if (CollectionUtils.isEmpty(arguments)) {
+            return Collections.emptyMap();
+        }
 
-	public static class RouterNamesGroup {
+        Map<String, String> metadata = new HashMap<>();
+        arguments.forEach(argument -> argument.toLabel(metadata));
 
-		private List<String> beforeRouters;
+        return Collections.unmodifiableMap(metadata);
+    }
 
-		private List<String> coreRouters;
+    @Deprecated
+    public Map<String, Map<String, String>> getRouterMetadata() {
+        buildRouterArgumentsBySourceService();
 
-		private List<String> afterRouters;
+        Map<String, Map<String, String>> ret = new HashMap<>();
 
-		public List<String> getBeforeRouters() {
-			return beforeRouters;
-		}
+        routerArgument.forEach((routerType, arguments) -> {
+            Map<String, String> entry = ret.computeIfAbsent(routerType, k -> new HashMap<>());
+            arguments.forEach(argument -> argument.toLabel(entry));
+        });
 
-		public void setBeforeRouters(List<String> beforeRouters) {
-			this.beforeRouters = beforeRouters;
-		}
+        return ret;
+    }
 
-		public List<String> getCoreRouters() {
-			return coreRouters;
-		}
+    public static class RouterNamesGroup {
 
-		public void setCoreRouters(List<String> coreRouters) {
-			this.coreRouters = coreRouters;
-		}
+        private List<String> beforeRouters;
 
-		public List<String> getAfterRouters() {
-			return afterRouters;
-		}
+        private List<String> coreRouters;
 
-		public void setAfterRouters(List<String> afterRouters) {
-			this.afterRouters = afterRouters;
-		}
-	}
+        private List<String> afterRouters;
+
+        public List<String> getBeforeRouters() {
+            return beforeRouters;
+        }
+
+        public void setBeforeRouters(List<String> beforeRouters) {
+            this.beforeRouters = beforeRouters;
+        }
+
+        public List<String> getCoreRouters() {
+            return coreRouters;
+        }
+
+        public void setCoreRouters(List<String> coreRouters) {
+            this.coreRouters = coreRouters;
+        }
+
+        public List<String> getAfterRouters() {
+            return afterRouters;
+        }
+
+        public void setAfterRouters(List<String> afterRouters) {
+            this.afterRouters = afterRouters;
+        }
+    }
 }
