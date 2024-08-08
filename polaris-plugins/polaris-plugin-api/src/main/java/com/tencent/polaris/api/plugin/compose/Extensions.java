@@ -40,7 +40,6 @@ import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.location.LocationProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
-import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
@@ -52,6 +51,7 @@ import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -86,7 +86,7 @@ public class Extensions extends Destroyable {
 
     private final List<StatReporter> statReporters = new ArrayList<>();
 
-	private TraceReporter traceReporter;
+    private TraceReporter traceReporter;
 
     private Supplier plugins;
 
@@ -195,8 +195,8 @@ public class Extensions extends Destroyable {
         // 加载监控上报
         loadStatReporters(plugins);
 
-		// 加载调用链上报
-		loadTraceReporter(plugins);
+        // 加载调用链上报
+        loadTraceReporter(plugins);
 
         // 加载优雅上下线插件
         loadLosslessPolicies(config, plugins);
@@ -237,9 +237,9 @@ public class Extensions extends Destroyable {
                 LOG.info("locationProvider plugin {} not found location", provider.getName());
                 continue;
             }
-            valueContext.setValue(LocationLevel.region.name(), location.getRegion().getValue());
-            valueContext.setValue(LocationLevel.zone.name(), location.getZone().getValue());
-            valueContext.setValue(LocationLevel.campus.name(), location.getCampus().getValue());
+            valueContext.setValue(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION.name(), location.getRegion().getValue());
+            valueContext.setValue(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE.name(), location.getZone().getValue());
+            valueContext.setValue(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS.name(), location.getCampus().getValue());
             valueContext.notifyAllForLocationReady();
             break;
         }
@@ -281,14 +281,14 @@ public class Extensions extends Destroyable {
         }
     }
 
-	private void loadTraceReporter(Supplier plugins) throws PolarisException {
-		if (configuration.getGlobal().getTraceReporter().isEnable()) {
-			Collection<Plugin> reporters = plugins.getPlugins(PluginTypes.TRACE_REPORTER.getBaseType());
-			if (CollectionUtils.isNotEmpty(reporters)) {
-				traceReporter = (TraceReporter) reporters.iterator().next();
-			}
-		}
-	}
+    private void loadTraceReporter(Supplier plugins) throws PolarisException {
+        if (configuration.getGlobal().getTraceReporter().isEnable()) {
+            Collection<Plugin> reporters = plugins.getPlugins(PluginTypes.TRACE_REPORTER.getBaseType());
+            if (CollectionUtils.isNotEmpty(reporters)) {
+                traceReporter = (TraceReporter) reporters.iterator().next();
+            }
+        }
+    }
 
     private void loadLosslessPolicies(Configuration config, Supplier plugins) throws PolarisException {
         if (!config.getProvider().getLossless().isEnable()) {
@@ -435,8 +435,7 @@ public class Extensions extends Destroyable {
             pluginToNodes.put(plugin.getName(), node);
             if (!allowPortDrift) {
                 nodeToDrift.put(node, allowPortDrift);
-            }
-            else {
+            } else {
                 nodeToDrift.putIfAbsent(node, allowPortDrift);
             }
         } else {
@@ -447,7 +446,7 @@ public class Extensions extends Destroyable {
             } else {
                 nodeToDrift.remove(targetNode);
                 nodeToDrift.put(node, targetAllowDrift);
-                for (Map.Entry<String, Node> entry: pluginToNodes.entrySet()) {
+                for (Map.Entry<String, Node> entry : pluginToNodes.entrySet()) {
                     if (entry.getValue().equals(targetNode)) {
                         pluginToNodes.put(entry.getKey(), node);
                     }
@@ -562,9 +561,9 @@ public class Extensions extends Destroyable {
         return losslessPolicies;
     }
 
-	public TraceReporter getTraceReporter() {
-		return traceReporter;
-	}
+    public TraceReporter getTraceReporter() {
+        return traceReporter;
+    }
 
     @Override
     protected void doDestroy() {

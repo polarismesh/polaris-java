@@ -22,6 +22,7 @@ import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
+import com.tencent.polaris.api.rpc.NamespaceRouterFailoverType;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -53,6 +54,8 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
     private MetadataFailoverType metadataFailoverType;
     // 规则路由降级策略
     private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
+    // 命名空间就近路由降级类型
+    private NamespaceRouterFailoverType namespaceRouterFailoverType;
 
     /**
      * 北极星内部治理规则执行时，会识别规则中的参数来源类别，如果发现规则中的参数来源指定为外部数据源时，会调用本接口进行获取
@@ -157,6 +160,14 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
     public void setMetadataContainerGroup(MetadataContainerGroup metadataContainerGroup) {
         this.metadataContainerGroup = metadataContainerGroup;
+    }
+
+    public NamespaceRouterFailoverType getNamespaceRouterFailoverType() {
+        return namespaceRouterFailoverType;
+    }
+
+    public void setNamespaceRouterFailoverType(NamespaceRouterFailoverType namespaceRouterFailoverType) {
+        this.namespaceRouterFailoverType = namespaceRouterFailoverType;
     }
 
     private void buildRouterArgumentsBySourceService() {

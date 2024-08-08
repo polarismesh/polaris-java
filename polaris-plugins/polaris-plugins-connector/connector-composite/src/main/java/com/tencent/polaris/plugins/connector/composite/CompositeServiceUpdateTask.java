@@ -117,7 +117,10 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
         // TODO 全部规则实现完后改成StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_CONSUL)
         if (ifMainConnectorTypeSet && isServiceUpdateTaskExecuted
                 && (StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_GRPC)
-                || (serviceEventKey.getEventType().equals(EventType.INSTANCE) || serviceEventKey.getEventType().equals(EventType.SERVICE) || serviceEventKey.getEventType().equals(EventType.ROUTING)))) {
+                || (serviceEventKey.getEventType().equals(EventType.INSTANCE)
+                || serviceEventKey.getEventType().equals(EventType.SERVICE)
+                || serviceEventKey.getEventType().equals(EventType.ROUTING)
+                || serviceEventKey.getEventType().equals(EventType.NEARBY_ROUTE_RULE)))) {
             return;
         }
         boolean svcDeleted = this.notifyServerEvent(

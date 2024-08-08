@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.router.nearby;
 
+import com.google.protobuf.Any;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
@@ -27,20 +28,25 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.pojo.*;
+import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.CompareUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.client.flow.DefaultFlowControlParam;
+import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
@@ -61,19 +67,20 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
 
     private static final String NEARBY_METADATA_ENABLE = "internal-enable-nearby";
 
-
     private static final Logger LOG = LoggerFactory.getLogger(NearbyRouter.class);
 
-    private static final LocationLevel defaultMinLevel = LocationLevel.zone;
+    private static final RoutingProto.NearbyRoutingConfig.LocationLevel defaultMinLevel = RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE;
     /**
      * 主调的地域信息
      */
-    private final AtomicReference<Map<LocationLevel, String>> locationInfo = new AtomicReference<>();
+    private final AtomicReference<Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String>> locationInfo = new AtomicReference<>();
     /**
      * 等待地域信息就绪的超时时间
      */
     long locationReadyTimeout;
     private ValueContext valueContext;
+
+    private final AtomicBoolean firstRoute = new AtomicBoolean(true);
 
     /**
      * # 默认就近区域：默认城市 matchLevel: zone # 最大就近区域，默认为空（全匹配） maxMatchLevel: all #
@@ -90,12 +97,42 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances serviceInstances)
             throws PolarisException {
+        if (firstRoute.compareAndSet(true, false)) {
+            refreshLocationInfo();
+        }
+
+        ServiceRule serviceRule = getServiceRule(serviceInstances.getNamespace(), serviceInstances.getService());
+        RoutingProto.NearbyRoutingConfig nearbyRoutingConfig = null;
+        if (serviceRule != null && serviceRule.getRule() != null) {
+            ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
+            List<RoutingProto.RouteRule> nearByRouteRuleList = discoverResponse.getNearbyRouteRulesList();
+            if (CollectionUtils.isNotEmpty(nearByRouteRuleList)) {
+                Any any = null;
+                for (RoutingProto.RouteRule routeRule : nearByRouteRuleList) {
+                    if (routeRule.getEnable()) {
+                        any = routeRule.getRoutingConfig();
+                        break;
+                    }
+                }
+                if (any != null) {
+                    try {
+                        nearbyRoutingConfig = any.unpack(RoutingProto.NearbyRoutingConfig.class);
+                    } catch (Exception e) {
+                        LOG.warn("{} cannot be unpacked to an instance of RoutingProto.NearbyRoutingConfig", any);
+                    }
+                }
+            }
+        }
+
         //先获取最低可用就近级别
-        LocationLevel minAvailableLevel = config.getMatchLevel();
+        RoutingProto.NearbyRoutingConfig.LocationLevel minAvailableLevel = config.getMatchLevel();
         if (null == minAvailableLevel) {
             minAvailableLevel = defaultMinLevel;
         }
-        LocationLevel minLevel = minAvailableLevel;
+        if (nearbyRoutingConfig != null) {
+            minAvailableLevel = nearbyRoutingConfig.getMatchLevel();
+        }
+        RoutingProto.NearbyRoutingConfig.LocationLevel minLevel = minAvailableLevel;
         if (null != routeInfo.getNextRouterInfo()) {
             if (null != routeInfo.getNextRouterInfo().getLocationLevel()) {
                 minLevel = routeInfo.getNextRouterInfo().getLocationLevel();
@@ -104,12 +141,15 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                 minAvailableLevel = routeInfo.getNextRouterInfo().getMinAvailableLevel();
             }
         }
-        LocationLevel maxLevel = config.getMaxMatchLevel();
+        RoutingProto.NearbyRoutingConfig.LocationLevel maxLevel = config.getMaxMatchLevel();
         if (null == maxLevel) {
-            maxLevel = LocationLevel.all;
+            maxLevel = RoutingProto.NearbyRoutingConfig.LocationLevel.ALL;
+        }
+        if (nearbyRoutingConfig != null) {
+            maxLevel = nearbyRoutingConfig.getMaxMatchLevel();
         }
 
-        Map<LocationLevel, String> clientLocationInfo = getLocationInfo();
+        Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String> clientLocationInfo = getLocationInfo();
         if (minLevel.ordinal() >= maxLevel.ordinal()) {
             List<Instance> instances = selectInstances(serviceInstances, minAvailableLevel, clientLocationInfo);
             if (CollectionUtils.isEmpty(instances)) {
@@ -122,7 +162,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         }
         CheckResult checkResult = new CheckResult();
         for (int i = minLevel.ordinal(); i <= maxLevel.ordinal(); i++) {
-            LocationLevel curLevel = LocationLevel.values()[i];
+            RoutingProto.NearbyRoutingConfig.LocationLevel curLevel = RoutingProto.NearbyRoutingConfig.LocationLevel.values()[i];
             checkResult = hasHealthyInstances(serviceInstances, curLevel,
                     clientLocationInfo);
             checkResult.curLevel = curLevel;
@@ -136,7 +176,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
             throw new PolarisException(ErrorCode.LOCATION_MISMATCH,
                     String.format("can not find any instance by level %s", checkResult.curLevel.name()));
         }
-        if (!config.isEnableDegradeByUnhealthyPercent() || checkResult.curLevel == LocationLevel.all) {
+        if (!config.isEnableDegradeByUnhealthyPercent() || checkResult.curLevel == RoutingProto.NearbyRoutingConfig.LocationLevel.ALL) {
             return new RouteResult(checkResult.instances, RouteResult.State.Next);
         }
         int healthyInstanceCount = checkResult.healthyInstanceCount;
@@ -155,27 +195,70 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         return new RouteResult(checkResult.instances, RouteResult.State.Next);
     }
 
-    private LocationLevel nextLevel(LocationLevel current) {
-        if (current == LocationLevel.all) {
+    private List<RoutingProto.RouteRule> sortNearbyRouteRules(List<RoutingProto.RouteRule> rules) {
+        List<RoutingProto.RouteRule> sorted = new ArrayList<>(rules);
+        // 数字越小，规则优先级越大
+        sorted.sort(Comparator.comparingInt(RoutingProto.RouteRule::getPriority));
+        sorted.sort((o1, o2) -> {
+            // 比较优先级，数字越小，规则优先级越大
+            int priorityResult = o1.getPriority() - o2.getPriority();
+            if (priorityResult != 0) {
+                return priorityResult;
+            }
+
+            // 比较目标服务
+            String destNamespace1 = "";
+            String destService1 = "";
+            try {
+                RoutingProto.NearbyRoutingConfig nearbyRoutingConfig = o1.getRoutingConfig().unpack(RoutingProto.NearbyRoutingConfig.class);
+                destNamespace1 = nearbyRoutingConfig.getNamespace();
+                destService1 = nearbyRoutingConfig.getService();
+            } catch (Exception e) {
+                LOG.warn("{} cannot be unpacked to an instance of RoutingProto.NearbyRoutingConfig", o1);
+            }
+
+            String destNamespace2 = "";
+            String destService2 = "";
+            try {
+                RoutingProto.NearbyRoutingConfig nearbyRoutingConfig = o2.getRoutingConfig().unpack(RoutingProto.NearbyRoutingConfig.class);
+                destNamespace2 = nearbyRoutingConfig.getNamespace();
+                destService2 = nearbyRoutingConfig.getService();
+            } catch (Exception e) {
+                LOG.warn("{} cannot be unpacked to an instance of RoutingProto.NearbyRoutingConfig", o2);
+            }
+            int serviceKeyResult = CompareUtils.compareService(destNamespace1, destService1, destNamespace2, destService2);
+            if (serviceKeyResult != 0) {
+                return serviceKeyResult;
+            }
+
+            String ruleId1 = o1.getId();
+            String ruleId2 = o1.getId();
+            return CompareUtils.compareSingleValue(ruleId1, ruleId2);
+        });
+        return sorted;
+    }
+
+    private RoutingProto.NearbyRoutingConfig.LocationLevel nextLevel(RoutingProto.NearbyRoutingConfig.LocationLevel current) {
+        if (current == RoutingProto.NearbyRoutingConfig.LocationLevel.ALL) {
             return current;
         }
-        return LocationLevel.values()[current.ordinal() + 1];
+        return RoutingProto.NearbyRoutingConfig.LocationLevel.values()[current.ordinal() + 1];
     }
 
     private CheckResult hasHealthyInstances(ServiceInstances svcInstances,
-                                            LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
+                                            RoutingProto.NearbyRoutingConfig.LocationLevel targetLevel, Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String> clientInfo) {
         String clientZone = "";
         String clientRegion = "";
         String clientCampus = "";
         if (null != clientInfo) {
-            clientZone = clientInfo.getOrDefault(LocationLevel.zone, "");
-            clientRegion = clientInfo.getOrDefault(LocationLevel.region, "");
-            clientCampus = clientInfo.getOrDefault(LocationLevel.campus, "");
+            clientZone = clientInfo.getOrDefault(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE, "");
+            clientRegion = clientInfo.getOrDefault(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION, "");
+            clientCampus = clientInfo.getOrDefault(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS, "");
         }
         CheckResult checkResult = new CheckResult();
         for (Instance instance : svcInstances.getInstances()) {
             switch (targetLevel) {
-                case zone:
+                case ZONE:
                     if (clientZone.equals("") || clientZone.equals(getInstanceZone(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
@@ -183,7 +266,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                         }
                     }
                     break;
-                case campus:
+                case CAMPUS:
                     if (clientCampus.equals("") || clientCampus.equals(getInstanceCampus(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
@@ -191,7 +274,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                         }
                     }
                     break;
-                case region:
+                case REGION:
                     if (clientRegion.equals("") || clientRegion.equals(getInstanceRegion(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
@@ -211,29 +294,30 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     }
 
     private List<Instance> selectInstances(
-            ServiceInstances svcInstances, LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
+            ServiceInstances svcInstances, RoutingProto.NearbyRoutingConfig.LocationLevel targetLevel,
+            Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String> clientInfo) {
         List<Instance> instances = new ArrayList<>();
         String clientZone = "";
         String clientRegion = "";
         String clientCampus = "";
         if (null != clientInfo) {
-            clientZone = clientInfo.get(LocationLevel.zone);
-            clientRegion = clientInfo.get(LocationLevel.region);
-            clientCampus = clientInfo.get(LocationLevel.campus);
+            clientZone = clientInfo.get(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE);
+            clientRegion = clientInfo.get(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION);
+            clientCampus = clientInfo.get(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS);
         }
         for (Instance instance : svcInstances.getInstances()) {
             switch (targetLevel) {
-                case zone:
+                case ZONE:
                     if (clientZone.equals("") || clientZone.equals(getInstanceZone(instance))) {
                         instances.add(instance);
                     }
                     break;
-                case campus:
+                case CAMPUS:
                     if (clientCampus.equals("") || clientCampus.equals(getInstanceCampus(instance))) {
                         instances.add(instance);
                     }
                     break;
-                case region:
+                case REGION:
                     if (clientRegion.equals("") || clientRegion.equals(getInstanceRegion(instance))) {
                         instances.add(instance);
                     }
@@ -286,6 +370,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
      */
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
+        this.extensions = extensions;
         //强制就近模式下，需要等待地域信息初始化成功
         ensureLocationReady();
     }
@@ -308,8 +393,8 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     }
 
     private void refreshLocationInfo() {
-        Map<LocationLevel, String> clientLocationInfo = new HashMap<>();
-        for (LocationLevel key : LocationLevel.values()) {
+        Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String> clientLocationInfo = new HashMap<>();
+        for (RoutingProto.NearbyRoutingConfig.LocationLevel key : RoutingProto.NearbyRoutingConfig.LocationLevel.values()) {
             if (valueContext.getValue(key.name()) != null) {
                 clientLocationInfo.put(key, valueContext.getValue(key.name()));
             }
@@ -318,7 +403,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         LOG.debug("[refreshLocationInfo] locationInfo={}", clientLocationInfo);
     }
 
-    private Map<LocationLevel, String> getLocationInfo() {
+    private Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String> getLocationInfo() {
         if (MapUtils.isEmpty(locationInfo.get())) {
             refreshLocationInfo();
         }
@@ -335,9 +420,22 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         if (!super.enable(routeInfo, dstSvcInfo)) {
             return false;
         }
-        Map<LocationLevel, String> clientLocationInfo = getLocationInfo();
+        Map<RoutingProto.NearbyRoutingConfig.LocationLevel, String> clientLocationInfo = getLocationInfo();
         if (MapUtils.isEmpty(clientLocationInfo)) {
             return false;
+        }
+
+        ServiceRule serviceRule = getServiceRule(dstSvcInfo.getNamespace(), dstSvcInfo.getService());
+        if (serviceRule != null && serviceRule.getRule() != null) {
+            ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
+            List<RoutingProto.RouteRule> nearByRouteRuleList = discoverResponse.getNearbyRouteRulesList();
+            if (CollectionUtils.isNotEmpty(nearByRouteRuleList)) {
+                for (RoutingProto.RouteRule routeRule : nearByRouteRuleList) {
+                    if (routeRule.getEnable()) {
+                        return true;
+                    }
+                }
+            }
         }
 
         Map<String, String> destSvcMetadata = Optional.ofNullable(dstSvcInfo.getMetadata()).orElse(Collections.emptyMap());
@@ -365,6 +463,27 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
 
     @Override
     protected void doDestroy() {
+    }
+
+    /**
+     * 获取就近路由规则
+     *
+     * @param dstNamespace   目标服务命名空间
+     * @param dstServiceName 目标服务名
+     * @return 目标服务就近路由规则
+     */
+    private ServiceRule getServiceRule(String dstNamespace, String dstServiceName) {
+        DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
+        BaseFlow.buildFlowControlParam(new RequestBaseEntity(), extensions.getConfiguration(), engineFlowControlParam);
+        Set<ServiceEventKey> routerKeys = new HashSet<>();
+        ServiceEventKey dstSvcEventKey = new ServiceEventKey(new ServiceKey(dstNamespace, dstServiceName),
+                ServiceEventKey.EventType.NEARBY_ROUTE_RULE);
+        routerKeys.add(dstSvcEventKey);
+        DefaultServiceEventKeysProvider svcKeysProvider = new DefaultServiceEventKeysProvider();
+        svcKeysProvider.setSvcEventKeys(routerKeys);
+        ResourcesResponse resourcesResponse = BaseFlow
+                .syncGetResources(extensions, false, svcKeysProvider, engineFlowControlParam);
+        return resourcesResponse.getServiceRule(dstSvcEventKey);
     }
 
     private String getInstanceZone(Instance instance) {
@@ -401,7 +520,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
 
     private static class CheckResult {
 
-        LocationLevel curLevel;
+        RoutingProto.NearbyRoutingConfig.LocationLevel curLevel;
         int healthyInstanceCount;
         List<Instance> instances = new ArrayList<>();
     }
