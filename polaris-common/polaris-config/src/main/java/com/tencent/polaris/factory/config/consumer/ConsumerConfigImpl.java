@@ -20,6 +20,7 @@ package com.tencent.polaris.factory.config.consumer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
+import com.tencent.polaris.api.config.consumer.WeightAdjustConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
@@ -62,6 +63,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
 
     @JsonIgnore
     private final Map<String, DiscoveryConfigImpl> discoveryConfigMap = new ConcurrentHashMap<>();
+
+    @JsonProperty
+    private WeightAdjustConfigImpl weightAdjust;
 
     @Override
     public LocalCacheConfigImpl getLocalCache() {
@@ -124,12 +128,18 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     }
 
     @Override
+    public WeightAdjustConfig getWeightAdjust() {
+        return weightAdjust;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(localCache, "localCache");
         ConfigUtils.validateNull(serviceRouter, "serviceRouter");
         ConfigUtils.validateNull(loadbalancer, "loadbalancer");
         ConfigUtils.validateNull(circuitBreaker, "circuitBreaker");
         ConfigUtils.validateNull(outlierDetection, "outlierDetection");
+        ConfigUtils.validateNull(weightAdjust, "weightAdjust");
 
         localCache.verify();
         serviceRouter.verify();
@@ -138,6 +148,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         outlierDetection.verify();
         subscribe.verify();
         zeroProtection.verify();
+        weightAdjust.verify();
         if (CollectionUtils.isNotEmpty(discoveries)) {
             for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                 discoveryConfig.verify();
@@ -169,6 +180,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         if (null == zeroProtection) {
             zeroProtection = new ZeroProtectionConfigImpl();
         }
+        if (null == weightAdjust) {
+            weightAdjust = new WeightAdjustConfigImpl();
+        }
         if (null != defaultObject) {
             ConsumerConfig consumerConfig = (ConsumerConfig) defaultObject;
             localCache.setDefault(consumerConfig.getLocalCache());
@@ -178,6 +192,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
             outlierDetection.setDefault(consumerConfig.getOutlierDetection());
             subscribe.setDefault(consumerConfig.getSubscribe());
             zeroProtection.setDefault(consumerConfig.getZeroProtection());
+            weightAdjust.setDefault(consumerConfig.getWeightAdjust());
             if (CollectionUtils.isNotEmpty(discoveries)) {
                 for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                     discoveryConfig.setDefault(consumerConfig.getDiscoveries().get(0));

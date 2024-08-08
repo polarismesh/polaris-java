@@ -83,6 +83,8 @@ public interface Instance extends BaseInstance, Comparable<Instance> {
 
     String getLogicSet();
 
+    String getCreateTime();
+
     default Map<String, String> getServiceMetadata() {
         return new HashMap<>();
     }

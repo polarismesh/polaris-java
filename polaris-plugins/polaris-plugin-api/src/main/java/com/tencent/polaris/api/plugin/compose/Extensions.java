@@ -44,6 +44,7 @@ import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
+import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -111,6 +112,8 @@ public class Extensions extends Destroyable {
 
     // 无损上下线策略列表，按照order排序
     private List<LosslessPolicy> losslessPolicies;
+
+    private List<WeightAdjuster> weightAdjusters;
 
     public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
@@ -202,6 +205,9 @@ public class Extensions extends Destroyable {
         // 加载优雅上下线插件
         loadLosslessPolicies(config, plugins);
 
+        // 加载预热插件
+        loadWeightAdjusters(plugins);
+
         initLocation(config, valueContext);
 
     }
@@ -292,6 +298,7 @@ public class Extensions extends Destroyable {
     }
 
     private void loadLosslessPolicies(Configuration config, Supplier plugins) throws PolarisException {
+
         if (!config.getProvider().getLossless().isEnable()) {
             return;
         }
@@ -303,6 +310,25 @@ public class Extensions extends Destroyable {
             }
         }
         losslessPolicies.sort((o1, o2) -> o1.getOrder() - o2.getOrder());
+    }
+
+    private void loadWeightAdjusters(Supplier plugins) throws PolarisException {
+        if (!configuration.getConsumer().getWeightAdjust().isEnable()) {
+            return;
+        }
+
+        weightAdjusters = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(configuration.getConsumer().getWeightAdjust().getChain())) {
+            for (String weightAdjusterName : configuration.getConsumer().getWeightAdjust().getChain()) {
+                Plugin pluginValue = plugins
+                        .getOptionalPlugin(PluginTypes.WEIGHT_ADJUSTER.getBaseType(), weightAdjusterName);
+                if (null == pluginValue) {
+                    LOG.warn("weightAdjuster plugin {} not found", weightAdjusterName);
+                    continue;
+                }
+                weightAdjusters.add((WeightAdjuster) pluginValue);
+            }
+        }
     }
 
     public void initHttpServer(Supplier plugins) {
@@ -565,6 +591,10 @@ public class Extensions extends Destroyable {
     public TraceReporter getTraceReporter() {
         return traceReporter;
     }
+
+	public List<WeightAdjuster> getWeightAdjusters() {
+		return weightAdjusters;
+	}
 
     @Override
     protected void doDestroy() {

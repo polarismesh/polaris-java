@@ -91,4 +91,6 @@ public interface ConsumerConfig extends Verifier {
      * @return Map of {@link DiscoveryConfig}
      */
     Map<String, ? extends DiscoveryConfig> getDiscoveryConfigMap();
+
+    WeightAdjustConfig getWeightAdjust();
 }

@@ -38,6 +38,7 @@ import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.api.utils.TimeUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
@@ -63,6 +64,10 @@ import static com.tencent.polaris.plugins.connector.consul.ConsulServerUtils.get
 public class InstanceService extends ConsulService {
 
     private static final Logger LOG = LoggerFactory.getLogger(InstanceService.class);
+    // consul origin key, 10 位时间戳
+    private final static String TSF_CREATION_TIME_KEY = "TSF_CREATION_TIME";
+    // 保持和 f/g/h 版本一致, 13 位时间戳
+    private final static String TSF_START_TIME_KEY = "TSF_START_TIME";
 
     private final Map<String, Long> serviceConsulIndexMap = new ConcurrentHashMap<>();
 
@@ -138,6 +143,17 @@ public class InstanceService extends ConsulService {
                         Map<String, String> metadata = getMetadata(healthService);
                         if (CollectionUtils.isNotEmpty(metadata)) {
                             instanceBuilder.putAllMetadata(metadata);
+                        }
+                        // set createTime
+                        Long createTime = null;
+                        if (StringUtils.isNotEmpty(metadata.get(TSF_CREATION_TIME_KEY))) {
+                            createTime = Long.parseLong(metadata.get(TSF_CREATION_TIME_KEY)) * 1000;
+                        }
+                        if (createTime == null && StringUtils.isNotEmpty(metadata.get(TSF_START_TIME_KEY))) {
+                            createTime = Long.parseLong(metadata.get(TSF_START_TIME_KEY));
+                        }
+                        if (createTime != null) {
+                            instanceBuilder.setCtime(StringValue.of(TimeUtils.getCreateTimeStr(createTime)));
                         }
                         // set location
                         ModelProto.Location.Builder locationBuilder = ModelProto.Location.newBuilder();

@@ -33,6 +33,7 @@ public class ServiceEventKey implements Service {
         SERVICE_CONTRACT,
         LANE_RULE,
         NEARBY_ROUTE_RULE,
+        LOSSLESS,
     }
 
     private final ServiceKey serviceKey;

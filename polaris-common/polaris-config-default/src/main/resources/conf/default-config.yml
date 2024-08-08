@@ -279,6 +279,11 @@ consumer:
   subscribe:
     #服务订阅执行回调Listener的线程数量
     callbackConcurrency: 1
+  weightAdjust:
+    enable: true
+    chain:
+      # 开启了服务预热插件，可以支持多个动态权重调整插件同时生效
+#      - warmup
 # 被调方配置
 provider:
   # Switch of registration
@@ -293,6 +298,7 @@ provider:
     host: 0.0.0.0
     # 优雅上下线功能需要对外提供接口，接口的监听端口
     port: 28080
+    strategy: DELAY_BY_TIME
     # 优雅上线时，如果没有启动探测，则兜底延迟多久会进行上线
     delayRegisterInterval: 30s
     # 优雅上线的探测周期

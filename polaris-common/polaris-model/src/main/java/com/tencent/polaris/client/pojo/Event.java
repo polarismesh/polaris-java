@@ -27,6 +27,15 @@ import java.util.*;
  */
 public class Event {
 
+    public Event() {
+    }
+
+    public Event(String clientId, BaseInstance baseInstance, String eventName) {
+        this.clientId = clientId;
+        this.baseInstance = baseInstance;
+        this.eventName = eventName;
+    }
+
     private String clientId;
 
     private BaseInstance baseInstance;

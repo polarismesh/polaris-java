@@ -21,10 +21,12 @@ package com.tencent.polaris.api.pojo;
  * Dynamic weight for an instance.
  */
 public class InstanceWeight {
-
+    // Instance id
     private String id;
-
+    // Current weight
     private int dynamicWeight;
+    // Base weight
+    private int baseWeight;
 
     public String getId() {
         return id;
@@ -40,5 +42,26 @@ public class InstanceWeight {
 
     public void setDynamicWeight(int dynamicWeight) {
         this.dynamicWeight = dynamicWeight;
+    }
+
+    public int getBaseWeight() {
+        return baseWeight;
+    }
+
+    public void setBaseWeight(int baseWeight) {
+        this.baseWeight = baseWeight;
+    }
+
+    public boolean isDynamicWeightValid() {
+        return dynamicWeight != baseWeight;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceWeight{" +
+                "id='" + id + '\'' +
+                ", dynamicWeight=" + dynamicWeight +
+                ", baseWeight=" + baseWeight +
+                '}';
     }
 }

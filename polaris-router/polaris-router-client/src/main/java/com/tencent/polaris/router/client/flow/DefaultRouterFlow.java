@@ -148,7 +148,8 @@ public class DefaultRouterFlow implements RouterFlow {
         }
         LoadBalancer loadBalancer = (LoadBalancer) extensions.getPlugins()
                 .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), lbPolicy);
-        Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), request.getDstInstances());
+        Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(),
+                request.getDstInstances(), extensions.getWeightAdjusters());
         return new ProcessLoadBalanceResponse(instance);
     }
 }

@@ -105,7 +105,8 @@ public class AsyncRateLimitConnector {
                     .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), LoadBalanceConfig.LOAD_BALANCE_RING_HASH);
             Criteria criteria = new Criteria();
             criteria.setHashKey(hashValue);
-            instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses);
+            instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses,
+                    extensions.getWeightAdjusters());
         }
         if (instance == null) {
             LOG.error("can not found any instance by serviceKye:{}", remoteCluster);

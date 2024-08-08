@@ -26,9 +26,12 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.InstanceWeight;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.api.utils.CollectionUtils;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -87,7 +90,7 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
         WeightedRoundRobin selectedWRR = null;
         for (Instance instance : svcInstances.getInstances()) {
             String identifyString = instance.getId();
-            int weight = instance.getWeight();
+            int weight = getWeight(criteria.getDynamicWeight(), instance);
             WeightedRoundRobin weightedRoundRobin = map.computeIfAbsent(identifyString, k -> {
                 WeightedRoundRobin wrr = new WeightedRoundRobin();
                 wrr.setWeight(weight);
@@ -115,6 +118,18 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
             return selectedInstance;
         }
         return svcInstances.getInstances().get(0);
+    }
+
+    private int getWeight(Map<String, InstanceWeight> dynamicWeights, Instance instance) {
+        if (CollectionUtils.isNotEmpty(dynamicWeights)) {
+            return instance.getWeight();
+        }
+
+        if (dynamicWeights.containsKey(instance.getId())) {
+            return dynamicWeights.get(instance.getId()).getDynamicWeight();
+        } else {
+            return instance.getWeight();
+        }
     }
 
     @Override

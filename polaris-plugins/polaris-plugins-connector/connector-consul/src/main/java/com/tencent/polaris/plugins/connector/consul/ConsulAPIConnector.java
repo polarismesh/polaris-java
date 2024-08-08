@@ -48,6 +48,7 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
 import com.tencent.polaris.plugins.connector.consul.service.InstanceService;
 import com.tencent.polaris.plugins.connector.consul.service.ServiceService;
+import com.tencent.polaris.plugins.connector.consul.service.lossless.LosslessService;
 import com.tencent.polaris.plugins.connector.consul.service.router.NearByRouteRuleService;
 import com.tencent.polaris.plugins.connector.consul.service.router.RoutingService;
 import org.slf4j.Logger;
@@ -225,6 +226,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         consulServiceMap.put(ServiceEventKey.EventType.SERVICE, new ServiceService(consulClient, consulRawClient, consulContext, "consul-service", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.ROUTING, new RoutingService(consulClient, consulRawClient, consulContext, "consul-routing", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.NEARBY_ROUTE_RULE, new NearByRouteRuleService(consulClient, consulRawClient, consulContext, "consul-nearby-route-rule", mapper));
+        consulServiceMap.put(ServiceEventKey.EventType.LOSSLESS, new LosslessService(consulClient, consulRawClient, consulContext, "consul-lossless", mapper));
         initialized = true;
     }
 

@@ -199,6 +199,11 @@ public class InstanceByProto implements Instance {
     }
 
     @Override
+    public String getCreateTime() {
+        return instance.getCtime().getValue();
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "InstanceByProto{" +

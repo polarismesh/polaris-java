@@ -237,6 +237,8 @@ public class GrpcUtil {
                 return DiscoverRequestType.LANE;
             case NEARBY_ROUTE_RULE:
                 return DiscoverRequestType.NEARBY_ROUTE_RULE;
+            case LOSSLESS:
+                return DiscoverRequestType.LOSSLESS;
             default:
                 return DiscoverRequestType.UNKNOWN;
         }
@@ -261,6 +263,8 @@ public class GrpcUtil {
                 return DiscoverResponseType.LANE;
             case NEARBY_ROUTE_RULE:
                 return DiscoverResponseType.NEARBY_ROUTE_RULE;
+            case LOSSLESS:
+                return DiscoverResponseType.LOSSLESS;
             default:
                 return DiscoverResponseType.UNKNOWN;
         }
@@ -284,6 +288,8 @@ public class GrpcUtil {
                 return EventType.LANE_RULE;
             case NEARBY_ROUTE_RULE:
                 return EventType.NEARBY_ROUTE_RULE;
+            case LOSSLESS:
+                return EventType.LOSSLESS;
             default:
                 return EventType.UNKNOWN;
         }
