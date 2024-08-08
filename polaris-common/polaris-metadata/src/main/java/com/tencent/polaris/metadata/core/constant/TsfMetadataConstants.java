@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core.constant.tsf;
+package com.tencent.polaris.metadata.core.constant;
 
 /**
  * Metadata constant for TSF.

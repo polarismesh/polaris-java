@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.consul.service.router;
 
-import com.ecwid.consul.ConsulException;
 import com.ecwid.consul.SingleUrlParameters;
 import com.ecwid.consul.UrlParameters;
 import com.ecwid.consul.json.GsonFactory;
@@ -84,7 +83,6 @@ public class RouterRuleService extends ConsulService {
         String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
         String service = serviceUpdateTask.getServiceEventKey().getService();
         String routeRuleKey = String.format("/v1/kv/route/%s/%s/data", namespace, service);
-        LOG.trace("tsf route rule, consul kv namespace, getKey: {}", routeRuleKey);
         UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
         UrlParameters tokenParam = new SingleUrlParameters("token", consulContext.getAclToken());
         UrlParameters recurseParam = new SingleUrlParameters("recurse");
@@ -132,19 +130,17 @@ public class RouterRuleService extends ConsulService {
                         code = ServerCodes.EXECUTE_SUCCESS;
                         if (rawResponse.getStatusCode() == 200) {
                             if (rawResponse.getContent() != null) {
-                                try {
-                                    LOG.info("new route rule: {}", rawResponse.getContent());
-                                    routes = parseResponse(rawResponse, namespace, service);
-                                } catch (Exception ex) {
-                                    LOG.error("tsf route rule load error, ex", ex);
-                                }
+                                LOG.info("new route rule: {}", rawResponse.getContent());
+                                routes = parseResponse(rawResponse, namespace, service);
                             }
                         } else if (rawResponse.getStatusCode() == 404) {
                             LOG.info("empty route rule: {}", rawResponse.getContent());
                         }
                     } else {
-                        LOG.debug("Consul data is not changed");
+                        LOG.debug("[TSF Route Rule] Consul data is not changed");
                     }
+                } else {
+                    LOG.warn("[TSF Route Rule] Consul data is abnormal. {}", rawResponse);
                 }
                 if (CollectionUtils.isNotEmpty(routes)) {
                     newRoutingBuilder.addAllInbounds(routes);
@@ -160,15 +156,16 @@ public class RouterRuleService extends ConsulService {
                     serviceUpdateTask.addUpdateTaskSet();
                 }
             }
-        } catch (ConsulException e) {
-            LOG.error("Get services sync failed. Will sleep for {} ms.", consulContext.getConsulErrorSleep(), e);
+        } catch (Throwable e) {
+            LOG.error("[TSF Route Rule] tsf route rule load error. Will sleep for {} ms. Key path:{}",
+                    consulContext.getConsulErrorSleep(), routeRuleKey, e);
             try {
                 Thread.sleep(consulContext.getConsulErrorSleep());
             } catch (Exception e1) {
-                LOG.error("error in sleep, msg: {}", e.getMessage());
+                LOG.error("error in sleep, msg: {}", e1.getMessage());
             }
             PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
-                    "Get services sync failed.");
+                    "Get routing sync failed.");
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error, SERVER_CONNECTOR_CONSUL);
             serviceUpdateTask.notifyServerEvent(serverEvent);
         }
@@ -195,7 +192,8 @@ public class RouterRuleService extends ConsulService {
                     routeRuleGroupList.add(tempList.get(0));
                 }
             } catch (Exception ex) {
-                LOG.error("tsf route rule load error, ex", ex);
+                LOG.error("tsf route rule load error.", ex);
+                throw new PolarisException(ErrorCode.INVALID_RESPONSE, "tsf route rule load error", ex);
             }
         });
 
@@ -268,7 +266,7 @@ public class RouterRuleService extends ConsulService {
     }
 
     private void setRouterRuleConsulIndex(RouterRuleKey routerRuleKey, Long lastIndex, Long newIndex) {
-        LOG.debug("serviceId: {}; lastIndex: {}; newIndex: {}", routerRuleKey, lastIndex, newIndex);
+        LOG.debug("RouterRuleKey: {}; lastIndex: {}; newIndex: {}", routerRuleKey, lastIndex, newIndex);
         routerRuleConsulIndexMap.put(routerRuleKey, newIndex);
     }
 

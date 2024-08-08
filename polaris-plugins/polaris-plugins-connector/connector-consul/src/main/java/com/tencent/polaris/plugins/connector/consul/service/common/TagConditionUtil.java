@@ -20,7 +20,7 @@ package com.tencent.polaris.plugins.connector.consul.service.common;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.metadata.core.MessageMetadataContainer;
-import com.tencent.polaris.metadata.core.constant.tsf.TsfMetadataConstants;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 
 public class TagConditionUtil {
