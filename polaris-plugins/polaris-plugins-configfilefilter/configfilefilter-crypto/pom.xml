@@ -34,6 +34,7 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk15to18</artifactId>
             <version>1.78.1</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
