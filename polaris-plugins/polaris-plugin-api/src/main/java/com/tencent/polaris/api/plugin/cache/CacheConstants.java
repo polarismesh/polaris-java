@@ -3,8 +3,8 @@
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
+ *  Licensed under the BSD 3-Clause License (the "License");
+ *  you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/BSD-3-Clause
@@ -15,15 +15,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.metadata.core.manager;
+package com.tencent.polaris.api.plugin.cache;
 
-import com.tencent.polaris.metadata.core.MetadataContainer;
+/**
+ * Constant for Cache.
+ *
+ * @author Haotian Zhang
+ */
+public interface CacheConstants {
 
-public interface MetadataContainerGroup {
-
-    MetadataContainer getMessageMetadataContainer();
-
-    MetadataContainer getApplicationMetadataContainer();
-
-    MetadataContainer getCustomMetadataContainer();
+    int API_ID = 433;
 }

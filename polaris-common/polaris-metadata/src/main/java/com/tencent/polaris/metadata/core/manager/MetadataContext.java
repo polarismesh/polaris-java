@@ -40,8 +40,8 @@ public class MetadataContext {
             transitivePrefix = "";
         }
         this.transitivePrefix = transitivePrefix;
-        callerMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix);
-        calleeMetadataContainerGroup = new MetadataContainerGroup(transitivePrefix);
+        callerMetadataContainerGroup = new CallerMetadataContainerGroup(transitivePrefix);
+        calleeMetadataContainerGroup = new CalleeMetadataContainerGroup(transitivePrefix);
     }
 
     /**
@@ -71,8 +71,15 @@ public class MetadataContext {
         }
     }
 
+    public MetadataContainerGroup getMetadataContainerGroup(boolean caller) {
+        if (caller) {
+            return callerMetadataContainerGroup;
+        } else {
+            return calleeMetadataContainerGroup;
+        }
+    }
+
     public String getTransitivePrefix() {
         return transitivePrefix;
     }
-
 }

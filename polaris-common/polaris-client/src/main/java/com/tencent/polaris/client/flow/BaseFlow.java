@@ -33,29 +33,21 @@ import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
-import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.slf4j.Logger;
+
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.slf4j.Logger;
+
+import static com.tencent.polaris.api.plugin.route.RouterConstants.ROUTER_FAULT_TOLERANCE_ENABLE;
 
 /**
  * 同步调用流程
@@ -71,16 +63,16 @@ public class BaseFlow {
     /**
      * 通用获取单个服务实例的方法，用于SDK内部调用
      *
-     * @param extensions 插件上下文
-     * @param serviceKey 服务信息
+     * @param extensions      插件上下文
+     * @param serviceKey      服务信息
      * @param coreRouterNames 核心路由插件链
-     * @param lbPolicy 负载均衡策略
-     * @param protocol 协议信息
-     * @param hashKey 一致性hash的key
+     * @param lbPolicy        负载均衡策略
+     * @param protocol        协议信息
+     * @param hashKey         一致性hash的key
      * @return 过滤后的实例
      */
     public static Instance commonGetOneInstance(Extensions extensions, ServiceKey serviceKey,
-            List<String> coreRouterNames, String lbPolicy, String protocol, String hashKey) {
+                                                List<String> coreRouterNames, String lbPolicy, String protocol, String hashKey) {
         ServiceEventKey svcEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         LOG.debug("[ConnectionManager]start to discover service {}", svcEventKey);
         DefaultServiceEventKeysProvider provider = new DefaultServiceEventKeysProvider();
@@ -123,14 +115,14 @@ public class BaseFlow {
     /**
      * 处理服务路由
      *
-     * @param routeInfo 路由信息
-     * @param dstInstances 目标实例列表
+     * @param routeInfo        路由信息
+     * @param dstInstances     目标实例列表
      * @param routerChainGroup 插件链
      * @return 过滤后的实例
      * @throws PolarisException 异常
      */
     public static ServiceInstances processServiceRouters(RouteInfo routeInfo, ServiceInstances dstInstances,
-            RouterChainGroup routerChainGroup) throws PolarisException {
+                                                         RouterChainGroup routerChainGroup) throws PolarisException {
         if (null == dstInstances || CollectionUtils.isEmpty(dstInstances.getInstances())) {
             return dstInstances;
         }
@@ -141,9 +133,18 @@ public class BaseFlow {
         if (processRouterChain(routerChainGroup.getBeforeRouters(), routeInfo, serviceInstancesWrap)) {
             processed = true;
         }
+        Map<String, String> destSvcMetadata = Optional.ofNullable(serviceInstancesWrap.getMetadata()).orElse(Collections.emptyMap());
+        List<Instance> faultToleranceServiceInstances = new ArrayList<>();
+        if (Boolean.parseBoolean(destSvcMetadata.get(ROUTER_FAULT_TOLERANCE_ENABLE))) {
+            faultToleranceServiceInstances = new ArrayList<>(dstInstances.getInstances());
+        }
         //再走业务路由
         if (processRouterChain(routerChainGroup.getCoreRouters(), routeInfo, serviceInstancesWrap)) {
             processed = true;
+        }
+        if (CollectionUtils.isEmpty(serviceInstancesWrap.getInstances())
+                && Boolean.parseBoolean(destSvcMetadata.get(ROUTER_FAULT_TOLERANCE_ENABLE))) {
+            serviceInstancesWrap.setInstances(faultToleranceServiceInstances);
         }
         //最后走后置路由
         if (processRouterChain(routerChainGroup.getAfterRouters(), routeInfo, serviceInstancesWrap)) {
@@ -156,7 +157,7 @@ public class BaseFlow {
     }
 
     private static boolean processRouterChain(List<ServiceRouter> routers,
-            RouteInfo routeInfo, ServiceInstancesWrap serviceInstances) throws PolarisException {
+                                              RouteInfo routeInfo, ServiceInstancesWrap serviceInstances) throws PolarisException {
         if (CollectionUtils.isEmpty(routers)) {
             return false;
         }
@@ -190,15 +191,15 @@ public class BaseFlow {
     /**
      * 同步拉取资源数据
      *
-     * @param extensions 插件集合
+     * @param extensions      插件集合
      * @param internalRequest 是否内部请求
-     * @param paramProvider 参数提供器
-     * @param controlParam 控制参数
+     * @param paramProvider   参数提供器
+     * @param controlParam    控制参数
      * @return 多资源应答
      * @throws PolarisException 获取异常
      */
     public static ResourcesResponse syncGetResources(Extensions extensions, boolean internalRequest,
-            ServiceEventKeysProvider paramProvider, FlowControlParam controlParam)
+                                                     ServiceEventKeysProvider paramProvider, FlowControlParam controlParam)
             throws PolarisException {
 
         if (CollectionUtils.isEmpty(paramProvider.getSvcEventKeys()) && null == paramProvider.getSvcEventKey()) {
@@ -245,7 +246,7 @@ public class BaseFlow {
     }
 
     private static boolean readResourcesFromLocalCache(ServiceEventKeysProvider paramProvider,
-            Extensions extensions, ResourcesResponse resourcesResponse) {
+                                                       Extensions extensions, ResourcesResponse resourcesResponse) {
         LocalRegistry localRegistry = extensions.getLocalRegistry();
         if (null != paramProvider.getSvcEventKey()) {
             if (loadLocalResources(paramProvider.getSvcEventKey(), resourcesResponse, localRegistry)) {
@@ -263,7 +264,7 @@ public class BaseFlow {
     }
 
     private static boolean loadLocalResources(ServiceEventKey svcEventKey, ResourcesResponse resourcesResponse,
-            LocalRegistry localRegistry) {
+                                              LocalRegistry localRegistry) {
         ResourceFilter filter = new ResourceFilter(svcEventKey, false, true);
         if (svcEventKey.getEventType() == EventType.INSTANCE) {
             ServiceInstances instances = localRegistry.getInstances(filter);
@@ -293,7 +294,7 @@ public class BaseFlow {
     }
 
     public static Instance processLoadBalance(LoadBalancer loadBalancer, Criteria criteria,
-            ServiceInstances dstInstances) throws PolarisException {
+                                              ServiceInstances dstInstances) throws PolarisException {
         Instance instance = loadBalancer.chooseInstance(criteria, dstInstances);
         if (null == instance) {
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
@@ -306,12 +307,12 @@ public class BaseFlow {
     /**
      * 构建流程控制参数
      *
-     * @param entity 请求对象
-     * @param config 配置对象
+     * @param entity       请求对象
+     * @param config       配置对象
      * @param controlParam 控制参数
      */
     public static void buildFlowControlParam(RequestBaseEntity entity, Configuration config,
-            FlowControlParam controlParam) {
+                                             FlowControlParam controlParam) {
         long timeoutMs = entity.getTimeoutMs();
         if (timeoutMs == 0) {
             timeoutMs = config.getGlobal().getAPI().getTimeout();

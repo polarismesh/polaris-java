@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.plugins.router.nearby;
 
-import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
-
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
@@ -40,17 +38,12 @@ import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.tencent.polaris.client.util.Utils.isHealthyInstance;
 
 /**
  * 就近接入路由
@@ -66,7 +59,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     public static final String ROUTER_METADATA_KEY_REGION = "region";
     public static final String ROUTER_METADATA_KEY_CAMPUS = "campus";
 
-    private static final String NEARBY_METADATA_ENABLE  = "internal-enable-nearby";
+    private static final String NEARBY_METADATA_ENABLE = "internal-enable-nearby";
 
 
     private static final Logger LOG = LoggerFactory.getLogger(NearbyRouter.class);
@@ -170,7 +163,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
     }
 
     private CheckResult hasHealthyInstances(ServiceInstances svcInstances,
-            LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
+                                            LocationLevel targetLevel, Map<LocationLevel, String> clientInfo) {
         String clientZone = "";
         String clientRegion = "";
         String clientCampus = "";
@@ -353,12 +346,21 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         }
 
         //默认关闭，需要显示打开
+        boolean enabled = false;
+        if (routeInfo.getMetadataContainerGroup() != null && routeInfo.getMetadataContainerGroup().getCustomMetadataContainer() != null) {
+            String enabledStr = routeInfo.getMetadataContainerGroup().getCustomMetadataContainer().getRawMetadataMapValue(ROUTER_TYPE_NEAR_BY, ROUTER_ENABLED);
+            if (StringUtils.isNotBlank(enabledStr) && Boolean.parseBoolean(enabledStr)) {
+                enabled = true;
+            }
+        }
         Map<String, String> routerMetadata = routeInfo.getRouterMetadata(ROUTER_TYPE_NEAR_BY);
         if (MapUtils.isNotEmpty(routerMetadata)) {
-            String enabled = routerMetadata.get(ROUTER_ENABLED);
-            return StringUtils.isNotBlank(enabled) && Boolean.parseBoolean(enabled);
+            String enabledStr = routerMetadata.get(ROUTER_ENABLED);
+            if (StringUtils.isNotBlank(enabledStr) && Boolean.parseBoolean(enabledStr)) {
+                enabled = true;
+            }
         }
-        return false;
+        return enabled;
     }
 
     @Override

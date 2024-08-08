@@ -26,17 +26,12 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
-import com.tencent.polaris.api.plugin.registry.CacheHandler;
-import com.tencent.polaris.api.plugin.registry.EventCompleteNotifier;
-import com.tencent.polaris.api.plugin.registry.InstanceProperty;
-import com.tencent.polaris.api.plugin.registry.LocalRegistry;
-import com.tencent.polaris.api.plugin.registry.ResourceEventListener;
-import com.tencent.polaris.api.plugin.registry.ResourceFilter;
-import com.tencent.polaris.api.plugin.registry.ServiceUpdateRequest;
+import com.tencent.polaris.api.plugin.registry.*;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
@@ -44,19 +39,8 @@ import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
-import com.tencent.polaris.api.pojo.DetectResult;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.InstanceLocalValue;
-import com.tencent.polaris.api.pojo.RegistryCacheValue;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.pojo.Services;
-import com.tencent.polaris.api.pojo.StatusDimension;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -75,23 +59,9 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+import java.util.concurrent.*;
 
 /**
  * 本地缓存,保存服务端返回的实例信息.
@@ -159,6 +129,11 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
     private boolean persistEnable;
 
     /**
+     * 缓存是否超时淘汰
+     */
+    private boolean serviceExpireEnable;
+
+    /**
      * 缓存淘汰时间
      */
     private long serviceExpireTimeMs;
@@ -167,6 +142,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      * 是否有独立的服务发现集群
      */
     private boolean hasDiscoverCluster = false;
+
+    private FlowCache flowCache;
 
     private Collection<Plugin> statPlugins;
 
@@ -247,6 +224,15 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      */
     private ServerConnector getConnector() {
         return connector;
+    }
+
+    /**
+     * 获取flow cache
+     *
+     * @return flow cache
+     */
+    public FlowCache getFlowCache() {
+        return flowCache;
     }
 
     /**
@@ -487,6 +473,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         }
         NamedThreadFactory namedThreadFactory = new NamedThreadFactory(getName());
         serviceExpireTimeMs = ctx.getConfig().getConsumer().getLocalCache().getServiceExpireTime();
+        serviceExpireEnable = ctx.getConfig().getConsumer().getLocalCache().isServiceExpireEnable();
         persistExecutor = Executors.newSingleThreadExecutor(namedThreadFactory);
         expireExecutor = Executors.newSingleThreadScheduledExecutor(namedThreadFactory);
         if (hasDiscoverCluster) {
@@ -499,11 +486,14 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-        expireExecutor.scheduleAtFixedRate(new ExpireTask(), 0, serviceExpireTimeMs, TimeUnit.MILLISECONDS);
+        if (serviceExpireEnable) {
+            expireExecutor.scheduleAtFixedRate(new ExpireTask(), 0, serviceExpireTimeMs, TimeUnit.MILLISECONDS);
+        }
         if (null != serverServicesDiscoverExecutor) {
             serverServicesDiscoverExecutor.execute(new WarmupDiscoverServiceTask(extensions));
         }
         statPlugins = extensions.getPlugins().getPlugins(PluginTypes.STAT_REPORTER.getBaseType());
+        flowCache = extensions.getFlowCache();
     }
 
     /**

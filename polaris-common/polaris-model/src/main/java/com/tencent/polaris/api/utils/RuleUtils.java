@@ -18,7 +18,9 @@
 package com.tencent.polaris.api.utils;
 
 
+import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
 import org.slf4j.Logger;
@@ -33,6 +35,8 @@ public class RuleUtils {
     private static final Logger LOG = LoggerFactory.getLogger(RuleUtils.class);
 
     public static final String MATCH_ALL = "*";
+
+    public static final String CALLEE_APPLICATION_METADATA_PREFIX = "$caller_metadata.";
 
     private static final Function<String, Pattern> DEFAULT_REGEX_PATTERN = new Function<String, Pattern>() {
         @Override
@@ -70,15 +74,15 @@ public class RuleUtils {
                                            Function<String, Pattern> regexToPattern) {
         MatchStringType matchType = matchString.getType();
         String matchValue = matchString.getValue().getValue();
-        return matchStringValue(matchType, actualValue, matchValue, regexToPattern);
+        return matchStringValue(matchType, actualValue, matchValue, regexToPattern, false, null);
     }
 
     public static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue) {
-        return matchStringValue(matchType, actualValue, matchValue, DEFAULT_REGEX_PATTERN);
+        return matchStringValue(matchType, actualValue, matchValue, DEFAULT_REGEX_PATTERN, false, null);
     }
 
     private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
-                                            Function<String, Pattern> regexToPattern) {
+                                            Function<String, Pattern> regexToPattern, boolean useTrieNode, Function<String, TrieNode<String>> trieNodeFunction) {
         actualValue = StringUtils.defaultString(actualValue);
         matchValue = StringUtils.defaultString(matchValue);
         if (RuleUtils.isMatchAllValue(matchValue)) {
@@ -86,6 +90,9 @@ public class RuleUtils {
         }
         switch (matchType) {
             case EXACT: {
+                if (useTrieNode && trieNodeFunction != null) {
+                    return ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue);
+                }
                 return StringUtils.equals(actualValue, matchValue);
             }
             case REGEX: {
@@ -94,13 +101,22 @@ public class RuleUtils {
                 return pattern.matcher(actualValue).find();
             }
             case NOT_EQUALS: {
+                if (useTrieNode && trieNodeFunction != null) {
+                    return !ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue);
+                }
                 return !StringUtils.equals(actualValue, matchValue);
             }
             case IN: {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
-                    if (StringUtils.equals(token, actualValue)) {
-                        return true;
+                    if (useTrieNode && trieNodeFunction != null) {
+                        if (ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue)) {
+                            return true;
+                        }
+                    } else {
+                        if (StringUtils.equals(token, actualValue)) {
+                            return true;
+                        }
                     }
                 }
                 return false;
@@ -108,8 +124,14 @@ public class RuleUtils {
             case NOT_IN: {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
-                    if (StringUtils.equals(token, actualValue)) {
-                        return false;
+                    if (useTrieNode && trieNodeFunction != null) {
+                        if (ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue)) {
+                            return false;
+                        }
+                    } else {
+                        if (StringUtils.equals(token, actualValue)) {
+                            return false;
+                        }
                     }
                 }
                 return true;
@@ -146,6 +168,14 @@ public class RuleUtils {
     public static boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
                                         boolean isMatchSource, Map<String, String> multiEnvRouterParamMap, Map<String
             , String> variables) {
+        return matchMetadata(ruleMeta, destMeta, null, isMatchSource, multiEnvRouterParamMap, variables, null);
+    }
+
+    // 匹配metadata
+    public static boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
+                                        MetadataContainerGroup metadataContainerGroup, boolean isMatchSource,
+                                        Map<String, String> multiEnvRouterParamMap, Map<String, String> variables,
+                                        Function<String, TrieNode<String>> trieNodeFunction) {
         // 如果规则metadata为空, 返回成功
         if (MapUtils.isEmpty(ruleMeta)) {
             return true;
@@ -154,7 +184,7 @@ public class RuleUtils {
             return true;
         }
         // 如果规则metadata不为空, 待匹配规则为空, 直接返回失败
-        if (MapUtils.isEmpty(destMeta)) {
+        if (metadataContainerGroup == null && MapUtils.isEmpty(destMeta)) {
             return false;
         }
 
@@ -170,16 +200,40 @@ public class RuleUtils {
                 matchNum++;
                 continue;
             }
-            if (destMeta.containsKey(ruleMetaKey)) {
+            String destMetaValue = null;
+            if (metadataContainerGroup != null) {
+                if (StringUtils.substringMatch(ruleMetaKey, 0, CALLEE_APPLICATION_METADATA_PREFIX) && metadataContainerGroup.getApplicationMetadataContainer() != null) {
+                    String originalRuleMetaKey = StringUtils.replace(ruleMetaKey, CALLEE_APPLICATION_METADATA_PREFIX, "");
+                    destMetaValue = metadataContainerGroup.getApplicationMetadataContainer().getRawMetadataStringValue(originalRuleMetaKey);
+                } else if (StringUtils.substringMatch(ruleMetaKey, 0, "$") && metadataContainerGroup.getMessageMetadataContainer() != null) {
+                    if (!ruleMetaKey.contains(".")) {
+                        destMetaValue = metadataContainerGroup.getMessageMetadataContainer().getRawMetadataStringValue(ruleMetaKey);
+                    } else {
+                        int index = ruleMetaKey.indexOf(".");
+                        if (index != -1 && index < ruleMetaKey.length() - 1) {
+                            String newKey = ruleMetaKey.substring(0, index + 1);
+                            String newMapKey = ruleMetaKey.substring(index + 1);
+                            destMetaValue = metadataContainerGroup.getMessageMetadataContainer().getRawMetadataMapValue(newKey, newMapKey);
+                        } else {
+                            destMetaValue = metadataContainerGroup.getMessageMetadataContainer().getRawMetadataStringValue(ruleMetaKey);
+                        }
+                    }
+                } else if (metadataContainerGroup.getCustomMetadataContainer() != null) {
+                    destMetaValue = metadataContainerGroup.getCustomMetadataContainer().getRawMetadataStringValue(ruleMetaKey);
+                }
+            }
+            if (StringUtils.isBlank(destMetaValue) && destMeta.containsKey(ruleMetaKey)) {
+                destMetaValue = destMeta.get(ruleMetaKey);
+            }
+            if (StringUtils.isNotBlank(destMetaValue)) {
                 matchNum++;
                 if (!ruleMetaValue.hasValue()
                         && ruleMetaValue.getValueType() != MatchString.ValueType.PARAMETER) {
                     continue;
                 }
-                // 这里获取到的是真正流量标签的 value 或者实例的标签 value
-                String destMetaValue = destMeta.get(ruleMetaKey);
+                boolean useTrieNode = StringUtils.equals(ruleMetaKey, "$path") && ruleMetaValue.getType() != MatchStringType.REGEX;
                 allMetaMatched = isAllMetaMatched(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
-                        multiEnvRouterParamMap, variables);
+                        multiEnvRouterParamMap, variables, useTrieNode, trieNodeFunction);
             }
 
             if (!allMetaMatched) {
@@ -202,18 +256,20 @@ public class RuleUtils {
     private static boolean isAllMetaMatched(boolean isMatchSource, String ruleMetaKey,
                                             MatchString ruleMetaValue, String destMetaValue,
                                             Map<String, String> multiEnvRouterParamMap,
-                                            Map<String, String> variables) {
+                                            Map<String, String> variables,
+                                            boolean useTrieNode, Function<String, TrieNode<String>> trieNodeFunction) {
         if (RuleUtils.MATCH_ALL.equals(destMetaValue)) {
             return true;
         }
         return matchValueByValueType(isMatchSource, ruleMetaKey, ruleMetaValue, destMetaValue,
-                multiEnvRouterParamMap, variables);
+                multiEnvRouterParamMap, variables, useTrieNode, trieNodeFunction);
     }
 
     private static boolean matchValueByValueType(boolean isMatchSource, String ruleMetaKey,
                                                  MatchString ruleMetaValue, String destMetaValue,
                                                  Map<String, String> multiEnvRouterParamMap,
-                                                 Map<String, String> variables) {
+                                                 Map<String, String> variables,
+                                                 boolean useTrieNode, Function<String, TrieNode<String>> trieNodeFunction) {
         boolean allMetaMatched = true;
 
         switch (ruleMetaValue.getValueType()) {
@@ -257,7 +313,7 @@ public class RuleUtils {
                 break;
             default:
                 allMetaMatched = matchStringValue(ruleMetaValue.getType(), destMetaValue,
-                        ruleMetaValue.getValue().getValue());
+                        ruleMetaValue.getValue().getValue(), DEFAULT_REGEX_PATTERN, useTrieNode, trieNodeFunction);
         }
 
         return allMetaMatched;

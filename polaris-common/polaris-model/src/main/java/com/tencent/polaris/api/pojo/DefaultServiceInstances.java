@@ -19,11 +19,8 @@ package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.Node;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+
+import java.util.*;
 
 public class DefaultServiceInstances implements ServiceInstances {
 
@@ -35,6 +32,8 @@ public class DefaultServiceInstances implements ServiceInstances {
 
     private final Map<Node, Instance> nodeMap;
 
+    private final Map<String, String> metadata;
+
     private final int totalWeight;
 
     private final int hashCode;
@@ -42,6 +41,10 @@ public class DefaultServiceInstances implements ServiceInstances {
     private final String revision;
 
     public DefaultServiceInstances(ServiceKey serviceKey, List<Instance> instances) {
+        this(serviceKey, instances, null);
+    }
+
+    public DefaultServiceInstances(ServiceKey serviceKey, List<Instance> instances, Map<String, String> metadata) {
         this.serviceKey = serviceKey;
         this.instances = Collections.unmodifiableList(instances);
         this.totalWeight = getTotalWeight(instances);
@@ -52,6 +55,10 @@ public class DefaultServiceInstances implements ServiceInstances {
         for (Instance instance : instances) {
             idMap.put(instance.getId(), instance);
             nodeMap.put(new Node(instance.getHost(), instance.getPort()), instance);
+        }
+        this.metadata = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(metadata)) {
+            this.metadata.putAll(metadata);
         }
     }
 
@@ -102,7 +109,7 @@ public class DefaultServiceInstances implements ServiceInstances {
 
     @Override
     public Map<String, String> getMetadata() {
-        return null;
+        return metadata;
     }
 
     @Override

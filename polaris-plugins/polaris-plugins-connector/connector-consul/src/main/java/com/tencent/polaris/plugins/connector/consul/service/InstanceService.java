@@ -63,7 +63,7 @@ public class InstanceService extends ConsulService {
 
     private static final Logger LOG = LoggerFactory.getLogger(InstanceService.class);
 
-    private final Map<String, Long> serviceConsulIndex = new ConcurrentHashMap<>();
+    private final Map<String, Long> serviceConsulIndexMap = new ConcurrentHashMap<>();
 
     public InstanceService(ConsulClient consulClient, ConsulRawClient consulRawClient, ConsulContext consulContext,
                            String threadName, ObjectMapper mapper) {
@@ -81,15 +81,15 @@ public class InstanceService extends ConsulService {
         UrlParameters tagParams = StringUtils.isNotBlank(tag) ? new SingleUrlParameters("tag", tag) : null;
         UrlParameters passingParams = onlyPassing ? new SingleUrlParameters("passing") : null;
         UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
-        Long index = getServersConsulIndex(serviceId);
+        Long currentIndex = getServersConsulIndex(serviceId);
         int code = ServerCodes.DATA_NO_CHANGE;
-        QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), index);
+        QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), currentIndex);
         try {
-            LOG.debug("Begin Get service instances of {} sync", serviceId);
+            LOG.debug("Begin get service instances of {} sync", serviceId);
             HttpResponse rawResponse = consulRawClient.makeGetRequest("/v1/health/service/" + serviceId, tagParams,
                     passingParams, tokenParam, nsTypeParam, queryParams);
             if (rawResponse != null) {
-                if (!index.equals(rawResponse.getConsulIndex())) {
+                if (!currentIndex.equals(rawResponse.getConsulIndex())) {
                     code = ServerCodes.EXECUTE_SUCCESS;
                 }
                 LOG.debug("raw response: " + rawResponse.getContent() + " ; onlyPassing: " + onlyPassing);
@@ -153,7 +153,7 @@ public class InstanceService extends ConsulService {
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 // 即使无服务，也要更新 index
                 if (rawResponse.getConsulIndex() != null) {
-                    setServersConsulIndex(serviceId, index, rawResponse.getConsulIndex());
+                    setServersConsulIndex(serviceId, currentIndex, rawResponse.getConsulIndex());
                 }
                 if (!svcDeleted) {
                     serviceUpdateTask.addUpdateTaskSet();
@@ -176,7 +176,7 @@ public class InstanceService extends ConsulService {
     }
 
     private Long getServersConsulIndex(String serviceId) {
-        Long index = serviceConsulIndex.get(serviceId);
+        Long index = serviceConsulIndexMap.get(serviceId);
         if (index != null) {
             return index;
         }
@@ -185,7 +185,7 @@ public class InstanceService extends ConsulService {
     }
 
     private void setServersConsulIndex(String serviceId, Long lastIndex, Long newIndex) {
-        LOG.debug("serviceId: " + serviceId, "; lastIndex: " + lastIndex + "; newIndex: " + newIndex);
-        serviceConsulIndex.put(serviceId, newIndex);
+        LOG.debug("serviceId: {}; lastIndex: {}; newIndex: {}", serviceId, lastIndex, newIndex);
+        serviceConsulIndexMap.put(serviceId, newIndex);
     }
 }

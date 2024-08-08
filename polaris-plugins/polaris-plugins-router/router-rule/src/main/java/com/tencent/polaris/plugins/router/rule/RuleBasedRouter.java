@@ -23,8 +23,10 @@ import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
@@ -33,21 +35,18 @@ import com.tencent.polaris.api.pojo.Service;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceMetadata;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
-import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.utils.MapUtils;
-import com.tencent.polaris.api.utils.RuleUtils;
-import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.api.utils.*;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Destination;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import org.slf4j.Logger;
+
+import java.util.*;
+
+import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
+import static com.tencent.polaris.api.plugin.route.RouterConstants.ROUTER_FAULT_TOLERANCE_ENABLE;
 
 /**
  * 基于规则的服务路由能力
@@ -64,6 +63,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     private Map<String, String> globalVariablesConfig;
 
     private RuleBasedRouterConfig routerConfig;
+
+    private FlowCache flowCache;
 
     /**
      * 根据路由规则进行服务实例过滤, 并返回过滤后的实例列表
@@ -104,8 +105,9 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
 
     // 匹配source规则
     private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService,
-            Map<String, String> trafficLabels,
-            RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
+                                Map<String, String> trafficLabels,
+                                MetadataContainerGroup metadataContainerGroup,
+                                RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
@@ -151,8 +153,9 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 continue;
             }
 
-            matched = RuleUtils.matchMetadata(
-                    source.getMetadataMap(), trafficLabels, true, multiEnvRouterParamMap, globalVariablesConfig);
+            matched = RuleUtils.matchMetadata(source.getMetadataMap(), trafficLabels, metadataContainerGroup, true,
+                    multiEnvRouterParamMap, globalVariablesConfig,
+                    key -> flowCache.loadPluginCacheObject(API_ID, key, path -> ApiTrieUtil.buildSimpleTrieNode((String) path)));
             if (matched) {
                 break;
             }
@@ -176,7 +179,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     private List<Instance> getRuleFilteredInstances(RouteInfo routeInfo, ServiceInstances instances,
-            RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
+                                                    RuleMatchType ruleMatchType, MatchStatus matchStatus) throws PolarisException {
         // 获取路由规则
         List<RoutingProto.Route> routes = getRoutesFromRule(routeInfo, ruleMatchType);
         if (CollectionUtils.isEmpty(routes)) {
@@ -186,6 +189,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         for (RoutingProto.Route route : routes) {
             if (route == null) {
                 continue;
+            } else {
+                matchStatus.fallback = Boolean.parseBoolean(route.getExtendInfoMap().get(ROUTER_FAULT_TOLERANCE_ENABLE));
             }
 
             if (LOG.isDebugEnabled()) {
@@ -193,10 +198,10 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             }
 
             Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ROUTER_TYPE_RULE_BASED);
+            MetadataContainerGroup metadataContainerGroup = routeInfo.getMetadataContainerGroup();
             // 匹配source规则
             boolean sourceMatched = matchSource(route.getSourcesList(), routeInfo.getSourceService(), trafficLabels,
-                    ruleMatchType,
-                    multiEnvRouterParamMap);
+                    metadataContainerGroup, ruleMatchType, multiEnvRouterParamMap);
             if (!sourceMatched) {
                 continue;
             }
@@ -248,8 +253,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     /**
      * populateSubsetsFromDest 根据destination中的规则填充分组列表
      *
-     * @param instances 实例信息
-     * @param dest 目标规则
+     * @param instances  实例信息
+     * @param dest       目标规则
      * @param subsetsMap 实例分组
      * @return 是否成功加入subset列表
      */
@@ -330,6 +335,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         // 优先匹配inbound规则, 成功则不需要继续匹配outbound规则
         List<Instance> destFilteredInstances = null;
         List<Instance> sourceFilteredInstances = null;
+
         MatchStatus matchStatus = new MatchStatus();
         if (routeInfo.getDestRouteRule() != null) {
             destFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
@@ -345,10 +351,11 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             // 然后匹配outbound规则
             sourceFilteredInstances = getRuleFilteredInstances(routeInfo, instances,
                     RuleMatchType.sourceRouteRuleMatch, matchStatus);
-            if (sourceFilteredInstances.isEmpty()) {
-                ruleStatus = RuleStatus.sourceRuleFail;
-            } else {
+            if (!sourceFilteredInstances.isEmpty()) {
                 ruleStatus = RuleStatus.sourceRuleSucc;
+            }
+            if (sourceFilteredInstances.isEmpty() && matchStatus.matched) {
+                ruleStatus = RuleStatus.sourceRuleFail;
             }
         }
         switch (ruleStatus) {
@@ -356,6 +363,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                 return new RouteResult(sourceFilteredInstances, RouteResult.State.Next);
             case destRuleSucc:
                 return new RouteResult(destFilteredInstances, RouteResult.State.Next);
+            case noRule:
+                return new RouteResult(instances.getInstances(), RouteResult.State.Next);
             default:
                 LOG.warn("route rule not match, rule status: {}, not matched source {}", ruleStatus,
                         routeInfo.getSourceService());
@@ -366,7 +375,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                     failoverType = routerConfig.getFailoverType();
                 }
 
-                if (failoverType == RuleBasedRouterFailoverType.none) {
+                if (failoverType == RuleBasedRouterFailoverType.none && !matchStatus.fallback) {
                     return new RouteResult(Collections.emptyList(), RouteResult.State.Next);
                 }
 
@@ -377,6 +386,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     private static class MatchStatus {
 
         boolean matched;
+
+        boolean fallback = false;
     }
 
     private List<Instance> getHealthyInstances(List<Instance> instances) {
@@ -437,6 +448,11 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     @Override
+    public void postContextInit(Extensions extensions) throws PolarisException {
+        flowCache = extensions.getFlowCache();
+    }
+
+    @Override
     public ServiceRouter.Aspect getAspect() {
         return ServiceRouter.Aspect.MIDDLE;
     }
@@ -452,12 +468,22 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         }
 
         //默认开启，需要显示关闭
+        boolean enabled = true;
+        if (routeInfo.getMetadataContainerGroup() != null && routeInfo.getMetadataContainerGroup().getCustomMetadataContainer() != null) {
+            String enabledStr = routeInfo.getMetadataContainerGroup().getCustomMetadataContainer().getRawMetadataMapValue(ROUTER_TYPE_RULE_BASED, ROUTER_ENABLED);
+            if (StringUtils.isNotBlank(enabledStr) && !Boolean.parseBoolean(enabledStr)) {
+                enabled = false;
+            }
+        }
         Map<String, String> routerMetadata = routeInfo.getRouterMetadata(ROUTER_TYPE_RULE_BASED);
         if (MapUtils.isNotEmpty(routerMetadata)) {
-            String enabled = routerMetadata.get(ROUTER_ENABLED);
-            if (StringUtils.isNotBlank(enabled) && !Boolean.parseBoolean(enabled)) {
-                return false;
+            String enabledStr = routerMetadata.get(ROUTER_ENABLED);
+            if (StringUtils.isNotBlank(enabledStr) && !Boolean.parseBoolean(enabledStr)) {
+                enabled = false;
             }
+        }
+        if (!enabled) {
+            return false;
         }
 
         List<RoutingProto.Route> dstRoutes = getRoutesFromRule(routeInfo, RuleMatchType.destRouteRuleMatch);

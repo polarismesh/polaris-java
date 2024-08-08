@@ -17,12 +17,20 @@
 
 package com.tencent.polaris.plugins.connector.grpc.codec;
 
+import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.utils.ApiTrieUtil;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Routing;
+
+import java.util.List;
+
+import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
 
 public class RoutingCacheHandler extends AbstractCacheHandler {
 
@@ -32,12 +40,35 @@ public class RoutingCacheHandler extends AbstractCacheHandler {
     }
 
     @Override
-    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded) {
+    public RegistryCacheValue messageToCacheValue(RegistryCacheValue oldValue, Object newValue, boolean isCacheLoaded, FlowCache flowCache) {
         DiscoverResponse discoverResponse = (DiscoverResponse) newValue;
         Routing routing = discoverResponse.getRouting();
         String revision = "";
         if (null != routing) {
             revision = routing.getRevision().getValue();
+            // 缓存 inbounds 中的 api 树
+            List<RoutingProto.Route> InboundsList = routing.getInboundsList();
+            for (RoutingProto.Route route : InboundsList) {
+                List<RoutingProto.Source> sources = route.getSourcesList();
+                for (RoutingProto.Source source : sources) {
+                    if (source.containsMetadata("$path")) {
+                        ModelProto.MatchString matchString = source.getMetadataOrDefault("$path", ModelProto.MatchString.getDefaultInstance());
+                        if (matchString.getType() != ModelProto.MatchString.MatchStringType.REGEX) {
+                            if (matchString.getType() == ModelProto.MatchString.MatchStringType.EXACT || matchString.getType() == ModelProto.MatchString.MatchStringType.NOT_EQUALS) {
+                                flowCache.loadPluginCacheObject(API_ID, matchString.getValue().getValue(),
+                                        path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+                            } else if (matchString.getType() == ModelProto.MatchString.MatchStringType.IN || matchString.getType() == ModelProto.MatchString.MatchStringType.NOT_IN) {
+                                String[] apis = matchString.getValue().getValue().split(",");
+                                for (String api : apis) {
+                                    flowCache.loadPluginCacheObject(API_ID, api,
+                                            path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         }
         return new ServiceRuleByProto(routing, revision, isCacheLoaded, getTargetEventType());
     }

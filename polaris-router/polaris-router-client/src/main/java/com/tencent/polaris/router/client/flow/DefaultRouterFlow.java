@@ -25,13 +25,8 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
-import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.SourceService;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.SDKContext;
@@ -45,10 +40,11 @@ import com.tencent.polaris.router.api.rpc.ProcessLoadBalanceResponse;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest.RouterNamesGroup;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
+import org.slf4j.Logger;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.slf4j.Logger;
 
 public class DefaultRouterFlow implements RouterFlow {
 
@@ -102,6 +98,12 @@ public class DefaultRouterFlow implements RouterFlow {
         routeInfo.setRouterArguments(request.getRouterArguments());
         if (request.getMetadataFailoverType() != null) {
             routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
+        }
+        if (request.getRuleBasedRouterFailoverType() != null) {
+            routeInfo.setRuleBasedRouterFailoverType(request.getRuleBasedRouterFailoverType());
+        }
+        if (request.getMetadataContainerGroup() != null) {
+            routeInfo.setMetadataContainerGroup(request.getMetadataContainerGroup());
         }
         //获取路由规则
         DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();

@@ -142,7 +142,7 @@ consumer:
     #描述: 缓存插件名
     type: inmemory
     #描述: 是否启用服务数据缓存
-    serviceExpireEnable: true
+    serviceExpireEnable: false
     #描述: 服务过期淘汰时间
     serviceExpireTime: 24h
     #描述: 服务定期同步刷新周期

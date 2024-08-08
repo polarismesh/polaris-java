@@ -48,6 +48,7 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
 import com.tencent.polaris.plugins.connector.consul.service.InstanceService;
 import com.tencent.polaris.plugins.connector.consul.service.ServiceService;
+import com.tencent.polaris.plugins.connector.consul.service.router.RouterRuleService;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -221,6 +222,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         // init consul service
         consulServiceMap.put(ServiceEventKey.EventType.INSTANCE, new InstanceService(consulClient, consulRawClient, consulContext, "consul-instance", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.SERVICE, new ServiceService(consulClient, consulRawClient, consulContext, "consul-service", mapper));
+        consulServiceMap.put(ServiceEventKey.EventType.ROUTING, new RouterRuleService(consulClient, consulRawClient, consulContext, "consul-router-rule", mapper));
         initialized = true;
     }
 
