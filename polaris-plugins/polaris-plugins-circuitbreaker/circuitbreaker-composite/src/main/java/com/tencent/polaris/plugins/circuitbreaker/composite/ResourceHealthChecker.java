@@ -191,13 +191,19 @@ public class ResourceHealthChecker {
 				instance.getHost(), instance.getPort(), protocol, detectResult.getStatusCode(),
 				detectResult.getDelay(), detectResult.getRetStatus(), faultDetectRule.getName());
 		Set<Resource> copiedResources = new HashSet<>(resources.keySet());
+		Set<Resource> reportedResources = new HashSet<>();
 		for (Resource resource : copiedResources) {
 			if (!matchInstanceToResource(instance, resource)) {
 				continue;
 			}
+			Resource actualResource = polarisCircuitBreaker.getActualResource(resource);
+			if (reportedResources.contains(actualResource)) {
+				continue;
+			}
+			reportedResources.add(actualResource);
 			ResourceStat resourceStat = new ResourceStat(
-					resource, detectResult.getStatusCode(), detectResult.getDelay(), detectResult.getRetStatus());
-			HC_EVENT_LOG.info("report health check to resource {}, status code {}, delay {}", resource,
+					actualResource, detectResult.getStatusCode(), detectResult.getDelay(), detectResult.getRetStatus());
+			HC_EVENT_LOG.info("report health check to resource {}, status code {}, delay {}", actualResource,
 					detectResult.getStatusCode(), detectResult.getDelay());
 			polarisCircuitBreaker.doReport(resourceStat, false);
 		}
