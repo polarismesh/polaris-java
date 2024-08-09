@@ -235,6 +235,8 @@ public class GrpcUtil {
                 return DiscoverRequestType.FAULT_DETECTOR;
             case LANE_RULE:
                 return DiscoverRequestType.LANE;
+            case NEARBY_ROUTE_RULE:
+                return DiscoverRequestType.NEARBY_ROUTE_RULE;
             default:
                 return DiscoverRequestType.UNKNOWN;
         }
@@ -257,6 +259,8 @@ public class GrpcUtil {
                 return DiscoverResponseType.FAULT_DETECTOR;
             case LANE_RULE:
                 return DiscoverResponseType.LANE;
+            case NEARBY_ROUTE_RULE:
+                return DiscoverResponseType.NEARBY_ROUTE_RULE;
             default:
                 return DiscoverResponseType.UNKNOWN;
         }
@@ -278,6 +282,8 @@ public class GrpcUtil {
                 return EventType.FAULT_DETECTING;
             case LANE:
                 return EventType.LANE_RULE;
+            case NEARBY_ROUTE_RULE:
+                return EventType.NEARBY_ROUTE_RULE;
             default:
                 return EventType.UNKNOWN;
         }

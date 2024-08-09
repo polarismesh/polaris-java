@@ -167,6 +167,8 @@ consumer:
       - isolatedRouter
     #描述: 服务路由链
     chain:
+      # 命名空间就近路由
+      - namespaceRouter
       # 泳道路由
       - laneRouter
       # 元数据路由
@@ -191,10 +193,10 @@ consumer:
         #描述：规则路由降级策略。all（降级返回所有的节点）,none(不降级)
         failoverType: all
       nearbyBasedRouter:
-        #描述: 就近路由的最小匹配级别。region(大区)、zone(区域)、campus(园区)
-        matchLevel: zone
+        #描述: 就近路由的最小匹配级别。ALL(全部)、REGION(大区)、ZONE(区域)、CAMPUS(园区)
+        matchLevel: ZONE
         #描述: 最大匹配级别
-        maxMatchLevel: all
+        maxMatchLevel: ALL
         #描述: 强制就近
         strictNearby: false
         #描述: 全部实例不健康时是否降级其他地域

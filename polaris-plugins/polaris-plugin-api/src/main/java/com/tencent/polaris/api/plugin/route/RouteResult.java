@@ -18,6 +18,8 @@
 package com.tencent.polaris.api.plugin.route;
 
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+
 import java.util.List;
 
 /**
@@ -41,7 +43,7 @@ public class RouteResult {
     }
 
     public RouteResult(List<Instance> instances,
-            NextRouterInfo nextRouterInfo, int hashCode) {
+                       NextRouterInfo nextRouterInfo, int hashCode) {
         this.instances = instances;
         this.nextRouterInfo = nextRouterInfo;
         this.hashCode = hashCode;
@@ -80,12 +82,12 @@ public class RouteResult {
 
         private final State state;
 
-        private LocationLevel locationLevel;
+        private RoutingProto.NearbyRoutingConfig.LocationLevel locationLevel;
 
         /**
          * 最小的存在实例的级别
          */
-        private LocationLevel minAvailableLevel;
+        private RoutingProto.NearbyRoutingConfig.LocationLevel minAvailableLevel;
 
         public NextRouterInfo(State state) {
             this.state = state;
@@ -95,19 +97,19 @@ public class RouteResult {
             return state;
         }
 
-        public LocationLevel getLocationLevel() {
+        public RoutingProto.NearbyRoutingConfig.LocationLevel getLocationLevel() {
             return locationLevel;
         }
 
-        public void setLocationLevel(LocationLevel locationLevel) {
+        public void setLocationLevel(RoutingProto.NearbyRoutingConfig.LocationLevel locationLevel) {
             this.locationLevel = locationLevel;
         }
 
-        public LocationLevel getMinAvailableLevel() {
+        public RoutingProto.NearbyRoutingConfig.LocationLevel getMinAvailableLevel() {
             return minAvailableLevel;
         }
 
-        public void setMinAvailableLevel(LocationLevel minAvailableLevel) {
+        public void setMinAvailableLevel(RoutingProto.NearbyRoutingConfig.LocationLevel minAvailableLevel) {
             this.minAvailableLevel = minAvailableLevel;
         }
     }

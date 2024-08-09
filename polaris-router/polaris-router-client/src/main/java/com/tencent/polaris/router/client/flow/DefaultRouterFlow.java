@@ -105,6 +105,9 @@ public class DefaultRouterFlow implements RouterFlow {
         if (request.getMetadataContainerGroup() != null) {
             routeInfo.setMetadataContainerGroup(request.getMetadataContainerGroup());
         }
+        if (request.getNamespaceRouterFailoverType() != null) {
+            routeInfo.setNamespaceRouterFailoverType(request.getNamespaceRouterFailoverType());
+        }
         //获取路由规则
         DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
         BaseFlow.buildFlowControlParam(request, config, engineFlowControlParam);
