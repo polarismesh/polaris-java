@@ -24,6 +24,8 @@ public class CircuitBreakerUtils {
 
 	public static long DEFAULT_ERROR_RATE_INTERVAL_MS = 60 * 1000;
 
+	public static long MIN_CLEANUP_INTERVAL = 60 * 1000;
+
 	public static boolean checkRule(CircuitBreakerProto.CircuitBreakerRule rule) {
 		return checkLevel(rule.getLevel());
 	}
