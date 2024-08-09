@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.circuitbraker.composite.trigger;
+package com.tencent.polaris.plugins.circuitbreaker.composite;
 
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -25,6 +25,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -36,10 +37,7 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.factory.ConfigAPIFactory;
-import com.tencent.polaris.plugins.circuitbreaker.composite.CircuitBreakerRuleDictionary;
-import com.tencent.polaris.plugins.circuitbreaker.composite.CircuitBreakerRuleListener;
-import com.tencent.polaris.plugins.circuitbreaker.composite.FaultDetectRuleDictionary;
-import com.tencent.polaris.plugins.circuitbreaker.composite.PolarisCircuitBreaker;
+import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreakerRule;
@@ -194,8 +192,8 @@ public class PolarisCircuitBreakerTest {
                 CircuitBreakerProto.RuleMatcher.newBuilder().
                         setSource(CircuitBreakerProto.RuleMatcher.SourceService.newBuilder().setNamespace("*").setService("*").build()).
                         setDestination(CircuitBreakerProto.RuleMatcher.DestinationService.newBuilder().
-                                setNamespace("*").setService("*").setMethod(MatchString.newBuilder().
-                                        setValue(StringValue.newBuilder().setValue(".*")).
+                                setNamespace("Test").setService("testMethodSvc").setMethod(MatchString.newBuilder().
+                                        setValue(StringValue.newBuilder().setValue("^/d/customers/base/.+$")).
                                         setType(MatchStringType.REGEX)).build()));
         builder.addTriggerCondition(
                 TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(10).build());
@@ -206,12 +204,55 @@ public class PolarisCircuitBreakerTest {
         builder.setRevision("222");
         CircuitBreaker.Builder cbBuilder = CircuitBreaker.newBuilder();
         cbBuilder.addRules(builder);
-        cbBuilder.setRevision(StringValue.newBuilder().setValue("xxxxxyyyyyx").build());
+        cbBuilder.setRevision(StringValue.newBuilder().setValue("xxxxxy1yyyx").build());
         return cbBuilder.build();
     }
 
     @Test
-    public void testCounterExpire() {
+    public void testCircuitBreakerMethodRules() {
+        MockServiceResourceProvider mockServiceRuleProvider = new MockServiceResourceProvider();
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
+        configurationImpl.getConsumer().getCircuitBreaker().setCountersExpireInterval(5000);
+        InitContext initContext = new MockInitContext(configuration);
+        polarisCircuitBreaker.init(initContext);
+        polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);
+        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile));
+        polarisCircuitBreaker.setFaultDetectRuleDictionary(new FaultDetectRuleDictionary());
+        ServiceKey serviceKey = new ServiceKey("Test", "testMethodSvc");
+        ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.CIRCUIT_BREAKING);
+        CircuitBreaker circuitBreaker = buildMethodRules();
+        ServiceRuleByProto serviceRule = new ServiceRuleByProto(circuitBreaker, circuitBreaker.getRevision().getValue(),
+                false,
+                EventType.CIRCUIT_BREAKING);
+        mockServiceRuleProvider.putServiceRule(serviceEventKey, serviceRule);
 
+        for (int i = 0; i < 1000; i++) {
+            Resource methodResource = new MethodResource(serviceKey, String.format("/d/customers/base/%d", i));
+            ResourceStat resourceStat = new ResourceStat(methodResource, 500, 1000);
+            polarisCircuitBreaker.report(resourceStat);
+        }
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        for (int i = 0; i < 1000; i++) {
+            Resource methodResource = new MethodResource(serviceKey, String.format("/d/customers/base/%d", i));
+            CircuitBreakerStatus circuitBreakerStatus = polarisCircuitBreaker.checkResource(methodResource);
+            Assert.assertEquals(Status.OPEN, circuitBreakerStatus.getStatus());
+        }
+        Assert.assertEquals(1, polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size());
+        Assert.assertEquals(1000, polarisCircuitBreaker.getResourceMapping().size());
+
+        //check cleanup
+        try {
+            Thread.sleep(6000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        polarisCircuitBreaker.cleanupExpiredResources();
+        Assert.assertEquals(0, polarisCircuitBreaker.getResourceMapping().size());
     }
 }
