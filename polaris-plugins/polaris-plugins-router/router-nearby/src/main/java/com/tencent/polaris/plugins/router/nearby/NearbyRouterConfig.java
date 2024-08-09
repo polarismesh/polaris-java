@@ -18,8 +18,8 @@ package com.tencent.polaris.plugins.router.nearby;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 
 /**
  * 就近路由配置结构
@@ -33,10 +33,10 @@ public class NearbyRouterConfig implements Verifier {
     private Boolean enableReportLocalAddress;
 
     @JsonProperty
-    private LocationLevel matchLevel;
+    private RoutingProto.NearbyRoutingConfig.LocationLevel matchLevel;
 
     @JsonProperty
-    private LocationLevel maxMatchLevel;
+    private RoutingProto.NearbyRoutingConfig.LocationLevel maxMatchLevel;
 
     @JsonProperty
     private Boolean strictNearby;
@@ -47,19 +47,19 @@ public class NearbyRouterConfig implements Verifier {
     @JsonProperty
     private Integer unhealthyPercentToDegrade;
 
-    public LocationLevel getMatchLevel() {
+    public RoutingProto.NearbyRoutingConfig.LocationLevel getMatchLevel() {
         return matchLevel;
     }
 
-    public void setMatchLevel(LocationLevel matchLevel) {
+    public void setMatchLevel(RoutingProto.NearbyRoutingConfig.LocationLevel matchLevel) {
         this.matchLevel = matchLevel;
     }
 
-    public LocationLevel getMaxMatchLevel() {
+    public RoutingProto.NearbyRoutingConfig.LocationLevel getMaxMatchLevel() {
         return maxMatchLevel;
     }
 
-    public void setMaxMatchLevel(LocationLevel maxMatchLevel) {
+    public void setMaxMatchLevel(RoutingProto.NearbyRoutingConfig.LocationLevel maxMatchLevel) {
         this.maxMatchLevel = maxMatchLevel;
     }
 

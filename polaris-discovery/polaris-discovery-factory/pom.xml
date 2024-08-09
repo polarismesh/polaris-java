@@ -79,6 +79,11 @@
             <artifactId>router-lane</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>router-namespace</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--依赖负载均衡插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

@@ -39,6 +39,7 @@ import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.ConsulContext;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
@@ -133,13 +134,20 @@ public class InstanceService extends ConsulService {
                             LOG.info("Instance with name {} host {} port {} doesn't have id.", serviceId
                                     , findHost(healthService), healthService.getService().getPort());
                         }
-                        // set location
-                        instanceBuilder.setLocation(ModelProto.Location.newBuilder().build());
                         // set metadata
                         Map<String, String> metadata = getMetadata(healthService);
                         if (CollectionUtils.isNotEmpty(metadata)) {
                             instanceBuilder.putAllMetadata(metadata);
                         }
+                        // set location
+                        ModelProto.Location.Builder locationBuilder = ModelProto.Location.newBuilder();
+                        if (metadata.containsKey(TsfMetadataConstants.TSF_ZONE)) {
+                            locationBuilder.setZone(StringValue.of(metadata.get(TsfMetadataConstants.TSF_ZONE)));
+                        }
+                        if (metadata.containsKey(TsfMetadataConstants.TSF_REGION)) {
+                            locationBuilder.setRegion(StringValue.of(metadata.get(TsfMetadataConstants.TSF_REGION)));
+                        }
+                        instanceBuilder.setLocation(locationBuilder.build());
                         instanceList.add(instanceBuilder.build());
                     }
                 }

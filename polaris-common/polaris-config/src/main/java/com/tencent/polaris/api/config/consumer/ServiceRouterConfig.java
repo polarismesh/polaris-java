@@ -19,6 +19,7 @@ package com.tencent.polaris.api.config.consumer;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
 
 /**
@@ -44,6 +45,8 @@ public interface ServiceRouterConfig extends PluginConfig, Verifier {
     String DEFAULT_ROUTER_CANARY = "canaryRouter";
 
     String DEFAULT_ROUTER_LANE = "laneRouter";
+    
+    String DEFAULT_ROUTER_NAMESPACE = "namespaceRouter";
 
 
     /**
