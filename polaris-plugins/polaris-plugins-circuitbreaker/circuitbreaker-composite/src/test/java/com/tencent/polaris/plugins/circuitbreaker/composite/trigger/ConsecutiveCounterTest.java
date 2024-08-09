@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.circuitbraker.composite.trigger;
+package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.pojo.ServiceKey;

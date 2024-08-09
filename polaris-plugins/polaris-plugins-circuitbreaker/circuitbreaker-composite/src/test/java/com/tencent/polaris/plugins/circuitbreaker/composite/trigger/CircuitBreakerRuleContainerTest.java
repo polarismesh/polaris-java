@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.circuitbraker.composite.trigger;
+package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
