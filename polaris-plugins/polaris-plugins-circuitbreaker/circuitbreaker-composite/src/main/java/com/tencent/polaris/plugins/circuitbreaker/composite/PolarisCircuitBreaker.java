@@ -113,7 +113,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		Resource ruleResource = getActualResource(resource);
 		Optional<ResourceCounters> resourceCounters = getResourceCounters(ruleResource);
 		if (null == resourceCounters) {
-			if (resource.getLevel() == Level.METHOD && ruleResource == resource) {
+			if (resource.getLevel() == Level.METHOD && Objects.equals(ruleResource, resource)) {
 				// 可能是被淘汰了，需要重新计算RuleResource
 				CircuitBreakerProto.CircuitBreakerRule circuitBreakerRule = circuitBreakerRuleDictionary.lookupCircuitBreakerRule(resource);
 				ruleResource = computeResourceByRule(resource, circuitBreakerRule);
