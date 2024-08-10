@@ -2,7 +2,6 @@ package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.StringUtils;
 
-import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -33,6 +32,7 @@ public class ServiceEventKey implements Service {
         FAULT_DETECTING,
         SERVICE_CONTRACT,
         LANE_RULE,
+        NEARBY_ROUTE_RULE,
     }
 
     private final ServiceKey serviceKey;

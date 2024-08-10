@@ -22,7 +22,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ProviderAPI;
-import com.tencent.polaris.api.plugin.route.LocationLevel;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterResponse;
@@ -30,6 +29,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.factory.api.DiscoveryAPIFactory;
 import com.tencent.polaris.quickstart.example.utils.ProviderExampleUtils;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -85,7 +85,7 @@ public class Provider {
 
     // do the instance register
     private static void register(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
+                                 ProviderAPI providerAPI) {
         InstanceRegisterRequest registerRequest = new InstanceRegisterRequest();
         registerRequest.setNamespace(namespace);
         registerRequest.setService(service);
@@ -103,7 +103,7 @@ public class Provider {
 
     // do the instance deregister
     private static void deregister(String namespace, String service, String host, int port,
-            ProviderAPI providerAPI) {
+                                   ProviderAPI providerAPI) {
         InstanceDeregisterRequest deregisterRequest = new InstanceDeregisterRequest();
         deregisterRequest.setNamespace(namespace);
         deregisterRequest.setService(service);
@@ -155,9 +155,9 @@ public class Provider {
         public void handle(HttpExchange exchange) throws IOException {
 
             Map<String, String> location = new HashMap<>();
-            location.put(LocationLevel.region.name(), context.getValueContext().getValue(LocationLevel.region.name()));
-            location.put(LocationLevel.zone.name(), context.getValueContext().getValue(LocationLevel.zone.name()));
-            location.put(LocationLevel.campus.name(), context.getValueContext().getValue(LocationLevel.campus.name()));
+            location.put(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION.name(), context.getValueContext().getValue(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION.name()));
+            location.put(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE.name(), context.getValueContext().getValue(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE.name()));
+            location.put(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS.name(), context.getValueContext().getValue(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS.name()));
 
             Map<String, String> parameters = splitQuery(exchange.getRequestURI());
             String echoValue = parameters.get("value");

@@ -344,6 +344,11 @@
             </dependency>
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
+                <artifactId>router-namespace</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
                 <artifactId>router-metadata</artifactId>
                 <version>${project.version}</version>
             </dependency>

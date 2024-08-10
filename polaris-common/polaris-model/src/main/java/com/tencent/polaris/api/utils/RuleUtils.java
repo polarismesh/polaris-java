@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.utils;
 
 
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
@@ -319,4 +320,21 @@ public class RuleUtils {
         return allMetaMatched;
     }
 
+    public static boolean matchService(ServiceKey serviceKey, String namespace, String service) {
+        String inputNamespace = "";
+        String inputService = "";
+        if (null != serviceKey) {
+            inputNamespace = serviceKey.getNamespace();
+            inputService = serviceKey.getService();
+        }
+        if (StringUtils.isNotBlank(namespace) && !StringUtils.equals(namespace, RuleUtils.MATCH_ALL) && !StringUtils
+                .equals(inputNamespace, namespace)) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(service) && !StringUtils.equals(service, RuleUtils.MATCH_ALL) && !StringUtils
+                .equals(inputService, service)) {
+            return false;
+        }
+        return true;
+    }
 }
