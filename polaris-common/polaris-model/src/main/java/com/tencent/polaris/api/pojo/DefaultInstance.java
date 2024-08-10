@@ -193,7 +193,11 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
     }
 
     public void setServiceMetadata(Map<String, String> serviceMetadata) {
-        this.serviceMetadata = serviceMetadata;
+        if (serviceMetadata != null) {
+            this.serviceMetadata = serviceMetadata;
+        } else {
+            this.serviceMetadata = new HashMap<>();
+        }
     }
 
     @Override

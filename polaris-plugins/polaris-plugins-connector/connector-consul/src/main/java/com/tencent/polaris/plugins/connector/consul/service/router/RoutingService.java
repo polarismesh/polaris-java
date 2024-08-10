@@ -67,14 +67,14 @@ import static com.tencent.polaris.plugins.connector.consul.service.common.TagCon
 /**
  * @author Haotian Zhang
  */
-public class RouterRuleService extends ConsulService {
+public class RoutingService extends ConsulService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RouterRuleService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RoutingService.class);
 
     private final Map<RouterRuleKey, Long> routerRuleConsulIndexMap = new ConcurrentHashMap<>();
 
-    public RouterRuleService(ConsulClient consulClient, ConsulRawClient consulRawClient, ConsulContext consulContext,
-                             String threadName, ObjectMapper mapper) {
+    public RoutingService(ConsulClient consulClient, ConsulRawClient consulRawClient, ConsulContext consulContext,
+                          String threadName, ObjectMapper mapper) {
         super(consulClient, consulRawClient, consulContext, threadName, mapper);
     }
 
@@ -83,6 +83,7 @@ public class RouterRuleService extends ConsulService {
         String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
         String service = serviceUpdateTask.getServiceEventKey().getService();
         String routeRuleKey = String.format("/v1/kv/route/%s/%s/data", namespace, service);
+        LOG.trace("tsf route rule, consul kv namespace, getKey: {}", routeRuleKey);
         UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
         UrlParameters tokenParam = new SingleUrlParameters("token", consulContext.getAclToken());
         UrlParameters recurseParam = new SingleUrlParameters("recurse");
