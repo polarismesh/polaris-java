@@ -20,6 +20,7 @@ import com.tencent.polaris.api.config.provider.ServiceConfig;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.StatusDimension.Level;
 import com.tencent.polaris.api.rpc.MetadataFailoverType;
+import com.tencent.polaris.api.rpc.NamespaceRouterFailoverType;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
@@ -60,6 +61,8 @@ public class RouteInfo {
     private MetadataFailoverType metadataFailoverType;
     //规则路由降级类型
     private RuleBasedRouterFailoverType ruleBasedRouterFailoverType;
+    // 命名空间就近路由降级类型
+    private NamespaceRouterFailoverType namespaceRouterFailoverType;
     //各个路由插件依赖的 metadata 参数
     private final Map<String, Map<String, String>> routerMetadata = new HashMap<>();
 
@@ -296,5 +299,13 @@ public class RouteInfo {
 
     public void setMetadataContainerGroup(MetadataContainerGroup metadataContainerGroup) {
         this.metadataContainerGroup = metadataContainerGroup;
+    }
+
+    public NamespaceRouterFailoverType getNamespaceRouterFailoverType() {
+        return namespaceRouterFailoverType;
+    }
+
+    public void setNamespaceRouterFailoverType(NamespaceRouterFailoverType namespaceRouterFailoverType) {
+        this.namespaceRouterFailoverType = namespaceRouterFailoverType;
     }
 }
