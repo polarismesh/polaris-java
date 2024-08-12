@@ -17,16 +17,6 @@
 
 package com.tencent.polaris.circuitbreaker.factory.test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
-
 import com.google.protobuf.util.JsonFormat;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
@@ -55,6 +45,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
 import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
@@ -154,6 +154,9 @@ public class CircuitBreakerTest {
             Instance instanceToLimit = instances.get(1);
             //report 60 fail in 500ms
             for (int i = 0; i < 60; ++i) {
+                if (i == 1) {
+                    Utils.sleepUninterrupted(5 * 1000);
+                }
                 ServiceCallResult result = instanceToResult(instanceToLimit);
                 result.setRetCode(-1);
                 result.setDelay(1000L);
@@ -216,6 +219,9 @@ public class CircuitBreakerTest {
             Instance instanceToLimit = instances.get(1);
             //report 60 fail in 500ms
             for (int i = 0; i < 60; ++i) {
+                if (i == 1) {
+                    Utils.sleepUninterrupted(5 * 1000);
+                }
                 ServiceCallResult result = instanceToResult(instanceToLimit);
                 result.setDelay(1000L);
                 if (i % 2 == 0) {
@@ -268,8 +274,7 @@ public class CircuitBreakerTest {
             Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
                 if (num % 2 == 0) {
                     throw new IllegalArgumentException("invoke failed");
-                }
-                else {
+                } else {
                     System.out.println("invoke success");
                 }
             });
@@ -278,8 +283,7 @@ public class CircuitBreakerTest {
                 Utils.sleepUninterrupted(1000);
                 integerConsumer.accept(2);
                 Utils.sleepUninterrupted(1000);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 if (!(e instanceof IllegalArgumentException)) {
                     throw e;
                 }
