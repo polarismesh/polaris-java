@@ -50,6 +50,7 @@ import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import org.slf4j.Logger;
@@ -574,6 +575,7 @@ public class Extensions extends Destroyable {
                 HttpServer httpServer = entry.getValue();
                 httpServer.stop(0);
                 ((ExecutorService) httpServer.getExecutor()).shutdownNow();
+                Utils.sleepUninterrupted(1000);
             }
         }
     }
