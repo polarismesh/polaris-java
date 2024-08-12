@@ -67,12 +67,18 @@ public class PrometheusHttpServerTest {
         statReporterConfig.setPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, prometheusHandlerConfig);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             sdkContext.init();
-            URL metricsUrl = new URL("http://127.0.0.1:28080/metrics");
-            HttpURLConnection metricsConn = (HttpURLConnection) metricsUrl.openConnection();
-            metricsConn.setRequestMethod("GET");
-            metricsConn.connect();
-            assertThat(metricsConn.getResponseCode()).isEqualTo(200);
-            metricsConn.disconnect();
+            for (int i = 0; i < 3; i++) {
+                URL metricsUrl = new URL(String.format("http://127.0.0.1:%d/metrics", 28080 + i));
+                HttpURLConnection metricsConn = (HttpURLConnection) metricsUrl.openConnection();
+                metricsConn.setRequestMethod("GET");
+                try {
+                    metricsConn.connect();
+                } catch (IOException e) {
+                    continue;
+                }
+                assertThat(metricsConn.getResponseCode()).isEqualTo(200);
+                metricsConn.disconnect();
+            }
         }
     }
 

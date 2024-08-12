@@ -196,7 +196,7 @@ public class ResourceHealthChecker {
 			if (!matchInstanceToResource(instance, resource)) {
 				continue;
 			}
-			Resource actualResource = polarisCircuitBreaker.getActualResource(resource);
+			Resource actualResource = polarisCircuitBreaker.getActualResource(resource, true);
 			if (reportedResources.contains(actualResource)) {
 				continue;
 			}
