@@ -17,11 +17,6 @@
 
 package com.tencent.polaris.circuitbreaker.factory.test;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.function.Consumer;
-
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
@@ -45,116 +40,121 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.function.Consumer;
+
 import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 public class FaultDetectorTest {
 
-	private NamingServer namingServer;
+    private NamingServer namingServer;
 
-	private final ServiceKey matchMethodService = new ServiceKey("Test", "SvcCbMethod");
+    private final ServiceKey matchMethodService = new ServiceKey("Test", "SvcCbMethod");
 
-	private final ServiceKey matchMethodDetectService = new ServiceKey("Test", "SvcCbMethodDetect");
+    private final ServiceKey matchMethodDetectService = new ServiceKey("Test", "SvcCbMethodDetect");
 
-	@Before
-	public void before() throws IOException {
-		try {
-			namingServer = NamingServer.startNamingServer(-1);
-			System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
-		}
-		catch (IOException e) {
-			Assert.fail(e.getMessage());
-		}
+    @Before
+    public void before() throws IOException {
+        try {
+            namingServer = NamingServer.startNamingServer(-1);
+            System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
+        } catch (IOException e) {
+            Assert.fail(e.getMessage());
+        }
 
-		CircuitBreakerProto.CircuitBreakerRule cbRule1 = CbTestUtils.loadCbRule("circuitBreakerMethodRuleNoDetect.json");
-		CircuitBreakerProto.CircuitBreaker circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder()
-				.addRules(cbRule1).setRevision(StringValue.newBuilder().setValue("0000").build()).build();
-		namingServer.getNamingService().setCircuitBreaker(matchMethodService, circuitBreaker);
+        CircuitBreakerProto.CircuitBreakerRule cbRule1 = CbTestUtils.loadCbRule("circuitBreakerMethodRuleNoDetect.json");
+        CircuitBreakerProto.CircuitBreaker circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder()
+                .addRules(cbRule1).setRevision(StringValue.newBuilder().setValue("0000").build()).build();
+        namingServer.getNamingService().setCircuitBreaker(matchMethodService, circuitBreaker);
 
 
-		CircuitBreakerProto.CircuitBreakerRule cbRule3 = CbTestUtils.loadCbRule("circuitBreakerMethodRule.json");
-		CircuitBreakerProto.CircuitBreakerRule cbRule4 = CbTestUtils.loadCbRule("circuitBreakerRule.json");
-		circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder()
-				.addRules(cbRule3).addRules(cbRule4).setRevision(StringValue.newBuilder().setValue("1111").build()).build();
-		namingServer.getNamingService().setCircuitBreaker(matchMethodDetectService, circuitBreaker);
-		FaultDetectorProto.FaultDetectRule rule1 = CbTestUtils.loadFdRule("faultDetectRule.json");
-		FaultDetectorProto.FaultDetectRule rule2 = CbTestUtils.loadFdRule("faultDetectMethodRule.json");
-		FaultDetectorProto.FaultDetector faultDetector = FaultDetectorProto.FaultDetector.newBuilder()
-				.addRules(rule1).addRules(rule2).setRevision("2222").build();
-		namingServer.getNamingService().setFaultDetector(matchMethodDetectService, faultDetector);
-	}
+        CircuitBreakerProto.CircuitBreakerRule cbRule3 = CbTestUtils.loadCbRule("circuitBreakerMethodRule.json");
+        CircuitBreakerProto.CircuitBreakerRule cbRule4 = CbTestUtils.loadCbRule("circuitBreakerRule.json");
+        circuitBreaker = CircuitBreakerProto.CircuitBreaker.newBuilder()
+                .addRules(cbRule3).addRules(cbRule4).setRevision(StringValue.newBuilder().setValue("1111").build()).build();
+        namingServer.getNamingService().setCircuitBreaker(matchMethodDetectService, circuitBreaker);
+        FaultDetectorProto.FaultDetectRule rule1 = CbTestUtils.loadFdRule("faultDetectRule.json");
+        FaultDetectorProto.FaultDetectRule rule2 = CbTestUtils.loadFdRule("faultDetectMethodRule.json");
+        FaultDetectorProto.FaultDetector faultDetector = FaultDetectorProto.FaultDetector.newBuilder()
+                .addRules(rule1).addRules(rule2).setRevision("2222").build();
+        namingServer.getNamingService().setFaultDetector(matchMethodDetectService, faultDetector);
+    }
 
-	@Test
-	public void testFaultDetectRuleChanged() throws IOException {
-		Configuration configuration = TestUtils.configWithEnvAddress();
-		ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
-		try (CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configurationImpl)) {
-			for (int i = 0; i < 10; i++) {
-				String method = "";
-				if (i < 9) {
-					method = "/test1/path/" + i;
-				}
-				FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-						matchMethodDetectService, method);
-				FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
-				int finalI = i;
-				Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
-					if (num % 2 == 0) {
-						throw new IllegalArgumentException("invoke failed" + finalI);
-					}
-					else {
-						System.out.println("invoke success" + finalI);
-					}
-				});
-				integerConsumer.accept(1);
-			}
-			BaseEngine baseEngine = (BaseEngine) circuitBreakAPI;
-			CircuitBreaker resourceBreaker = baseEngine.getSDKContext().getExtensions().getResourceBreaker();
-			PolarisCircuitBreaker polarisCircuitBreaker = (PolarisCircuitBreaker) resourceBreaker;
-			Map<ServiceKey, HealthCheckContainer> healthCheckCache = polarisCircuitBreaker.getHealthCheckCache();
-			Assert.assertEquals(1, healthCheckCache.size());
-			HealthCheckContainer healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
-			Assert.assertNotNull(healthCheckContainer);
-			Collection<ResourceHealthChecker> healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
-			Assert.assertEquals(2, healthCheckerValues.size());
+    @Test
+    public void testFaultDetectRuleChanged() throws IOException {
+        Configuration configuration = TestUtils.configWithEnvAddress();
+        ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
+        try (CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configurationImpl)) {
+            for (int i = 0; i < 10; i++) {
+                if (i == 1) {
+                    Utils.sleepUninterrupted(5 * 1000);
+                }
+                String method = "";
+                if (i < 9) {
+                    method = "/test1/path/" + i;
+                }
+                FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
+                        matchMethodDetectService, method);
+                FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
+                int finalI = i;
+                Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
+                    if (num % 2 == 0) {
+                        throw new IllegalArgumentException("invoke failed" + finalI);
+                    } else {
+                        System.out.println("invoke success" + finalI);
+                    }
+                });
+                integerConsumer.accept(1);
+            }
+            BaseEngine baseEngine = (BaseEngine) circuitBreakAPI;
+            CircuitBreaker resourceBreaker = baseEngine.getSDKContext().getExtensions().getResourceBreaker();
+            PolarisCircuitBreaker polarisCircuitBreaker = (PolarisCircuitBreaker) resourceBreaker;
+            Map<ServiceKey, HealthCheckContainer> healthCheckCache = polarisCircuitBreaker.getHealthCheckCache();
+            Assert.assertEquals(1, healthCheckCache.size());
+            HealthCheckContainer healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
+            Assert.assertNotNull(healthCheckContainer);
+            Collection<ResourceHealthChecker> healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
+            Assert.assertEquals(2, healthCheckerValues.size());
 
-			FaultDetectorProto.FaultDetectRule rule1 = CbTestUtils.loadFdRule("faultDetectMethodRuleChanged.json");
-			FaultDetectorProto.FaultDetector faultDetector = FaultDetectorProto.FaultDetector.newBuilder()
-					.addRules(rule1).setRevision("33333").build();
-			namingServer.getNamingService().setFaultDetector(matchMethodDetectService, faultDetector);
+            FaultDetectorProto.FaultDetectRule rule1 = CbTestUtils.loadFdRule("faultDetectMethodRuleChanged.json");
+            FaultDetectorProto.FaultDetector faultDetector = FaultDetectorProto.FaultDetector.newBuilder()
+                    .addRules(rule1).setRevision("33333").build();
+            namingServer.getNamingService().setFaultDetector(matchMethodDetectService, faultDetector);
 
-			Utils.sleepUninterrupted(20 * 1000);
-			healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
-			Assert.assertNull(healthCheckContainer);
-			for (int i = 0; i < 3; i++) {
-				String method = "";
-				if (i > 0) {
-					method = "/test1/path/" + i;
-				}
-				FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-						matchMethodDetectService, method);
-				FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
-				int finalI = i;
-				Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
-					if (num % 2 == 0) {
-						throw new IllegalArgumentException("invoke failed" + finalI);
-					}
-					else {
-						System.out.println("invoke success" + finalI);
-					}
-				});
-				integerConsumer.accept(1);
-			}
-			healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
-			Assert.assertNotNull(healthCheckContainer);
-			healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
-			Assert.assertEquals(1, healthCheckerValues.size());
-		}
-	}
+            Utils.sleepUninterrupted(20 * 1000);
+            healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
+            Assert.assertNull(healthCheckContainer);
+            for (int i = 0; i < 3; i++) {
+                String method = "";
+                if (i > 0) {
+                    method = "/test1/path/" + i;
+                }
+                FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
+                        matchMethodDetectService, method);
+                FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
+                int finalI = i;
+                Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
+                    if (num % 2 == 0) {
+                        throw new IllegalArgumentException("invoke failed" + finalI);
+                    } else {
+                        System.out.println("invoke success" + finalI);
+                    }
+                });
+                integerConsumer.accept(1);
+            }
+            healthCheckContainer = healthCheckCache.get(matchMethodDetectService);
+            Assert.assertNotNull(healthCheckContainer);
+            healthCheckerValues = healthCheckContainer.getHealthCheckerValues();
+            Assert.assertEquals(1, healthCheckerValues.size());
+        }
+    }
 
-	@After
-	public void after() {
-		if (null != namingServer) {
-			namingServer.terminate();
-		}
-	}
+    @After
+    public void after() {
+        if (null != namingServer) {
+            namingServer.terminate();
+        }
+    }
 }
