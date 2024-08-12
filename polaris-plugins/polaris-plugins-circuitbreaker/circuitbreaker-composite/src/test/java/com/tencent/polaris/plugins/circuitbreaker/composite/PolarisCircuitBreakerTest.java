@@ -244,7 +244,7 @@ public class PolarisCircuitBreakerTest {
             Assert.assertEquals(Status.OPEN, circuitBreakerStatus.getStatus());
         }
         Assert.assertEquals(1, polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size());
-        Assert.assertEquals(1000, polarisCircuitBreaker.getResourceMapping().size());
+        Assert.assertEquals(1000, polarisCircuitBreaker.getResourceMappingSize());
 
         //check cleanup
         try {
@@ -253,6 +253,6 @@ public class PolarisCircuitBreakerTest {
             e.printStackTrace();
         }
         polarisCircuitBreaker.cleanupExpiredResources();
-        Assert.assertEquals(0, polarisCircuitBreaker.getResourceMapping().size());
+        Assert.assertEquals(0, polarisCircuitBreaker.getResourceMappingSize());
     }
 }

@@ -90,7 +90,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
 	// map the wildcard resource to rule specific resource,
 	// eg. /path/wildcard/123 => /path/wildcard/.+
-	private Cache<Resource, Resource> resourceMapping;
+	private final Map<Resource, ResourceWrap> resourceMapping = new ConcurrentHashMap<>();
 
 	private Extensions extensions;
 
@@ -102,6 +102,8 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
 	private long checkPeriod;
 
+	private long resourceExpireInterval;
+
 	private CircuitBreakerRuleDictionary circuitBreakerRuleDictionary;
 
 	private FaultDetectRuleDictionary faultDetectRuleDictionary;
@@ -110,7 +112,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
 	@Override
 	public CircuitBreakerStatus checkResource(Resource resource) {
-		Resource ruleResource = getActualResource(resource);
+		Resource ruleResource = getActualResource(resource, false);
 		Optional<ResourceCounters> resourceCounters = getResourceCounters(ruleResource);
 		if (null == resourceCounters) {
 			if (resource.getLevel() == Level.METHOD && Objects.equals(ruleResource, resource)) {
@@ -118,7 +120,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 				CircuitBreakerProto.CircuitBreakerRule circuitBreakerRule = circuitBreakerRuleDictionary.lookupCircuitBreakerRule(resource);
 				ruleResource = computeResourceByRule(resource, circuitBreakerRule);
 				if (!Objects.equals(ruleResource, resource)) {
-					resourceMapping.put(resource, ruleResource);
+					// 这里不能放缓存，需要在report的时候统一放，否则会有探测规则无法关联resource的问题
 					resourceCounters = getResourceCounters(ruleResource);
 				}
 			}
@@ -139,16 +141,19 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		doReport(resourceStat, true);
 	}
 
-	public Resource getActualResource(Resource resource) {
-		Resource ruleResource = resourceMapping.getIfPresent(resource);
-		if (null == ruleResource) {
-			ruleResource = resource;
+	public Resource getActualResource(Resource resource, boolean internal) {
+		ResourceWrap resourceWrap = resourceMapping.get(resource);
+		if (null == resourceWrap) {
+			return resource;
 		}
-		return ruleResource;
+		if (!internal) {
+			resourceWrap.lastAccessTimeMilli = System.currentTimeMillis();
+		}
+		return resourceWrap.resource;
 	}
 
 	private ResourceCounters getOrInitResourceCounters(Resource resource) throws ExecutionException {
-		Resource ruleResource = getActualResource(resource);
+		Resource ruleResource = getActualResource(resource, false);
 		Optional<ResourceCounters> resourceCounters = getResourceCounters(ruleResource);
 		boolean reloadFaultDetect = false;
 		if (null == resourceCounters) {
@@ -211,7 +216,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 			if (null == healthCheckContainer) {
 				return;
 			}
-			healthCheckContainer.removeResource(getActualResource(resource));
+			healthCheckContainer.removeResource(resource);
 		}
 		else {
 			if (null == healthCheckContainer) {
@@ -268,10 +273,12 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		Cache<Resource, Optional<ResourceCounters>> resourceOptionalCache = countersCache.get(resource.getLevel());
 		CircuitBreakerProto.CircuitBreakerRule finalCircuitBreakerRule = circuitBreakerRule;
 		Resource ruleResource = computeResourceByRule(resource, circuitBreakerRule);
+		if (!Objects.equals(ruleResource, resource)) {
+			resourceMapping.put(resource, new ResourceWrap(ruleResource, System.currentTimeMillis()));
+		}
 		return resourceOptionalCache.get(ruleResource, new Callable<Optional<ResourceCounters>>() {
 			@Override
 			public Optional<ResourceCounters> call() {
-				resourceMapping.put(resource, ruleResource);
 				if (null == finalCircuitBreakerRule) {
 					return Optional.empty();
 				}
@@ -303,7 +310,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		InstanceResource instanceResource = (InstanceResource) resource;
 		HealthCheckContainer healthCheckContainer = healthCheckCache
 				.get(instanceResource.getService());
-		if (null == healthCheckContainer) {
+		if (null == healthCheckContainer || instanceResource.getPort() == 0) {
 			return;
 		}
 		healthCheckContainer.addInstance(instanceResource);
@@ -314,7 +321,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		return PluginTypes.CIRCUIT_BREAKER.getBaseType();
 	}
 
-	private class CounterRemoveListener implements RemovalListener<Resource, Optional<ResourceCounters>> {
+	private static class CounterRemoveListener implements RemovalListener<Resource, Optional<ResourceCounters>> {
 
 		@Override
 		public void onRemoval(RemovalNotification<Resource, Optional<ResourceCounters>> removalNotification) {
@@ -323,21 +330,12 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 				return;
 			}
 			value.ifPresent(resourceCounters -> resourceCounters.setDestroyed(true));
-			Resource resource = removalNotification.getKey();
-			if (null == resource) {
-				return;
-			}
-			HealthCheckContainer healthCheckContainer = PolarisCircuitBreaker.this.healthCheckCache.get(resource.getService());
-			if (null != healthCheckContainer) {
-				healthCheckContainer.removeResource(resource);
-			}
 		}
 	}
 
 	@Override
 	public void init(InitContext ctx) throws PolarisException {
-		long expireIntervalMilli = ctx.getConfig().getConsumer().getCircuitBreaker().getCountersExpireInterval();
-		resourceMapping = CacheBuilder.newBuilder().expireAfterAccess(expireIntervalMilli, TimeUnit.MILLISECONDS).build();
+		resourceExpireInterval = ctx.getConfig().getConsumer().getCircuitBreaker().getCountersExpireInterval();
 		countersCache.put(Level.SERVICE, CacheBuilder.newBuilder().removalListener(new CounterRemoveListener()).build());
 		countersCache.put(Level.METHOD, CacheBuilder.newBuilder().removalListener(new CounterRemoveListener()).build());
 		countersCache.put(Level.INSTANCE, CacheBuilder.newBuilder().removalListener(new CounterRemoveListener()).build());
@@ -366,7 +364,19 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 	}
 
 	public void cleanupExpiredResources() {
-		resourceMapping.cleanUp();
+		LOG.info("[CIRCUIT_BREAKER] cleanup expire resources");
+		for (Map.Entry<Resource, ResourceWrap> entry : resourceMapping.entrySet()) {
+			Resource resource = entry.getKey();
+			if (System.currentTimeMillis() - entry.getValue().lastAccessTimeMilli >= resourceExpireInterval) {
+				LOG.info("[CIRCUIT_BREAKER] resource {} expired, start to cleanup", resource);
+				resourceMapping.remove(resource);
+				HealthCheckContainer healthCheckContainer = healthCheckCache.get(resource.getService());
+				if (null == healthCheckContainer) {
+					continue;
+				}
+				healthCheckContainer.removeResource(resource);
+			}
+		}
 		for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
 			Cache<Resource, Optional<ResourceCounters>> values = entry.getValue();
 			values.asMap().forEach(new BiConsumer<Resource, Optional<ResourceCounters>>() {
@@ -458,8 +468,8 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 		this.circuitBreakerConfig = circuitBreakerConfig;
 	}
 
-	Cache<Resource, Resource> getResourceMapping() {
-		return resourceMapping;
+	int getResourceMappingSize() {
+		return resourceMapping.size();
 	}
 
 	@Override
@@ -477,8 +487,13 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 					if (Objects.equals(resource.getService(), serviceKey)) {
 						cacheValue.invalidate(resource);
 					}
-					HealthCheckContainer healthCheckContainer = healthCheckCache.get(serviceKey);
-					if (null != healthCheckContainer) {
+				}
+			}
+			HealthCheckContainer healthCheckContainer = healthCheckCache.get(serviceKey);
+			if (null != healthCheckContainer) {
+				for (Map.Entry<Resource, ResourceWrap> entry : resourceMapping.entrySet()) {
+					Resource resource = entry.getKey();
+					if (Objects.equals(resource.getService(), serviceKey)) {
 						LOG.info("onCircuitBreakerRuleChanged: clear resource {} from healthCheckContainer", resource);
 						healthCheckContainer.removeResource(resource);
 					}
@@ -550,5 +565,17 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 				return null;
 			}
 		});
+	}
+
+	private static class ResourceWrap {
+		// target resource, not nullable
+		final Resource resource;
+		// only record the report time
+		long lastAccessTimeMilli;
+
+		ResourceWrap(Resource resource, long lastAccessTimeMilli) {
+			this.resource = resource;
+			this.lastAccessTimeMilli = lastAccessTimeMilli;
+		}
 	}
 }
