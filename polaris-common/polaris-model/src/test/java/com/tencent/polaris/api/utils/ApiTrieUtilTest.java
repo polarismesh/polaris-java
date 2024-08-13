@@ -33,7 +33,13 @@ public class ApiTrieUtilTest {
         TrieNode<String> rootWithoutMethod = ApiTrieUtil.buildSimpleTrieNode("/echo/{param}-GET");
         assertThat(ApiTrieUtil.checkSimple(rootWithMethod, "/echo/test")).isTrue();
         assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/test")).isTrue();
+        assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echoo/test")).isFalse();
+        assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/")).isFalse();
         assertThat(ApiTrieUtil.checkSimple(rootWithMethod, "/echo/test-GET")).isTrue();
         assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/test-GET")).isTrue();
+        assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/test-POST")).isTrue();
+        assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/test-POST")).isTrue();
+        assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echoo/test-GET")).isFalse();
+        assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/-GET")).isFalse();
     }
 }
