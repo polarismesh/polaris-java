@@ -55,6 +55,7 @@ public class ApiTrieUtil {
 
             // 因为前端的改动（最初的 tagValue 只有 path，某次前端组件改动后变成了 path-method，非客户提的），有兼容性问题，
             // 临时简化处理，不处理 method，前面逻辑保留是为了取出正确的 path
+            method = null;
             String[] apiPaths = path.split("/");
 
             // 跳过第一个为空的str
