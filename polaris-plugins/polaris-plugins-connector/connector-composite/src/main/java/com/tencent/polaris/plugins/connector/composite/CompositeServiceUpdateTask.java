@@ -106,12 +106,11 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     @Override
     public void execute() {
         boolean isServiceUpdateTaskExecuted = false;
-        for (ServiceUpdateTask serviceUpdateTask : subServiceUpdateTaskMap.values()) {
-            if ((serviceUpdateTask.getTaskType() == ServiceUpdateTaskConstant.Type.FIRST && serviceUpdateTask.getTaskStatus() == Status.READY)
-                    || serviceUpdateTask.needUpdate()) {
+        for (Map.Entry<String, ServiceUpdateTask> entry : subServiceUpdateTaskMap.entrySet()) {
+            if (canExecute(entry.getKey(), entry.getValue())) {
                 isServiceUpdateTaskExecuted = true;
-                serviceUpdateTask.setStatus(ServiceUpdateTaskConstant.Status.READY, ServiceUpdateTaskConstant.Status.RUNNING);
-                serviceUpdateTask.execute(this);
+                entry.getValue().setStatus(ServiceUpdateTaskConstant.Status.READY, ServiceUpdateTaskConstant.Status.RUNNING);
+                entry.getValue().execute(this);
             }
         }
         // TODO 全部规则实现完后改成StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_CONSUL)
@@ -402,6 +401,15 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
             subTask.setType(ServiceUpdateTaskConstant.Type.FIRST, ServiceUpdateTaskConstant.Type.LONG_RUNNING);
         }
         return svcDeleted;
+    }
+
+    private boolean canExecute(String connectorType, ServiceUpdateTask serviceUpdateTask) {
+        boolean canConnectorExecute = StringUtils.equalsIgnoreCase(mainConnectorType, connectorType)
+                || serviceEventKey.getEventType().equals(EventType.INSTANCE)
+                || serviceEventKey.getEventType().equals(EventType.SERVICE);
+        boolean canTaskExecute = (serviceUpdateTask.getTaskType() == ServiceUpdateTaskConstant.Type.FIRST
+                && serviceUpdateTask.getTaskStatus() == Status.READY) || serviceUpdateTask.needUpdate();
+        return canConnectorExecute && canTaskExecute;
     }
 
     public boolean notifyServerEventWithRevisionChecking(ServerEvent serverEvent, String revision) {
