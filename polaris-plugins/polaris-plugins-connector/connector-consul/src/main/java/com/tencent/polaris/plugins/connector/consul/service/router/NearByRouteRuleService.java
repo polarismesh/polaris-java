@@ -81,7 +81,6 @@ public class NearByRouteRuleService extends ConsulService {
         String routeAffinityKey = String.format("/v1/kv/affinity/%s/data", namespace);
         // 带等待时间发起对Consul的KV请求
         LOG.trace("tsf route affinity, consul kv namespace, getKey: {}", routeAffinityKey);
-        UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
         UrlParameters tokenParam = new SingleUrlParameters("token", consulContext.getAclToken());
         NearByRouteRuleKey nearByRouteRuleKey = new NearByRouteRuleKey();
         nearByRouteRuleKey.setNamespace(namespace);
@@ -91,8 +90,7 @@ public class NearByRouteRuleService extends ConsulService {
         int code = ServerCodes.DATA_NO_CHANGE;
         try {
             LOG.debug("Begin get affinity rules of {}:{} sync", namespace, service);
-            HttpResponse rawResponse = consulRawClient.makeGetRequest(routeAffinityKey, tokenParam,
-                    nsTypeParam, queryParams);
+            HttpResponse rawResponse = consulRawClient.makeGetRequest(routeAffinityKey, tokenParam, queryParams);
             if (rawResponse != null) {
                 if (LOG.isDebugEnabled()) {
                     String responseStr = "RawResponse{" +
