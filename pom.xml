@@ -109,6 +109,7 @@
         <okhttp.version>2.7.5</okhttp.version>
         <httpclient.version>4.5.14</httpclient.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <bouncycastle.version>1.78.1</bouncycastle.version>
     </properties>
 
     <dependencies>
