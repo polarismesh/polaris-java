@@ -479,24 +479,22 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
 	void onCircuitBreakerRuleChanged(ServiceKey serviceKey) {
 		circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
-		synchronized (countersCache) {
-			LOG.info("onCircuitBreakerRuleChanged: clear service {} from ResourceCounters", serviceKey);
-			for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
-				Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
-				for (Resource resource : cacheValue.asMap().keySet()) {
-					if (Objects.equals(resource.getService(), serviceKey)) {
-						cacheValue.invalidate(resource);
-					}
+		LOG.info("onCircuitBreakerRuleChanged: clear service {} from ResourceCounters", serviceKey);
+		for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
+			Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
+			for (Resource resource : cacheValue.asMap().keySet()) {
+				if (Objects.equals(resource.getService(), serviceKey)) {
+					cacheValue.invalidate(resource);
 				}
 			}
-			HealthCheckContainer healthCheckContainer = healthCheckCache.get(serviceKey);
-			if (null != healthCheckContainer) {
-				for (Map.Entry<Resource, ResourceWrap> entry : resourceMapping.entrySet()) {
-					Resource resource = entry.getKey();
-					if (Objects.equals(resource.getService(), serviceKey)) {
-						LOG.info("onCircuitBreakerRuleChanged: clear resource {} from healthCheckContainer", resource);
-						healthCheckContainer.removeResource(resource);
-					}
+		}
+		HealthCheckContainer healthCheckContainer = healthCheckCache.get(serviceKey);
+		if (null != healthCheckContainer) {
+			for (Map.Entry<Resource, ResourceWrap> entry : resourceMapping.entrySet()) {
+				Resource resource = entry.getKey();
+				if (Objects.equals(resource.getService(), serviceKey)) {
+					LOG.info("onCircuitBreakerRuleChanged: clear resource {} from healthCheckContainer", resource);
+					healthCheckContainer.removeResource(resource);
 				}
 			}
 		}
@@ -504,15 +502,13 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
 	void onCircuitBreakerRuleAdded(ServiceKey serviceKey) {
 		circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
-		synchronized (countersCache) {
-			LOG.info("onCircuitBreakerRuleChanged: clear service {} from ResourceCounters", serviceKey);
-			for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
-				Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
-				for (Map.Entry<Resource, Optional<ResourceCounters>> entryCache: cacheValue.asMap().entrySet()) {
-					Resource resource = entryCache.getKey();
-					if (Objects.equals(resource.getService(), serviceKey) && !entryCache.getValue().isPresent()) {
-						cacheValue.invalidate(resource);
-					}
+		LOG.info("onCircuitBreakerRuleAdded: clear service {} from ResourceCounters", serviceKey);
+		for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
+			Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
+			for (Map.Entry<Resource, Optional<ResourceCounters>> entryCache: cacheValue.asMap().entrySet()) {
+				Resource resource = entryCache.getKey();
+				if (Objects.equals(resource.getService(), serviceKey) && !entryCache.getValue().isPresent()) {
+					cacheValue.invalidate(resource);
 				}
 			}
 		}
@@ -533,19 +529,17 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 				return null;
 			}
 		});
-		synchronized (countersCache) {
-			for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
-				Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
-				for (Map.Entry<Resource, Optional<ResourceCounters>> entryCache : cacheValue.asMap().entrySet()) {
-					Resource resource = entryCache.getKey();
-					if (Objects.equals(resource.getService(), svcKey)) {
-						if (entryCache.getValue().isPresent()) {
-							LOG.info("onFaultDetectRuleChanged: ResourceCounters {} setReloadFaultDetect true", svcKey);
-							ResourceCounters resourceCounters = entryCache.getValue().get();
-							resourceCounters.setReloadFaultDetect(true);
-						}
-
+		for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
+			Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
+			for (Map.Entry<Resource, Optional<ResourceCounters>> entryCache : cacheValue.asMap().entrySet()) {
+				Resource resource = entryCache.getKey();
+				if (Objects.equals(resource.getService(), svcKey)) {
+					if (entryCache.getValue().isPresent()) {
+						LOG.info("onFaultDetectRuleChanged: ResourceCounters {} setReloadFaultDetect true", svcKey);
+						ResourceCounters resourceCounters = entryCache.getValue().get();
+						resourceCounters.setReloadFaultDetect(true);
 					}
+
 				}
 			}
 		}
