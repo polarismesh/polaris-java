@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.rpc;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.tencent.polaris.api.pojo.InstanceWeight;
@@ -57,7 +58,7 @@ public class Criteria {
     }
 
     public Map<String, InstanceWeight> getDynamicWeight() {
-        return dynamicWeight;
+        return dynamicWeight != null ? dynamicWeight : new HashMap<>();
     }
 
     public void setDynamicWeight(Map<String, InstanceWeight> dynamicWeight) {
