@@ -298,7 +298,9 @@ public class BaseFlow {
 
     public static Instance processLoadBalance(LoadBalancer loadBalancer, Criteria criteria,
             ServiceInstances dstInstances, List<WeightAdjuster> weightAdjusters) throws PolarisException {
-
+        if (criteria == null) {
+            criteria = new Criteria();
+        }
         Map<String, InstanceWeight> dynamicWeight = new HashMap<>();
         if (CollectionUtils.isNotEmpty(weightAdjusters)) {
             for (WeightAdjuster weightAdjuster : weightAdjusters) {

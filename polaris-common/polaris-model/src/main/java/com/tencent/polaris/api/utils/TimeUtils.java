@@ -32,11 +32,11 @@ public class TimeUtils {
 
 	}
 
-	public static long getCreateTime(Instance instance) {
-		if (StringUtils.isEmpty(instance.getCreateTime())) {
+	public static long getCreateTime(String createTime)  {
+		if (StringUtils.isEmpty(createTime)) {
 			return 0;
 		}
-		LocalDateTime dateTime = LocalDateTime.parse(instance.getCreateTime(), DATE_TIME_FORMATTER);
+		LocalDateTime dateTime = LocalDateTime.parse(createTime, DATE_TIME_FORMATTER);
 		return dateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 	}
 
