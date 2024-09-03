@@ -194,8 +194,8 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
     private int countNeedWarmupInstances(List<Instance> instanceList, LosslessProto.Warmup warmup, long currentTime) {
         int needWarmupInstanceCount = 0;
         for (Instance instance : instanceList) {
-            long createTime = TimeUtils.getCreateTime(instance);
-            if (createTime <= 0) {
+            Long createTime = instance.getCreateTime();
+            if (createTime == null || createTime <= 0) {
                 continue;
             }
             long uptime = Math.abs(TimeUnit.MILLISECONDS.toSeconds(currentTime - createTime));
@@ -226,8 +226,8 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
         weight.setBaseWeight(baseWeight);
         weight.setDynamicWeight(baseWeight);
 
-        long createTime = TimeUtils.getCreateTime(instance);
-        if (createTime <= 0) {
+        Long createTime = instance.getCreateTime();
+        if (createTime == null || createTime <= 0) {
             return weight;
         }
         long uptime = Math.abs(TimeUnit.MILLISECONDS.toSeconds(currentTime - createTime));

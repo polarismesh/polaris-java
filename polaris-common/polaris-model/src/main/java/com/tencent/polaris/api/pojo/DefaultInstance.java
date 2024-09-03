@@ -56,7 +56,7 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
 
     private String logicSet;
 
-    private String createTime;
+    private Long createTime;
 
     private Map<String, String> serviceMetadata = new HashMap<>();
 
@@ -194,12 +194,12 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
         return serviceMetadata;
     }
 
-    public void setCreateTime(String createTime) {
+    public void setCreateTime(Long createTime) {
         this.createTime = createTime;
     }
 
     @Override
-    public String getCreateTime() {
+    public Long getCreateTime() {
         return createTime;
     }
 
