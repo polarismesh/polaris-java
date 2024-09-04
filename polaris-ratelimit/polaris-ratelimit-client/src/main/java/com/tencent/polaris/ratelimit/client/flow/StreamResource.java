@@ -25,26 +25,18 @@ import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow.WindowStatus;
 import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc;
 import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc.RateLimitGRPCV2BlockingStub;
 import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc.RateLimitGRPCV2Stub;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.LimitTarget;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaCounter;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaLeft;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitCmd;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitResponse;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitReportResponse;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitRequest;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitResponse;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.TimeAdjustRequest;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.TimeAdjustResponse;
+import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.*;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.slf4j.Logger;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
 
 /**
  * 与远端的连接资源
@@ -177,10 +169,15 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         closeStream(true);
     }
 
-    public InitializeRecord addInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
-        if (!initRecord.containsKey(serviceIdentifier)) {
+    public InitializeRecord getInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
+        InitializeRecord record = initRecord.get(serviceIdentifier);
+        if (record == null) {
             LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
             initRecord.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
+        } else if (record.getRateLimitWindow() != rateLimitWindow) {  // 存在旧窗口映射关系，说明已经淘汰
+            initRecord.put(serviceIdentifier, new InitializeRecord(rateLimitWindow));
+            RateLimitWindow oldWindow = record.getRateLimitWindow();
+            LOG.info("remove init record for window {} {}", oldWindow.getUniqueKey(), oldWindow.getStatus());
         }
         return initRecord.get(serviceIdentifier);
     }
@@ -335,10 +332,6 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     public boolean hasInit(ServiceIdentifier serviceIdentifier) {
         return initRecord.containsKey(serviceIdentifier);
-    }
-
-    public InitializeRecord getInitRecord(ServiceIdentifier serviceIdentifier) {
-        return initRecord.get(serviceIdentifier);
     }
 
     public Integer getCounterKey(ServiceIdentifier serviceIdentifier, Integer duration) {

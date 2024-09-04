@@ -22,23 +22,12 @@ import com.tencent.polaris.api.plugin.ratelimiter.LocalQuotaInfo;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.logging.LoggerFactory;
-import com.tencent.polaris.ratelimit.client.flow.AsyncRateLimitConnector;
-import com.tencent.polaris.ratelimit.client.flow.InitializeRecord;
-import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow;
-import com.tencent.polaris.ratelimit.client.flow.ServiceIdentifier;
-import com.tencent.polaris.ratelimit.client.flow.StreamCounterSet;
-import com.tencent.polaris.ratelimit.client.flow.StreamResource;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.LimitTarget;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaMode;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaSum;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.QuotaTotal;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitCmd;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitRequest;
+import com.tencent.polaris.ratelimit.client.flow.*;
+import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.*;
 import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitRequest.Builder;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitReportRequest;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitRequest;
-import java.util.Map;
 import org.slf4j.Logger;
+
+import java.util.Map;
 
 /**
  * 1、首次调用需要上报
@@ -124,10 +113,7 @@ public class RemoteSyncTask implements Runnable {
         //调整时间
         adjustTime(streamResource);
 
-        InitializeRecord initRecord = streamResource.getInitRecord(serviceIdentifier);
-        if (null == initRecord) {
-            initRecord = streamResource.addInitRecord(serviceIdentifier, window);
-        }
+        InitializeRecord initRecord = streamResource.getInitRecord(serviceIdentifier, window);
         if (!isInitExpired(initRecord)) {
             //未超时，先不初始化
             return;
