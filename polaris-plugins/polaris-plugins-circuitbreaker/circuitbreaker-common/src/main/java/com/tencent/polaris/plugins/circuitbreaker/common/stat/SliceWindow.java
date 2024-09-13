@@ -18,9 +18,10 @@
 package com.tencent.polaris.plugins.circuitbreaker.common.stat;
 
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import org.slf4j.Logger;
 
 /**
  * 时间滑窗的具体实现
@@ -136,7 +137,7 @@ public class SliceWindow {
                 break;
             }
             slipCount++;
-            headStartTime = head.getTimeRange().getStart();
+            headStartTime = nextHead.getTimeRange().getStart();
             headWindowEndTime = headStartTime + windowLengthMs;
         }
         if (null == nextHead) {
