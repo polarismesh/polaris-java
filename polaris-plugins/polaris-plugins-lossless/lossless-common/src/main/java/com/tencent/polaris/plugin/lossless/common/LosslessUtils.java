@@ -18,12 +18,16 @@
 package com.tencent.polaris.plugin.lossless.common;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.pojo.BaseInstance;
 import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
+import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
@@ -36,7 +40,7 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 
 /**
- * Lossless utils for getting lossless rules
+ * Lossless utils for getting lossless rules.
  * @author Shedfree Wu
  */
 public class LosslessUtils {
@@ -69,11 +73,76 @@ public class LosslessUtils {
 		return discoverResponse.getLosslessRulesList();
 	}
 
-	public static LosslessProto.LosslessRule getFirstLosslessRule(Extensions extensions, String dstNamespace, String dstServiceName) {
-		List<LosslessProto.LosslessRule> losslessRules = getLosslessRules(extensions, dstNamespace, dstServiceName);
-		if (CollectionUtils.isEmpty(losslessRules)) {
+	public static Map<String, Map<String, LosslessProto.LosslessRule>> parseMetadataLosslessRules(
+			List<LosslessProto.LosslessRule> losslessRuleList) {
+
+		Map<String, Map<String, LosslessProto.LosslessRule>> metadataLosslessRules = new HashMap<>();
+		for (LosslessProto.LosslessRule losslessRule : losslessRuleList) {
+			if (CollectionUtils.isNotEmpty(losslessRule.getMetadataMap())) {
+				for (Map.Entry<String, String> labelEntry : losslessRule.getMetadataMap().entrySet()) {
+					metadataLosslessRules.putIfAbsent(labelEntry.getKey(), new HashMap<>());
+					metadataLosslessRules.get(labelEntry.getKey()).put(labelEntry.getValue(), losslessRule);
+				}
+			}
+		}
+		return metadataLosslessRules;
+	}
+
+	/**
+	 * if metadata lossless rule is not empty, return the match lossless rule.
+	 * if metadata lossless rule is empty, return the first lossless rule.
+	 */
+	public static LosslessProto.LosslessRule getMatchLosslessRule(BaseInstance baseInstance,
+			Map<String, Map<String, LosslessProto.LosslessRule>> metadataLosslessRules,
+			List<LosslessProto.LosslessRule> allLosslessRules) {
+
+		if (CollectionUtils.isEmpty(allLosslessRules)) {
 			return null;
 		}
-		return losslessRules.get(0);
+
+		if (needMetadataLosslessRule(metadataLosslessRules)) {
+			return getMatchMetadataLosslessRule(baseInstance, metadataLosslessRules);
+		} else {
+			return allLosslessRules.get(0);
+		}
+	}
+
+	public static LosslessProto.LosslessRule getMatchLosslessRule(Extensions extensions, BaseInstance baseInstance) {
+		List<LosslessProto.LosslessRule> allLosslessRules = getLosslessRules(
+				extensions, baseInstance.getNamespace(), baseInstance.getService());
+
+		Map<String, Map<String, LosslessProto.LosslessRule>> metadataLosslessRules =
+				parseMetadataLosslessRules(allLosslessRules);
+
+		return getMatchLosslessRule(baseInstance, metadataLosslessRules, allLosslessRules);
+	}
+
+
+	public static LosslessProto.LosslessRule getMatchMetadataLosslessRule(BaseInstance baseInstance,
+			Map<String, Map<String, LosslessProto.LosslessRule>> metadataLosslessRules) {
+		if (!(baseInstance instanceof Instance)) {
+			return null;
+		}
+
+		Instance instance = (Instance) baseInstance;
+
+		if (CollectionUtils.isEmpty(instance.getMetadata())) {
+			return null;
+		}
+
+		for (Map.Entry<String, Map<String, LosslessProto.LosslessRule>> metatadaEntry :
+				metadataLosslessRules.entrySet()) {
+			String instanceMatchValue = instance.getMetadata().get(metatadaEntry.getKey());
+			if (metatadaEntry.getValue().containsKey(instanceMatchValue)) {
+				return metatadaEntry.getValue().get(instanceMatchValue);
+			}
+		}
+		// not match
+		return null;
+	}
+
+	private static boolean needMetadataLosslessRule(
+			Map<String, Map<String, LosslessProto.LosslessRule>> metadataLosslessRules) {
+		return CollectionUtils.isNotEmpty(metadataLosslessRules);
 	}
 }

@@ -21,7 +21,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -35,7 +39,6 @@ import com.tencent.polaris.api.pojo.InstanceWeight;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.utils.TimeUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugin.lossless.common.LosslessRuleDictionary;
 import com.tencent.polaris.plugin.lossless.common.LosslessRuleListener;
@@ -47,9 +50,12 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
     private static final Logger LOG = LoggerFactory.getLogger(WarmupWeightAdjuster.class);
 
     public static final String WARMUP_WEIGHT_ADJUSTER_NAME = "warmup";
+
     private Extensions extensions;
 
     private LosslessRuleDictionary losslessRuleDictionary;
+
+    private final ConcurrentHashMap<ServiceKey, Lock> lockMap = new ConcurrentHashMap<>();
 
     @Override
     public String getName() {
@@ -86,26 +92,51 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
         if (CollectionUtils.isEmpty(instances.getInstances())) {
             return Collections.emptyMap();
         }
+        Map<String, InstanceWeight> result = losslessRuleDictionary.getInstanceWeight(instances.getServiceKey());
+
+        if (result != null && result.size() == instances.getInstances().size()) {
+            return result;
+        }
+        // lock for every service key
+        Lock lock = lockMap.computeIfAbsent(instances.getServiceKey(), k -> new ReentrantLock());
+        lock.lock();
+        try {
+            // double check
+            result = losslessRuleDictionary.getInstanceWeight(instances.getServiceKey());
+            if (result != null && result.size() == instances.getInstances().size()) {
+                return result;
+            }
+            result = doTimingAdjustDynamicWeight(dynamicWeight, instances);
+            losslessRuleDictionary.putInstanceWeight(instances.getServiceKey(), result);
+        } finally {
+            lock.unlock();
+        }
+        return result;
+    }
+
+    private Map<String, InstanceWeight> doTimingAdjustDynamicWeight(Map<String, InstanceWeight> dynamicWeight,
+            ServiceInstances instances) {
+
         List<LosslessProto.LosslessRule> losslessRuleList = LosslessUtils.getLosslessRules(extensions,
                 instances.getNamespace(), instances.getService());
 
         if (CollectionUtils.isEmpty(losslessRuleList)) {
             return Collections.emptyMap();
         }
-        // metadata key, {metadata value -> warmup}
-        Map<String, Map<String, LosslessProto.Warmup>> metadataWarmupRule = losslessRuleDictionary.getMetadataWarmupRule(
+        // metadata key, {metadata value -> lossless rule}}
+        Map<String, Map<String, LosslessProto.LosslessRule>> metadataWarmupRules = losslessRuleDictionary.getMetadataLosslessRules(
                 new ServiceKey(instances.getNamespace(), instances.getService()));
 
-        if (metadataWarmupRule.isEmpty()) {
+        if (metadataWarmupRules.isEmpty()) {
             // no match metadata, select first warmup rule
             return getInstanceWeightFromLosslessRule(dynamicWeight, instances, losslessRuleList.get(0));
         } else {
-            return getInstanceWeightFromMetadataRule(dynamicWeight, metadataWarmupRule, instances);
+            return getInstanceWeightFromMetadataRule(dynamicWeight, metadataWarmupRules, instances);
         }
     }
 
     private Map<String, InstanceWeight> getInstanceWeightFromMetadataRule(Map<String, InstanceWeight> originDynamicWeight,
-            Map<String, Map<String, LosslessProto.Warmup>> metadataWarmupRule,
+            Map<String, Map<String, LosslessProto.LosslessRule>> metadataLosslessRules,
             ServiceInstances instances) {
 
         Map<String, InstanceWeight> result = new HashMap<>(originDynamicWeight);
@@ -115,22 +146,27 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
         int overloadProtectionThreshold = 0;
         int warmupInstanceCount = 0;
         for (Instance instance : instances.getInstances()) {
-            for (Map.Entry<String, Map<String, LosslessProto.Warmup>> metatadaEntry : metadataWarmupRule.entrySet()) {
-                if (instance.getMetadata() != null
-                        && metatadaEntry.getValue().containsKey(instance.getMetadata().get(metatadaEntry.getKey()))) {
-                    LosslessProto.Warmup warmup = metatadaEntry.getValue().get(instance.getMetadata().get(metatadaEntry.getKey()));
-                    if (!warmup.getEnableOverloadProtection()) {
-                        needOverloadProtection = false;
-                    }
-                    if (warmup.getOverloadProtectionThreshold() > overloadProtectionThreshold) {
-                        overloadProtectionThreshold = warmup.getOverloadProtectionThreshold();
-                    }
-                    InstanceWeight weight = getInstanceWeight(originDynamicWeight, instance, warmup, currentTime);
-                    if (weight.isDynamicWeightValid()) {
-                        warmupInstanceCount++;
-                    }
-                    result.put(instance.getId(), weight);
+            LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchMetadataLosslessRule(instance, metadataLosslessRules);
+            Optional<LosslessProto.Warmup> warmupOptional = Optional.ofNullable(losslessRule).
+                    map(LosslessProto.LosslessRule::getLosslessOnline).
+                    map(LosslessProto.LosslessOnline::getWarmup);
+
+            if (warmupOptional.isPresent()) {
+                LosslessProto.Warmup warmup = warmupOptional.get();
+                if (!warmup.getEnable()) {
+                    continue;
                 }
+                if (!warmup.getEnableOverloadProtection()) {
+                    needOverloadProtection = false;
+                }
+                if (warmup.getOverloadProtectionThreshold() > overloadProtectionThreshold) {
+                    overloadProtectionThreshold = warmup.getOverloadProtectionThreshold();
+                }
+                InstanceWeight weight = getInstanceWeight(originDynamicWeight, instance, warmup, currentTime);
+                if (weight.isDynamicWeightValid()) {
+                    warmupInstanceCount++;
+                }
+                result.put(instance.getId(), weight);
             }
         }
         if (needOverloadProtection) {
@@ -161,6 +197,9 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
         Map<String, InstanceWeight> result = new HashMap<>(originDynamicWeight);
 		LosslessProto.Warmup warmup = losslessRule.getLosslessOnline().getWarmup();
 
+        if (!warmup.getEnable()) {
+            return originDynamicWeight;
+        }
         if (warmup.getEnableOverloadProtection()) {
             int needWarmupCount = countNeedWarmupInstances(instances.getInstances(), warmup, currentTime);
             if (needWarmupCount / instances.getInstances().size() * 100 >= warmup.getOverloadProtectionThreshold()) {

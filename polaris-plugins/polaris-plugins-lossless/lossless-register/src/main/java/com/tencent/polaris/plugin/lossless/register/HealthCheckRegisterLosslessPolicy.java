@@ -217,8 +217,6 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             EVENT_LOG.info(new Event(clientId, instance, EVENT_DIRECT_REGISTER).toString());
         }
 
-
-
         int warmupInterval = getWarmupInterval(instance);
         if (warmupInterval > 0) {
             LOG.info("[HealthCheckRegisterLosslessPolicy] warmup for instance {}, warmupInterval:{}ms", instance, warmupInterval);
@@ -275,31 +273,6 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         return finalStatus;
     }
 
-    private RegisterStatus checkWarmupStatus(Collection<BaseInstance> instances) {
-        int needWarmupInstances = 0;
-        int doneWarmupInstances = 0;
-        long current = System.currentTimeMillis();
-        Map<BaseInstance, Long> warmupTimestamps = valueContext.getValue(CTX_KEY_REGISTER_TIMESTAMP);
-        for (BaseInstance baseInstance : instances) {
-            int warmupInterval = getWarmupInterval(baseInstance);
-            if (warmupInterval > 0) {
-                needWarmupInstances++;
-                long registerTimestamp = warmupTimestamps.get(baseInstance);
-                if (registerTimestamp > 0 && current - registerTimestamp > warmupInterval) {
-                    doneWarmupInstances++;
-                }
-            }
-        }
-        if (needWarmupInstances == 0) {
-            return RegisterStatus.REGISTERED;
-        }
-        if (doneWarmupInstances == needWarmupInstances) {
-            return RegisterStatus.WARMUP_END;
-        } else {
-            return RegisterStatus.WARMUP_START;
-        }
-    }
-
     @Override
     public Map<String, HttpHandler> getHandlers() {
         if (!losslessConfig.isEnable()) {
@@ -317,30 +290,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         return false;
     }
 
-    private Set<BaseInstance> getNeedReadinessInstances(Set<BaseInstance> instances) {
-        Set<BaseInstance> needReadinessInstances = new HashSet<>();
-        for (BaseInstance instance : instances) {
-            if (isReadinessEnable(instance)) {
-                needReadinessInstances.add(instance);
-            }
-        }
-        return needReadinessInstances;
-    }
-
-    private boolean isReadinessEnable(BaseInstance instance) {
-        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-                instance.getNamespace(), instance.getService());
-        // high priority for console configuration
-        return  Optional.ofNullable(losslessRule).
-                map(LosslessProto.LosslessRule::getLosslessOnline).
-                map(LosslessProto.LosslessOnline::getReadiness).
-                map(LosslessProto.Readiness::getEnable).
-                orElse(true);
-    }
-
-    private boolean isDelayRegisterEnable(BaseInstance instance) {
-        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-                instance.getNamespace(), instance.getService());
+    private boolean isDelayRegisterEnable(BaseInstance baseInstance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, baseInstance);
         // high priority for console configuration
         return  Optional.ofNullable(losslessRule).
                 map(LosslessProto.LosslessRule::getLosslessOnline).
@@ -349,9 +300,10 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
                 orElse(true);
     }
 
-    private int getWarmupInterval(BaseInstance instance) {
-        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-                instance.getNamespace(), instance.getService());
+    private int getWarmupInterval(BaseInstance baseInstance) {
+
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, baseInstance);
+
         return Optional.ofNullable(losslessRule).
                 map(LosslessProto.LosslessRule::getLosslessOnline).
                 map(LosslessProto.LosslessOnline::getWarmup).
@@ -360,9 +312,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
                 orElse(0);
     }
 
-    private long getDelayRegisterInterval(BaseInstance instance) {
-        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-                instance.getNamespace(), instance.getService());
+    private long getDelayRegisterInterval(BaseInstance baseInstance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, baseInstance);
         return Optional.ofNullable(losslessRule).
                 map(LosslessProto.LosslessRule::getLosslessOnline).
                 map(LosslessProto.LosslessOnline::getDelayRegister).
@@ -371,15 +322,36 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
                 orElse(losslessConfig.getDelayRegisterInterval());
     }
 
-    private long getHealthCheckInterval(BaseInstance instance) {
-        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-                instance.getNamespace(), instance.getService());
+    private long getHealthCheckInterval(BaseInstance baseInstance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, baseInstance);
         return Optional.ofNullable(losslessRule).
                 map(LosslessProto.LosslessRule::getLosslessOnline).
                 map(LosslessProto.LosslessOnline::getDelayRegister).
                 map(LosslessProto.DelayRegister::getHealthCheckIntervalSecond).
                 map(Long::valueOf).map(interval -> interval * 1000).
                 orElse(losslessConfig.getHealthCheckInterval());
+    }
+
+    private boolean isLosslessReadinessEnable(BaseInstance instance) {
+        // high priority for console configuration
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, instance);
+        return Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOnline).
+                map(LosslessProto.LosslessOnline::getReadiness).
+                map(LosslessProto.Readiness::getEnable).
+                orElse(true);
+    }
+
+    private Set<BaseInstance> getNeedReadinessInstances(Set<BaseInstance> instances) {
+        Set<BaseInstance> needReadinessInstances = new HashSet<>();
+        for (BaseInstance instance : instances) {
+            if (isLosslessReadinessEnable(instance)) {
+                needReadinessInstances.add(instance);
+            } else {
+                LOG.debug("[getNeedOfflineInstances] lossless readiness is disabled for instance {}", instance);
+            }
+        }
+        return needReadinessInstances;
     }
 
     class ReadinessHttpHandler implements HttpHandler {
@@ -390,21 +362,15 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         public void handle(HttpExchange exchange) throws IOException {
             Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
             Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-            Set<BaseInstance> instances = actionProviders.keySet();
+            Set<BaseInstance> needReadinessInstances = getNeedReadinessInstances(actionProviders.keySet());
 
-            Set<BaseInstance> needReadinessInstances = getNeedReadinessInstances(instances);
             if (CollectionUtils.isEmpty(needReadinessInstances)) {
-                LOG.debug("[HealthCheckRegisterLosslessPolicy] no instance need readiness check");
-                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_INSTANCE_NEED_READINESS_CHECK, 404);
-                exchange.close();
+                LOG.debug("[LosslessDeRegister] no instance needs to be ready");
+                HttpServerUtils.writeTextToHttpServer(exchange, "", 404);
                 return;
             }
 
             RegisterStatus finalStatus = checkRegisterStatus(needReadinessInstances, registerStatuses);
-            if (finalStatus == RegisterStatus.REGISTERED) {
-                // all registered, need check warmup status
-                finalStatus = checkWarmupStatus(needReadinessInstances);
-            }
             if (finalStatus != lastFinalStatus) {
                 LOG.info("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
                         "finalStatus from {} to {}", needReadinessInstances, lastFinalStatus, finalStatus);
@@ -414,18 +380,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
                 LOG.debug("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
                         "finalStatus from {} to {}", needReadinessInstances, lastFinalStatus, finalStatus);
             }
-            int responseCode;
-            switch (finalStatus) {
-            case REGISTERED:
-            case WARMUP_END:
-                responseCode = 200;
-                break;
-            default:
-                responseCode = 503;
-                break;
-            }
             HttpServerUtils.writeTextToHttpServer(
-                    exchange, finalStatus.toString(), responseCode);
+                    exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 503);
         }
     }
 }

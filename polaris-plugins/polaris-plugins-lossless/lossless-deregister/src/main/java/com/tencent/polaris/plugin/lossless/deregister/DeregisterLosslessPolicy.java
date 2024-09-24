@@ -112,15 +112,13 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
             if (CollectionUtils.isEmpty(losslessPolicies)) {
                 LOG.warn("[LosslessDeRegister] lossless is disabled, no losslessDeregister will do");
                 HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_POLICY, 500);
-                exchange.close();
                 return;
             }
 
             Set<BaseInstance> needOfflineInstances = getNeedOfflineInstances(actionProviders.keySet());
             if (CollectionUtils.isEmpty(needOfflineInstances)) {
-                LOG.warn("[LosslessDeRegister] no instance need to be offline");
-                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_INSTANCE_NEED_OFFLINE, 404);
-                exchange.close();
+                LOG.warn("[LosslessDeRegister] no instance needs to be offline");
+                HttpServerUtils.writeTextToHttpServer(exchange, "", 404);
                 return;
             }
 
@@ -219,8 +217,7 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
 
     private boolean isLosslessOfflineEnable(BaseInstance instance) {
         // high priority for console configuration
-        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-                instance.getNamespace(), instance.getService());
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, instance);
         return Optional.ofNullable(losslessRule).
                 map(LosslessProto.LosslessRule::getLosslessOffline).
                 map(LosslessProto.LosslessOffline::getEnable).

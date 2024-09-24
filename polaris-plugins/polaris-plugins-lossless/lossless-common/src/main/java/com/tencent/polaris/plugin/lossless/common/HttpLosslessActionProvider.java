@@ -25,7 +25,6 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.pojo.BaseInstance;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.OkHttpUtil;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 
@@ -85,7 +84,7 @@ public class HttpLosslessActionProvider implements LosslessActionProvider {
 	 */
 	@Override
 	public boolean isEnableHealthCheck() {
-		return StringUtils.isNotBlank(healthCheckPath);
+		return LosslessProto.DelayRegister.DelayStrategy.DELAY_BY_HEALTH_CHECK.equals(strategy);
 	}
 
 	@Override
@@ -97,8 +96,7 @@ public class HttpLosslessActionProvider implements LosslessActionProvider {
 	}
 
 	private LosslessProto.DelayRegister.DelayStrategy getStrategy() {
-		LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-				instance.getNamespace(), instance.getService());
+		LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, instance);
 		return Optional.ofNullable(losslessRule).
 				map(LosslessProto.LosslessRule::getLosslessOnline).
 				map(LosslessProto.LosslessOnline::getDelayRegister).
@@ -107,8 +105,7 @@ public class HttpLosslessActionProvider implements LosslessActionProvider {
 	}
 
 	private String getHealthCheckPath() {
-		LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
-				instance.getNamespace(), instance.getService());
+		LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, instance);
 		return Optional.ofNullable(losslessRule).
 				map(LosslessProto.LosslessRule::getLosslessOnline).
 				map(LosslessProto.LosslessOnline::getDelayRegister).

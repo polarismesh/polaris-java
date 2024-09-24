@@ -55,10 +55,6 @@ public interface LosslessPolicy extends Plugin, SortableAware {
 
     String REPS_TEXT_NO_POLICY = "no policy";
 
-    String REPS_TEXT_NO_INSTANCE_NEED_OFFLINE = "no instance need offline";
-
-    String REPS_TEXT_NO_INSTANCE_NEED_READINESS_CHECK = "no instance need readiness check";
-
     String REPS_TEXT_OK = "ok";
 
     String REPS_TEXT_FAILED = "failed";

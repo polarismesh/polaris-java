@@ -48,7 +48,7 @@ public class LosslessRuleListener extends AbstractResourceEventListener {
 		}
 
 		ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-		losslessRuleDictionary.putMetadataWarmupRule(svcEventKey.getServiceKey(), discoverResponse.getLosslessRulesList());
+		losslessRuleDictionary.putMetadataLosslessRules(svcEventKey.getServiceKey(), discoverResponse.getLosslessRulesList());
 	}
 
 	@Override
@@ -64,7 +64,7 @@ public class LosslessRuleListener extends AbstractResourceEventListener {
 		}
 
 		ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-		losslessRuleDictionary.putMetadataWarmupRule(svcEventKey.getServiceKey(), discoverResponse.getLosslessRulesList());
+		losslessRuleDictionary.putMetadataLosslessRules(svcEventKey.getServiceKey(), discoverResponse.getLosslessRulesList());
 	}
 
 	@Override
