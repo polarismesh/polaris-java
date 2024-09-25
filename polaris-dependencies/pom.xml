@@ -292,6 +292,16 @@
                 <artifactId>trace-otel</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>event-logger</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>event-tsf</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- polaris-plugins-ratelimiter-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

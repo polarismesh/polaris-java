@@ -21,9 +21,16 @@ import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetector;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class FaultDetectCacheHandler extends AbstractCacheHandler {
 
@@ -49,6 +56,34 @@ public class FaultDetectCacheHandler extends AbstractCacheHandler {
         if (null != faultDetector) {
             revision = faultDetector.getRevision();
         }
+
+        FaultDetector.Builder newFaultDetectorBuilder = FaultDetector.newBuilder().mergeFrom(faultDetector);
+        List<FaultDetectorProto.FaultDetectRule> faultDetectRuleList = faultDetector.getRulesList();
+        if (CollectionUtils.isNotEmpty(faultDetectRuleList)) {
+            List<FaultDetectorProto.FaultDetectRule> newFaultDetectRuleList = new ArrayList<>();
+            for (FaultDetectorProto.FaultDetectRule rule : faultDetectRuleList) {
+                // 兼容老版本服务端
+                if (rule.hasTargetService() && rule.getTargetService().hasMethod()) {
+                    FaultDetectorProto.FaultDetectRule.DestinationService.Builder newDestBuilder
+                            = FaultDetectorProto.FaultDetectRule.DestinationService.newBuilder().mergeFrom(rule.getTargetService());
+                    newDestBuilder.setApi(ModelProto.API.newBuilder().setPath(rule.getTargetService().getMethod()).build());
+                    FaultDetectorProto.FaultDetectRule.Builder newFaultDetectRuleBuilder
+                            = FaultDetectorProto.FaultDetectRule.newBuilder().mergeFrom(rule);
+                    newFaultDetectRuleBuilder.setTargetService(newDestBuilder.build());
+                    newFaultDetectRuleList.add(newFaultDetectRuleBuilder.build());
+                } else {
+                    newFaultDetectRuleList.add(rule);
+                }
+            }
+
+            // 排序
+            newFaultDetectRuleList.sort(Comparator.comparingInt(FaultDetectorProto.FaultDetectRule::getPriority));
+
+            newFaultDetectorBuilder.clearRules();
+            newFaultDetectorBuilder.addAllRules(newFaultDetectRuleList);
+            faultDetector = newFaultDetectorBuilder.build();
+        }
+
         return new ServiceRuleByProto(faultDetector, revision, isCacheLoaded, getTargetEventType());
     }
 }

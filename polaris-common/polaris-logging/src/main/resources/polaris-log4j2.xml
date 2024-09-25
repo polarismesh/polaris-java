@@ -3,7 +3,7 @@
 <Configuration status="WARN">
     <Appenders>
         <RollingFile name="POLARIS_LOG_FILE" fileName="${sys:polaris.log.home}/polaris.log"
-                filePattern="${sys:polaris.log.home}/polaris.log.%d{yyyy-MM-dd}.%i">
+                     filePattern="${sys:polaris.log.home}/polaris.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
@@ -17,8 +17,8 @@
         </RollingFile>
 
         <RollingFile name="POLARIS_UPDATE_EVENT_LOG_FILE"
-                fileName="${sys:polaris.log.home}/polaris-update-event.log"
-                filePattern="${sys:polaris.log.home}/polaris-update-event.log.%d{yyyy-MM-dd}.%i">
+                     fileName="${sys:polaris.log.home}/polaris-update-event.log"
+                     filePattern="${sys:polaris.log.home}/polaris-update-event.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
@@ -31,9 +31,9 @@
             <DefaultRolloverStrategy max="${sys:polaris.update.event.log.retain.count:-7}"/>
         </RollingFile>
 
-        <RollingFile name="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"
-                fileName="${sys:polaris.log.home}/polaris-circuitbreaker-event.log"
-                filePattern="${sys:polaris.log.home}/polaris-circuitbreaker-event.log.%d{yyyy-MM-dd}.%i">
+        <RollingFile name="POLARIS_CIRCUIT_BREAKER_LOG_FILE"
+                     fileName="${sys:polaris.log.home}/polaris-circuitbreaker.log"
+                     filePattern="${sys:polaris.log.home}/polaris-circuitbreaker.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
@@ -41,15 +41,15 @@
             <Policies>
                 <TimeBasedTriggeringPolicy/>
                 <SizeBasedTriggeringPolicy
-                        size="${sys:polaris.circuitbreaker.event.log.file.size:-10MB}"/>
+                        size="${sys:polaris.circuitbreaker.log.file.size:-10MB}"/>
             </Policies>
 
-            <DefaultRolloverStrategy max="${sys:polaris.circuitbreaker.event.log.retain.count:-7}"/>
+            <DefaultRolloverStrategy max="${sys:polaris.circuitbreaker.log.retain.count:-7}"/>
         </RollingFile>
 
         <RollingFile name="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"
-                fileName="${sys:polaris.log.home}/polaris-healthcheck-event.log"
-                filePattern="${sys:polaris.log.home}/polaris-healthcheck-event.log.%d{yyyy-MM-dd}.%i">
+                     fileName="${sys:polaris.log.home}/polaris-healthcheck-event.log"
+                     filePattern="${sys:polaris.log.home}/polaris-healthcheck-event.log.%d{yyyy-MM-dd}.%i">
             <PatternLayout>
                 <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
             </PatternLayout>
@@ -94,6 +94,21 @@
 
             <DefaultRolloverStrategy max="${sys:polaris.instance.heartbeat.log.retain.count:-7}"/>
         </RollingFile>
+
+        <RollingFile name="POLARIS_EVENT_LOG_FILE"
+                     fileName="${sys:polaris.log.home}/polaris-event.log"
+                     filePattern="${sys:polaris.log.home}/polaris-event.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:polaris.event.log.file.size:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:polaris.event.log.retain.count:-7}"/>
+        </RollingFile>
     </Appenders>
 
     <Loggers>
@@ -107,10 +122,10 @@
                 additivity="false">
             <AppenderRef ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
         </Logger>
-        <Logger name="polaris-circuitbreaker-event"
-                level="${sys:polaris.circuitbreaker.event.log.level:-info}"
+        <Logger name="polaris-circuitbreaker"
+                level="${sys:polaris.circuitbreaker.log.level:-info}"
                 additivity="false">
-            <AppenderRef ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
+            <AppenderRef ref="POLARIS_CIRCUIT_BREAKER_LOG_FILE"/>
         </Logger>
         <Logger name="polaris-healthcheck-event"
                 level="${sys:polaris.healthcheck.event.log.level:-info}"
@@ -131,6 +146,11 @@
                 level="${sys:polaris.instance.heartbeat.log.level:-info}"
                 additivity="false">
             <AppenderRef ref="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"/>
+        </Logger>
+        <Logger name="polaris-event"
+                level="${sys:polaris.event.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="POLARIS_EVENT_LOG_FILE"/>
         </Logger>
     </Loggers>
 </Configuration>

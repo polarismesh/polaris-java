@@ -20,14 +20,14 @@ package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
-import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.CounterOptions;
-import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ErrRateCounter;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.regex.Pattern;
 
 public class ErrRateCounterTest {
 
@@ -44,7 +44,7 @@ public class ErrRateCounterTest {
         counterOptions.setTriggerCondition(builder.build());
         counterOptions.setStatusChangeHandler(new StatusChangeHandler() {
             @Override
-            public void closeToOpen(String circuitBreaker) {
+            public void closeToOpen(String circuitBreaker, String reason) {
                 triggerOpen.set(true);
             }
 
@@ -72,7 +72,12 @@ public class ErrRateCounterTest {
             @Override
             public void run() {
                 for (int i = 0; i < 100; i++) {
-                    counter.report(i % 2 != 0);
+                    counter.report(i % 2 != 0, Pattern::compile);
+                    try {
+                        Thread.sleep(20);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         });

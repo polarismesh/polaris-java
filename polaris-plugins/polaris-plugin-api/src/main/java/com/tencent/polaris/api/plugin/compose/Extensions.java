@@ -36,6 +36,7 @@ import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
+import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.location.LocationProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
@@ -111,6 +112,9 @@ public class Extensions extends Destroyable {
 
     // 无损上下线策略列表，按照order排序
     private List<LosslessPolicy> losslessPolicies;
+
+    // 事件上报器列表
+    private List<EventReporter> eventReporterList;
 
     public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
@@ -201,6 +205,9 @@ public class Extensions extends Destroyable {
 
         // 加载优雅上下线插件
         loadLosslessPolicies(config, plugins);
+
+        // 加载事件上报插件
+        loadEventReporterList(config, plugins);
 
         initLocation(config, valueContext);
 
@@ -303,6 +310,24 @@ public class Extensions extends Destroyable {
             }
         }
         losslessPolicies.sort((o1, o2) -> o1.getOrder() - o2.getOrder());
+    }
+
+    private void loadEventReporterList(Configuration config, Supplier plugins) throws PolarisException {
+        if (!config.getGlobal().getEventReporter().isEnable()) {
+            return;
+        }
+        List<String> eventReporters = config.getGlobal().getEventReporter().getReporters();
+        eventReporterList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(eventReporters)) {
+            for (String pluginName : eventReporters) {
+                Plugin eventReporter = plugins.getPlugin(PluginTypes.EVENT_REPORTER.getBaseType(), pluginName);
+                if (!(eventReporter instanceof EventReporter)) {
+                    LOG.warn("event reporter {} not found", pluginName);
+                    continue;
+                }
+                eventReporterList.add((EventReporter) eventReporter);
+            }
+        }
     }
 
     public void initHttpServer(Supplier plugins) {
@@ -564,6 +589,10 @@ public class Extensions extends Destroyable {
 
     public TraceReporter getTraceReporter() {
         return traceReporter;
+    }
+
+    public List<EventReporter> getEventReporterList() {
+        return eventReporterList;
     }
 
     @Override

@@ -22,13 +22,17 @@ import com.google.common.cache.CacheBuilder;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.ServiceRule;
+import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.CompareUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -40,10 +44,13 @@ public class CircuitBreakerRuleDictionary {
 
     private final Function<String, Pattern> regexToPattern;
 
+    private final Function<String, TrieNode<String>> trieNodeFunction;
+
     private final Object updateLock = new Object();
 
-    public CircuitBreakerRuleDictionary(Function<String, Pattern> regexToPattern) {
+    public CircuitBreakerRuleDictionary(Function<String, Pattern> regexToPattern, Function<String, TrieNode<String>> trieNodeFunction) {
         this.regexToPattern = regexToPattern;
+        this.trieNodeFunction = trieNodeFunction;
         allRules.put(CircuitBreakerProto.Level.SERVICE, CacheBuilder.newBuilder().build());
         allRules.put(CircuitBreakerProto.Level.METHOD, CacheBuilder.newBuilder().build());
         allRules.put(CircuitBreakerProto.Level.INSTANCE, CacheBuilder.newBuilder().build());
@@ -55,12 +62,14 @@ public class CircuitBreakerRuleDictionary {
             if (null == serviceKeyListCache) {
                 return null;
             }
-            return selectRule(resource, serviceKeyListCache.getIfPresent(resource.getService()), regexToPattern);
+            return selectRule(resource, serviceKeyListCache.getIfPresent(resource.getService()), regexToPattern, trieNodeFunction);
         }
     }
 
     private static CircuitBreakerProto.CircuitBreakerRule selectRule(Resource resource,
-                                                                     List<CircuitBreakerProto.CircuitBreakerRule> sortedRules, Function<String, Pattern> regexToPattern) {
+                                                                     List<CircuitBreakerProto.CircuitBreakerRule> sortedRules,
+                                                                     Function<String, Pattern> regexToPattern,
+                                                                     Function<String, TrieNode<String>> trieNodeFunction) {
         if (CollectionUtils.isEmpty(sortedRules)) {
             return null;
         }
@@ -74,9 +83,12 @@ public class CircuitBreakerRuleDictionary {
             if (!RuleUtils.matchService(resource.getCallerService(), source.getNamespace(), source.getService())) {
                 continue;
             }
-            boolean methodMatched = matchMethod(resource, destination.getMethod(), regexToPattern);
-            if (methodMatched) {
-                return cbRule;
+            List<CircuitBreakerProto.BlockConfig> blockConfigList = cbRule.getBlockConfigsList();
+            for (CircuitBreakerProto.BlockConfig blockConfig : blockConfigList) {
+                boolean methodMatched = matchMethod(resource, blockConfig.getApi(), regexToPattern, trieNodeFunction);
+                if (methodMatched) {
+                    return cbRule;
+                }
             }
         }
         return null;
@@ -141,39 +153,32 @@ public class CircuitBreakerRuleDictionary {
             return rules;
         }
         List<CircuitBreakerProto.CircuitBreakerRule> outRules = new ArrayList<>(rules);
-        outRules.sort(new Comparator<CircuitBreakerProto.CircuitBreakerRule>() {
-            @Override
-            public int compare(CircuitBreakerProto.CircuitBreakerRule rule1, CircuitBreakerProto.CircuitBreakerRule rule2) {
-                // 1. compare destination service
-                CircuitBreakerProto.RuleMatcher ruleMatcher1 = rule1.getRuleMatcher();
-                String destNamespace1 = ruleMatcher1.getDestination().getNamespace();
-                String destService1 = ruleMatcher1.getDestination().getService();
-                String destMethod1 = ruleMatcher1.getDestination().getMethod().getValue().getValue();
-
-                CircuitBreakerProto.RuleMatcher ruleMatcher2 = rule2.getRuleMatcher();
-                String destNamespace2 = ruleMatcher2.getDestination().getNamespace();
-                String destService2 = ruleMatcher2.getDestination().getService();
-                String destMethod2 = ruleMatcher2.getDestination().getMethod().getValue().getValue();
-
-                int svcResult = CompareUtils.compareService(destNamespace1, destService1, destNamespace2, destService2);
-                if (svcResult != 0) {
-                    return svcResult;
-                }
-                if (rule1.getLevel() == CircuitBreakerProto.Level.METHOD && rule1.getLevel() == rule2.getLevel()) {
-                    int methodResult = CompareUtils.compareSingleValue(destMethod1, destMethod2);
-                    if (methodResult != 0) {
-                        return methodResult;
-                    }
-                }
-                // 2. compare source service
-                String srcNamespace1 = ruleMatcher1.getSource().getNamespace();
-                String srcService1 = ruleMatcher1.getSource().getService();
-                String srcNamespace2 = ruleMatcher2.getSource().getNamespace();
-                String srcService2 = ruleMatcher2.getSource().getService();
-                return CompareUtils.compareService(srcNamespace1, srcService1, srcNamespace2, srcService2);
+        outRules.sort((rule1, rule2) -> {
+            // 1. compare priority
+            int priorityResult = rule1.getPriority() - rule2.getPriority();
+            if (priorityResult != 0) {
+                return priorityResult;
             }
+
+            // 2. compare destination service
+            CircuitBreakerProto.RuleMatcher ruleMatcher1 = rule1.getRuleMatcher();
+            String destNamespace1 = ruleMatcher1.getDestination().getNamespace();
+            String destService1 = ruleMatcher1.getDestination().getService();
+
+            CircuitBreakerProto.RuleMatcher ruleMatcher2 = rule2.getRuleMatcher();
+            String destNamespace2 = ruleMatcher2.getDestination().getNamespace();
+            String destService2 = ruleMatcher2.getDestination().getService();
+
+            int svcResult = CompareUtils.compareService(destNamespace1, destService1, destNamespace2, destService2);
+            if (svcResult != 0) {
+                return svcResult;
+            }
+
+            // 3. compare rule ID
+            String id1 = rule1.getId();
+            String id2 = rule2.getId();
+            return CompareUtils.compareSingleValue(id1, id2);
         });
         return outRules;
     }
-
 }

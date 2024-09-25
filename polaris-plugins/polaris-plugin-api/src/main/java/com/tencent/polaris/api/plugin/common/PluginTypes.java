@@ -24,6 +24,7 @@ import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileGroupConnector;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
+import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
@@ -100,6 +101,11 @@ public enum PluginTypes {
      * 调用链上报扩展点
      */
     TRACE_REPORTER(new PluginType(TraceReporter.class, 2)),
+
+    /**
+     * 调用链上报扩展点
+     */
+    EVENT_REPORTER(new PluginType(EventReporter.class, 2)),
 
     /**
      * 限流器扩展点

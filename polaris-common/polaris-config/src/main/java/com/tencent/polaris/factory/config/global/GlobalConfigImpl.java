@@ -21,12 +21,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.global.LocationConfig;
-import com.tencent.polaris.api.config.global.TraceReporterConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +57,9 @@ public class GlobalConfigImpl implements GlobalConfig {
 
     @JsonProperty
     private TraceReporterConfigImpl traceReporter;
+
+    @JsonProperty
+    private EventReporterConfigImpl eventReporter;
 
     @JsonProperty
     private LocationConfigImpl location;
@@ -122,6 +123,11 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
+    public EventReporterConfigImpl getEventReporter() {
+        return eventReporter;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(system, "system");
         ConfigUtils.validateNull(api, "api");
@@ -130,7 +136,8 @@ public class GlobalConfigImpl implements GlobalConfig {
         validateMap.put("serverConnectors", serverConnectors);
         ConfigUtils.validateAllNull(validateMap);
         ConfigUtils.validateNull(statReporter, "statReporter");
-        ConfigUtils.validateNull(traceReporter,"traceReporter");
+        ConfigUtils.validateNull(traceReporter, "traceReporter");
+        ConfigUtils.validateNull(eventReporter, "eventReporter");
 
         system.verify();
         api.verify();
@@ -147,6 +154,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         }
         statReporter.verify();
         traceReporter.verify();
+        eventReporter.verify();
     }
 
     @Override
@@ -165,6 +173,9 @@ public class GlobalConfigImpl implements GlobalConfig {
         }
         if (null == traceReporter) {
             traceReporter = new TraceReporterConfigImpl();
+        }
+        if (null == eventReporter) {
+            eventReporter = new EventReporterConfigImpl();
         }
         if (null == location) {
             location = new LocationConfigImpl();
@@ -189,12 +200,12 @@ public class GlobalConfigImpl implements GlobalConfig {
             }
             statReporter.setDefault(globalConfig.getStatReporter());
             traceReporter.setDefault(globalConfig.getTraceReporter());
+            eventReporter.setDefault(globalConfig.getEventReporter());
             location.setDefault(globalConfig.getLocation());
         }
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "GlobalConfigImpl{" +
                 "system=" + system +
@@ -203,6 +214,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 ", serverConnectors=" + serverConnectors +
                 ", statReporter=" + statReporter +
                 ", traceReporter=" + traceReporter +
+                ", eventReporter=" + eventReporter +
                 ", location=" + location +
                 '}';
     }

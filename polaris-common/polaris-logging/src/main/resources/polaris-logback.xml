@@ -22,7 +22,7 @@
     </appender>
 
     <appender name="POLARIS_UPDATE_EVENT_LOG_FILE"
-            class="ch.qos.logback.core.rolling.RollingFileAppender">
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${polaris.log.home}/polaris-update-event.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -39,18 +39,18 @@
         </encoder>
     </appender>
 
-    <appender name="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"
-            class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${polaris.log.home}/polaris-circuitbreaker-event.log</file>
+    <appender name="POLARIS_CIRCUIT_BREAKER_LOG_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/polaris-circuitbreaker.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>${polaris.log.home}/polaris-circuitbreaker-event.log.%i
+            <fileNamePattern>${polaris.log.home}/polaris-circuitbreaker.log.%i
             </fileNamePattern>
-            <maxIndex>${polaris.circuitbreaker.event.log.retain.count:-7}</maxIndex>
+            <maxIndex>${polaris.circuitbreaker.log.retain.count:-7}</maxIndex>
         </rollingPolicy>
 
         <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>${polaris.circuitbreaker.event.log.file.size:-10MB}</maxFileSize>
+            <maxFileSize>${polaris.circuitbreaker.log.file.size:-10MB}</maxFileSize>
         </triggeringPolicy>
 
         <encoder>
@@ -59,7 +59,7 @@
     </appender>
 
     <appender name="POLARIS_HEALTH_CHECK_EVENT_LOG_FILE"
-            class="ch.qos.logback.core.rolling.RollingFileAppender">
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${polaris.log.home}/polaris-healthcheck-event.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -115,8 +115,27 @@
         </encoder>
     </appender>
 
+    <appender name="POLARIS_EVENT_LOG_FILE"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/polaris-event.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/polaris-event.log.%i
+            </fileNamePattern>
+            <maxIndex>${polaris.event.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${polaris.event.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%m%n</pattern>
+        </encoder>
+    </appender>
+
     <appender name="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"
-            class="ch.qos.logback.classic.AsyncAppender">
+              class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
         <queueSize>512</queueSize>
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
@@ -137,10 +156,10 @@
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE_ASYNC"/>
     </logger>
 
-    <logger name="polaris-circuitbreaker-event"
-            level="${polaris.circuitbreaker.event.log.level:-info}"
+    <logger name="polaris-circuitbreaker"
+            level="${polaris.circuitbreaker.log.level:-info}"
             additivity="false">
-        <appender-ref ref="POLARIS_CIRCUIT_BREAKER_EVENT_LOG_FILE"/>
+        <appender-ref ref="POLARIS_CIRCUIT_BREAKER_LOG_FILE"/>
     </logger>
 
     <logger name="polaris-healthcheck-event"
@@ -159,5 +178,11 @@
             level="${polaris.instance.heartbeat.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_INSTANCE_HEARTBEAT_LOG_FILE"/>
+    </logger>
+
+    <logger name="polaris-event"
+            level="${polaris.event.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="POLARIS_EVENT_LOG_FILE"/>
     </logger>
 </configuration>

@@ -32,11 +32,13 @@ public interface LoggingConsts {
 
     String LOGGING_UPDATE_EVENT_ASYNC = "polaris-update-event-async";
 
-    String LOGGING_CIRCUITBREAKER_EVENT = "polaris-circuitbreaker-event";
+    String LOGGING_CIRCUIT_BREAKER = "polaris-circuitbreaker";
 
     String LOGGING_HEALTHCHECK_EVENT = "polaris-healthcheck-event";
 
     String LOGGING_LOSSLESS_EVENT = "polaris-lossless-event";
 
     String LOGGING_HEARTBEAT_RECORD = "polaris-instance-heartbeat";
+
+    String LOGGING_EVENT = "polaris-event";
 }

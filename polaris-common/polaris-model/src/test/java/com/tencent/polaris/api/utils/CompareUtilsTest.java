@@ -22,7 +22,7 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Test for {@link CompareUtils}
+ * Test for {@link CompareUtils}.
  *
  * @author Haotian Zhang
  */

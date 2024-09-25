@@ -19,7 +19,7 @@ package com.tencent.polaris.plugins.circuitbreaker.composite;
 
 public interface StatusChangeHandler {
 
-    void closeToOpen(String circuitBreaker);
+    void closeToOpen(String circuitBreaker, String reason);
 
     void openToHalfOpen();
 

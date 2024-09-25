@@ -17,9 +17,17 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
 import org.slf4j.Logger;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
+import static com.tencent.polaris.plugins.circuitbreaker.composite.utils.MatchUtils.matchMethod;
 
 public class ConsecutiveCounter extends TriggerCounter {
 
@@ -40,20 +48,41 @@ public class ConsecutiveCounter extends TriggerCounter {
     }
 
     @Override
-    public void report(boolean success) {
+    public void report(ResourceStat resourceStat, Function<String, Pattern> regexPatternFunction) {
         if (suspended.get()) {
             return;
         }
+
+        if (api != null && !matchMethod(resourceStat.getResource(), api, regexFunction, trieNodeFunction)) {
+            return;
+        }
+
+        RetStatus retStatus = CircuitBreakerUtils.parseRetStatus(resourceStat, errorConditionList, regexPatternFunction);
+        boolean success = retStatus != RetStatus.RetFail && retStatus != RetStatus.RetTimeout;
+        report(success, regexPatternFunction);
+    }
+
+    @Override
+    public void report(boolean success, Function<String, Pattern> regexPatternFunction) {
+        if (suspended.get()) {
+            return;
+        }
+
         if (!success) {
             int currentSum = consecutiveErrors.incrementAndGet();
             if (currentSum == maxCount) {
                 suspend();
                 consecutiveErrors.set(0);
-                statusChangeHandler.closeToOpen(ruleName);
+                statusChangeHandler.closeToOpen(ruleName, getReason());
                 return;
             }
         } else {
             consecutiveErrors.set(0);
         }
+    }
+
+    @Override
+    public String getReason() {
+        return "consecutive_error_count:" + maxCount;
     }
 }

@@ -17,12 +17,20 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import org.slf4j.Logger;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public abstract class TriggerCounter {
 
@@ -30,19 +38,31 @@ public abstract class TriggerCounter {
 
     protected final String ruleName;
 
+    protected final List<CircuitBreakerProto.ErrorCondition> errorConditionList;
+
     protected final TriggerCondition triggerCondition;
 
     protected final Resource resource;
 
+    protected final ModelProto.API api;
+
     protected final StatusChangeHandler statusChangeHandler;
+
+    protected final Function<String, Pattern> regexFunction;
+
+    protected final Function<String, TrieNode<String>> trieNodeFunction;
 
     protected final AtomicBoolean suspended = new AtomicBoolean(false);
 
     public TriggerCounter(String ruleName, CounterOptions counterOptions) {
+        this.errorConditionList = counterOptions.getErrorConditionList();
         this.triggerCondition = counterOptions.getTriggerCondition();
         this.ruleName = ruleName;
         this.resource = counterOptions.getResource();
+        this.api = counterOptions.getApi();
         this.statusChangeHandler = counterOptions.getStatusChangeHandler();
+        this.regexFunction = counterOptions.getRegexFunction();
+        this.trieNodeFunction = counterOptions.getTrieNodeFunction();
         init();
     }
 
@@ -58,5 +78,11 @@ public abstract class TriggerCounter {
 
     protected abstract void init();
 
-    public abstract void report(boolean success);
+    public abstract void report(ResourceStat resourceStat, Function<String, Pattern> regexPatternFunction);
+
+    public abstract void report(boolean success, Function<String, Pattern> regexPatternFunction);
+
+    public String getReason() {
+        return "";
+    }
 }

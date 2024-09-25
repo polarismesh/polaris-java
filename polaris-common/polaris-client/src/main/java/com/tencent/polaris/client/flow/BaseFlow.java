@@ -27,6 +27,8 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.DefaultRouterChainGroup;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.RouterChainGroup;
+import com.tencent.polaris.api.plugin.event.EventReporter;
+import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
@@ -322,4 +324,25 @@ public class BaseFlow {
         controlParam.setRetryIntervalMs(config.getGlobal().getAPI().getRetryInterval());
     }
 
+    /**
+     * 上报流程事件
+     *
+     * @param extensions 插件上下文
+     * @param flowEvent  流程事件
+     */
+    public static void reportFlowEvent(Extensions extensions, FlowEvent flowEvent) {
+        List<EventReporter> eventReporterList = extensions.getEventReporterList();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Reporting flow event: {}", flowEvent);
+        }
+        for (EventReporter eventReporter : eventReporterList) {
+            try {
+                if (!eventReporter.reportEvent(flowEvent)) {
+                    LOG.warn("Report event by {} failed. Flow event detail: {}", eventReporter.getName(), flowEvent);
+                }
+            } catch (Throwable throwable) {
+                LOG.warn("Report event by {} failed. Flow event detail: {}", eventReporter.getName(), flowEvent, throwable);
+            }
+        }
+    }
 }

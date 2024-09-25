@@ -30,7 +30,6 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public class NearByRouteRuleCacheHandler extends AbstractCacheHandler {
@@ -66,8 +65,6 @@ public class NearByRouteRuleCacheHandler extends AbstractCacheHandler {
 
     private List<RoutingProto.RouteRule> sortNearbyRouteRules(List<RoutingProto.RouteRule> rules) {
         List<RoutingProto.RouteRule> sorted = new ArrayList<>(rules);
-        // 数字越小，规则优先级越大
-        sorted.sort(Comparator.comparingInt(RoutingProto.RouteRule::getPriority));
         sorted.sort((o1, o2) -> {
             // 比较优先级，数字越小，规则优先级越大
             int priorityResult = o1.getPriority() - o2.getPriority();
@@ -101,7 +98,7 @@ public class NearByRouteRuleCacheHandler extends AbstractCacheHandler {
             }
 
             String ruleId1 = o1.getId();
-            String ruleId2 = o1.getId();
+            String ruleId2 = o2.getId();
             return CompareUtils.compareSingleValue(ruleId1, ruleId2);
         });
         return sorted;

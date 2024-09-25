@@ -79,4 +79,14 @@ public interface DefaultPlugins {
      * consul 配置中心连接器插件名
      */
     String CONSUL_FILE_CONNECTOR_TYPE = "consul";
+
+    /**
+     * logger 事件上报插件名
+     */
+    String LOGGER_EVENT_REPORTER_TYPE = "logger";
+
+    /**
+     * TSF 事件上报插件名
+     */
+    String TSF_EVENT_REPORTER_TYPE = "tsf";
 }

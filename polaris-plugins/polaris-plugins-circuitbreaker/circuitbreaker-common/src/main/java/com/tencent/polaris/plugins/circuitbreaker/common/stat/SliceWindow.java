@@ -18,9 +18,10 @@
 package com.tencent.polaris.plugins.circuitbreaker.common.stat;
 
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import org.slf4j.Logger;
 
 /**
  * 时间滑窗的具体实现
@@ -102,7 +103,7 @@ public class SliceWindow {
             Bucket newBucket = new Bucket(now, bucketIntervalMs, metricSize);
             newBucket.getCount().set(1);
             headBucket.set(newBucket);
-            LOG.debug("window {}: recreated, new bucket {}, now is {}", name, newBucket.getTimeRange(), now);
+            LOG.debug("window {}: recreated when adding, new bucket {}, now is {}", name, newBucket.getTimeRange(), now);
             Long value = operation.apply(newBucket);
             return null != value ? value : 0L;
         }
@@ -136,13 +137,13 @@ public class SliceWindow {
                 break;
             }
             slipCount++;
-            headStartTime = head.getTimeRange().getStart();
+            headStartTime = nextHead.getTimeRange().getStart();
             headWindowEndTime = headStartTime + windowLengthMs;
         }
         if (null == nextHead) {
             newBucket.getCount().set(1);
             headBucket.set(newBucket);
-            LOG.info("window {}: recreated, new bucket {}, now is {}", name, newBucket.getTimeRange(), now);
+            LOG.info("window {}: recreated when slip expiring, new bucket {}, now is {}", name, newBucket.getTimeRange(), now);
             return;
         }
         //滑掉之前的窗

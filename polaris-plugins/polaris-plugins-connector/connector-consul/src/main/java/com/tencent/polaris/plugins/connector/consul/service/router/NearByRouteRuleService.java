@@ -25,7 +25,6 @@ import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.ConsulRawClient;
 import com.ecwid.consul.v1.QueryParams;
 import com.ecwid.consul.v1.kv.model.GetValue;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 import com.google.gson.reflect.TypeToken;
@@ -170,9 +169,6 @@ public class NearByRouteRuleService extends ConsulService {
         representer.addClassTag(RouteAffinity.class, Tag.MAP);
         representer.getPropertyUtils().setSkipMissingProperties(true);
         Yaml yaml = new Yaml(representer);
-        ObjectMapper mapper = new ObjectMapper();
-        // 配置 ObjectMapper在反序列化时，忽略目标对象没有的属性
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         List<RouteAffinity> routeAffinityList = Lists.newArrayList();
         valueList.forEach(value -> {
             try {

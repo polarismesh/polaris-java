@@ -19,6 +19,7 @@ package com.tencent.polaris.api.config.global;
 
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
+
 import java.util.List;
 
 /**
@@ -66,9 +67,17 @@ public interface GlobalConfig extends Verifier {
 
     /**
      * Configuration of prefix of "global.traceReporter"
+     *
      * @return
      */
     TraceReporterConfig getTraceReporter();
+
+    /**
+     * Configuration of prefix of "global.eventReporter"
+     *
+     * @return
+     */
+    EventReporterConfig getEventReporter();
 
     /**
      * 获取地理位置提供者配置信息
