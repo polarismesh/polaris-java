@@ -26,6 +26,8 @@ public interface ConsulConstant {
 
     interface MetadataMapKey {
 
+        String NAMESPACE_KEY = "NAMESPACE_KEY";
+
         String SERVICE_NAME_KEY = "SERVICE_NAME_KEY";
 
         String INSTANCE_ID_KEY = "INSTANCE_ID_KEY";

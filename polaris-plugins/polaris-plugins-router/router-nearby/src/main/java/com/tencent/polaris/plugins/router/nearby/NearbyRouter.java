@@ -33,7 +33,6 @@ import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.utils.CompareUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
@@ -105,7 +104,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         RoutingProto.NearbyRoutingConfig nearbyRoutingConfig = null;
         if (serviceRule != null && serviceRule.getRule() != null) {
             ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-            List<RoutingProto.RouteRule> nearByRouteRuleList = sortNearbyRouteRules(discoverResponse.getNearbyRouteRulesList());
+            List<RoutingProto.RouteRule> nearByRouteRuleList = discoverResponse.getNearbyRouteRulesList();
             if (CollectionUtils.isNotEmpty(nearByRouteRuleList)) {
                 Any any = null;
                 for (RoutingProto.RouteRule routeRule : nearByRouteRuleList) {
@@ -193,49 +192,6 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
             return result;
         }
         return new RouteResult(checkResult.instances, RouteResult.State.Next);
-    }
-
-    private List<RoutingProto.RouteRule> sortNearbyRouteRules(List<RoutingProto.RouteRule> rules) {
-        List<RoutingProto.RouteRule> sorted = new ArrayList<>(rules);
-        // 数字越小，规则优先级越大
-        sorted.sort(Comparator.comparingInt(RoutingProto.RouteRule::getPriority));
-        sorted.sort((o1, o2) -> {
-            // 比较优先级，数字越小，规则优先级越大
-            int priorityResult = o1.getPriority() - o2.getPriority();
-            if (priorityResult != 0) {
-                return priorityResult;
-            }
-
-            // 比较目标服务
-            String destNamespace1 = "";
-            String destService1 = "";
-            try {
-                RoutingProto.NearbyRoutingConfig nearbyRoutingConfig = o1.getRoutingConfig().unpack(RoutingProto.NearbyRoutingConfig.class);
-                destNamespace1 = nearbyRoutingConfig.getNamespace();
-                destService1 = nearbyRoutingConfig.getService();
-            } catch (Exception e) {
-                LOG.warn("{} cannot be unpacked to an instance of RoutingProto.NearbyRoutingConfig", o1);
-            }
-
-            String destNamespace2 = "";
-            String destService2 = "";
-            try {
-                RoutingProto.NearbyRoutingConfig nearbyRoutingConfig = o2.getRoutingConfig().unpack(RoutingProto.NearbyRoutingConfig.class);
-                destNamespace2 = nearbyRoutingConfig.getNamespace();
-                destService2 = nearbyRoutingConfig.getService();
-            } catch (Exception e) {
-                LOG.warn("{} cannot be unpacked to an instance of RoutingProto.NearbyRoutingConfig", o2);
-            }
-            int serviceKeyResult = CompareUtils.compareService(destNamespace1, destService1, destNamespace2, destService2);
-            if (serviceKeyResult != 0) {
-                return serviceKeyResult;
-            }
-
-            String ruleId1 = o1.getId();
-            String ruleId2 = o1.getId();
-            return CompareUtils.compareSingleValue(ruleId1, ruleId2);
-        });
-        return sorted;
     }
 
     private RoutingProto.NearbyRoutingConfig.LocationLevel nextLevel(RoutingProto.NearbyRoutingConfig.LocationLevel current) {
@@ -428,7 +384,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         ServiceRule serviceRule = getServiceRule(dstSvcInfo.getNamespace(), dstSvcInfo.getService());
         if (serviceRule != null && serviceRule.getRule() != null) {
             ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-            List<RoutingProto.RouteRule> nearByRouteRuleList = sortNearbyRouteRules(discoverResponse.getNearbyRouteRulesList());
+            List<RoutingProto.RouteRule> nearByRouteRuleList = discoverResponse.getNearbyRouteRulesList();
             if (CollectionUtils.isNotEmpty(nearByRouteRuleList)) {
                 for (RoutingProto.RouteRule routeRule : nearByRouteRuleList) {
                     if (routeRule.getEnable()) {

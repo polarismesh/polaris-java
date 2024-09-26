@@ -17,24 +17,40 @@
 
 package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
+
 import java.util.Objects;
 
 public class MethodResource extends AbstractResource {
 
+    private final String protocol;
+
     private final String method;
 
-    public MethodResource(ServiceKey service, String methodName) {
-        this(service, methodName, null);
+    private final String path;
+
+    @JustForTest
+    public MethodResource(ServiceKey service, String path) {
+        this(service, "*", "*", path, null);
     }
 
-    public MethodResource(ServiceKey service, String methodName, ServiceKey callerService) {
+    public MethodResource(ServiceKey service, String protocol, String method, String path, ServiceKey callerService) {
         super(service, callerService);
         CommonValidator.validateNamespaceService(service.getNamespace(), service.getService());
-        CommonValidator.validateText(methodName, "method");
-        this.method = methodName;
+        CommonValidator.validateText(path, "path");
+        if (StringUtils.isBlank(protocol)) {
+            protocol = "*";
+        }
+        if (StringUtils.isBlank(method)) {
+            method = "*";
+        }
+        this.protocol = protocol;
+        this.method = method;
+        this.path = path;
     }
 
     @Override
@@ -42,34 +58,38 @@ public class MethodResource extends AbstractResource {
         return Level.METHOD;
     }
 
+    public String getProtocol() {
+        return protocol;
+    }
+
     public String getMethod() {
         return method;
     }
 
+    public String getPath() {
+        return path;
+    }
+
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MethodResource)) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
-        MethodResource that = (MethodResource) o;
-        return Objects.equals(method, that.method);
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        if (!super.equals(object)) return false;
+        MethodResource that = (MethodResource) object;
+        return Objects.equals(getProtocol(), that.getProtocol()) && Objects.equals(getMethod(), that.getMethod()) && Objects.equals(getPath(), that.getPath());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), method);
+        return Objects.hash(super.hashCode(), getProtocol(), getMethod(), getPath());
     }
 
     @Override
     public String toString() {
         return "MethodResource{" +
-                "method='" + method + '\'' +
-                "} " + super.toString();
+                "protocol='" + protocol + '\'' +
+                ", method='" + method + '\'' +
+                ", path='" + path + '\'' +
+                '}';
     }
 }

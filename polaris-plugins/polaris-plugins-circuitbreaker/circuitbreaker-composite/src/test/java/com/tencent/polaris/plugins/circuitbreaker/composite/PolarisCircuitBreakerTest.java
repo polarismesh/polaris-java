@@ -17,9 +17,6 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite;
 
-import java.util.Optional;
-import java.util.regex.Pattern;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.protobuf.StringValue;
@@ -39,20 +36,19 @@ import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.factory.ConfigAPIFactory;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreakerRule;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.ErrorCondition;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.*;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.ErrorCondition.InputType;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.RecoverCondition;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition.TriggerType;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.test.common.MockInitContext;
 import com.tencent.polaris.test.mock.discovery.MockServiceResourceProvider;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 public class PolarisCircuitBreakerTest {
 
@@ -61,11 +57,11 @@ public class PolarisCircuitBreakerTest {
         builder.setName("test_cb_rule");
         builder.setEnable(true);
         builder.setLevel(Level.SERVICE);
-        builder.addTriggerCondition(
-                TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(10).build());
-        builder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
-                MatchString.newBuilder().setType(MatchStringType.EXACT)
-                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        BlockConfig.Builder blockConfigBuilder = BlockConfig.newBuilder();
+        blockConfigBuilder.addTriggerConditions(TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(10).build());
+        blockConfigBuilder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        builder.addBlockConfigs(blockConfigBuilder.build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         builder.setRevision("111");
         CircuitBreaker.Builder cbBuilder = CircuitBreaker.newBuilder();
@@ -79,11 +75,11 @@ public class PolarisCircuitBreakerTest {
         builder.setName("test_cb_rule1");
         builder.setEnable(true);
         builder.setLevel(Level.SERVICE);
-        builder.addTriggerCondition(
-                TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(3).build());
-        builder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
-                MatchString.newBuilder().setType(MatchStringType.EXACT)
-                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        BlockConfig.Builder blockConfigBuilder = BlockConfig.newBuilder();
+        blockConfigBuilder.addTriggerConditions(TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(3).build());
+        blockConfigBuilder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        builder.addBlockConfigs(blockConfigBuilder.build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         builder.setRevision("222");
         CircuitBreaker.Builder cbBuilder = CircuitBreaker.newBuilder();
@@ -100,7 +96,7 @@ public class PolarisCircuitBreakerTest {
         InitContext initContext = new MockInitContext(configuration);
         polarisCircuitBreaker.init(initContext);
         polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);
-        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile));
+        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile, null));
         ServiceKey serviceKey = new ServiceKey("Test", "testSvc");
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.CIRCUIT_BREAKING);
         CircuitBreaker circuitBreaker = buildRules();
@@ -131,7 +127,7 @@ public class PolarisCircuitBreakerTest {
         InitContext initContext = new MockInitContext(configuration);
         polarisCircuitBreaker.init(initContext);
         polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);
-        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile));
+        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile, null));
         polarisCircuitBreaker.setFaultDetectRuleDictionary(new FaultDetectRuleDictionary());
         ServiceKey serviceKey = new ServiceKey("Test", "testSvc");
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.CIRCUIT_BREAKING);
@@ -192,14 +188,15 @@ public class PolarisCircuitBreakerTest {
                 CircuitBreakerProto.RuleMatcher.newBuilder().
                         setSource(CircuitBreakerProto.RuleMatcher.SourceService.newBuilder().setNamespace("*").setService("*").build()).
                         setDestination(CircuitBreakerProto.RuleMatcher.DestinationService.newBuilder().
-                                setNamespace("Test").setService("testMethodSvc").setMethod(MatchString.newBuilder().
-                                        setValue(StringValue.newBuilder().setValue("^/d/customers/base/.+$")).
-                                        setType(MatchStringType.REGEX)).build()));
-        builder.addTriggerCondition(
-                TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(10).build());
-        builder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
-                MatchString.newBuilder().setType(MatchStringType.EXACT)
-                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+                                setNamespace("Test").setService("testMethodSvc").build()));
+        BlockConfig.Builder blockConfigBuilder = BlockConfig.newBuilder();
+        blockConfigBuilder.setApi(ModelProto.API.newBuilder().setProtocol("*").setMethod("*").setPath(MatchString.newBuilder().
+                setValue(StringValue.newBuilder().setValue("^/d/customers/base/.+$")).
+                setType(MatchStringType.REGEX)).build());
+        blockConfigBuilder.addTriggerConditions(TriggerCondition.newBuilder().setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(10).build());
+        blockConfigBuilder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT).setValue(StringValue.newBuilder().setValue("500").build()).build()).build()).build();
+        builder.addBlockConfigs(blockConfigBuilder.build());
         builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
         builder.setRevision("222");
         CircuitBreaker.Builder cbBuilder = CircuitBreaker.newBuilder();
@@ -218,7 +215,7 @@ public class PolarisCircuitBreakerTest {
         InitContext initContext = new MockInitContext(configuration);
         polarisCircuitBreaker.init(initContext);
         polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);
-        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile));
+        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile, null));
         polarisCircuitBreaker.setFaultDetectRuleDictionary(new FaultDetectRuleDictionary());
         ServiceKey serviceKey = new ServiceKey("Test", "testMethodSvc");
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.CIRCUIT_BREAKING);

@@ -17,53 +17,99 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
-import java.util.concurrent.ScheduledExecutorService;
-
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
+
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class CounterOptions {
 
-	private Resource resource;
+    private Resource resource;
 
-	private TriggerCondition triggerCondition;
+    private ModelProto.API api;
 
-	private ScheduledExecutorService executorService;
+    private List<CircuitBreakerProto.ErrorCondition> errorConditionList;
 
-	private StatusChangeHandler statusChangeHandler;
+    private TriggerCondition triggerCondition;
 
-	public Resource getResource() {
-		return resource;
-	}
+    private ScheduledExecutorService executorService;
 
-	public void setResource(Resource resource) {
-		this.resource = resource;
-	}
+    private StatusChangeHandler statusChangeHandler;
 
-	public TriggerCondition getTriggerCondition() {
-		return triggerCondition;
-	}
+    private Function<String, Pattern> regexFunction;
 
-	public void setTriggerCondition(
-			TriggerCondition triggerCondition) {
-		this.triggerCondition = triggerCondition;
-	}
+    private Function<String, TrieNode<String>> trieNodeFunction;
 
-	public ScheduledExecutorService getExecutorService() {
-		return executorService;
-	}
+    public Resource getResource() {
+        return resource;
+    }
 
-	public void setExecutorService(ScheduledExecutorService executorService) {
-		this.executorService = executorService;
-	}
+    public void setResource(Resource resource) {
+        this.resource = resource;
+    }
 
-	public StatusChangeHandler getStatusChangeHandler() {
-		return statusChangeHandler;
-	}
+    public ModelProto.API getApi() {
+        return api;
+    }
 
-	public void setStatusChangeHandler(
-			StatusChangeHandler statusChangeHandler) {
-		this.statusChangeHandler = statusChangeHandler;
-	}
+    public void setApi(ModelProto.API api) {
+        this.api = api;
+    }
+
+    public List<CircuitBreakerProto.ErrorCondition> getErrorConditionList() {
+        return errorConditionList;
+    }
+
+    public void setErrorConditionList(List<CircuitBreakerProto.ErrorCondition> errorConditionList) {
+        this.errorConditionList = errorConditionList;
+    }
+
+    public TriggerCondition getTriggerCondition() {
+        return triggerCondition;
+    }
+
+    public void setTriggerCondition(
+            TriggerCondition triggerCondition) {
+        this.triggerCondition = triggerCondition;
+    }
+
+    public ScheduledExecutorService getExecutorService() {
+        return executorService;
+    }
+
+    public void setExecutorService(ScheduledExecutorService executorService) {
+        this.executorService = executorService;
+    }
+
+    public StatusChangeHandler getStatusChangeHandler() {
+        return statusChangeHandler;
+    }
+
+    public void setStatusChangeHandler(
+            StatusChangeHandler statusChangeHandler) {
+        this.statusChangeHandler = statusChangeHandler;
+    }
+
+    public Function<String, Pattern> getRegexFunction() {
+        return regexFunction;
+    }
+
+    public void setRegexFunction(Function<String, Pattern> regexFunction) {
+        this.regexFunction = regexFunction;
+    }
+
+    public Function<String, TrieNode<String>> getTrieNodeFunction() {
+        return trieNodeFunction;
+    }
+
+    public void setTrieNodeFunction(Function<String, TrieNode<String>> trieNodeFunction) {
+        this.trieNodeFunction = trieNodeFunction;
+    }
 }

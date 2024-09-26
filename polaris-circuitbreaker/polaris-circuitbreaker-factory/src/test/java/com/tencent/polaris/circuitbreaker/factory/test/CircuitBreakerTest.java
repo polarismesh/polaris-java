@@ -269,7 +269,7 @@ public class CircuitBreakerTest {
         Configuration configuration = TestUtils.configWithEnvAddress();
         try (CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configuration)) {
             FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                    new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "'");
+                    new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "", "", "");
             FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
             Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
                 if (num % 2 == 0) {

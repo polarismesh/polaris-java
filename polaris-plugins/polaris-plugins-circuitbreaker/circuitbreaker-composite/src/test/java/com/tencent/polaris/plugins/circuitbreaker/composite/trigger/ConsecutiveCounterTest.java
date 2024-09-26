@@ -20,12 +20,12 @@ package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.plugins.circuitbreaker.composite.StatusChangeHandler;
-import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ConsecutiveCounter;
-import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.CounterOptions;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.TriggerCondition;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 public class ConsecutiveCounterTest {
 
@@ -42,7 +42,7 @@ public class ConsecutiveCounterTest {
                 new MethodResource(new ServiceKey("Test", "testSvc"), "foo"));
         counterOptions.setStatusChangeHandler(new StatusChangeHandler() {
             @Override
-            public void closeToOpen(String circuitBreaker) {
+            public void closeToOpen(String circuitBreaker, String reason) {
                 triggerOpen.set(true);
             }
 
@@ -63,7 +63,7 @@ public class ConsecutiveCounterTest {
         });
         ConsecutiveCounter consecutiveCounter = new ConsecutiveCounter("test-rule", counterOptions);
         for (int i = 0; i < MAX_COUNT; i++) {
-            consecutiveCounter.report(false);
+            consecutiveCounter.report(false, Pattern::compile);
         }
         Assert.assertTrue(triggerOpen.get());
     }

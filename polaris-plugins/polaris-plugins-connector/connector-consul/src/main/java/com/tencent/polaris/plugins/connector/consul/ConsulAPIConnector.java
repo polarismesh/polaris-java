@@ -27,6 +27,7 @@ import com.ecwid.consul.v1.OperationException;
 import com.ecwid.consul.v1.agent.model.NewService;
 import com.ecwid.consul.v1.agent.model.NewService.Check;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
@@ -48,6 +49,7 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
 import com.tencent.polaris.plugins.connector.consul.service.InstanceService;
 import com.tencent.polaris.plugins.connector.consul.service.ServiceService;
+import com.tencent.polaris.plugins.connector.consul.service.circuitbreaker.CircuitBreakingService;
 import com.tencent.polaris.plugins.connector.consul.service.router.NearByRouteRuleService;
 import com.tencent.polaris.plugins.connector.consul.service.router.RoutingService;
 import org.slf4j.Logger;
@@ -91,8 +93,6 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     private ConsulContext consulContext;
 
     private ObjectMapper mapper;
-
-    private List<String> lastServices = new ArrayList<>();
 
     private final Map<ServiceEventKey.EventType, ConsulService> consulServiceMap = new HashMap<>();
 
@@ -142,6 +142,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 for (ServerConnectorConfigImpl serverConnectorConfig : serverConnectorConfigs) {
                     if (SERVER_CONNECTOR_CONSUL.equals(serverConnectorConfig.getProtocol())) {
                         mapper = new ObjectMapper();
+                        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                         initActually(ctx, serverConnectorConfig);
                     }
                 }
@@ -162,7 +163,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         int lastIndex = address.lastIndexOf(":");
         String agentHost = address.substring(0, lastIndex);
         int agentPort = Integer.parseInt(address.substring(lastIndex + 1));
-        LOG.debug("Consul Server : [" + address + "]");
+        LOG.debug("Consul Server : [{}]", address);
         consulRawClient = new ConsulRawClient(agentHost, agentPort);
         consulClient = new ConsulClient(consulRawClient);
 
@@ -170,6 +171,9 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         consulContext = new ConsulContext();
         consulContext.setConnectorConfig(connectorConfig);
         Map<String, String> metadata = connectorConfig.getMetadata();
+        if (metadata.containsKey(NAMESPACE_KEY) && StringUtils.isNotBlank(metadata.get(NAMESPACE_KEY))) {
+            consulContext.setNamespace(metadata.get(NAMESPACE_KEY));
+        }
         if (metadata.containsKey(SERVICE_NAME_KEY) && StringUtils.isNotBlank(metadata.get(SERVICE_NAME_KEY))) {
             consulContext.setServiceName(metadata.get(SERVICE_NAME_KEY));
         }
@@ -225,6 +229,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         consulServiceMap.put(ServiceEventKey.EventType.SERVICE, new ServiceService(consulClient, consulRawClient, consulContext, "consul-service", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.ROUTING, new RoutingService(consulClient, consulRawClient, consulContext, "consul-routing", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.NEARBY_ROUTE_RULE, new NearByRouteRuleService(consulClient, consulRawClient, consulContext, "consul-nearby-route-rule", mapper));
+        consulServiceMap.put(ServiceEventKey.EventType.CIRCUIT_BREAKING, new CircuitBreakingService(consulClient, consulRawClient, consulContext, "consul-circuit-breaking", mapper));
         initialized = true;
     }
 

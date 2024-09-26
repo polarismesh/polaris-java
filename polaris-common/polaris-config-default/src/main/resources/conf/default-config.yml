@@ -79,6 +79,13 @@ global:
     enable: false
     #描述: 调用链实现
     reporter: otel
+  # 事件上报相关的配置
+  eventReporter:
+    #描述: 是否启动事件上报
+    enable: true
+    #描述: 事件上报插件名列表
+    reporters:
+      - logger
   #描述: 监控及日志数据上报相关配置
   statReporter:
     #描述: 是否启用上报

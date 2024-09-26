@@ -17,15 +17,21 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.composite.trigger;
 
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.SliceWindow;
 import com.tencent.polaris.plugins.circuitbreaker.common.stat.TimeRange;
+import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
+import org.slf4j.Logger;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
-import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
-import org.slf4j.Logger;
+import static com.tencent.polaris.plugins.circuitbreaker.composite.utils.MatchUtils.matchMethod;
 
 public class ErrRateCounter extends TriggerCounter {
 
@@ -62,7 +68,23 @@ public class ErrRateCounter extends TriggerCounter {
     }
 
     @Override
-    public void report(boolean success) {
+    public void report(ResourceStat resourceStat, Function<String, Pattern> regexPatternFunction) {
+        if (suspended.get()) {
+            LOG.debug("[CircuitBreaker][Counter] errRateCounter {} suspended, skip report", ruleName);
+            return;
+        }
+
+        if (api != null && !matchMethod(resourceStat.getResource(), api, regexFunction, trieNodeFunction)) {
+            return;
+        }
+
+        RetStatus retStatus = CircuitBreakerUtils.parseRetStatus(resourceStat, errorConditionList, regexPatternFunction);
+        boolean success = retStatus != RetStatus.RetFail && retStatus != RetStatus.RetTimeout;
+        report(success, regexPatternFunction);
+    }
+
+    @Override
+    public void report(boolean success, Function<String, Pattern> regexPatternFunction) {
         if (suspended.get()) {
             LOG.debug("[CircuitBreaker][Counter] errRateCounter {} suspended, skip report", ruleName);
             return;
@@ -91,22 +113,34 @@ public class ErrRateCounter extends TriggerCounter {
 
         @Override
         public void run() {
-            long currentTimeMs = System.currentTimeMillis();
-            TimeRange timeRange = new TimeRange(currentTimeMs - metricWindowMs, currentTimeMs);
-            long requestCount = sliceWindow.calcMetricsBothIncluded(Dimension.keyRequestCount.ordinal(), timeRange);
-            LOG.info("[CircuitBreaker][Counter] errRateCounter: requestCount {}, minimumRequest {}, name {}",
-                    requestCount, minimumRequest, ruleName);
-            if (requestCount < minimumRequest) {
+            try {
+                long currentTimeMs = System.currentTimeMillis();
+                TimeRange timeRange = new TimeRange(currentTimeMs - metricWindowMs, currentTimeMs);
+                long requestCount = sliceWindow.calcMetricsBothIncluded(Dimension.keyRequestCount.ordinal(), timeRange);
+                LOG.info("[CircuitBreaker][Counter] errRateCounter: requestCount {}, minimumRequest {}, name {}, timeRange {}",
+                        requestCount, minimumRequest, ruleName, timeRange);
+                if (requestCount < minimumRequest) {
+                    scheduled.set(false);
+                    return;
+                }
+                long failCount = sliceWindow.calcMetricsBothIncluded(Dimension.keyFailCount.ordinal(), timeRange);
+                double failRatio = ((double) failCount / (double) requestCount) * 100;
+                LOG.info("[CircuitBreaker][Counter] errRateCounter: failCount {}, minimumRequest {}, failRatio {}," +
+                        " name {}, timeRange {}", failCount, failRatio, minimumRequest, ruleName, timeRange);
+                if (failRatio >= errorPercent) {
+                    suspend();
+                    statusChangeHandler.closeToOpen(ruleName, getReason());
+                }
+            } catch (Throwable throwable) {
+                LOG.warn("check state failed.", throwable);
+            } finally {
                 scheduled.set(false);
-                return;
             }
-            long failCount = sliceWindow.calcMetricsBothIncluded(Dimension.keyFailCount.ordinal(), timeRange);
-            double failRatio = ((double) failCount / (double) requestCount) * 100;
-            if (failRatio >= errorPercent) {
-                suspend();
-                statusChangeHandler.closeToOpen(ruleName);
-            }
-            scheduled.set(false);
         }
+    }
+
+    @Override
+    public String getReason() {
+        return "error_rate:" + errorPercent + "%";
     }
 }

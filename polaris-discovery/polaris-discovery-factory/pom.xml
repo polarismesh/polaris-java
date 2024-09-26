@@ -172,6 +172,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!--事件上报插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>event-logger</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!--测试依赖插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

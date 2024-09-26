@@ -32,83 +32,83 @@ import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 
 public class DefaultInvokeHandler implements InvokeHandler {
 
-	private final CircuitBreakAPI circuitBreakAPI;
+    private final CircuitBreakAPI circuitBreakAPI;
 
-	private final InvokeContext.RequestContext requestContext;
+    private final InvokeContext.RequestContext requestContext;
 
-	public DefaultInvokeHandler(InvokeContext.RequestContext requestContext, CircuitBreakAPI circuitBreakAPI) {
-		this.requestContext = requestContext;
-		this.circuitBreakAPI = circuitBreakAPI;
-	}
+    public DefaultInvokeHandler(InvokeContext.RequestContext requestContext, CircuitBreakAPI circuitBreakAPI) {
+        this.requestContext = requestContext;
+        this.circuitBreakAPI = circuitBreakAPI;
+    }
 
-	@Override
-	public void acquirePermission() {
-		CheckResult check = commonCheck(requestContext);
-		if (check != null){
-			throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
-		}
-	}
+    @Override
+    public void acquirePermission() {
+        CheckResult check = commonCheck(requestContext);
+        if (check != null) {
+            throw new CallAbortedException(check.getRuleName(), check.getFallbackInfo());
+        }
+    }
 
-	@Override
-	public void onSuccess(InvokeContext.ResponseContext responseContext) {
-		long delay = responseContext.getDurationUnit().toMillis(responseContext.getDuration());
-		ResultToErrorCode resultToErrorCode = requestContext.getResultToErrorCode();
-		int code = 0;
-		RetStatus retStatus = RetStatus.RetUnknown;
-		if (null != resultToErrorCode) {
-			code = resultToErrorCode.onSuccess(responseContext.getResult());
-		}
-		commonReport(requestContext, delay, code, retStatus);
-	}
+    @Override
+    public void onSuccess(InvokeContext.ResponseContext responseContext) {
+        long delay = responseContext.getDurationUnit().toMillis(responseContext.getDuration());
+        ResultToErrorCode resultToErrorCode = requestContext.getResultToErrorCode();
+        int code = 0;
+        RetStatus retStatus = RetStatus.RetUnknown;
+        if (null != resultToErrorCode) {
+            code = resultToErrorCode.onSuccess(responseContext.getResult());
+        }
+        commonReport(requestContext, delay, code, retStatus);
+    }
 
-	@Override
-	public void onError(InvokeContext.ResponseContext responseContext) {
-		long delay = responseContext.getDurationUnit().toMillis(responseContext.getDuration());
-		ResultToErrorCode resultToErrorCode = requestContext.getResultToErrorCode();
-		int code = -1;
-		RetStatus retStatus = RetStatus.RetUnknown;
-		if (null != resultToErrorCode) {
-			code = resultToErrorCode.onError(responseContext.getError());
-		}
-		if (responseContext.getError() instanceof CallAbortedException) {
-			retStatus = RetStatus.RetReject;
-		}
-		commonReport(requestContext, delay, code, retStatus);
-	}
+    @Override
+    public void onError(InvokeContext.ResponseContext responseContext) {
+        long delay = responseContext.getDurationUnit().toMillis(responseContext.getDuration());
+        ResultToErrorCode resultToErrorCode = requestContext.getResultToErrorCode();
+        int code = -1;
+        RetStatus retStatus = RetStatus.RetUnknown;
+        if (null != resultToErrorCode) {
+            code = resultToErrorCode.onError(responseContext.getError());
+        }
+        if (responseContext.getError() instanceof CallAbortedException) {
+            retStatus = RetStatus.RetReject;
+        }
+        commonReport(requestContext, delay, code, retStatus);
+    }
 
-	private CheckResult commonCheck(InvokeContext.RequestContext requestContext) {
-		// check service
-		Resource svcResource = new ServiceResource(requestContext.getService(),
-				requestContext.getSourceService());
-		CheckResult check = circuitBreakAPI.check(svcResource);
-		if (!check.isPass()) {
-			return check;
-		}
-		// check method
-		if (StringUtils.isNotBlank(requestContext.getMethod())) {
-			Resource methodResource = new MethodResource(requestContext.getService(),
-					requestContext.getMethod(), requestContext.getSourceService());
-			check = circuitBreakAPI.check(methodResource);
-			if (!check.isPass()) {
-				return check;
-			}
-		}
-		return null;
-	}
+    private CheckResult commonCheck(InvokeContext.RequestContext requestContext) {
+        // check service
+        Resource svcResource = new ServiceResource(requestContext.getService(),
+                requestContext.getSourceService());
+        CheckResult check = circuitBreakAPI.check(svcResource);
+        if (!check.isPass()) {
+            return check;
+        }
+        // check method
+        if (StringUtils.isNotBlank(requestContext.getPath())) {
+            Resource methodResource = new MethodResource(requestContext.getService(), requestContext.getProtocol(),
+                    requestContext.getMethod(), requestContext.getPath(), requestContext.getSourceService());
+            check = circuitBreakAPI.check(methodResource);
+            if (!check.isPass()) {
+                return check;
+            }
+        }
+        return null;
+    }
 
-	private void commonReport(InvokeContext.RequestContext requestContext, long delayMills, int code, RetStatus retStatus) {
-		// report service
-		Resource svcResource = new ServiceResource(requestContext.getService(),
-				requestContext.getSourceService());
-		ResourceStat resourceStat = new ResourceStat(svcResource, code, delayMills, retStatus);
-		circuitBreakAPI.report(resourceStat);
-		// report method
-		if (StringUtils.isNotBlank(requestContext.getMethod())) {
-			Resource methodResource = new MethodResource(requestContext.getService(),
-					requestContext.getMethod(), requestContext.getSourceService());
-			resourceStat = new ResourceStat(methodResource, code, delayMills, retStatus);
-			circuitBreakAPI.report(resourceStat);
-		}
-	}
+    private void commonReport(InvokeContext.RequestContext requestContext, long delayMills, int code, RetStatus retStatus) {
+        // report service
+        Resource svcResource = new ServiceResource(requestContext.getService(),
+                requestContext.getSourceService());
+        ResourceStat resourceStat = new ResourceStat(svcResource, code, delayMills, retStatus);
+        circuitBreakAPI.report(resourceStat);
+        // report method
+        if (StringUtils.isNotBlank(requestContext.getPath())) {
+            Resource methodResource = new MethodResource(requestContext.getService(), requestContext.getProtocol(),
+                    requestContext.getMethod(), requestContext.getPath(), requestContext.getSourceService());
+            resourceStat = new ResourceStat(methodResource, code, delayMills, retStatus);
+            circuitBreakAPI.report(resourceStat);
+        }
+    }
 
 }

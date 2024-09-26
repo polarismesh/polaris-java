@@ -82,8 +82,8 @@ public class RuleUtils {
         return matchStringValue(matchType, actualValue, matchValue, DEFAULT_REGEX_PATTERN, false, null);
     }
 
-    private static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
-                                            Function<String, Pattern> regexToPattern, boolean useTrieNode, Function<String, TrieNode<String>> trieNodeFunction) {
+    public static boolean matchStringValue(MatchStringType matchType, String actualValue, String matchValue,
+                                           Function<String, Pattern> regexToPattern, boolean useTrieNode, Function<String, TrieNode<String>> trieNodeFunction) {
         actualValue = StringUtils.defaultString(actualValue);
         matchValue = StringUtils.defaultString(matchValue);
         if (RuleUtils.isMatchAllValue(matchValue)) {

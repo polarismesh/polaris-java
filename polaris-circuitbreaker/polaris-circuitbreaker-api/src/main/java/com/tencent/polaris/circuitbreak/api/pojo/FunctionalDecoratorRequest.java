@@ -21,8 +21,8 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 
 public class FunctionalDecoratorRequest extends InvokeContext.RequestContext {
 
-    public FunctionalDecoratorRequest(ServiceKey service, String method) {
-        super(service, method);
+    public FunctionalDecoratorRequest(ServiceKey service, String protocol, String method, String path) {
+        super(service, protocol, method, path);
     }
 
     @Override

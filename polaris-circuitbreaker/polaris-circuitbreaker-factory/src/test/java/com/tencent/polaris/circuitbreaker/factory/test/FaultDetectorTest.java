@@ -96,7 +96,7 @@ public class FaultDetectorTest {
                     method = "/test1/path/" + i;
                 }
                 FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                        matchMethodDetectService, method);
+                        matchMethodDetectService, "*", "*", method);
                 FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
                 int finalI = i;
                 Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
@@ -132,7 +132,7 @@ public class FaultDetectorTest {
                     method = "/test1/path/" + i;
                 }
                 FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                        matchMethodDetectService, method);
+                        matchMethodDetectService, "", "", method);
                 FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
                 int finalI = i;
                 Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {

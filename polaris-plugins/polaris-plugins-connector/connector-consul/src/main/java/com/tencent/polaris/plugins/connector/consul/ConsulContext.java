@@ -32,6 +32,8 @@ public class ConsulContext {
 
     private ServerConnectorConfig connectorConfig;
 
+    private String namespace;
+
     private String serviceName;
 
     private String instanceId;
@@ -63,6 +65,7 @@ public class ConsulContext {
     private int waitTime;
 
     public ConsulContext() {
+        namespace = "";
         serviceName = "";
         instanceId = "";
         ipAddress = "";
@@ -83,6 +86,14 @@ public class ConsulContext {
 
     public void setConnectorConfig(ServerConnectorConfig connectorConfig) {
         this.connectorConfig = connectorConfig;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
     public String getServiceName() {

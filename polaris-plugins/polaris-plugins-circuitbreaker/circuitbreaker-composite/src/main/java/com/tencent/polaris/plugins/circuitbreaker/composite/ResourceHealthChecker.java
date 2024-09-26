@@ -261,13 +261,13 @@ public class ResourceHealthChecker {
             return false;
         }
         if (resource.getLevel() == CircuitBreakerProto.Level.METHOD) {
-            if (!targetService.hasMethod() || StringUtils.isBlank(targetService.getMethod().getValue().getValue())) {
+            if (!targetService.hasApi() || StringUtils.isBlank(targetService.getApi().getPath().getValue().getValue())) {
                 return false;
             }
-            return MatchUtils.matchMethod(resource, targetService.getMethod(), regexToPattern);
+            return MatchUtils.matchMethod(resource, targetService.getApi(), regexToPattern);
         } else {
             // only match empty method rules
-            return RuleUtils.isMatchAllValue(targetService.getMethod());
+            return RuleUtils.isMatchAllValue(targetService.getApi().getPath());
         }
     }
 

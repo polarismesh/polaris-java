@@ -32,13 +32,19 @@ public class InvokeContext {
 
         private final ServiceKey service;
 
+        private final String protocol;
+
         private final String method;
+
+        private final String path;
 
         private ResultToErrorCode resultToErrorCode;
 
-        public RequestContext(ServiceKey service, String method){
+        public RequestContext(ServiceKey service, String protocol, String method, String path) {
             this.service = service;
+            this.protocol = protocol;
             this.method = method;
+            this.path = path;
         }
 
         public ServiceKey getSourceService() {
@@ -53,8 +59,16 @@ public class InvokeContext {
             return service;
         }
 
+        public String getProtocol() {
+            return protocol;
+        }
+
         public String getMethod() {
             return method;
+        }
+
+        public String getPath() {
+            return path;
         }
 
         public ResultToErrorCode getResultToErrorCode() {

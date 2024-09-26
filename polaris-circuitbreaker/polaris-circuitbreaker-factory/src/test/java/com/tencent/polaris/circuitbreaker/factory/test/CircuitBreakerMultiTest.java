@@ -100,8 +100,11 @@ public class CircuitBreakerMultiTest {
         configurationImpl.getConsumer().getCircuitBreaker().setCountersExpireInterval(5000);
         try (CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configurationImpl)) {
             for (int i = 0; i < 50; i++) {
+                if (i == 1) {
+                    Utils.sleepUninterrupted(5 * 1000);
+                }
                 FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                        new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "/test/" + i);
+                        new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER), "", "", "/test/" + i);
                 FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
                 int finalI = i;
                 Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
@@ -135,7 +138,7 @@ public class CircuitBreakerMultiTest {
                     Utils.sleepUninterrupted(5 * 1000);
                 }
                 FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                        matchMethodService, "/test1/path/" + i);
+                        matchMethodService, "", "", "/test1/path/" + i);
                 FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
                 int finalI = i;
                 Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
@@ -182,7 +185,7 @@ public class CircuitBreakerMultiTest {
                     method = "/test1/path/" + i;
                 }
                 FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                        matchMethodDetectService, method);
+                        matchMethodDetectService, "", "", method);
                 FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
                 int finalI = i;
                 Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {
@@ -214,7 +217,7 @@ public class CircuitBreakerMultiTest {
             for (int i = 0; i < 10; i++) {
                 String method = "/test1/path/" + i;
                 FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                        matchMethodDetectService, method);
+                        matchMethodDetectService, "", "", method);
                 FunctionalDecorator decorator = circuitBreakAPI.makeFunctionalDecorator(makeDecoratorRequest);
                 int finalI = i;
                 Consumer<Integer> integerConsumer = decorator.decorateConsumer(num -> {

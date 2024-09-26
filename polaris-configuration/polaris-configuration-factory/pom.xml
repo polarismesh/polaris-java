@@ -115,6 +115,12 @@
             <artifactId>stat-prometheus</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--依赖事件上报插件-->
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>event-logger</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--配置加密插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

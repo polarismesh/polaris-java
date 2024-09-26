@@ -24,9 +24,9 @@ import com.tencent.polaris.cb.example.common.Utils;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
-import com.tencent.polaris.circuitbreak.api.pojo.ResultToErrorCode;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
+
 import java.util.function.Consumer;
 
 public class MethodBreakerExample {
@@ -46,7 +46,7 @@ public class MethodBreakerExample {
         int[] ports = new int[]{PORT_NORMAL, PORT_ABNORMAL};
         CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPI();
         FunctionalDecoratorRequest makeDecoratorRequest = new FunctionalDecoratorRequest(
-                new ServiceKey(NAMESPACE, SERVICE), "echo");
+                new ServiceKey(NAMESPACE, SERVICE), "HTTP", "GET", "echo");
 //        makeDecoratorRequest.setResultToErrorCode(new ResultToErrorCode() {
 //            @Override
 //            public int onSuccess(Object value) {

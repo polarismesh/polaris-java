@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.plugins.circuitbreaker.common.stat;
 
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,6 +32,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @date 2019/8/25
  */
 public class Bucket {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Bucket.class);
 
     /**
      * 统计序列集合，key为资源ID
@@ -109,7 +114,9 @@ public class Bucket {
         long total = 0L;
         List<Bucket> buckets = new ArrayList<>();
         Bucket next = this;
+        LOG.debug("begin calc with dimension {} and time range {}.", dimension, timeRange);
         while (null != next) {
+            boolean added = false;
             TimeRange bucketTimeRange = next.getTimeRange();
             TimePosition posStart = bucketTimeRange.isTimeInBucket(timeRange.getStart());
             TimePosition posEnd = bucketTimeRange.isTimeInBucket(timeRange.getEnd());
@@ -117,14 +124,21 @@ public class Bucket {
             TimePosition posBucketRangeEnd = timeRange.isTimeInBucket(bucketTimeRange.getEnd());
             if (posStart == TimePosition.inside || posEnd == TimePosition.inside) {
                 buckets.add(next);
+                added = true;
             } else if (posBucketRangeStart == TimePosition.inside && posBucketRangeEnd == TimePosition.inside) {
                 buckets.add(next);
+                added = true;
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Bucket with dimension {} is {} added metrics {} with time range {}.",
+                        dimension, added, next.getMetric(dimension), bucketTimeRange);
             }
             next = next.getNextBucket().get();
         }
         for (Bucket bucket : buckets) {
             total += bucket.getMetric(dimension);
         }
+        LOG.debug("end calc with dimension {} and time range {}.", dimension, timeRange);
         return total;
     }
 }
