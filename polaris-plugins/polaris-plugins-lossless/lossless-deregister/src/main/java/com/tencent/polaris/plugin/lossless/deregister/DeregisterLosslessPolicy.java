@@ -37,14 +37,19 @@ import com.tencent.polaris.client.pojo.Event;
 import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.logging.LoggingConsts;
+import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
+import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
@@ -110,10 +115,19 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
                 exchange.close();
                 return;
             }
+
+            Set<BaseInstance> needOfflineInstances = getNeedOfflineInstances(actionProviders.keySet());
+            if (CollectionUtils.isEmpty(needOfflineInstances)) {
+                LOG.warn("[LosslessDeRegister] no instance need to be offline");
+                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_INSTANCE_NEED_OFFLINE, 404);
+                exchange.close();
+                return;
+            }
+
             String text;
             int code;
             try {
-                for (BaseInstance instance : actionProviders.keySet()) {
+                for (BaseInstance instance : needOfflineInstances) {
                     for (LosslessPolicy losslessPolicy : losslessPolicies) {
                         losslessPolicy.losslessDeregister(instance);
                     }
@@ -201,5 +215,27 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
         event.setBaseInstance(instance);
         event.setEventName(EVENT_LOSSLESS_DEREGISTER);
         EVENT_LOG.info(event.toString());
+    }
+
+    private boolean isLosslessOfflineEnable(BaseInstance instance) {
+        // high priority for console configuration
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
+                instance.getNamespace(), instance.getService());
+        return Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOffline).
+                map(LosslessProto.LosslessOffline::getEnable).
+                orElse(true);
+    }
+
+    private Set<BaseInstance> getNeedOfflineInstances(Set<BaseInstance> instances) {
+        Set<BaseInstance> needOfflineInstances = new HashSet<>();
+        for (BaseInstance instance : instances) {
+            if (isLosslessOfflineEnable(instance)) {
+                needOfflineInstances.add(instance);
+            } else {
+                LOG.info("[LosslessDeregister] lossless offline is disabled for instance {}", instance);
+            }
+        }
+        return needOfflineInstances;
     }
 }

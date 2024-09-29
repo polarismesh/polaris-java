@@ -28,11 +28,24 @@ public interface LosslessPolicy extends Plugin, SortableAware {
      */
     String CTX_KEY_REGISTER_STATUS = "key-register-status";
 
+    String CTX_KEY_REGISTER_TIMESTAMP = "key-register-timestamp";
+
+    String EVENT_DIRECT_REGISTER = "DirectRegister";
+
     String EVENT_LOSSLESS_REGISTER = "LosslessRegister";
 
     String EVENT_LOSSLESS_DEREGISTER = "LosslessDeregister";
 
-    String ONLINE_PATH = "/online";
+    String EVENT_LOSSLESS_DELAY_REGISTER_START = "LosslessDelayRegisterStart";
+
+    String EVENT_LOSSLESS_WARMUP_START = "LosslessWarmupStart";
+
+    String EVENT_LOSSLESS_WARMUP_END = "LosslessWarmupEnd";
+
+    String READINESS_PATH = "/readiness";
+
+    @Deprecated
+    String DEPRECATED_READINESS_PATH = "/online";
 
     String OFFLINE_PATH = "/offline";
 
@@ -41,6 +54,10 @@ public interface LosslessPolicy extends Plugin, SortableAware {
     String REPS_TEXT_NO_ACTION = "no action";
 
     String REPS_TEXT_NO_POLICY = "no policy";
+
+    String REPS_TEXT_NO_INSTANCE_NEED_OFFLINE = "no instance need offline";
+
+    String REPS_TEXT_NO_INSTANCE_NEED_READINESS_CHECK = "no instance need readiness check";
 
     String REPS_TEXT_OK = "ok";
 

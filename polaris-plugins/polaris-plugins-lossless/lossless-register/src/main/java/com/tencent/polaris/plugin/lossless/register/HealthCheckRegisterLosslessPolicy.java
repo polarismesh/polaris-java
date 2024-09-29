@@ -38,6 +38,8 @@ import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.logging.LoggingConsts;
+import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
+import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -57,6 +59,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
     private LosslessConfig losslessConfig;
 
     private ValueContext valueContext;
+
+    private Extensions extensions;
 
     private final ScheduledExecutorService healthCheckExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("lossless-register-check"));
@@ -81,11 +85,15 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             Map<BaseInstance, RegisterStatus> registerStatuses = new ConcurrentHashMap<>();
             valueContext.setValue(CTX_KEY_REGISTER_STATUS, registerStatuses);
         }
+        if (!valueContext.containsValue(CTX_KEY_REGISTER_TIMESTAMP)) {
+            Map<BaseInstance, Long> registerTimestamps = new ConcurrentHashMap<>();
+            valueContext.setValue(CTX_KEY_REGISTER_TIMESTAMP, registerTimestamps);
+        }
     }
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
-
+        extensions = ctx;
     }
 
     @Override
@@ -151,12 +159,12 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
             boolean result = losslessActionProvider.doHealthCheck();
             LOG.info("[HealthCheckRegisterLosslessPolicy] do health-check for lossless register, result {}", result);
             if (!result) {
-                healthCheckExecutor.schedule(this, losslessConfig.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
+                healthCheckExecutor.schedule(this, getHealthCheckInterval(instance), TimeUnit.MILLISECONDS);
                 return;
             }
             LOG.info("[HealthCheckRegisterLosslessPolicy] health-check success, start to do register");
             try {
-                doRegister(instance, losslessActionProvider, instanceProperties);
+                doRegister(instance, losslessActionProvider, instanceProperties, true);
             } catch (Throwable throwable) {
                 LOG.error("[HealthCheckRegisterLosslessPolicy] fail to do lossless register in plugin {}", getName(), throwable);
             }
@@ -165,38 +173,70 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
     private void doLosslessRegister(
             BaseInstance instance, LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+
+        if (!isDelayRegisterEnable(instance)) {
+            LOG.info("[HealthCheckRegisterLosslessPolicy] console lossless register disabled, start to do register now");
+            doRegister(instance, losslessActionProvider, instanceProperties, false);
+            return;
+        }
+
         LOG.info("[HealthCheckRegisterLosslessPolicy] do losslessRegister for instance {}", instance);
         if (!losslessActionProvider.isEnableHealthCheck()) {
+            long delayRegisterInterval = getDelayRegisterInterval(instance);
             LOG.info("[HealthCheckRegisterLosslessPolicy] health check disabled, start lossless register after {}ms, plugin {}",
-                    losslessConfig.getDelayRegisterInterval(), getName());
+                    delayRegisterInterval, getName());
+            Event delayRegisterStartEvent = new Event(valueContext.getClientId(), instance, EVENT_LOSSLESS_DELAY_REGISTER_START);
+            EVENT_LOG.info(delayRegisterStartEvent.toString());
             healthCheckExecutor.schedule(new Runnable() {
                 @Override
                 public void run() {
                     LOG.info("[HealthCheckRegisterLosslessPolicy] health-check disabled, start to do register now");
-                    doRegister(instance, losslessActionProvider, instanceProperties);
+                    doRegister(instance, losslessActionProvider, instanceProperties, true);
                 }
-            }, losslessConfig.getDelayRegisterInterval(), TimeUnit.MILLISECONDS);
+            }, delayRegisterInterval, TimeUnit.MILLISECONDS);
         } else {
+            long healthCheckInterval = getHealthCheckInterval(instance);
             LOG.info("[HealthCheckRegisterLosslessPolicy] health check enabled, start lossless register after check, interval {}ms, plugin {}",
-                    losslessConfig.getHealthCheckInterval(), getName());
+                    healthCheckInterval, getName());
             HealthChecker healthChecker = new HealthChecker(instance, losslessActionProvider, instanceProperties);
             healthCheckExecutor.schedule(
-                    healthChecker, losslessConfig.getHealthCheckInterval(), TimeUnit.MILLISECONDS);
+                    healthChecker, healthCheckInterval, TimeUnit.MILLISECONDS);
         }
     }
 
-    private void doRegister(BaseInstance instance,
-                            LosslessActionProvider losslessActionProvider, InstanceProperties instanceProperties) {
+    private void doRegister(BaseInstance instance, LosslessActionProvider losslessActionProvider,
+            InstanceProperties instanceProperties, boolean isDelayRegister) {
         losslessActionProvider.doRegister(instanceProperties);
         Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
         registerStatusMap.put(instance, RegisterStatus.REGISTERED);
         // record event log
         String clientId = valueContext.getClientId();
-        Event event = new Event();
-        event.setClientId(clientId);
-        event.setBaseInstance(instance);
-        event.setEventName(EVENT_LOSSLESS_REGISTER);
-        EVENT_LOG.info(event.toString());
+        if (isDelayRegister) {
+            EVENT_LOG.info(new Event(clientId, instance, EVENT_LOSSLESS_REGISTER).toString());
+        } else {
+            EVENT_LOG.info(new Event(clientId, instance, EVENT_DIRECT_REGISTER).toString());
+        }
+
+
+
+        int warmupInterval = getWarmupInterval(instance);
+        if (warmupInterval > 0) {
+            LOG.info("[HealthCheckRegisterLosslessPolicy] warmup for instance {}, warmupInterval:{}ms", instance, warmupInterval);
+            // need warmup
+            Map<BaseInstance, Long> registerTimestamp = valueContext.getValue(CTX_KEY_REGISTER_TIMESTAMP);
+            registerTimestamp.put(instance, System.currentTimeMillis());
+
+            Event warmupStartEvent = new Event(clientId, instance, EVENT_LOSSLESS_WARMUP_START);
+            EVENT_LOG.info(warmupStartEvent.toString());
+
+            healthCheckExecutor.schedule(() -> {
+                LOG.info("[HealthCheckRegisterLosslessPolicy] warmup for instance {} finished", instance);
+                Event warmupEndEvent = new Event(clientId, instance, EVENT_LOSSLESS_WARMUP_END);
+                EVENT_LOG.info(warmupEndEvent.toString());
+            }, warmupInterval, TimeUnit.MILLISECONDS);
+        } else {
+            LOG.info("[HealthCheckRegisterLosslessPolicy] no warmup for instance {}", instance);
+        }
     }
 
     @Override
@@ -235,35 +275,39 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         return finalStatus;
     }
 
+    private RegisterStatus checkWarmupStatus(Collection<BaseInstance> instances) {
+        int needWarmupInstances = 0;
+        int doneWarmupInstances = 0;
+        long current = System.currentTimeMillis();
+        Map<BaseInstance, Long> warmupTimestamps = valueContext.getValue(CTX_KEY_REGISTER_TIMESTAMP);
+        for (BaseInstance baseInstance : instances) {
+            int warmupInterval = getWarmupInterval(baseInstance);
+            if (warmupInterval > 0) {
+                needWarmupInstances++;
+                long registerTimestamp = warmupTimestamps.get(baseInstance);
+                if (registerTimestamp > 0 && current - registerTimestamp > warmupInterval) {
+                    doneWarmupInstances++;
+                }
+            }
+        }
+        if (needWarmupInstances == 0) {
+            return RegisterStatus.REGISTERED;
+        }
+        if (doneWarmupInstances == needWarmupInstances) {
+            return RegisterStatus.WARMUP_END;
+        } else {
+            return RegisterStatus.WARMUP_START;
+        }
+    }
+
     @Override
     public Map<String, HttpHandler> getHandlers() {
         if (!losslessConfig.isEnable()) {
             return Collections.emptyMap();
         }
         Map<String, HttpHandler> handlers = new HashMap<>();
-        handlers.put(ONLINE_PATH, new HttpHandler() {
-
-            private RegisterStatus lastFinalStatus;
-
-            @Override
-            public void handle(HttpExchange exchange) throws IOException {
-                Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
-                Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
-                Set<BaseInstance> instances = actionProviders.keySet();
-                RegisterStatus finalStatus = checkRegisterStatus(instances, registerStatuses);
-                if (finalStatus != lastFinalStatus) {
-                    LOG.info("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
-                            "finalStatus from {} to {}", instances, lastFinalStatus, finalStatus);
-                    // 最终一致性，无需做多线程保护
-                    lastFinalStatus = finalStatus;
-                } else {
-                    LOG.debug("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
-                            "finalStatus from {} to {}", instances, lastFinalStatus, finalStatus);
-                }
-                HttpServerUtils.writeTextToHttpServer(
-                        exchange, finalStatus.toString(), finalStatus == RegisterStatus.REGISTERED ? 200 : 503);
-            }
-        });
+        handlers.put(READINESS_PATH, new ReadinessHttpHandler());
+        handlers.put(DEPRECATED_READINESS_PATH, new ReadinessHttpHandler());
         return handlers;
     }
 
@@ -271,5 +315,117 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
     public boolean allowPortDrift() {
         // 优雅上下线端口会配置在K8S的脚本中，不允许漂移
         return false;
+    }
+
+    private Set<BaseInstance> getNeedReadinessInstances(Set<BaseInstance> instances) {
+        Set<BaseInstance> needReadinessInstances = new HashSet<>();
+        for (BaseInstance instance : instances) {
+            if (isReadinessEnable(instance)) {
+                needReadinessInstances.add(instance);
+            }
+        }
+        return needReadinessInstances;
+    }
+
+    private boolean isReadinessEnable(BaseInstance instance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
+                instance.getNamespace(), instance.getService());
+        // high priority for console configuration
+        return  Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOnline).
+                map(LosslessProto.LosslessOnline::getReadiness).
+                map(LosslessProto.Readiness::getEnable).
+                orElse(true);
+    }
+
+    private boolean isDelayRegisterEnable(BaseInstance instance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
+                instance.getNamespace(), instance.getService());
+        // high priority for console configuration
+        return  Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOnline).
+                map(LosslessProto.LosslessOnline::getDelayRegister).
+                map(LosslessProto.DelayRegister::getEnable).
+                orElse(true);
+    }
+
+    private int getWarmupInterval(BaseInstance instance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
+                instance.getNamespace(), instance.getService());
+        return Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOnline).
+                map(LosslessProto.LosslessOnline::getWarmup).
+                filter(LosslessProto.Warmup::getEnable).
+                map(LosslessProto.Warmup::getIntervalSecond).map(interval -> interval * 1000).
+                orElse(0);
+    }
+
+    private long getDelayRegisterInterval(BaseInstance instance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
+                instance.getNamespace(), instance.getService());
+        return Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOnline).
+                map(LosslessProto.LosslessOnline::getDelayRegister).
+                map(LosslessProto.DelayRegister::getIntervalSecond).
+                map(Long::valueOf).map(interval -> interval * 1000).
+                orElse(losslessConfig.getDelayRegisterInterval());
+    }
+
+    private long getHealthCheckInterval(BaseInstance instance) {
+        LosslessProto.LosslessRule losslessRule = LosslessUtils.getFirstLosslessRule(extensions,
+                instance.getNamespace(), instance.getService());
+        return Optional.ofNullable(losslessRule).
+                map(LosslessProto.LosslessRule::getLosslessOnline).
+                map(LosslessProto.LosslessOnline::getDelayRegister).
+                map(LosslessProto.DelayRegister::getHealthCheckIntervalSecond).
+                map(Long::valueOf).map(interval -> interval * 1000).
+                orElse(losslessConfig.getHealthCheckInterval());
+    }
+
+    class ReadinessHttpHandler implements HttpHandler {
+
+        private RegisterStatus lastFinalStatus;
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            Map<BaseInstance, LosslessActionProvider> actionProviders = valueContext.getValue(LosslessActionProvider.CTX_KEY);
+            Map<BaseInstance, RegisterStatus> registerStatuses = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
+            Set<BaseInstance> instances = actionProviders.keySet();
+
+            Set<BaseInstance> needReadinessInstances = getNeedReadinessInstances(instances);
+            if (CollectionUtils.isEmpty(needReadinessInstances)) {
+                LOG.debug("[HealthCheckRegisterLosslessPolicy] no instance need readiness check");
+                HttpServerUtils.writeTextToHttpServer(exchange, REPS_TEXT_NO_INSTANCE_NEED_READINESS_CHECK, 404);
+                exchange.close();
+                return;
+            }
+
+            RegisterStatus finalStatus = checkRegisterStatus(needReadinessInstances, registerStatuses);
+            if (finalStatus == RegisterStatus.REGISTERED) {
+                // all registered, need check warmup status
+                finalStatus = checkWarmupStatus(needReadinessInstances);
+            }
+            if (finalStatus != lastFinalStatus) {
+                LOG.info("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
+                        "finalStatus from {} to {}", needReadinessInstances, lastFinalStatus, finalStatus);
+                // 最终一致性，无需做多线程保护
+                lastFinalStatus = finalStatus;
+            } else {
+                LOG.debug("[HealthCheckRegisterLosslessPolicy] receive /online request for instances {}, " +
+                        "finalStatus from {} to {}", needReadinessInstances, lastFinalStatus, finalStatus);
+            }
+            int responseCode;
+            switch (finalStatus) {
+            case REGISTERED:
+            case WARMUP_END:
+                responseCode = 200;
+                break;
+            default:
+                responseCode = 503;
+                break;
+            }
+            HttpServerUtils.writeTextToHttpServer(
+                    exchange, finalStatus.toString(), responseCode);
+        }
     }
 }

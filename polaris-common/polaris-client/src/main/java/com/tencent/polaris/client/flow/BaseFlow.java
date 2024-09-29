@@ -35,6 +35,7 @@ import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
+import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.rpc.Criteria;
@@ -111,7 +112,7 @@ public class BaseFlow {
                 .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), lbPolicy);
         Criteria criteria = new Criteria();
         criteria.setHashKey(hashKey);
-        return BaseFlow.processLoadBalance(loadBalancer, criteria, instancesAfterRoute);
+        return BaseFlow.processLoadBalance(loadBalancer, criteria, instancesAfterRoute, extensions.getWeightAdjusters());
     }
 
     /**
@@ -296,8 +297,25 @@ public class BaseFlow {
     }
 
     public static Instance processLoadBalance(LoadBalancer loadBalancer, Criteria criteria,
-                                              ServiceInstances dstInstances) throws PolarisException {
+            ServiceInstances dstInstances, List<WeightAdjuster> weightAdjusters) throws PolarisException {
+
+        Map<String, InstanceWeight> dynamicWeight = new HashMap<>();
+        if (CollectionUtils.isNotEmpty(weightAdjusters)) {
+            for (WeightAdjuster weightAdjuster : weightAdjusters) {
+                dynamicWeight = weightAdjuster.timingAdjustDynamicWeight(dynamicWeight, dstInstances);
+            }
+            if (CollectionUtils.isNotEmpty(criteria.getDynamicWeight())) {
+                // rebuild dstInstances with new total weight
+                int totalWeight = 0;
+                for (Map.Entry<String, InstanceWeight> weightEntry : criteria.getDynamicWeight().entrySet()) {
+                    totalWeight += weightEntry.getValue().getDynamicWeight();
+                }
+                dstInstances = new ServiceInstancesWrap(dstInstances, dstInstances.getInstances(), totalWeight);
+            }
+        }
+        criteria.setDynamicWeight(dynamicWeight);
         Instance instance = loadBalancer.chooseInstance(criteria, dstInstances);
+        LOG.debug("[processLoadBalance] choose instance: {}", instance);
         if (null == instance) {
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
                     String.format("no suitable instance for service %s after loadbanlancer %s",

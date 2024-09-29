@@ -23,6 +23,7 @@ import com.tencent.polaris.api.config.provider.LosslessConfig;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
+import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 
 public class LosslessConfigImpl implements LosslessConfig {
 
@@ -42,6 +43,21 @@ public class LosslessConfigImpl implements LosslessConfig {
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long healthCheckInterval;
+    // plugin name, such as default
+    @JsonProperty
+    private String type;
+
+    @JsonProperty
+    private LosslessProto.DelayRegister.DelayStrategy strategy;
+
+    @JsonProperty
+    private String healthCheckProtocol;
+
+    @JsonProperty
+    private String healthCheckPath;
+
+    @JsonProperty
+    private String healthCheckMethod = "GET";
 
     @Override
     public boolean isEnable() {
@@ -80,12 +96,57 @@ public class LosslessConfigImpl implements LosslessConfig {
         return healthCheckInterval;
     }
 
+    @Override
+    public String getType() {
+        return type;
+    }
+
+    @Override
+    public LosslessProto.DelayRegister.DelayStrategy getStrategy() {
+        return strategy;
+    }
+
+    @Override
+    public String getHealthCheckProtocol() {
+        return healthCheckProtocol;
+    }
+
+    @Override
+    public String getHealthCheckPath() {
+        return healthCheckPath;
+    }
+
+    @Override
+    public String getHealthCheckMethod() {
+        return healthCheckMethod;
+    }
+
     public void setHealthCheckInterval(long healthCheckInterval) {
         this.healthCheckInterval = healthCheckInterval;
     }
 
     public void setHost(String host) {
         this.host = host;
+    }
+
+    public void setHealthCheckProtocol(String healthCheckProtocol) {
+        this.healthCheckProtocol = healthCheckProtocol;
+    }
+
+    public void setHealthCheckPath(String healthCheckPath) {
+        this.healthCheckPath = healthCheckPath;
+    }
+
+    public void setHealthCheckMethod(String healthCheckMethod) {
+        this.healthCheckMethod = healthCheckMethod;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setStrategy(LosslessProto.DelayRegister.DelayStrategy strategy) {
+        this.strategy = strategy;
     }
 
     @Override
@@ -97,6 +158,7 @@ public class LosslessConfigImpl implements LosslessConfig {
                 "lossless.port or lossless[?].port");
         ConfigUtils.validateInterval(delayRegisterInterval,
                 "lossless.delayRegisterMilli or lossless[?].delayRegisterMilli");
+        ConfigUtils.validateNull(strategy, "lossless.strategy or lossless[?].strategy");
     }
 
     @Override
@@ -118,6 +180,21 @@ public class LosslessConfigImpl implements LosslessConfig {
             if (null == healthCheckInterval || 0 == healthCheckInterval) {
                 setHealthCheckInterval(losslessConfig.getHealthCheckInterval());
             }
+            if (StringUtils.isBlank(type)) {
+                setType(losslessConfig.getType());
+            }
+            if (null == strategy) {
+                setStrategy(losslessConfig.getStrategy());
+            }
+            if (StringUtils.isBlank(healthCheckProtocol)) {
+                setHealthCheckProtocol(losslessConfig.getHealthCheckProtocol());
+            }
+            if (StringUtils.isBlank(healthCheckPath)) {
+                setHealthCheckPath(losslessConfig.getHealthCheckPath());
+            }
+            if (StringUtils.isBlank(healthCheckMethod)) {
+                setHealthCheckMethod(losslessConfig.getHealthCheckMethod());
+            }
         }
     }
 
@@ -129,6 +206,11 @@ public class LosslessConfigImpl implements LosslessConfig {
                 ", port=" + port +
                 ", delayRegisterInterval=" + delayRegisterInterval +
                 ", healthCheckInterval=" + healthCheckInterval +
+                ", type='" + type + '\'' +
+                ", strategy='" + strategy + '\'' +
+                ", healthCheckProtocol='" + healthCheckProtocol + '\'' +
+                ", healthCheckPath='" + healthCheckPath + '\'' +
+                ", healthCheckMethod='" + healthCheckMethod + '\'' +
                 '}';
     }
 }

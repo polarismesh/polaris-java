@@ -15,7 +15,9 @@
     <name>Polaris Plugins Lossless</name>
     <description>Polaris Plugins Lossless POM</description>
     <modules>
+        <module>lossless-common</module>
         <module>lossless-register</module>
         <module>lossless-deregister</module>
+        <module>lossless-warmup</module>
     </modules>
 </project>

@@ -45,6 +45,7 @@ import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
+import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -115,6 +116,8 @@ public class Extensions extends Destroyable {
 
     // 事件上报器列表
     private List<EventReporter> eventReporterList;
+
+    private List<WeightAdjuster> weightAdjusters;
 
     public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
@@ -208,6 +211,9 @@ public class Extensions extends Destroyable {
 
         // 加载事件上报插件
         loadEventReporterList(config, plugins);
+
+        // 加载预热插件
+        loadWeightAdjusters(plugins);
 
         initLocation(config, valueContext);
 
@@ -326,6 +332,25 @@ public class Extensions extends Destroyable {
                     continue;
                 }
                 eventReporterList.add((EventReporter) eventReporter);
+            }
+        }
+    }
+
+    private void loadWeightAdjusters(Supplier plugins) throws PolarisException {
+        if (!configuration.getConsumer().getWeightAdjust().isEnable()) {
+            return;
+        }
+
+        weightAdjusters = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(configuration.getConsumer().getWeightAdjust().getChain())) {
+            for (String weightAdjusterName : configuration.getConsumer().getWeightAdjust().getChain()) {
+                Plugin pluginValue = plugins
+                        .getOptionalPlugin(PluginTypes.WEIGHT_ADJUSTER.getBaseType(), weightAdjusterName);
+                if (null == pluginValue) {
+                    LOG.warn("weightAdjuster plugin {} not found", weightAdjusterName);
+                    continue;
+                }
+                weightAdjusters.add((WeightAdjuster) pluginValue);
             }
         }
     }
@@ -594,6 +619,10 @@ public class Extensions extends Destroyable {
     public List<EventReporter> getEventReporterList() {
         return eventReporterList;
     }
+
+	public List<WeightAdjuster> getWeightAdjusters() {
+		return weightAdjusters;
+	}
 
     @Override
     protected void doDestroy() {

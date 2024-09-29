@@ -22,5 +22,8 @@ public enum RegisterStatus {
     UNREGISTERED,
     // 实例已经注册
     REGISTERED,
-
+    // 实例预热开始
+    WARMUP_START,
+    // 实例预热结束
+    WARMUP_END,
 }

@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.config.provider;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 
 public interface LosslessConfig extends Verifier {
 
@@ -51,5 +52,14 @@ public interface LosslessConfig extends Verifier {
      */
     long getHealthCheckInterval();
 
+    String getType();
+
+    LosslessProto.DelayRegister.DelayStrategy getStrategy();
+
+    String getHealthCheckProtocol();
+
+    String getHealthCheckPath();
+
+    String getHealthCheckMethod();
 
 }

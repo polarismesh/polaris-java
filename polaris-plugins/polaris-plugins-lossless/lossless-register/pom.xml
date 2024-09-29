@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-plugin-api</artifactId>
+            <artifactId>lossless-common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
