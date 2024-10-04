@@ -1,0 +1,9 @@
+[
+{
+  "name":"com.tencent.polaris.factory.util.ConfigUtilsTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }, {"name":"test1","parameterTypes":[] }]
+}
+]
