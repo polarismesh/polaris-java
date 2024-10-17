@@ -5,3 +5,4 @@ com.tencent.polaris.plugins.connector.grpc.codec.ServicesCacheHandler
 com.tencent.polaris.plugins.connector.grpc.codec.FaultDetectCacheHandler
 com.tencent.polaris.plugins.connector.grpc.codec.LaneRuleCacheHandler
 com.tencent.polaris.plugins.connector.grpc.codec.NearByRouteRuleCacheHandler
+com.tencent.polaris.plugins.connector.grpc.codec.LosslessCacheHandler

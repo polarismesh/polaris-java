@@ -22,6 +22,7 @@ import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.InstanceWeight;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 【扩展点接口】动态权重调整接口
@@ -33,11 +34,12 @@ public interface WeightAdjuster extends Plugin {
 
     /**
      * Update dynamic weight.
-     *
-     * @param instances service's instances
-     * @return new dynamic weight for instances
+     * @param dynamicWeight original dynamic weight
+     * @param instances instances
+     * @return updated dynamic weight
      */
-    List<InstanceWeight> timingAdjustDynamicWeight(ServiceInstances instances);
+    Map<String, InstanceWeight> timingAdjustDynamicWeight(Map<String, InstanceWeight> dynamicWeight,
+            ServiceInstances instances);
 
     /**
      * 实时上报健康状态，并判断是否需要立刻进行动态权重调整，用于流量削峰.

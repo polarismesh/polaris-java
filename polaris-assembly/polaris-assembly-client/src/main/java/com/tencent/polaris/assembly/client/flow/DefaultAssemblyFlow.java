@@ -152,7 +152,7 @@ public class DefaultAssemblyFlow implements AssemblyFlow {
         ServiceInstances routerInstances =
                 BaseFlow.processServiceRouters(routeInfo, dstInstances, extensions.getConfigRouterChainGroup());
         LoadBalancer loadBalancer = extensions.getLoadBalancer();
-        return BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), routerInstances);
+        return BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), routerInstances, extensions.getWeightAdjusters());
     }
 
     private static CommonInstancesRequest buildCommonInstancesRequest(GetOneInstanceRequest request, Configuration configuration) {

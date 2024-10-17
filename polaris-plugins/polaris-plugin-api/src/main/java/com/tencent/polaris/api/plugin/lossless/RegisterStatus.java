@@ -22,5 +22,4 @@ public enum RegisterStatus {
     UNREGISTERED,
     // 实例已经注册
     REGISTERED,
-
 }

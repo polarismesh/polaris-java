@@ -17,6 +17,11 @@
 
 package com.tencent.polaris.api.rpc;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.tencent.polaris.api.pojo.InstanceWeight;
+
 /**
  * 用户态的服务路由因子
  *
@@ -34,6 +39,8 @@ public class Criteria {
      */
     private String hashKey;
 
+    private Map<String, InstanceWeight> dynamicWeight;
+
     public String getHashKey() {
         return hashKey;
     }
@@ -48,6 +55,14 @@ public class Criteria {
 
     public void setLbPolicy(String lbPolicy) {
         this.lbPolicy = lbPolicy;
+    }
+
+    public Map<String, InstanceWeight> getDynamicWeight() {
+        return dynamicWeight != null ? dynamicWeight : new HashMap<>();
+    }
+
+    public void setDynamicWeight(Map<String, InstanceWeight> dynamicWeight) {
+        this.dynamicWeight = dynamicWeight;
     }
 
     @Override

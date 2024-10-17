@@ -24,6 +24,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.api.utils.TimeUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,12 +47,15 @@ public class InstanceByProto implements Instance {
 
     private final int hashCode;
 
+    private final Long createTime;
+
     public InstanceByProto(ServiceKey serviceKey, ServiceProto.Instance instance,
             InstanceLocalValue localValue) {
         this.serviceKey = serviceKey;
         this.instance = instance;
         this.instanceLocalValue = localValue;
         hashCode = Objects.hash(instance.getHost(), instance.getPort());
+        createTime = TimeUtils.getCreateTime(instance.getCtime().getValue());
     }
 
     @Override
@@ -196,6 +200,11 @@ public class InstanceByProto implements Instance {
     @Override
     public String getLogicSet() {
         return instance.getLogicSet().getValue();
+    }
+
+    @Override
+    public Long getCreateTime() {
+        return createTime;
     }
 
     @Override

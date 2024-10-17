@@ -26,11 +26,13 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.InstanceWeight;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.control.Destroyable;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -47,7 +49,7 @@ public class WeightedRandomBalance extends Destroyable implements LoadBalancer {
     public Instance chooseInstance(Criteria criteria, ServiceInstances svcInstances) throws PolarisException {
         int totalWeight = svcInstances.getTotalWeight();
         if (totalWeight <= 0) {
-            totalWeight = sumTotalWeight(svcInstances);
+            totalWeight = sumTotalWeight(criteria.getDynamicWeight(), svcInstances);
         }
         if (totalWeight == 0) {
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
@@ -60,7 +62,7 @@ public class WeightedRandomBalance extends Destroyable implements LoadBalancer {
         int start = 0;
         int end = 0;
         for (Instance instance : instances) {
-            end = end + instance.getWeight();
+            end = end + getWeight(criteria.getDynamicWeight(), instance);
             if (randomValue >= start && randomValue < end) {
                 return instance;
             }
@@ -70,15 +72,27 @@ public class WeightedRandomBalance extends Destroyable implements LoadBalancer {
         return instances.get(totalWeight % instances.size());
     }
 
-    private int sumTotalWeight(ServiceInstances svcInstances) {
+    private int sumTotalWeight(Map<String, InstanceWeight> dynamicWeights, ServiceInstances svcInstances) {
         List<Instance> instances = svcInstances.getInstances();
         int totalWeight = 0;
         if (CollectionUtils.isNotEmpty(instances)) {
             for (Instance instance : instances) {
-                totalWeight += instance.getWeight();
+                totalWeight += getWeight(dynamicWeights, instance);
             }
         }
         return totalWeight;
+    }
+
+    private int getWeight(Map<String, InstanceWeight> dynamicWeights, Instance instance) {
+        if (CollectionUtils.isNotEmpty(dynamicWeights)) {
+            return instance.getWeight();
+        }
+
+        if (dynamicWeights.containsKey(instance.getId())) {
+            return dynamicWeights.get(instance.getId()).getDynamicWeight();
+        } else {
+            return instance.getWeight();
+        }
     }
 
     @Override

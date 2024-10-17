@@ -93,7 +93,8 @@ public class SyncFlow {
                 BaseFlow.processServiceRouters(routeInfo, request.getDstInstances(),
                         extensions.getConfigRouterChainGroup());
         LoadBalancer loadBalancer = extensions.getLoadBalancer();
-        Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), routerInstances);
+        Instance instance = BaseFlow.processLoadBalance(loadBalancer, request.getCriteria(), routerInstances,
+                extensions.getWeightAdjusters());
         return new InstancesResponse(dstInstances, instance, routeInfo.getSubsetName(), routeInfo.getSubsetMetadata());
     }
 
