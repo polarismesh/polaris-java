@@ -22,25 +22,11 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
-import com.tencent.polaris.logging.LoggerFactory;
-import org.slf4j.Logger;
 
 /**
  * @author wallezhang
  */
 public class PrometheusHandlerConfig implements Verifier {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusHandlerConfig.class);
-
-    public static final Integer DEFAULT_MIN_PULL_PORT = 28080;
-
-    public static final Integer DEFAULT_MAX_PULL_PORT = DEFAULT_MIN_PULL_PORT + 10;
-
-    @JsonProperty
-    private String host = "0.0.0.0";
-
-    @JsonProperty
-    private Integer port = DEFAULT_MIN_PULL_PORT;
 
     @JsonProperty
     private String path = "/metrics";
@@ -81,12 +67,6 @@ public class PrometheusHandlerConfig implements Verifier {
             if (StringUtils.isBlank(type)) {
                 setType(config.getType());
             }
-            if (StringUtils.isBlank(host)) {
-                setHost(config.getHost());
-            }
-            if (port == null) {
-                setPort(config.getPort());
-            }
             if (StringUtils.isBlank(path)) {
                 setPath(config.getPath());
             }
@@ -108,22 +88,6 @@ public class PrometheusHandlerConfig implements Verifier {
                 }
             }
         }
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
-    }
-
-    public Integer getPort() {
-        return port;
-    }
-
-    public void setPort(Integer port) {
-        this.port = port;
     }
 
     public String getPath() {
@@ -169,8 +133,6 @@ public class PrometheusHandlerConfig implements Verifier {
     @Override
     public String toString() {
         return "PrometheusHandlerConfig{" +
-                "host='" + host + '\'' +
-                ", port=" + port +
                 ", path='" + path + '\'' +
                 ", type='" + type + '\'' +
                 ", address='" + address + '\'' +

@@ -98,8 +98,8 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
      * 构造器
      *
      * @param configuration 配置
-     * @param plugins 插件工厂
-     * @param valueContext 上下文
+     * @param plugins       插件工厂
+     * @param valueContext  上下文
      */
     public SDKContext(Configuration configuration, Manager plugins, ValueContext valueContext) {
         this.configuration = configuration;
@@ -311,7 +311,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         }
         extensions.init(configuration, plugins, valueContext);
         plugins.postContextInitPlugins(extensions);
-        extensions.initHttpServer(plugins);
+        extensions.initHttpServer(configuration, plugins);
         reportClient(extensions);
         registerDestroyHook(extensions);
     }

@@ -22,6 +22,7 @@ import com.sun.net.httpserver.HttpServer;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
+import com.tencent.polaris.api.config.global.AdminConfig;
 import com.tencent.polaris.api.config.global.LocationConfig;
 import com.tencent.polaris.api.config.global.LocationProviderConfig;
 import com.tencent.polaris.api.control.Destroyable;
@@ -48,7 +49,6 @@ import com.tencent.polaris.api.plugin.stat.TraceReporter;
 import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
@@ -73,8 +73,6 @@ import java.util.concurrent.ThreadFactory;
 public class Extensions extends Destroyable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Extensions.class);
-
-    private static final int MAX_EXTEND_PORT_RANGE = 10;
 
     private static final int HTTP_SERVER_BACKLOG_SIZE = 5;
 
@@ -108,8 +106,8 @@ public class Extensions extends Destroyable {
     //全局监听端口，如果SDK需要暴露端口，则通过这里初始化
     private Map<Node, HttpServer> httpServers;
 
-    //插件与端口的映射关系
-    private Map<String, Node> pluginToNodes;
+    // Admin node
+    private Node node;
 
     // 无损上下线策略列表，按照order排序
     private List<LosslessPolicy> losslessPolicies;
@@ -355,38 +353,35 @@ public class Extensions extends Destroyable {
         }
     }
 
-    public void initHttpServer(Supplier plugins) {
+    public void initHttpServer(Configuration configuration, Supplier plugins) {
         // 遍历插件并获取监听器
-        Map<Node, Map<String, HttpHandler>> allHandlers = buildHttpHandlers(plugins);
+        Map<String, HttpHandler> allHandlers = buildHttpHandlers(plugins);
         if (allHandlers == null) return;
         //启动监听
         httpServers = new HashMap<>();
-        for (Map.Entry<Node, Map<String, HttpHandler>> entry : allHandlers.entrySet()) {
-            Node node = entry.getKey();
-            Map<String, HttpHandler> handlers = entry.getValue();
-            try {
-                HttpServer httpServer = HttpServer.create(
-                        new InetSocketAddress(node.getHost(), node.getPort()), HTTP_SERVER_BACKLOG_SIZE);
-                for (Map.Entry<String, HttpHandler> handlerEntry : handlers.entrySet()) {
-                    httpServer.createContext(handlerEntry.getKey(), handlerEntry.getValue());
-                }
-                NamedThreadFactory threadFactory = new NamedThreadFactory("polaris-java-http");
-                ExecutorService executor = Executors.newFixedThreadPool(3, threadFactory);
-                httpServer.setExecutor(executor);
-                httpServers.put(node, httpServer);
-                startServer(threadFactory, httpServer);
-            } catch (IOException e) {
-                LOG.error("create polaris http server exception. host:{}, port:{}, path:{}",
-                        node.getHost(), node.getPort(), handlers.keySet(), e);
-                throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Create polaris http server failed!", e);
+        AdminConfig adminConfig = configuration.getGlobal().getAdmin();
+        node = new Node(adminConfig.getHost(), adminConfig.getPort());
+        try {
+            HttpServer httpServer = HttpServer.create(
+                    new InetSocketAddress(node.getHost(), node.getPort()), HTTP_SERVER_BACKLOG_SIZE);
+            for (Map.Entry<String, HttpHandler> handlerEntry : allHandlers.entrySet()) {
+                httpServer.createContext(handlerEntry.getKey(), handlerEntry.getValue());
             }
+            NamedThreadFactory threadFactory = new NamedThreadFactory("polaris-java-http");
+            ExecutorService executor = Executors.newFixedThreadPool(3, threadFactory);
+            httpServer.setExecutor(executor);
+            httpServers.put(node, httpServer);
+            LOG.info("admin listen on {}:{}", node.getHost(), node.getPort());
+            startServer(threadFactory, httpServer);
+        } catch (IOException e) {
+            LOG.error("create polaris http server exception. host:{}, port:{}, path:{}",
+                    node.getHost(), node.getPort(), allHandlers.keySet(), e);
+            throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Create polaris http server failed!", e);
         }
     }
 
-    Map<Node, Map<String, HttpHandler>> buildHttpHandlers(Supplier plugins) {
-        pluginToNodes = new HashMap<>();
-        Map<Node, Boolean> nodeToDrift = new HashMap<>();
-        Map<Node, Map<String, HttpHandler>> allHandlers = new HashMap<>();
+    Map<String, HttpHandler> buildHttpHandlers(Supplier plugins) {
+        Map<String, HttpHandler> allHandlers = new HashMap<>();
         for (Plugin plugin : plugins.getAllPlugins()) {
             if (plugin instanceof HttpServerAware) {
                 HttpServerAware httpServerAware = (HttpServerAware) plugin;
@@ -395,120 +390,18 @@ public class Extensions extends Destroyable {
                     LOG.info("plugin {} has no http handlers", plugin.getName());
                     continue;
                 }
-                int port = httpServerAware.getPort();
-                String host = httpServerAware.getHost();
-                LOG.info("plugin {} listen on {}:{}, expose paths {}", plugin.getName(), host, port, handlers.keySet());
-                if (port <= 0) {
-                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                            String.format("invalid port %d to bind by plugin %s", port, plugin.getName()));
-                }
-                if (StringUtils.isBlank(host)) {
-                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                            String.format("empty host to bind by plugin %s", plugin.getName()));
-                }
-                Node node = new Node(host, port);
-                if (!allHandlers.containsKey(node)) {
-                    Node targetNode = null;
-                    for (Node existNode : allHandlers.keySet()) {
-                        if ((existNode.isAnyAddress() || node.isAnyAddress()) && existNode.getPort() == node.getPort()) {
-                            targetNode = existNode;
-                            break;
-                        }
-                    }
-                    if (null == targetNode) {
-                        allHandlers.put(node, handlers);
-                    } else {
-                        Node replcaceNode = null;
-                        if (!targetNode.isAnyAddress() && node.isAnyAddress()) {
-                            // make any address replace the specific address
-                            replcaceNode = node;
-                        }
-                        mergeHandlers(plugin, allHandlers, targetNode, handlers, replcaceNode);
-                    }
-                } else {
-                    mergeHandlers(plugin, allHandlers, node, handlers, null);
-                }
-                addNodeToDrift(plugin, node, httpServerAware, nodeToDrift);
+                LOG.info("plugin {} expose paths {}", plugin.getName(), handlers.keySet());
+                mergeHandlers(plugin, allHandlers, handlers);
             }
         }
         if (MapUtils.isEmpty(allHandlers)) {
             LOG.info("no http paths to exposed, will not listen on any ports");
             return null;
         }
-        // 校验端口重复，并自动迁移
-        for (Map.Entry<Node, Boolean> entry : nodeToDrift.entrySet()) {
-            Node node = entry.getKey();
-            Node targetNode = null;
-            for (int i = 0; i <= MAX_EXTEND_PORT_RANGE; i++) {
-                Node probeNode = new Node(node.getHost(), node.getPort() + i);
-                if (!probeNode.equals(node) && allHandlers.containsKey(probeNode)) {
-                    // check duplicated
-                    continue;
-                }
-                if (isPortAvailable(probeNode)) {
-                    targetNode = probeNode;
-                    break;
-                } else if (!entry.getValue()) {
-                    // 检查是否允许端口漂移
-                    throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                            String.format("host %s, port %d conflicted", probeNode.getHost(), probeNode.getPort()));
-                }
-            }
-            if (targetNode == null) {
-                LOG.error("fail to bind {}, port conflict within range [{}, {}]", node,
-                        node.getPort(), node.getPort() + MAX_EXTEND_PORT_RANGE);
-                throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
-                        String.format("port conflict in node %s", node));
-            }
-            if (!targetNode.equals(node)) {
-                LOG.info("listen port has changed from {} to {}", node.getPort(), targetNode.getPort());
-                allHandlers.put(targetNode, allHandlers.remove(node));
-                for (Map.Entry<String, Node> entry1 : pluginToNodes.entrySet()) {
-                    if (entry1.getValue().equals(node)) {
-                        pluginToNodes.put(entry1.getKey(), targetNode);
-                    }
-                }
-            }
-        }
         return allHandlers;
     }
 
-    private void addNodeToDrift(Plugin plugin, Node node, HttpServerAware httpServerAware, Map<Node, Boolean> nodeToDrift) {
-        boolean allowPortDrift = httpServerAware.allowPortDrift();
-        Node targetNode = null;
-        for (Node existNode : nodeToDrift.keySet()) {
-            if ((existNode.isAnyAddress() || node.isAnyAddress()) && existNode.getPort() == node.getPort()) {
-                targetNode = existNode;
-                break;
-            }
-        }
-        if (null == targetNode) {
-            pluginToNodes.put(plugin.getName(), node);
-            if (!allowPortDrift) {
-                nodeToDrift.put(node, allowPortDrift);
-            } else {
-                nodeToDrift.putIfAbsent(node, allowPortDrift);
-            }
-        } else {
-            boolean targetAllowDrift = !allowPortDrift ? allowPortDrift : nodeToDrift.get(targetNode);
-            if (targetNode.isAnyAddress()) {
-                nodeToDrift.put(targetNode, targetAllowDrift);
-                pluginToNodes.put(plugin.getName(), targetNode);
-            } else {
-                nodeToDrift.remove(targetNode);
-                nodeToDrift.put(node, targetAllowDrift);
-                for (Map.Entry<String, Node> entry : pluginToNodes.entrySet()) {
-                    if (entry.getValue().equals(targetNode)) {
-                        pluginToNodes.put(entry.getKey(), node);
-                    }
-                }
-                pluginToNodes.put(plugin.getName(), node);
-            }
-        }
-    }
-
-    private static void mergeHandlers(Plugin plugin, Map<Node, Map<String, HttpHandler>> allHandlers, Node existNode, Map<String, HttpHandler> handlers, Node replaceNode) {
-        Map<String, HttpHandler> existsHandlers = allHandlers.get(existNode);
+    private static void mergeHandlers(Plugin plugin, Map<String, HttpHandler> existsHandlers, Map<String, HttpHandler> handlers) {
         // validate duplicated paths
         for (String key : handlers.keySet()) {
             if (existsHandlers.containsKey(key)) {
@@ -517,14 +410,10 @@ public class Extensions extends Destroyable {
             }
         }
         existsHandlers.putAll(handlers);
-        if (null != replaceNode) {
-            allHandlers.remove(existNode);
-            allHandlers.put(replaceNode, existsHandlers);
-        }
     }
 
-    public Node getHttpServerNodeByPlugin(String name) {
-        return pluginToNodes.get(name);
+    public Node getHttpServerNode() {
+        return node;
     }
 
     private static void startServer(ThreadFactory threadFactory, HttpServer httpServer) {

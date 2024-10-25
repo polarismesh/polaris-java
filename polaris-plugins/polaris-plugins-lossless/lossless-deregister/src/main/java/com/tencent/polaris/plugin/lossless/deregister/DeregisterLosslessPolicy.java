@@ -65,16 +65,6 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
     private Extensions extensions;
 
     @Override
-    public String getHost() {
-        return losslessConfig.getHost();
-    }
-
-    @Override
-    public int getPort() {
-        return losslessConfig.getPort();
-    }
-
-    @Override
     public Map<String, HttpHandler> getHandlers() {
         if (!losslessConfig.isEnable()) {
             return Collections.emptyMap();
@@ -82,12 +72,6 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
         Map<String, HttpHandler> handlers = new HashMap<>();
         handlers.put(OFFLINE_PATH, new DeregisterHandler());
         return handlers;
-    }
-
-    @Override
-    public boolean allowPortDrift() {
-        // 优雅上下线端口会配置在K8S的脚本中，不允许漂移
-        return false;
     }
 
     private class DeregisterHandler implements HttpHandler {

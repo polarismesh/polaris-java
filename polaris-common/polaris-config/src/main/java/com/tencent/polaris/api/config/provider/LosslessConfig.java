@@ -24,30 +24,21 @@ public interface LosslessConfig extends Verifier {
 
     /**
      * 是否启用无损上下线
+     *
      * @return 启用无损上下线
      */
     boolean isEnable();
 
     /**
-     * 无损下线和获取上线状态的监听IP
-     * @return host
-     */
-    String getHost();
-
-    /**
-     * 无损下线和获取上线状态的监听端口
-     * @return port
-     */
-    int getPort();
-
-    /**
      * 如果没有实现健康检查，延迟注册的时间，单位毫秒
+     *
      * @return long
      */
     long getDelayRegisterInterval();
 
     /**
      * 获取健康探测的间隔时间
+     *
      * @return long
      */
     long getHealthCheckInterval();

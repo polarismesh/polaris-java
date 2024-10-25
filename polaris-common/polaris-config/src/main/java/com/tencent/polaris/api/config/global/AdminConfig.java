@@ -3,8 +3,8 @@
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the BSD 3-Clause License (the "License");
- * you may not use this file except in compliance with the License.
+ *  Licensed under the BSD 3-Clause License (the "License");
+ *  you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/BSD-3-Clause
@@ -15,21 +15,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin;
+package com.tencent.polaris.api.config.global;
 
-import com.sun.net.httpserver.HttpHandler;
-
-import java.util.Map;
+import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
- * plugin who want to expose port should implement this interface
+ * Admin Config.
+ *
+ * @author Haotian Zhang
  */
-public interface HttpServerAware {
+public interface AdminConfig extends Verifier {
 
     /**
-     * get the http server handlers
+     * Admin的监听IP
      *
-     * @return handlers
+     * @return host
      */
-    Map<String, HttpHandler> getHandlers();
+    String getHost();
+
+    /**
+     * Admin的监听端口
+     *
+     * @return port
+     */
+    int getPort();
 }

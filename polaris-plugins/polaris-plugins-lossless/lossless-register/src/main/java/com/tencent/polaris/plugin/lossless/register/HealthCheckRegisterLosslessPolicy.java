@@ -205,7 +205,7 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
     }
 
     private void doRegister(BaseInstance instance, LosslessActionProvider losslessActionProvider,
-            InstanceProperties instanceProperties, boolean isDelayRegister) {
+                            InstanceProperties instanceProperties, boolean isDelayRegister) {
         losslessActionProvider.doRegister(instanceProperties);
         Map<BaseInstance, RegisterStatus> registerStatusMap = valueContext.getValue(CTX_KEY_REGISTER_STATUS);
         registerStatusMap.put(instance, RegisterStatus.REGISTERED);
@@ -235,16 +235,6 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         } else {
             LOG.info("[HealthCheckRegisterLosslessPolicy] no warmup for instance {}", instance);
         }
-    }
-
-    @Override
-    public String getHost() {
-        return losslessConfig.getHost();
-    }
-
-    @Override
-    public int getPort() {
-        return losslessConfig.getPort();
     }
 
     static RegisterStatus checkRegisterStatus(
@@ -284,16 +274,10 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         return handlers;
     }
 
-    @Override
-    public boolean allowPortDrift() {
-        // 优雅上下线端口会配置在K8S的脚本中，不允许漂移
-        return false;
-    }
-
     private boolean isDelayRegisterEnable(BaseInstance baseInstance) {
         LosslessProto.LosslessRule losslessRule = LosslessUtils.getMatchLosslessRule(extensions, baseInstance);
         // high priority for console configuration
-        return  Optional.ofNullable(losslessRule).
+        return Optional.ofNullable(losslessRule).
                 map(LosslessProto.LosslessRule::getLosslessOnline).
                 map(LosslessProto.LosslessOnline::getDelayRegister).
                 map(LosslessProto.DelayRegister::getEnable).

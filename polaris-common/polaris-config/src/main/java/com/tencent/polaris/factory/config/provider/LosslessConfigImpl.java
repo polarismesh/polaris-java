@@ -31,12 +31,6 @@ public class LosslessConfigImpl implements LosslessConfig {
     private Boolean enable;
 
     @JsonProperty
-    private String host;
-
-    @JsonProperty
-    private Integer port;
-
-    @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long delayRegisterInterval;
 
@@ -65,26 +59,12 @@ public class LosslessConfigImpl implements LosslessConfig {
     }
 
     @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public int getPort() {
-        return port;
-    }
-
-    @Override
     public long getDelayRegisterInterval() {
         return delayRegisterInterval;
     }
 
     public void setEnable(Boolean enable) {
         this.enable = enable;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     public void setDelayRegisterInterval(long delayRegisterInterval) {
@@ -125,10 +105,6 @@ public class LosslessConfigImpl implements LosslessConfig {
         this.healthCheckInterval = healthCheckInterval;
     }
 
-    public void setHost(String host) {
-        this.host = host;
-    }
-
     public void setHealthCheckProtocol(String healthCheckProtocol) {
         this.healthCheckProtocol = healthCheckProtocol;
     }
@@ -151,11 +127,8 @@ public class LosslessConfigImpl implements LosslessConfig {
 
     @Override
     public void verify() {
-        ConfigUtils.validateString(host, "lossless.host or lossless[?].host");
         ConfigUtils.validateNull(enable,
                 "lossless.enable or lossless[?].enable");
-        ConfigUtils.validatePositiveInteger(port,
-                "lossless.port or lossless[?].port");
         ConfigUtils.validateInterval(delayRegisterInterval,
                 "lossless.delayRegisterMilli or lossless[?].delayRegisterMilli");
         ConfigUtils.validateNull(strategy, "lossless.strategy or lossless[?].strategy");
@@ -167,12 +140,6 @@ public class LosslessConfigImpl implements LosslessConfig {
             LosslessConfig losslessConfig = (LosslessConfig) defaultObject;
             if (null == enable) {
                 setEnable(losslessConfig.isEnable());
-            }
-            if (null == port || 0 == port) {
-                setPort(losslessConfig.getPort());
-            }
-            if (StringUtils.isBlank(host)) {
-                setHost(losslessConfig.getHost());
             }
             if (null == delayRegisterInterval) {
                 setDelayRegisterInterval(losslessConfig.getDelayRegisterInterval());
@@ -202,8 +169,6 @@ public class LosslessConfigImpl implements LosslessConfig {
     public String toString() {
         return "LosslessConfigImpl{" +
                 "enable=" + enable +
-                ", host='" + host + '\'' +
-                ", port=" + port +
                 ", delayRegisterInterval=" + delayRegisterInterval +
                 ", healthCheckInterval=" + healthCheckInterval +
                 ", type='" + type + '\'' +
