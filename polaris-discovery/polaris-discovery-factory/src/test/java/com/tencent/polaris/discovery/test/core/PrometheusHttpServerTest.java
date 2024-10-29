@@ -21,6 +21,7 @@ package com.tencent.polaris.discovery.test.core;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.StatReporterConfig;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.factory.config.global.AdminConfigImpl;
 import com.tencent.polaris.factory.config.global.StatReporterConfigImpl;
 import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConfig;
 import com.tencent.polaris.test.common.TestUtils;
@@ -37,10 +38,10 @@ public class PrometheusHttpServerTest {
     @Test
     public void testHttpServerWithPort() throws IOException {
         Configuration configuration = TestUtils.configWithEnvAddress();
-        StatReporterConfigImpl statReporterConfig = (StatReporterConfigImpl)configuration.getGlobal().getStatReporter();
+        ((AdminConfigImpl) configuration.getGlobal().getAdmin()).setHost("0.0.0.0");
+        ((AdminConfigImpl) configuration.getGlobal().getAdmin()).setPort(18080);
+        StatReporterConfigImpl statReporterConfig = (StatReporterConfigImpl) configuration.getGlobal().getStatReporter();
         PrometheusHandlerConfig prometheusHandlerConfig = new PrometheusHandlerConfig();
-        prometheusHandlerConfig.setHost("0.0.0.0");
-        prometheusHandlerConfig.setPort(18080);
         prometheusHandlerConfig.setPath("/metric");
         prometheusHandlerConfig.setType("pull");
         statReporterConfig.setPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, prometheusHandlerConfig);
@@ -58,10 +59,10 @@ public class PrometheusHttpServerTest {
     @Test
     public void testHttpServerRandomPort() throws IOException {
         Configuration configuration = TestUtils.configWithEnvAddress();
-        StatReporterConfigImpl statReporterConfig = (StatReporterConfigImpl)configuration.getGlobal().getStatReporter();
+        ((AdminConfigImpl) configuration.getGlobal().getAdmin()).setHost("0.0.0.0");
+        ((AdminConfigImpl) configuration.getGlobal().getAdmin()).setPort(0);
+        StatReporterConfigImpl statReporterConfig = (StatReporterConfigImpl) configuration.getGlobal().getStatReporter();
         PrometheusHandlerConfig prometheusHandlerConfig = new PrometheusHandlerConfig();
-        prometheusHandlerConfig.setHost("0.0.0.0");
-        prometheusHandlerConfig.setPort(0);
         prometheusHandlerConfig.setPath("/metric");
         prometheusHandlerConfig.setType("pull");
         statReporterConfig.setPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, prometheusHandlerConfig);
@@ -85,10 +86,10 @@ public class PrometheusHttpServerTest {
     @Test
     public void testHttpServerWithPath() throws IOException {
         Configuration configuration = TestUtils.configWithEnvAddress();
-        StatReporterConfigImpl statReporterConfig = (StatReporterConfigImpl)configuration.getGlobal().getStatReporter();
+        ((AdminConfigImpl) configuration.getGlobal().getAdmin()).setHost("0.0.0.0");
+        ((AdminConfigImpl) configuration.getGlobal().getAdmin()).setPort(18081);
+        StatReporterConfigImpl statReporterConfig = (StatReporterConfigImpl) configuration.getGlobal().getStatReporter();
         PrometheusHandlerConfig prometheusHandlerConfig = new PrometheusHandlerConfig();
-        prometheusHandlerConfig.setHost("0.0.0.0");
-        prometheusHandlerConfig.setPort(18081);
         prometheusHandlerConfig.setPath("/customMetrics");
         prometheusHandlerConfig.setType("pull");
         statReporterConfig.setPluginConfig(StatReporterConfig.DEFAULT_REPORTER_PROMETHEUS, prometheusHandlerConfig);

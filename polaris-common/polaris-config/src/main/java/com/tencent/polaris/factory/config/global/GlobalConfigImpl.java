@@ -62,8 +62,10 @@ public class GlobalConfigImpl implements GlobalConfig {
     private EventReporterConfigImpl eventReporter;
 
     @JsonProperty
-    private LocationConfigImpl location;
+    private AdminConfigImpl admin;
 
+    @JsonProperty
+    private LocationConfigImpl location;
 
     @Override
     public SystemConfigImpl getSystem() {
@@ -79,7 +81,6 @@ public class GlobalConfigImpl implements GlobalConfig {
     public ServerConnectorConfigImpl getServerConnector() {
         return serverConnector;
     }
-
 
     @Override
     public LocationConfig getLocation() {
@@ -128,6 +129,11 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
+    public AdminConfigImpl getAdmin() {
+        return admin;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(system, "system");
         ConfigUtils.validateNull(api, "api");
@@ -138,6 +144,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         ConfigUtils.validateNull(statReporter, "statReporter");
         ConfigUtils.validateNull(traceReporter, "traceReporter");
         ConfigUtils.validateNull(eventReporter, "eventReporter");
+        ConfigUtils.validateNull(admin, "admin");
 
         system.verify();
         api.verify();
@@ -155,6 +162,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         statReporter.verify();
         traceReporter.verify();
         eventReporter.verify();
+        admin.verify();
     }
 
     @Override
@@ -176,6 +184,9 @@ public class GlobalConfigImpl implements GlobalConfig {
         }
         if (null == eventReporter) {
             eventReporter = new EventReporterConfigImpl();
+        }
+        if (null == admin) {
+            admin = new AdminConfigImpl();
         }
         if (null == location) {
             location = new LocationConfigImpl();
@@ -201,6 +212,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             statReporter.setDefault(globalConfig.getStatReporter());
             traceReporter.setDefault(globalConfig.getTraceReporter());
             eventReporter.setDefault(globalConfig.getEventReporter());
+            admin.setDefault(globalConfig.getAdmin());
             location.setDefault(globalConfig.getLocation());
         }
     }
@@ -215,6 +227,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 ", statReporter=" + statReporter +
                 ", traceReporter=" + traceReporter +
                 ", eventReporter=" + eventReporter +
+                ", admin=" + admin +
                 ", location=" + location +
                 '}';
     }

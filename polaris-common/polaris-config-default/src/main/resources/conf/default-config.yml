@@ -86,6 +86,12 @@ global:
     #描述: 事件上报插件名列表
     reporters:
       - logger
+  # 描述：Admin相关的配置
+  admin:
+    # 描述：Admin的监听的IP
+    host: 0.0.0.0
+    # 描述：Admin监听的端口
+    port: 28080
   #描述: 监控及日志数据上报相关配置
   statReporter:
     #描述: 是否启用上报
@@ -97,19 +103,10 @@ global:
         #默认值:pull
         #范围:pull|push
         type: pull
-        #描述: 设置 prometheus http-server 的监听端口
-        #类型:int
-        #默认值: 28080, 默认会自动从 [28080, 28090] 进行逐个探测占用
-        #如果设置为负数，则不会开启默认的http-server，如果设置为0，则随机选择一个可用端口进行启动 http-server
-        port: 28080
         #描述: 设置 prometheus http-server 的拉取path
         #类型:string
         #默认值: /metric
         path: /metric
-        #描述: 设置 prometheus http-server 的监听的IP
-        #类型:string
-        #默认值: 0.0.0.0
-        host: 0.0.0.0
         # #描述: 设置 pushgateway 的地址, 仅 type == push 时生效
         # #类型:string
         # #默认 global.serverConnector.addresses[0]:9091
@@ -301,10 +298,6 @@ provider:
   lossless:
     # 是否启用优雅上下线
     enable: false
-    # 优雅上下线功能需要对外提供接口，接口的监听IP
-    host: 0.0.0.0
-    # 优雅上下线功能需要对外提供接口，接口的监听端口
-    port: 28080
     strategy: DELAY_BY_TIME
     # 优雅上线时，如果没有启动探测，则兜底延迟多久会进行上线
     delayRegisterInterval: 30s

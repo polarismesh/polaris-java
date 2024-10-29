@@ -70,8 +70,8 @@ public class LosslessTest {
     public void testLosslessRegisterWithoutHealthCheck() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setEnable(true);
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(38080);
+        ((LosslessConfigImpl) configurationImpl.getProvider().getLossless()).setEnable(true);
+        configurationImpl.getGlobal().getAdmin().setPort(38080);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =
@@ -116,8 +116,8 @@ public class LosslessTest {
     public void testLosslessRegisterWithHealthCheck() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setEnable(true);
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(38081);
+        ((LosslessConfigImpl) configurationImpl.getProvider().getLossless()).setEnable(true);
+        configurationImpl.getGlobal().getAdmin().setPort(38081);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =
@@ -162,8 +162,8 @@ public class LosslessTest {
     public void testLosslessDeregister() {
         Configuration configuration = TestUtils.configWithEnvAddress();
         ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setEnable(true);
-        ((LosslessConfigImpl)configurationImpl.getProvider().getLossless()).setPort(38082);
+        ((LosslessConfigImpl) configurationImpl.getProvider().getLossless()).setEnable(true);
+        configurationImpl.getGlobal().getAdmin().setPort(38082);
         try (SDKContext sdkContext = SDKContext.initContextByConfig(configuration)) {
             LosslessAPI losslessAPI = DiscoveryAPIFactory.createLosslessAPIByContext(sdkContext);
             DemoLosslessActionProvider demoLosslessActionProvider =

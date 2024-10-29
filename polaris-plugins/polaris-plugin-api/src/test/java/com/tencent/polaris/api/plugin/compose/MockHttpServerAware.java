@@ -17,9 +17,6 @@
 
 package com.tencent.polaris.api.plugin.compose;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.sun.net.httpserver.HttpHandler;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.HttpServerAware;
@@ -27,76 +24,46 @@ import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class MockHttpServerAware implements HttpServerAware, Plugin {
 
-	private String host;
+    private final Map<String, HttpHandler> handlers = new HashMap<>();
 
-	private int port;
+    private String name;
 
-	private final Map<String, HttpHandler> handlers = new HashMap<>();
+    @Override
+    public Map<String, HttpHandler> getHandlers() {
+        return handlers;
+    }
 
-	private String name;
+    @Override
+    public String getName() {
+        return name;
+    }
 
-	private boolean portDrift;
+    @Override
+    public PluginType getType() {
+        return null;
+    }
 
-	@Override
-	public String getHost() {
-		return host;
-	}
+    @Override
+    public void init(InitContext ctx) throws PolarisException {
 
-	@Override
-	public int getPort() {
-		return port;
-	}
+    }
 
-	@Override
-	public Map<String, HttpHandler> getHandlers() {
-		return handlers;
-	}
+    @Override
+    public void postContextInit(Extensions ctx) throws PolarisException {
 
-	@Override
-	public boolean allowPortDrift() {
-		return portDrift;
-	}
+    }
 
-	@Override
-	public String getName() {
-		return name;
-	}
+    @Override
+    public void destroy() {
 
-	@Override
-	public PluginType getType() {
-		return null;
-	}
+    }
 
-	@Override
-	public void init(InitContext ctx) throws PolarisException {
-
-	}
-
-	@Override
-	public void postContextInit(Extensions ctx) throws PolarisException {
-
-	}
-
-	@Override
-	public void destroy() {
-
-	}
-
-	void setHost(String host) {
-		this.host = host;
-	}
-
-	void setPort(int port) {
-		this.port = port;
-	}
-
-	void setName(String name) {
-		this.name = name;
-	}
-
-	void setPortDrift(boolean portDrift) {
-		this.portDrift = portDrift;
-	}
+    void setName(String name) {
+        this.name = name;
+    }
 }

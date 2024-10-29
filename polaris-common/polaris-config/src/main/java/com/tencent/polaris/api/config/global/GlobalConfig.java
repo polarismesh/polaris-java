@@ -80,6 +80,13 @@ public interface GlobalConfig extends Verifier {
     EventReporterConfig getEventReporter();
 
     /**
+     * Configuration of prefix of "global.admin"
+     *
+     * @return
+     */
+    AdminConfig getAdmin();
+
+    /**
      * 获取地理位置提供者配置信息
      *
      * @return location
