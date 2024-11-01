@@ -23,12 +23,7 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-logging</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-metadata</artifactId>
+            <artifactId>polaris-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

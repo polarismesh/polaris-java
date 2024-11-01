@@ -173,6 +173,11 @@ public class RuleUtils {
     }
 
     // 匹配metadata
+    public static boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta, MetadataContainerGroup metadataContainerGroup) {
+        return matchMetadata(ruleMeta, destMeta, metadataContainerGroup, true, Collections.emptyMap(), Collections.emptyMap(), null);
+    }
+
+    // 匹配metadata
     public static boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
                                         MetadataContainerGroup metadataContainerGroup, boolean isMatchSource,
                                         Map<String, String> multiEnvRouterParamMap, Map<String, String> variables,
@@ -223,7 +228,7 @@ public class RuleUtils {
                     destMetaValue = metadataContainerGroup.getCustomMetadataContainer().getRawMetadataStringValue(ruleMetaKey);
                 }
             }
-            if (StringUtils.isBlank(destMetaValue) && destMeta.containsKey(ruleMetaKey)) {
+            if (StringUtils.isBlank(destMetaValue) && CollectionUtils.isNotEmpty(destMeta) && destMeta.containsKey(ruleMetaKey)) {
                 destMetaValue = destMeta.get(ruleMetaKey);
             }
             if (StringUtils.isNotBlank(destMetaValue)) {

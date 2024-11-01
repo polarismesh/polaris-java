@@ -52,6 +52,11 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
+            <artifactId>router-lane</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>router-healthy</artifactId>
             <version>${project.version}</version>
         </dependency>

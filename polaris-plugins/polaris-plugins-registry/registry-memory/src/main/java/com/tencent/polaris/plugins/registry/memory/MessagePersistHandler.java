@@ -238,6 +238,8 @@ public class MessagePersistHandler {
         File persistTmpFile = new File(persistDirPath + File.separator + tmpFileName);
         File persistLockFile = new File(persistDirPath + File.separator + lockFileName);
         try {
+            // Occasionally the directory cannot be found, so we need to init every time.
+            init();
             if (!persistLockFile.exists()) {
                 if (!persistLockFile.createNewFile()) {
                     LOG.warn("lock file {} already exists", persistLockFile.getAbsolutePath());
