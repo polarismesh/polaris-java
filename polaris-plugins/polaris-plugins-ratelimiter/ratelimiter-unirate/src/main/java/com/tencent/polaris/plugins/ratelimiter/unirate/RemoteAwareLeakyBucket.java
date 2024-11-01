@@ -20,19 +20,14 @@ package com.tencent.polaris.plugins.ratelimiter.unirate;
 import com.google.protobuf.util.Durations;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.api.plugin.ratelimiter.AmountInfo;
-import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
-import com.tencent.polaris.api.plugin.ratelimiter.LocalQuotaInfo;
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
-import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
+import com.tencent.polaris.api.plugin.ratelimiter.*;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+import org.slf4j.Logger;
+
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
 
 /**
  * Quota bucket implement of leaky bucket.
@@ -102,6 +97,11 @@ public class RemoteAwareLeakyBucket implements QuotaBucket {
     @Override
     public QuotaResult allocateQuota(long curTimeMs, int count) throws PolarisException {
         return leakyBucket.getQuota();
+    }
+
+    @Override
+    public void returnQuota(long allocateTimeMs, int count) throws PolarisException {
+
     }
 
     @Override

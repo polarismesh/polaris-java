@@ -27,8 +27,10 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.FlowControlParam;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.ratelimit.api.rpc.Argument;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaRequest;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,19 +46,25 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
 
     private final int count;
 
+    private final MetadataContext metadataContext;
+
     //服务规则
     private ServiceRule rateLimitRule;
 
     private final FlowControlParam flowControlParam;
 
+    private final long currentTimestamp;
+
     public CommonQuotaRequest(QuotaRequest quotaRequest, Configuration configuration) {
         svcEventKey = new ServiceEventKey(new ServiceKey(quotaRequest.getNamespace(), quotaRequest.getService()),
                 EventType.RATE_LIMITING);
         arguments = parseArguments(quotaRequest.getArguments());
+        metadataContext = quotaRequest.getMetadataContext();
         method = quotaRequest.getMethod();
         count = quotaRequest.getCount();
         flowControlParam = new DefaultFlowControlParam();
         BaseFlow.buildFlowControlParam(quotaRequest, configuration, flowControlParam);
+        currentTimestamp = System.currentTimeMillis();
     }
 
     private Map<Integer, Map<String, String>> parseArguments(Collection<Argument> arguments) {
@@ -95,8 +103,13 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
         return method;
     }
 
+    @Deprecated
     public Map<Integer, Map<String, String>> getArguments() {
         return arguments;
+    }
+
+    public MetadataContext getMetadataContext() {
+        return metadataContext;
     }
 
     public ServiceRule getRateLimitRule() {
@@ -105,6 +118,10 @@ public class CommonQuotaRequest implements ServiceEventKeysProvider {
 
     public FlowControlParam getFlowControlParam() {
         return flowControlParam;
+    }
+
+    public long getCurrentTimestamp() {
+        return currentTimestamp;
     }
 
     public int getCount() {

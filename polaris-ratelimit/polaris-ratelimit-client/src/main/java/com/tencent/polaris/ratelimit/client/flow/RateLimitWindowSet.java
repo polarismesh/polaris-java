@@ -18,16 +18,18 @@
 package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+import org.slf4j.Logger;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import org.slf4j.Logger;
 
 public class RateLimitWindowSet {
 
@@ -37,6 +39,8 @@ public class RateLimitWindowSet {
      * 被限流服务的serviceKey
      */
     private final ServiceKey serviceKey;
+
+    private final Extensions extensions;
 
     private final RateLimitExtension rateLimitExtension;
 
@@ -59,13 +63,14 @@ public class RateLimitWindowSet {
     /**
      * syncFlow
      *
-     * @param serviceKey 服务名
+     * @param serviceKey         服务名
      * @param rateLimitExtension 扩展插件
-     * @param clientId 客户端唯一标识
+     * @param clientId           客户端唯一标识
      */
-    public RateLimitWindowSet(ServiceKey serviceKey, RateLimitExtension rateLimitExtension, String clientId) {
+    public RateLimitWindowSet(ServiceKey serviceKey, Extensions extensions, RateLimitExtension rateLimitExtension, String clientId) {
         this.clientId = clientId;
         this.serviceKey = serviceKey;
+        this.extensions = extensions;
         this.rateLimitExtension = rateLimitExtension;
         this.asyncRateLimitConnector = new AsyncRateLimitConnector();
     }
@@ -81,12 +86,12 @@ public class RateLimitWindowSet {
     /**
      * 增加限流窗口
      *
-     * @param request 请求
+     * @param request   请求
      * @param labelsStr 标签
      * @return window
      */
     public RateLimitWindow addRateLimitWindow(CommonQuotaRequest request, String labelsStr,
-            RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
+                                              RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
         Rule targetRule = initCriteria.getRule();
         String revision = targetRule.getRevision().getValue();
         Function<String, RateLimitWindow> createRateLimitWindow = new Function<String, RateLimitWindow>() {
@@ -107,6 +112,10 @@ public class RateLimitWindowSet {
             return mainWindow;
         }
         return container.computeLabelWindow(labelsStr, createRateLimitWindow);
+    }
+
+    public Extensions getExtensions() {
+        return extensions;
     }
 
     public RateLimitExtension getRateLimitExtension() {

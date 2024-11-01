@@ -318,6 +318,16 @@
                 <artifactId>ratelimiter-unirate</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>ratelimiter-reject-concurrency</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>ratelimiter-tsf</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- polaris-plugins-registry-->
             <dependency>

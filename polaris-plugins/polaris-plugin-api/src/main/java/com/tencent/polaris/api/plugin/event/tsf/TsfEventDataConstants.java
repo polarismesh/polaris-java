@@ -25,11 +25,13 @@ public interface TsfEventDataConstants {
     Integer MAX_BATCH_SIZE = 50;
 
     String CIRCUIT_BREAKER_EVENT_NAME = "circuit_break";
+    String RATE_LIMIT_EVENT_NAME = "tsf_rate_limit";
 
     // dimensions keys
     String APP_ID_KEY = "app_id";
     String NAMESPACE_ID_KEY = "namespace_id";
     String SERVICE_NAME = "service_name";
+    String APPLICATION_ID = "application_id";
 
     // additionalMsg keys
     String UPSTREAM_SERVICE_KEY = "upstream_service";
@@ -39,6 +41,8 @@ public interface TsfEventDataConstants {
     String ISOLATION_OBJECT_KEY = "isolation_object";
     String FAILURE_RATE_KEY = "failure_rate";
     String SLOW_CALL_DURATION_KEY = "slow_call_rate";
+    String RULE_ID_KEY = "rule_id";
+    String RULE_DETAIL_KEY = "rule_detail";
 
     /**
      * 熔断恢复

@@ -34,6 +34,9 @@ public class TsfEventReporterConfig implements Verifier {
     @JsonProperty
     private String token;
 
+    @JsonProperty
+    private String applicationId;
+
     @Override
     public void verify() {
         ConfigUtils.validateString(eventMasterIp, "global.eventReporter.plugins.tsf.eventMasterIp");
@@ -44,7 +47,7 @@ public class TsfEventReporterConfig implements Verifier {
         ConfigUtils.validateString(tsfNamespaceId, "global.eventReporter.plugins.tsf.tsfNamespaceId");
         ConfigUtils.validateString(serviceName, "global.eventReporter.plugins.tsf.serviceName");
         ConfigUtils.validateString(token, "global.eventReporter.plugins.tsf.token");
-
+        ConfigUtils.validateString(applicationId, "global.eventReporter.plugins.tsf.applicationId");
     }
 
     @Override
@@ -74,6 +77,9 @@ public class TsfEventReporterConfig implements Verifier {
             }
             if (StringUtils.isBlank(token)) {
                 setToken(tsfEventReporterConfig.getToken());
+            }
+            if (StringUtils.isBlank(applicationId)) {
+                setApplicationId(tsfEventReporterConfig.getApplicationId());
             }
         }
     }
@@ -140,5 +146,13 @@ public class TsfEventReporterConfig implements Verifier {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
     }
 }

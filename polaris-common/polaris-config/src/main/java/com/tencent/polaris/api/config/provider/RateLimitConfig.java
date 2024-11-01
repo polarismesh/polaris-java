@@ -19,7 +19,9 @@ package com.tencent.polaris.api.config.provider;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
+import java.util.Map;
 
 public interface RateLimitConfig extends PluginConfig, Verifier {
 
@@ -85,6 +87,8 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
      * @return boolean
      */
     boolean isReportMetrics();
+
+    Map<String, String> getMetadata();
 
     enum Fallback {
         pass, reject,

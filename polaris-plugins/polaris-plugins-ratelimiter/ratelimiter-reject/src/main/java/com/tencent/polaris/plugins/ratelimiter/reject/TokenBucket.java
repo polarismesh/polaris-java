@@ -24,9 +24,10 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.BucketShareInfo;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.UpdateIdentifier;
 import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
+import org.slf4j.Logger;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
 
 public class TokenBucket implements Comparable<TokenBucket> {
 
@@ -98,6 +99,10 @@ public class TokenBucket implements Comparable<TokenBucket> {
         return ruleToken.get() * instanceCount.get();
     }
 
+    public long getValidDurationMs() {
+        return validDurationMs;
+    }
+
     public SlidingWindow getSlidingWindow() {
         return slidingWindow;
     }
@@ -106,8 +111,8 @@ public class TokenBucket implements Comparable<TokenBucket> {
      * 归还配额
      *
      * @param identifier 时间标识
-     * @param token 配额
-     * @param mode 限流模式
+     * @param token      配额
+     * @param mode       限流模式
      */
     public void giveBackToken(UpdateIdentifier identifier, long token, TokenBucketMode mode) {
         try (LockWrapper readLock = this.lock.readLock()) {
@@ -230,7 +235,7 @@ public class TokenBucket implements Comparable<TokenBucket> {
 
     //尝试只读方式分配远程配额
     private AllocateResult allocateRemoteReadOnly(int token, long nowMs, UpdateIdentifier identifier,
-            AllocateResult result) {
+                                                  AllocateResult result) {
         try (LockWrapper readLock = this.lock.readLock()) {
             readLock.lock();
             if (isRemoteNotExpired(nowMs)) {
@@ -302,7 +307,7 @@ public class TokenBucket implements Comparable<TokenBucket> {
 
     //远端分配完整流程
     private AllocateResult tryAllocateRemote(int token, long nowMs, UpdateIdentifier identifier,
-            AllocateResult result) {
+                                             AllocateResult result) {
         AllocateResult allocateResult = allocateRemoteReadOnly(token, nowMs, identifier, result);
         if (allocateResult.isSuccess()) {
             return allocateResult;
@@ -328,15 +333,15 @@ public class TokenBucket implements Comparable<TokenBucket> {
     /**
      * 尝试分配配额
      *
-     * @param token 所需配额
-     * @param nowMs 当前时间点
+     * @param token      所需配额
+     * @param nowMs      当前时间点
      * @param identifier 标识
-     * @param mode 配额模式
-     * @param result 出参，分配结果
+     * @param mode       配额模式
+     * @param result     出参，分配结果
      * @return 分配结果
      */
     public AllocateResult tryAllocateToken(TokenBucketMode mode, int token, long nowMs, UpdateIdentifier identifier,
-            AllocateResult result) {
+                                           AllocateResult result) {
         switch (mode) {
             case LOCAL:
                 return tryAllocateLocal(token, nowMs, identifier, result);
@@ -368,7 +373,7 @@ public class TokenBucket implements Comparable<TokenBucket> {
      * 记录真实分配的配额
      *
      * @param passed 已分配配额
-     * @param nowMs 时间点
+     * @param nowMs  时间点
      */
     public void confirmPassed(long passed, long nowMs) {
         slidingWindow.addAndGetCurrentPassed(nowMs, passed);
@@ -378,7 +383,7 @@ public class TokenBucket implements Comparable<TokenBucket> {
      * 记录真实限流记录
      *
      * @param limited 已限流记录
-     * @param nowMs 时间点
+     * @param nowMs   时间点
      */
     public void confirmLimited(long limited, long nowMs) {
         slidingWindow.addAndGetCurrentLimited(nowMs, limited);

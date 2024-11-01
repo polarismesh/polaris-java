@@ -26,47 +26,49 @@ import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult.Code;
 import com.tencent.polaris.api.plugin.registry.AbstractResourceEventListener;
-import com.tencent.polaris.api.pojo.RegistryCacheValue;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceRule;
-import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.api.utils.MapUtils;
-import com.tencent.polaris.api.utils.RuleUtils;
-import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.api.utils.*;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.MessageMetadataContainer;
+import com.tencent.polaris.metadata.core.MetadataType;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResponse;
 import com.tencent.polaris.ratelimit.api.rpc.QuotaResultCode;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
+import com.tencent.polaris.ratelimit.client.sync.tsf.TsfRateLimitConstants;
+import com.tencent.polaris.ratelimit.client.sync.tsf.TsfRateLimitMasterUtils;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import org.slf4j.Logger;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
+
+import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
+import static com.tencent.polaris.metadata.core.constant.MetadataConstants.LOCAL_NAMESPACE;
+import static com.tencent.polaris.metadata.core.constant.MetadataConstants.LOCAL_SERVICE;
 
 public class QuotaFlow extends Destroyable {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuotaFlow.class);
 
+    private Extensions extensions;
+
     private RateLimitExtension rateLimitExtension;
 
     private RateLimitConfig rateLimitConfig;
+
+    private Function<String, TrieNode<String>> trieNodeFunction;
 
     /**
      * 客户端的唯一标识
@@ -75,14 +77,35 @@ public class QuotaFlow extends Destroyable {
 
     private boolean enabled;
 
+    private ReentrantLock lock;
+
     private final Map<ServiceKey, RateLimitWindowSet> svcToWindowSet = new ConcurrentHashMap<>();
 
     public void init(Extensions extensions) throws PolarisException {
+        this.extensions = extensions;
         clientId = extensions.getValueContext().getClientId();
         rateLimitExtension = new RateLimitExtension(extensions);
         rateLimitConfig = rateLimitExtension.getExtensions().getConfiguration().getProvider().getRateLimit();
         enabled = rateLimitConfig.isEnable();
         extensions.getLocalRegistry().registerResourceListener(new RateLimitRuleListener());
+        trieNodeFunction = key -> {
+            FlowCache flowCache = extensions.getFlowCache();
+            return flowCache.loadPluginCacheObject(API_ID, key, path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+        };
+
+        // init tsf rate limit master utils if need
+        Map<String, String> metadata = rateLimitConfig.getMetadata();
+        if (CollectionUtils.isNotEmpty(metadata) && metadata.containsKey(TsfRateLimitConstants.RATE_LIMIT_MASTER_IP_KEY)) {
+            String rateLimitMasterIp = metadata.get(TsfRateLimitConstants.RATE_LIMIT_MASTER_IP_KEY);
+            String rateLimitMasterPort = metadata.get(TsfRateLimitConstants.RATE_LIMIT_MASTER_PORT_KEY);
+            String serviceName = metadata.get(TsfRateLimitConstants.SERVICE_NAME_KEY);
+            String instanceId = metadata.get(TsfRateLimitConstants.INSTANCE_ID_KEY);
+            String token = metadata.get(TsfRateLimitConstants.TOKEN_KEY);
+            if (!StringUtils.isAnyEmpty(rateLimitMasterIp, rateLimitMasterPort, serviceName, instanceId, token)) {
+                TsfRateLimitMasterUtils.setUri(rateLimitMasterIp, rateLimitMasterPort, serviceName, instanceId, token);
+                lock = new ReentrantLock();
+            }
+        }
     }
 
     protected void doDestroy() {
@@ -101,20 +124,47 @@ public class QuotaFlow extends Destroyable {
                     new QuotaResult(QuotaResult.Code.QuotaResultOk, 0, RateLimitConstants.REASON_RULE_NOT_EXISTS));
         }
         long maxWaitMs = 0;
-        for (RateLimitWindow rateLimitWindow : windows) {
-            rateLimitWindow.init();
-            QuotaResponse quotaResponse = new QuotaResponse(rateLimitWindow.allocateQuota(request.getCount()));
-            if (quotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
-                // 一个限流则直接限流
-                // 记录这个限流 RateLimitWindow 对应的限流规则信息，放到 QuotaResponse 中返回
-                quotaResponse.setActiveRule(rateLimitWindow.getRule());
-                return quotaResponse;
+        List<Runnable> releaseList = new ArrayList<>();
+        QuotaResponse quotaResponse = null;
+        List<RateLimitWindow> allocatedWindowList = new ArrayList<>();
+        if (lock != null) {
+            lock.lock();
+        }
+        try {
+            for (RateLimitWindow rateLimitWindow : windows) {
+                rateLimitWindow.init();
+                QuotaResponse tempQuotaResponse = new QuotaResponse(rateLimitWindow.allocateQuota(request));
+                if (CollectionUtils.isNotEmpty(tempQuotaResponse.getReleaseList())) {
+                    releaseList.addAll(tempQuotaResponse.getReleaseList());
+                }
+                if (tempQuotaResponse.getCode() == QuotaResultCode.QuotaResultLimited) {
+                    // 一个限流则直接限流
+                    // 记录这个限流 RateLimitWindow 对应的限流规则信息，放到 QuotaResponse 中返回
+                    tempQuotaResponse.setActiveRule(rateLimitWindow.getRule());
+                    tempQuotaResponse.setReleaseList(releaseList);
+                    quotaResponse = tempQuotaResponse;
+                    // 归还之前已经消费的令牌
+                    for (RateLimitWindow window : allocatedWindowList) {
+                        window.returnQuota(request);
+                    }
+                    break;
+                } else {
+                    allocatedWindowList.add(rateLimitWindow);
+                }
+                if (tempQuotaResponse.getWaitMs() > maxWaitMs) {
+                    maxWaitMs = tempQuotaResponse.getWaitMs();
+                }
             }
-            if (quotaResponse.getWaitMs() > maxWaitMs) {
-                maxWaitMs = quotaResponse.getWaitMs();
+        } finally {
+            if (lock != null) {
+                lock.unlock();
             }
         }
-        return new QuotaResponse(new QuotaResult(Code.QuotaResultOk, maxWaitMs, ""));
+
+        if (quotaResponse == null) {
+            quotaResponse = new QuotaResponse(new QuotaResult(Code.QuotaResultOk, maxWaitMs, ""), releaseList);
+        }
+        return quotaResponse;
     }
 
     private List<RateLimitWindow> lookupRateLimitWindow(CommonQuotaRequest request) throws PolarisException {
@@ -124,7 +174,7 @@ public class QuotaFlow extends Destroyable {
         ServiceRule serviceRule = resourcesResponse.getServiceRule(request.getSvcEventKey());
         //2.进行规则匹配
         List<RateLimitWindow> windows = new ArrayList<>();
-        List<Rule> rules = lookupRules(serviceRule, request.getMethod(), request.getArguments());
+        List<Rule> rules = lookupRules(serviceRule, request.getMethod(), request.getMetadataContext(), request.getArguments());
         if (CollectionUtils.isEmpty(rules)) {
             return windows;
         }
@@ -155,7 +205,7 @@ public class QuotaFlow extends Destroyable {
         return svcToWindowSet.computeIfAbsent(serviceKey, new Function<ServiceKey, RateLimitWindowSet>() {
             @Override
             public RateLimitWindowSet apply(ServiceKey serviceKey) {
-                return new RateLimitWindowSet(serviceKey, rateLimitExtension, clientId);
+                return new RateLimitWindowSet(serviceKey, extensions, rateLimitExtension, clientId);
             }
         });
     }
@@ -179,14 +229,20 @@ public class QuotaFlow extends Destroyable {
         List<MatchArgument> argumentsList = rule.getArgumentsList();
         List<String> tmpList = new ArrayList<>();
         Map<Integer, Map<String, String>> arguments = request.getArguments();
+        MetadataContext metadataContext = request.getMetadataContext();
         for (MatchArgument matchArgument : argumentsList) {
-            String labelValue;
+            String labelValue = null;
             MatchString matcher = matchArgument.getValue();
             if (regexCombine && matcher.getType() != MatchStringType.EXACT) {
                 labelValue = matcher.getValue().getValue();
             } else {
                 Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
-                labelValue = getLabelValue(matchArgument, stringStringMap);
+                if (metadataContext != null) {
+                    labelValue = getLabelValue(matchArgument, metadataContext);
+                }
+                if (StringUtils.isBlank(labelValue)) {
+                    labelValue = getLabelValue(matchArgument, stringStringMap);
+                }
                 if (matcher.getType() != MatchStringType.EXACT) {
                     //正则表达式扩散
                     initCriteria.setRegexSpread(true);
@@ -221,11 +277,12 @@ public class QuotaFlow extends Destroyable {
     }
 
     private static String getLabelValue(MatchArgument matchArgument,
-            Map<String, String> stringStringMap) {
+                                        Map<String, String> stringStringMap) {
         switch (matchArgument.getType()) {
             case CUSTOM:
             case HEADER:
             case QUERY:
+            case CALLER_METADATA:
             case CALLER_SERVICE: {
                 return stringStringMap.get(matchArgument.getKey());
             }
@@ -238,8 +295,43 @@ public class QuotaFlow extends Destroyable {
         }
     }
 
-    private List<Rule> lookupRules(ServiceRule serviceRule, String method,
-            Map<Integer, Map<String, String>> arguments) {
+    private static String getLabelValue(MatchArgument matchArgument,
+                                        MetadataContext metadataContext) {
+        MessageMetadataContainer messageMetadataContainer = metadataContext.getMetadataContainer(MetadataType.MESSAGE, true);
+        if (messageMetadataContainer == null) {
+            return null;
+        }
+        switch (matchArgument.getType()) {
+            case HEADER:
+                return messageMetadataContainer.getHeader(matchArgument.getKey());
+            case QUERY:
+                return messageMetadataContainer.getQuery(matchArgument.getKey());
+            case CALLER_SERVICE: {
+                String namespace = metadataContext.getMetadataContainer(MetadataType.APPLICATION, true).getRawMetadataStringValue(LOCAL_NAMESPACE);
+                if (StringUtils.equals(matchArgument.getKey(), namespace) || StringUtils.equals("*", matchArgument.getKey())) {
+                    return metadataContext.getMetadataContainer(MetadataType.APPLICATION, true).getRawMetadataStringValue(LOCAL_SERVICE);
+                } else {
+                    return null;
+                }
+            }
+            case METHOD:
+                return messageMetadataContainer.getMethod();
+            case CALLER_IP:
+                return messageMetadataContainer.getCallerIP();
+            case CALLER_METADATA:
+                return metadataContext.getMetadataContainer(MetadataType.APPLICATION, true).getRawMetadataStringValue(matchArgument.getKey());
+            case CUSTOM:
+            default:
+                String value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, false).getRawMetadataStringValue(matchArgument.getKey());
+                if (StringUtils.isBlank(value)) {
+                    value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, true).getRawMetadataStringValue(matchArgument.getKey());
+                }
+                return value;
+        }
+    }
+
+    private List<Rule> lookupRules(ServiceRule serviceRule, String method, MetadataContext metadataContext,
+                                   Map<Integer, Map<String, String>> arguments) {
         if (null == serviceRule || null == serviceRule.getRule()) {
             return null;
         }
@@ -259,7 +351,7 @@ public class QuotaFlow extends Destroyable {
                         rule.getName().getValue(), rule.getRevision().getValue());
                 continue;
             }
-            if (rule.getAmountsCount() == 0) {
+            if (rule.getAmountsCount() == 0 && rule.getConcurrencyAmount().getMaxAmount() == 0) {
                 //没有amount的规则就忽略
                 LOG.debug("rule(id={}, name={}, revision={}) amounts count is zero, ignore", rule.getId().getValue(),
                         rule.getName().getValue(), rule.getRevision().getValue());
@@ -268,7 +360,8 @@ public class QuotaFlow extends Destroyable {
             //match method
             MatchString methodMatcher = rule.getMethod();
             if (Objects.nonNull(methodMatcher)) {
-                boolean matchMethod = RuleUtils.matchStringValue(methodMatcher, method, function);
+                boolean matchMethod = RuleUtils.matchStringValue(methodMatcher.getType(), method,
+                        methodMatcher.getValue().getValue(), function, true, trieNodeFunction);
                 if (!matchMethod) {
                     continue;
                 }
@@ -277,12 +370,19 @@ public class QuotaFlow extends Destroyable {
             boolean matched = true;
             if (CollectionUtils.isNotEmpty(argumentsList)) {
                 for (MatchArgument matchArgument : argumentsList) {
-                    Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
-                    if (CollectionUtils.isEmpty(stringStringMap)) {
-                        matched = false;
-                        break;
+                    String labelValue = null;
+                    if (metadataContext != null) {
+                        labelValue = getLabelValue(matchArgument, metadataContext);
                     }
-                    String labelValue = getLabelValue(matchArgument, stringStringMap);
+                    if (StringUtils.isBlank(labelValue) && CollectionUtils.isNotEmpty(arguments)) {
+                        Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
+                        if (CollectionUtils.isEmpty(stringStringMap)) {
+                            matched = false;
+                            break;
+                        }
+                        labelValue = getLabelValue(matchArgument, stringStringMap);
+                    }
+
                     if (null == labelValue) {
                         matched = false;
                     } else {
@@ -330,7 +430,7 @@ public class QuotaFlow extends Destroyable {
 
         @Override
         public void onResourceUpdated(ServiceEventKey svcEventKey, RegistryCacheValue oldValue,
-                RegistryCacheValue newValue) {
+                                      RegistryCacheValue newValue) {
             EventType eventType = svcEventKey.getEventType();
             if (eventType != EventType.RATE_LIMITING) {
                 return;

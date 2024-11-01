@@ -23,10 +23,15 @@ package com.tencent.polaris.api.plugin.event;
 public class FlowEventConstants {
 
     public enum Status {
+        // circuit breaker status
         OPEN,
         CLOSE,
         HALF_OPEN,
         DESTROY,
+
+        // rate limiter status
+        UNLIMITED,
+        LIMITED,
 
         UNKNOWN,
     }
@@ -35,6 +40,10 @@ public class FlowEventConstants {
         SERVICE,
         METHOD,
         INSTANCE,
+
+        // rate limiter resource
+        QPS,
+        CONCURRENCY,
 
         UNKNOWN,
     }

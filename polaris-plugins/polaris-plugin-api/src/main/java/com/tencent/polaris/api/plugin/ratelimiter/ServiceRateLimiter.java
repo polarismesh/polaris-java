@@ -33,6 +33,16 @@ public interface ServiceRateLimiter extends Plugin {
     String LIMITER_UNIRATE = "UNIRATE";
 
     /**
+     * 并发数限流
+     */
+    String LIMITER_CONCURRENCY = "CONCURRENCY";
+
+    /**
+     * TSF限流
+     */
+    String LIMITER_TSF = "TSF";
+
+    /**
      * 初始化并创建令牌桶/漏桶, 主流程会在首次调用，以及规则对象变更的时候，调用该方法
      *
      * @param criteria 参数对象

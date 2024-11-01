@@ -21,14 +21,30 @@ import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class QuotaResponse {
 
     private final QuotaResult quotaResult;
 
     private RateLimitProto.Rule activeRule;
 
+    private List<Runnable> releaseList;
+
     public QuotaResponse(QuotaResult quotaResult) {
+        this(quotaResult, null);
+    }
+
+    public QuotaResponse(QuotaResult quotaResult, List<Runnable> releaseList) {
         this.quotaResult = quotaResult;
+        if (releaseList == null) {
+            releaseList = new ArrayList<>();
+            if (quotaResult.getRelease() != null) {
+                releaseList.add(quotaResult.getRelease());
+            }
+        }
+        this.releaseList = releaseList;
     }
 
     public QuotaResultCode getCode() {
@@ -54,5 +70,20 @@ public class QuotaResponse {
 
     public Rule getActiveRule() {
         return activeRule;
+    }
+
+    public void addRelease(Runnable runnable) {
+        releaseList.add(runnable);
+    }
+
+    public List<Runnable> getReleaseList() {
+        return releaseList;
+    }
+
+    public void setReleaseList(List<Runnable> releaseList) {
+        if (releaseList == null) {
+            releaseList = new ArrayList<>();
+        }
+        this.releaseList = releaseList;
     }
 }
