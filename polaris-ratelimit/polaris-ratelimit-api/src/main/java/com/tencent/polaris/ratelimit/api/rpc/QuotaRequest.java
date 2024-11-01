@@ -19,11 +19,9 @@ package com.tencent.polaris.ratelimit.api.rpc;
 
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
+
+import java.util.*;
 
 //配额查询请求
 public class QuotaRequest extends RequestBaseEntity {
@@ -35,6 +33,8 @@ public class QuotaRequest extends RequestBaseEntity {
     private String method;
 
     private Set<Argument> arguments = new HashSet<>();
+
+    private MetadataContext metadataContext;
 
     private int count = 1;
 
@@ -97,16 +97,26 @@ public class QuotaRequest extends RequestBaseEntity {
         this.method = method;
     }
 
+    @Deprecated
     public Set<Argument> getArguments() {
         return arguments;
     }
 
+    @Deprecated
     public void setArguments(Set<Argument> arguments) {
         if (CollectionUtils.isEmpty(arguments)) {
             this.arguments = Collections.emptySet();
         } else {
             this.arguments = arguments;
         }
+    }
+
+    public MetadataContext getMetadataContext() {
+        return metadataContext;
+    }
+
+    public void setMetadataContext(MetadataContext metadataContext) {
+        this.metadataContext = metadataContext;
     }
 
     @Override
@@ -116,6 +126,7 @@ public class QuotaRequest extends RequestBaseEntity {
                 ", service='" + service + '\'' +
                 ", method='" + method + '\'' +
                 ", arguments=" + arguments +
+                ", metadataContext=" + metadataContext +
                 ", count=" + count +
                 "} " + super.toString();
     }

@@ -67,6 +67,10 @@ public interface RateLimitConstants {
 
     int RANGE_DELAY_MS = 10;
 
+    /**
+     * 等待服务端返回结果的时间 1000ms
+     */
+    int INIT_WAIT_RESPONSE_TIME = 1 * 1000;
 
     /**
      * 服务端的返回code

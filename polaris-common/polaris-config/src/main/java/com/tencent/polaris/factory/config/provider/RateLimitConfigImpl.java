@@ -17,187 +17,197 @@
 
 package com.tencent.polaris.factory.config.provider;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitConfig {
 
-	@JsonProperty
-	private Boolean enable;
+    @JsonProperty
+    private Boolean enable;
 
-	@JsonProperty
-	private String limiterService;
+    @JsonProperty
+    private String limiterService;
 
-	@JsonProperty
-	private String limiterNamespace;
+    @JsonProperty
+    private String limiterNamespace;
 
-	@JsonProperty
-	private List<String> limiterAddresses;
+    @JsonProperty
+    private List<String> limiterAddresses;
 
-	@JsonProperty
-	private Integer maxWindowCount;
+    @JsonProperty
+    private Integer maxWindowCount;
 
-	@JsonProperty
-	private Fallback fallbackOnExceedWindowCount;
+    @JsonProperty
+    private Fallback fallbackOnExceedWindowCount;
 
-	@JsonProperty
-	private Long remoteSyncTimeoutMilli;
+    @JsonProperty
+    private Long remoteSyncTimeoutMilli;
 
-	@JsonProperty
-	private Long maxQueuingTime;
+    @JsonProperty
+    private Long maxQueuingTime;
 
-	@JsonProperty
-	private Boolean reportMetrics;
+    @JsonProperty
+    private Boolean reportMetrics;
 
-	public boolean isEnable() {
-		if (null == enable) {
-			return false;
-		}
-		return enable;
-	}
+    private final Map<String, String> metadata = new HashMap<>();
 
-	public void setEnable(boolean enable) {
-		this.enable = enable;
-	}
+    public boolean isEnable() {
+        if (null == enable) {
+            return false;
+        }
+        return enable;
+    }
 
-	@Override
-	public int getMaxWindowCount() {
-		if (null == maxWindowCount) {
-			return 0;
-		}
-		return maxWindowCount;
-	}
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
 
-	public void setMaxWindowCount(int maxWindowCount) {
-		this.maxWindowCount = maxWindowCount;
-	}
+    @Override
+    public int getMaxWindowCount() {
+        if (null == maxWindowCount) {
+            return 0;
+        }
+        return maxWindowCount;
+    }
 
-	@Override
-	public Fallback getFallbackOnExceedWindowCount() {
-		return fallbackOnExceedWindowCount;
-	}
+    public void setMaxWindowCount(int maxWindowCount) {
+        this.maxWindowCount = maxWindowCount;
+    }
 
-	public void setFallbackOnExceedWindowCount(
-			Fallback fallbackOnExceedWindowCount) {
-		this.fallbackOnExceedWindowCount = fallbackOnExceedWindowCount;
-	}
+    @Override
+    public Fallback getFallbackOnExceedWindowCount() {
+        return fallbackOnExceedWindowCount;
+    }
 
-	public String getLimiterService() {
-		return limiterService;
-	}
+    public void setFallbackOnExceedWindowCount(
+            Fallback fallbackOnExceedWindowCount) {
+        this.fallbackOnExceedWindowCount = fallbackOnExceedWindowCount;
+    }
 
-	public void setLimiterService(String limiterService) {
-		this.limiterService = limiterService;
-	}
+    public String getLimiterService() {
+        return limiterService;
+    }
 
-	public String getLimiterNamespace() {
-		return limiterNamespace;
-	}
+    public void setLimiterService(String limiterService) {
+        this.limiterService = limiterService;
+    }
 
-	public void setLimiterNamespace(String limiterNamespace) {
-		this.limiterNamespace = limiterNamespace;
-	}
+    public String getLimiterNamespace() {
+        return limiterNamespace;
+    }
 
-	public List<String> getLimiterAddresses() {
-		return limiterAddresses;
-	}
+    public void setLimiterNamespace(String limiterNamespace) {
+        this.limiterNamespace = limiterNamespace;
+    }
 
-	public void setLimiterAddresses(List<String> limiterAddresses) {
-		this.limiterAddresses = limiterAddresses;
-	}
+    public List<String> getLimiterAddresses() {
+        return limiterAddresses;
+    }
 
-	@Override
-	public void verify() {
-		ConfigUtils.validateNull(enable, "rateLimit.enable");
-		if (!enable) {
-			return;
-		}
-		ConfigUtils.validatePositive(maxWindowCount, "rateLimit.maxWindowCount");
-		ConfigUtils.validateNull(fallbackOnExceedWindowCount, "rateLimit.fallbackOnExceedWindowCount");
-		verifyPluginConfig();
-	}
+    public void setLimiterAddresses(List<String> limiterAddresses) {
+        this.limiterAddresses = limiterAddresses;
+    }
 
-	@Override
-	public long getRemoteSyncTimeoutMilli() {
-		return remoteSyncTimeoutMilli;
-	}
+    @Override
+    public void verify() {
+        ConfigUtils.validateNull(enable, "rateLimit.enable");
+        if (!enable) {
+            return;
+        }
+        ConfigUtils.validatePositive(maxWindowCount, "rateLimit.maxWindowCount");
+        ConfigUtils.validateNull(fallbackOnExceedWindowCount, "rateLimit.fallbackOnExceedWindowCount");
+        verifyPluginConfig();
+    }
 
-	public void setRemoteSyncTimeoutMilli(long remoteSyncTimeoutMilli) {
-		this.remoteSyncTimeoutMilli = remoteSyncTimeoutMilli;
-	}
+    @Override
+    public long getRemoteSyncTimeoutMilli() {
+        return remoteSyncTimeoutMilli;
+    }
 
-	@Override
-	public long getMaxQueuingTime() {
-		return maxQueuingTime;
-	}
+    public void setRemoteSyncTimeoutMilli(long remoteSyncTimeoutMilli) {
+        this.remoteSyncTimeoutMilli = remoteSyncTimeoutMilli;
+    }
 
-	public void setMaxQueuingTime(Long maxQueuingTime) {
-		this.maxQueuingTime = maxQueuingTime;
-	}
+    @Override
+    public long getMaxQueuingTime() {
+        return maxQueuingTime;
+    }
 
-	@Override
-	public boolean isReportMetrics() {
-		if (null == reportMetrics) {
-			return false;
-		}
-		return reportMetrics;
-	}
+    public void setMaxQueuingTime(Long maxQueuingTime) {
+        this.maxQueuingTime = maxQueuingTime;
+    }
 
-	public void setReportMetrics(boolean reportMetrics) {
-		this.reportMetrics = reportMetrics;
-	}
+    @Override
+    public boolean isReportMetrics() {
+        if (null == reportMetrics) {
+            return false;
+        }
+        return reportMetrics;
+    }
 
-	@Override
-	public void setDefault(Object defaultObject) {
-		if (null != defaultObject) {
-			RateLimitConfig rateLimitConfig = (RateLimitConfig) defaultObject;
-			if (null == enable) {
-				setEnable(rateLimitConfig.isEnable());
-			}
-			if (null == maxWindowCount) {
-				setMaxWindowCount(rateLimitConfig.getMaxWindowCount());
-			}
-			if (null == fallbackOnExceedWindowCount) {
-				setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
-			}
-			if (null == remoteSyncTimeoutMilli) {
-				setRemoteSyncTimeoutMilli(rateLimitConfig.getRemoteSyncTimeoutMilli());
-			}
-			if (null == fallbackOnExceedWindowCount) {
-				setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
-			}
-			if (null == limiterNamespace) {
-				setLimiterNamespace(rateLimitConfig.getLimiterNamespace());
-			}
-			if (null == limiterService) {
-				setLimiterService(rateLimitConfig.getLimiterService());
-			}
-			if (null == maxQueuingTime) {
-				setMaxQueuingTime(rateLimitConfig.getMaxQueuingTime());
-			}
+    public void setReportMetrics(boolean reportMetrics) {
+        this.reportMetrics = reportMetrics;
+    }
+
+    @Override
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    @Override
+    public void setDefault(Object defaultObject) {
+        if (null != defaultObject) {
+            RateLimitConfig rateLimitConfig = (RateLimitConfig) defaultObject;
+            if (null == enable) {
+                setEnable(rateLimitConfig.isEnable());
+            }
+            if (null == maxWindowCount) {
+                setMaxWindowCount(rateLimitConfig.getMaxWindowCount());
+            }
+            if (null == fallbackOnExceedWindowCount) {
+                setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
+            }
+            if (null == remoteSyncTimeoutMilli) {
+                setRemoteSyncTimeoutMilli(rateLimitConfig.getRemoteSyncTimeoutMilli());
+            }
+            if (null == fallbackOnExceedWindowCount) {
+                setFallbackOnExceedWindowCount(rateLimitConfig.getFallbackOnExceedWindowCount());
+            }
+            if (null == limiterNamespace) {
+                setLimiterNamespace(rateLimitConfig.getLimiterNamespace());
+            }
+            if (null == limiterService) {
+                setLimiterService(rateLimitConfig.getLimiterService());
+            }
+            if (null == maxQueuingTime) {
+                setMaxQueuingTime(rateLimitConfig.getMaxQueuingTime());
+            }
             if (null == reportMetrics) {
                 setReportMetrics(rateLimitConfig.isReportMetrics());
             }
-			setDefaultPluginConfig(rateLimitConfig);
-		}
-	}
+            setDefaultPluginConfig(rateLimitConfig);
+        }
+    }
 
-	@Override
-	public String toString() {
-		return "RateLimitConfigImpl{" +
-				"enable=" + enable +
-				", limiterService='" + limiterService + '\'' +
-				", limiterNamespace='" + limiterNamespace + '\'' +
-				", limiterAddresses=" + limiterAddresses +
-				", maxWindowCount=" + maxWindowCount +
-				", fallbackOnExceedWindowCount=" + fallbackOnExceedWindowCount +
-				", remoteSyncTimeoutMilli=" + remoteSyncTimeoutMilli +
-				", maxQueuingTime=" + maxQueuingTime +
-				", reportMetrics=" + reportMetrics +
-				'}';
-	}
+    @Override
+    public String toString() {
+        return "RateLimitConfigImpl{" +
+                "enable=" + enable +
+                ", limiterService='" + limiterService + '\'' +
+                ", limiterNamespace='" + limiterNamespace + '\'' +
+                ", limiterAddresses=" + limiterAddresses +
+                ", maxWindowCount=" + maxWindowCount +
+                ", fallbackOnExceedWindowCount=" + fallbackOnExceedWindowCount +
+                ", remoteSyncTimeoutMilli=" + remoteSyncTimeoutMilli +
+                ", maxQueuingTime=" + maxQueuingTime +
+                ", reportMetrics=" + reportMetrics +
+                ", metadata=" + metadata +
+                '}';
+    }
 }

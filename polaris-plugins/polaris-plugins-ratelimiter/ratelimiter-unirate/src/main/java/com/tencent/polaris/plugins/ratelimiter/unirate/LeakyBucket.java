@@ -20,8 +20,9 @@ package com.tencent.polaris.plugins.ratelimiter.unirate;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
-import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implement of leaky bucket.
@@ -72,8 +73,7 @@ public class LeakyBucket implements Comparable<LeakyBucket> {
 
     public QuotaResult getQuota() {
         if (getRejectAll()) {
-            return new QuotaResult(QuotaResult.Code.QuotaResultLimited, 0,
-                    "uniRate RateLimiter: reject for zero rule amount");
+            return new QuotaResult(QuotaResult.Code.QuotaResultLimited, 0, rule.getResource() + ":0");
         }
 
         long costDuration = effectiveRate;
@@ -103,11 +103,9 @@ public class LeakyBucket implements Comparable<LeakyBucket> {
         }
         // 如果等待时间超过配置的上限，那么拒绝
         // 归还等待间隔
-        LOG.debug("ratelimited, waitDuration {}ms.", waitDuration);
-        String info = String.format("uniRate RateLimiter: queueing time %d exceed maxQueuingTime %s", waitDuration,
-                maxQueuingDuration);
+        LOG.debug("uniRate RateLimiter: queueing time {} exceed maxQueuingTime {}", waitDuration, maxQueuingDuration);
         lastGrantTime.addAndGet(-costDuration);
-        return new QuotaResult(QuotaResult.Code.QuotaResultLimited, 0, info);
+        return new QuotaResult(QuotaResult.Code.QuotaResultLimited, 0, rule.getResource() + ":" + effectiveRate);
     }
 
     @Override

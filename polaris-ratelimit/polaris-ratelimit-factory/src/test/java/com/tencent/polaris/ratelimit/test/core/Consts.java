@@ -30,9 +30,9 @@ public interface Consts {
 
     String LABEL_METHOD = "method";
 
-    String METHOD_PAY = "pay";
+    String METHOD_PAY = "/pay";
 
-    String METHOD_CASH = "cash";
+    String METHOD_CASH = "/cash";
 
     String HEADER_KEY = "uid";
 
@@ -45,7 +45,7 @@ public interface Consts {
     /**
      * 通过数组创建Map
      *
-     * @param keys key数组
+     * @param keys   key数组
      * @param values value数组
      * @return map对象
      */

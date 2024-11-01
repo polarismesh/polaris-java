@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.ratelimit.test.core;
 
-import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
-
 import com.google.protobuf.Duration;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
@@ -42,13 +40,16 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Ru
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.Type;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 public class RuleMatchTest {
 
@@ -85,7 +86,7 @@ public class RuleMatchTest {
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder1.setMethod(MatchString.newBuilder().setType(MatchStringType.REGEX).setValue(
-                StringValue.newBuilder().setValue("^ca.+$").build()).build());
+                StringValue.newBuilder().setValue("^/ca.+$").build()).build());
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("11111").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());
         rateLimitBuilder.setRevision(StringValue.newBuilder().setValue("xxxxxxx").build());
@@ -105,7 +106,7 @@ public class RuleMatchTest {
                 Amount.newBuilder().setMaxAmount(UInt32Value.newBuilder().setValue(1).build()).setValidDuration(
                         Duration.newBuilder().setSeconds(1).build()));
         ruleBuilder1.setMethod(MatchString.newBuilder().setType(MatchStringType.NOT_EQUALS).setValue(
-                StringValue.newBuilder().setValue("cash").build()).build());
+                StringValue.newBuilder().setValue("/cash").build()).build());
         ruleBuilder1.setRevision(StringValue.newBuilder().setValue("22222").build());
         rateLimitBuilder.addRules(ruleBuilder1.build());
         rateLimitBuilder.setRevision(StringValue.newBuilder().setValue("yyyyyy").build());
@@ -264,7 +265,7 @@ public class RuleMatchTest {
             boolean hasLimited = false;
             boolean hasPassed = false;
             for (int i = 0; i < 5; i++) {
-                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_IN_SERVICE, null, Consts.METHOD_PAY);
+                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_IN_SERVICE, null, "pay");
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
                     hasLimited = true;
@@ -290,7 +291,7 @@ public class RuleMatchTest {
             hasLimited = false;
             hasPassed = false;
             for (int i = 0; i < 5; i++) {
-                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_IN_SERVICE, null, Consts.METHOD_CASH);
+                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_IN_SERVICE, null, "cash");
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
                     hasLimited = true;
@@ -314,7 +315,7 @@ public class RuleMatchTest {
             boolean hasLimited = false;
             boolean hasPassed = false;
             for (int i = 0; i < 5; i++) {
-                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_NOT_IN_SERVICE, null, Consts.METHOD_PAY);
+                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_NOT_IN_SERVICE, null, "pay");
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
                     hasLimited = true;
@@ -340,7 +341,7 @@ public class RuleMatchTest {
             hasLimited = false;
             hasPassed = false;
             for (int i = 0; i < 5; i++) {
-                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_NOT_IN_SERVICE, null, Consts.METHOD_CASH);
+                QuotaResponse quotaResponse = quotaAcquire(limitAPI, MATCH_NOT_IN_SERVICE, null, "cash");
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {
                     hasLimited = true;

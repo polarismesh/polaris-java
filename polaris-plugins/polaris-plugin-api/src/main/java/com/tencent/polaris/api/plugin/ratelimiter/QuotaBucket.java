@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.plugin.ratelimiter;
 
 import com.tencent.polaris.api.exception.PolarisException;
+
 import java.util.Map;
 
 /**
@@ -29,11 +30,20 @@ public interface QuotaBucket {
      * 在令牌桶/漏桶中进行单个配额的划扣，并返回本次分配的结果
      *
      * @param curTimeMs 当前时间点
-     * @param count 需获取的配额数
+     * @param count     需获取的配额数
      * @return 分配结果
      * @throws PolarisException 异常信息
      */
     QuotaResult allocateQuota(long curTimeMs, int count) throws PolarisException;
+
+    /**
+     * 归还配额
+     *
+     * @param allocateTimeMs 配额分配时间
+     * @param count          需归还的配额数
+     * @throws PolarisException 异常信息
+     */
+    void returnQuota(long allocateTimeMs, int count) throws PolarisException;
 
     /**
      * 释放配额（仅对于并发数限流有用）

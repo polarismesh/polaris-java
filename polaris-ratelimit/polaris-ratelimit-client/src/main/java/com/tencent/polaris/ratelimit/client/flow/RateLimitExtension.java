@@ -22,20 +22,20 @@ import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+
+import static com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter.*;
 
 public class RateLimitExtension extends Destroyable {
 
@@ -60,7 +60,7 @@ public class RateLimitExtension extends Destroyable {
         this.extensions = extensions;
         Collection<Plugin> plugins = extensions.getPlugins().getPlugins(PluginTypes.SERVICE_LIMITER.getBaseType());
         for (Plugin plugin : plugins) {
-            if (plugin.getName().equals(ServiceRateLimiter.LIMITER_REJECT)) {
+            if (plugin.getName().equals(LIMITER_REJECT)) {
                 defaultRateLimiter = (ServiceRateLimiter) plugin;
             }
             rateLimiters.put(plugin.getName(), (ServiceRateLimiter) plugin);
@@ -83,8 +83,28 @@ public class RateLimitExtension extends Destroyable {
         return extensions;
     }
 
-    public ServiceRateLimiter getRateLimiter(String name) {
+    public ServiceRateLimiter getRateLimiter(RateLimitProto.Rule.Resource resource, String action) {
+        String name = getRateLimiterName(resource, action);
         return rateLimiters.get(name);
+    }
+
+    private String getRateLimiterName(RateLimitProto.Rule.Resource resource, String action) {
+        if (null != resource && StringUtils.isNotBlank(action)) {
+            if (StringUtils.equals(action, LIMITER_TSF)) {
+                return LIMITER_TSF;
+            }
+            if (resource.equals(RateLimitProto.Rule.Resource.QPS)) {
+                if (StringUtils.equals(action, LIMITER_UNIRATE)) {
+                    return LIMITER_UNIRATE;
+                } else if (StringUtils.equals(action, LIMITER_REJECT)) {
+                    return LIMITER_REJECT;
+                }
+                return LIMITER_REJECT;
+            } else if (resource.equals(RateLimitProto.Rule.Resource.CONCURRENCY)) {
+                return LIMITER_CONCURRENCY;
+            }
+        }
+        return LIMITER_REJECT;
     }
 
     /**
@@ -93,8 +113,12 @@ public class RateLimitExtension extends Destroyable {
      * @param task 任务
      */
     public void submitSyncTask(RemoteSyncTask task) {
+        submitSyncTask(task, 0L, getTaskDelayInterval());
+    }
+
+    public void submitSyncTask(RemoteSyncTask task, long initialDelay, long delay) {
         ScheduledFuture<?> scheduledFuture = syncExecutor
-                .scheduleWithFixedDelay(task, 0, getTaskDelayInterval(), TimeUnit.MILLISECONDS);
+                .scheduleWithFixedDelay(task, 0, delay, TimeUnit.MILLISECONDS);
         scheduledTasks.put(task.getWindow().getUniqueKey(), scheduledFuture);
     }
 

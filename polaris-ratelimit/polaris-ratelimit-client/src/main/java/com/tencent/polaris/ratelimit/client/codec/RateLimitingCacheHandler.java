@@ -19,6 +19,7 @@ package com.tencent.polaris.ratelimit.client.codec;
 
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
+import com.tencent.polaris.api.plugin.cache.FlowCacheUtils;
 import com.tencent.polaris.api.plugin.registry.AbstractCacheHandler;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
@@ -61,7 +62,7 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
         RateLimit rateLimit = discoverResponse.getRateLimit();
         String revision = getRevision(discoverResponse);
         //需要做一次排序,PB中的数据不可变，需要单独构建一份
-        List<Rule> sortedRules = unifiedRules(rateLimit.getRulesList());
+        List<Rule> sortedRules = unifiedRules(rateLimit.getRulesList(), flowCache);
         sortedRules.sort(RateLimitingCacheHandler::compareRule);
         Collections.reverse(sortedRules);
         RateLimit newRateLimit = RateLimit.newBuilder().addAllRules(sortedRules)
@@ -96,12 +97,14 @@ public class RateLimitingCacheHandler extends AbstractCacheHandler {
         return getRuleLevel(rule1) - getRuleLevel(rule2);
     }
 
-    private List<Rule> unifiedRules(List<Rule> rules) {
+    private List<Rule> unifiedRules(List<Rule> rules, FlowCache flowCache) {
         List<Rule> retRules = new ArrayList<>();
         if (CollectionUtils.isEmpty(rules)) {
             return rules;
         }
         for (Rule rule : rules) {
+            MatchString path = rule.getMethod();
+            FlowCacheUtils.saveApiTrie(path, flowCache);
             if (CollectionUtils.isEmpty(rule.getLabelsMap())) {
                 // not labels, nothing to convert
                 retRules.add(rule);

@@ -36,10 +36,17 @@ public class QuotaResult {
 
     private final String info;
 
+    private Runnable release;
+
     public QuotaResult(Code code, long waitMs, String info) {
+        this(code, waitMs, info, null);
+    }
+
+    public QuotaResult(Code code, long waitMs, String info, Runnable release) {
         this.code = code;
         this.waitMs = waitMs;
         this.info = info;
+        this.release = release;
     }
 
     public Code getCode() {
@@ -52,5 +59,13 @@ public class QuotaResult {
 
     public String getInfo() {
         return info;
+    }
+
+    public Runnable getRelease() {
+        return release;
+    }
+
+    public void setRelease(Runnable release) {
+        this.release = release;
     }
 }

@@ -19,12 +19,7 @@ package com.tencent.polaris.plugins.ratelimiter.reject;
 
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
-import com.tencent.polaris.api.plugin.ratelimiter.AmountInfo;
-import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
-import com.tencent.polaris.api.plugin.ratelimiter.LocalQuotaInfo;
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
-import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
-import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
+import com.tencent.polaris.api.plugin.ratelimiter.*;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.BucketShareInfo;
 import com.tencent.polaris.plugins.ratelimiter.common.bucket.UpdateIdentifier;
@@ -37,12 +32,9 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Ru
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.AmountMode;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.FailoverType;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.Type;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
+
+import java.util.*;
 
 public class RemoteAwareBucket implements QuotaBucket {
 
@@ -54,15 +46,18 @@ public class RemoteAwareBucket implements QuotaBucket {
 
     private final FlowCache flowCache;
 
+    private final Rule.Resource resource;
+
     /**
      * 构造器
      *
      * @param initCriteria 参数
-     * @param flowCache 流程缓存
+     * @param flowCache    流程缓存
      */
     public RemoteAwareBucket(InitCriteria initCriteria, FlowCache flowCache) {
         Rule rule = initCriteria.getRule();
         this.flowCache = flowCache;
+        this.resource = rule.getResource();
         boolean shareEqual = rule.getAmountMode() == AmountMode.SHARE_EQUALLY;
         boolean local = rule.getType() == Type.LOCAL;
         boolean passOnRemoteFail = rule.getFailover() == FailoverType.FAILOVER_PASS;
@@ -115,7 +110,10 @@ public class RemoteAwareBucket implements QuotaBucket {
                 TokenBucket bucket = tokenBuckets.get(i);
                 bucket.giveBackToken(identifiers[i], token, mode);
             }
-            response = new QuotaResult(QuotaResult.Code.QuotaResultLimited, 0, "");
+
+            long qps = tokenBucket.getRuleTotal() / tokenBucket.getValidDurationMs();
+            String info = this.resource + ":" + qps;
+            response = new QuotaResult(QuotaResult.Code.QuotaResultLimited, 0, info);
         } else {
             //记录分配的配额
             for (TokenBucket tokenBucket : tokenBuckets) {
@@ -129,6 +127,11 @@ public class RemoteAwareBucket implements QuotaBucket {
             flowCache.giveBackThreadCacheObject(results[i]);
         }
         return response;
+    }
+
+    @Override
+    public void returnQuota(long allocateTimeMs, int count) throws PolarisException {
+        
     }
 
     @Override

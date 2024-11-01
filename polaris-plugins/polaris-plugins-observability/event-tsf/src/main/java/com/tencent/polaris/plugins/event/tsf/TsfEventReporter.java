@@ -34,9 +34,12 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
-import com.tencent.polaris.plugins.event.tsf.v1.EventResponse;
+import com.tencent.polaris.plugins.event.tsf.report.CloudEvent;
+import com.tencent.polaris.plugins.event.tsf.report.Event;
+import com.tencent.polaris.plugins.event.tsf.report.EventResponse;
 import com.tencent.polaris.plugins.event.tsf.v1.TsfEventData;
 import com.tencent.polaris.plugins.event.tsf.v1.TsfEventDataPair;
+import com.tencent.polaris.plugins.event.tsf.v1.TsfEventResponse;
 import com.tencent.polaris.plugins.event.tsf.v1.TsfGenericEvent;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -71,19 +74,28 @@ public class TsfEventReporter implements EventReporter {
 
     private final BlockingQueue<TsfEventData> v1EventQueue = new LinkedBlockingQueue<>(QUEUE_THRESHOLD);
 
+    private final Map<String, BlockingQueue<Event>> reportEventQueueMap = new ConcurrentHashMap<>();
+
     private volatile boolean init = true;
 
     private TsfEventReporterConfig tsfEventReporterConfig;
 
     private URI v1EventUri;
 
-    private final ScheduledExecutorService eventV1Executors = new ScheduledThreadPoolExecutor(1,
+    private URI reportEventUri;
+
+    private final ScheduledExecutorService v1EventExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("event-tsf-v1"));
+
+    protected ScheduledExecutorService reportEventExecutors = Executors.newScheduledThreadPool(1,
+            new NamedThreadFactory("event-tsf-report"));
 
     @Override
     public boolean reportEvent(FlowEvent flowEvent) {
         if (flowEvent.getEventType().equals(ServiceEventKey.EventType.CIRCUIT_BREAKING)) {
             return reportV1Event(flowEvent);
+        } else if (flowEvent.getEventType().equals(ServiceEventKey.EventType.RATE_LIMITING)) {
+            return reportReportEvent(flowEvent);
         }
         return true;
     }
@@ -91,7 +103,7 @@ public class TsfEventReporter implements EventReporter {
     private boolean reportV1Event(FlowEvent flowEvent) {
         try {
             if (v1EventUri == null) {
-                LOG.warn("build event request url fail, can not sent event.");
+                LOG.warn("build v1 event request url fail, can not sent event.");
                 return false;
             }
 
@@ -133,12 +145,72 @@ public class TsfEventReporter implements EventReporter {
             // 如果满了就抛出异常
             try {
                 v1EventQueue.add(eventData);
-            } catch (Exception e) {
-                LOG.warn("eventQueue is full. Log this event and drop it. {}", flowEvent);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("add v1 event to v1EventQueue: {}", eventData);
+                }
+            } catch (Throwable throwable) {
+                LOG.warn("v1EventQueue is full. Log this event and drop it. event={}, error={}.",
+                        flowEvent, throwable.getMessage(), throwable);
             }
             return true;
         } catch (Throwable throwable) {
-            LOG.warn("Failed to send event to TSF. {}", flowEvent, throwable);
+            LOG.warn("failed to add v1 event. {}", flowEvent, throwable);
+            return false;
+        }
+    }
+
+    private boolean reportReportEvent(FlowEvent flowEvent) {
+        try {
+            if (reportEventUri == null) {
+                LOG.warn("build event report request url fail, can not sent event.");
+                return false;
+            }
+
+            CloudEvent cloudEvent = new CloudEvent();
+            cloudEvent.setEvent(TsfEventDataUtils.convertEventName(flowEvent));
+            cloudEvent.setAppId(tsfEventReporterConfig.getAppId());
+            cloudEvent.setRegion(tsfEventReporterConfig.getRegion());
+            Byte status = TsfEventDataUtils.convertStatus(flowEvent);
+            if (status == null || status == -1) {
+                return true;
+            }
+            cloudEvent.setStatus(status);
+
+            cloudEvent.putDimension(APP_ID_KEY, tsfEventReporterConfig.getAppId());
+            cloudEvent.putDimension(NAMESPACE_ID_KEY, tsfEventReporterConfig.getTsfNamespaceId());
+            cloudEvent.putDimension(SERVICE_NAME, tsfEventReporterConfig.getServiceName());
+            cloudEvent.putDimension(APPLICATION_ID, tsfEventReporterConfig.getApplicationId());
+
+            cloudEvent.putExtensionMsg(UPSTREAM_SERVICE_KEY, flowEvent.getSourceService());
+            cloudEvent.putExtensionMsg(UPSTREAM_NAMESPACE_ID_KEY, flowEvent.getSourceNamespace());
+            String ruleId = flowEvent.getRuleName();
+            for (Map.Entry<String, String> entry : flowEvent.getAdditionalParams().entrySet()) {
+                cloudEvent.putExtensionMsg(entry.getKey(), entry.getValue());
+                if (StringUtils.equals(entry.getKey(), RULE_ID_KEY)) {
+                    ruleId = entry.getValue();
+                }
+            }
+
+            String uniqueId = tsfEventReporterConfig.getInstanceId()
+                    + "#" + tsfEventReporterConfig.getTsfNamespaceId()
+                    + "#" + tsfEventReporterConfig.getServiceName() + "#" + ruleId;
+            cloudEvent.setId(uniqueId);
+            cloudEvent.setObject(uniqueId);
+
+            // 如果满了就抛出异常
+            try {
+                BlockingQueue<Event> reportEventQueue = reportEventQueueMap.computeIfAbsent(cloudEvent.getEvent(), k -> new LinkedBlockingQueue<>(QUEUE_THRESHOLD));
+                reportEventQueue.add(cloudEvent);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("add report event to reportEventQueue: {}", cloudEvent);
+                }
+            } catch (Throwable throwable) {
+                LOG.warn("reportEventQueue {} is full. Log this event and drop it. event={}, error={}.",
+                        cloudEvent.getEvent(), cloudEvent, throwable.getMessage(), throwable);
+            }
+            return true;
+        } catch (Throwable throwable) {
+            LOG.warn("failed to add report event. {}", flowEvent, throwable);
             return false;
         }
     }
@@ -184,8 +256,18 @@ public class TsfEventReporter implements EventReporter {
                                 .setPath(v1Path)
                                 .setParameter("token", tsfEventReporterConfig.getToken())
                                 .build();
-                        LOG.info("Tsf event reporter init with v1 uri: {}", v1EventUri);
-                        eventV1Executors.scheduleWithFixedDelay(new TsfEventV1Task(), 1000, 1000, TimeUnit.MILLISECONDS);
+                        v1EventExecutors.scheduleWithFixedDelay(new TsfV1EventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
+                        LOG.info("Tsf v1 event reporter init with uri: {}", v1EventUri);
+
+                        this.reportEventUri = new URIBuilder()
+                                .setScheme("http")
+                                .setHost(tsfEventReporterConfig.getEventMasterIp())
+                                .setPort(tsfEventReporterConfig.getEventMasterPort())
+                                .setPath("/event/report")
+                                .setParameter("token", tsfEventReporterConfig.getToken())
+                                .build();
+                        reportEventExecutors.scheduleWithFixedDelay(new TsfReportEventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
+                        LOG.info("Tsf report event reporter init with uri: {}", reportEventUri);
                         LOG.info("Tsf event reporter starts reporting task.");
                     } catch (URISyntaxException | UnsupportedEncodingException e) {
                         LOG.error("Build event request url fail.", e);
@@ -197,10 +279,10 @@ public class TsfEventReporter implements EventReporter {
 
     @Override
     public void destroy() {
-        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{eventV1Executors});
+        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{v1EventExecutors, reportEventExecutors});
     }
 
-    class TsfEventV1Task implements Runnable {
+    class TsfV1EventTask implements Runnable {
 
         @Override
         public void run() {
@@ -221,32 +303,81 @@ public class TsfEventReporter implements EventReporter {
                 LOG.warn("Tsf v1 event reporter task fail.", e);
             }
         }
+
+        private void postV1Event(TsfGenericEvent genericEvent) {
+            StringEntity postBody = null;
+            RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
+            try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+                HttpPost httpPost = new HttpPost(v1EventUri);
+                postBody = new StringEntity(gson.toJson(genericEvent));
+                httpPost.setEntity(postBody);
+                httpPost.setHeader("Content-Type", "application/json");
+                HttpResponse httpResponse;
+
+                httpResponse = httpClient.execute(httpPost);
+                String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
+                TsfEventResponse response = gson.fromJson(resultString, TsfEventResponse.class);
+
+                if (response.getRetCode() != 0) {
+                    throw new RuntimeException("Report v1 event failed. Response = [" + resultString + "].");
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("postV1Event body:{}", postBody);
+                }
+                LOG.info("Report v1 event To TSF event-center Success. Response is : {}", resultString);
+            } catch (Exception e) {
+                String message = String.format("Report v1 event to event-master failed, postBody:%s.", postBody);
+                throw new PolarisException(SERVER_USER_ERROR, message, e);
+            }
+        }
     }
 
-    private void postV1Event(TsfGenericEvent genericEvent) {
-        StringEntity postBody = null;
-        RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
-        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-            HttpPost httpPost = new HttpPost(v1EventUri);
-            postBody = new StringEntity(gson.toJson(genericEvent));
-            httpPost.setEntity(postBody);
-            httpPost.setHeader("Content-Type", "application/json");
-            HttpResponse httpResponse;
+    class TsfReportEventTask implements Runnable {
 
-            httpResponse = httpClient.execute(httpPost);
-            String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
-            EventResponse response = gson.fromJson(resultString, EventResponse.class);
+        @Override
+        public void run() {
+            try {
+                reportEventQueueMap.entrySet().stream().parallel().forEach((entry) -> {
+                    while (!entry.getValue().isEmpty()) {
+                        try {
+                            List<Event> eventDataList = new ArrayList<>();
+                            entry.getValue().drainTo(eventDataList, MAX_BATCH_SIZE);
+                            postReportEvent(eventDataList);
+                        } catch (Throwable e) {
+                            LOG.warn("Tsf report event reporter task fail.", e);
+                        }
+                    }
+                });
+            } catch (Throwable e) {
+                LOG.warn("Tsf report event reporter task fail.", e);
+            }
+        }
 
-            if (response.getRetCode() != 0) {
-                throw new RuntimeException("Report v1 event failed. Response = [" + resultString + "].");
+        private void postReportEvent(List<Event> eventData) {
+            StringEntity postBody = null;
+            RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
+            try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+
+                HttpPost httpPost = new HttpPost(reportEventUri);
+                postBody = new StringEntity(gson.toJson(eventData));
+                httpPost.setEntity(postBody);
+                httpPost.setHeader("Content-Type", "application/json");
+
+                HttpResponse httpResponse = httpClient.execute(httpPost);
+                String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
+                EventResponse response = gson.fromJson(resultString, EventResponse.class);
+
+                if (StringUtils.isNotBlank(response.getErrorInfo())) {
+                    throw new RuntimeException("Report report event failed. Response = [" + resultString + "].");
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("postReportEvent body:{}", postBody);
+                }
+                LOG.info("Report report Event To TSF event-center Success. Response is : {}", resultString);
+            } catch (Exception e) {
+                String message = String.format("Report report event to event-master failed, postBody:%s.", postBody);
+                throw new PolarisException(SERVER_USER_ERROR, message, e);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("postV1Event body:{}", postBody);
-            }
-            LOG.info("Report v1 event To TSF event-center Success. Response is : {}", resultString);
-        } catch (Exception e) {
-            String message = String.format("Report v1 event to event-master failed, postBody:%s.", postBody);
-            throw new PolarisException(SERVER_USER_ERROR, message, e);
         }
     }
 }

@@ -22,26 +22,32 @@ import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
-import com.tencent.polaris.api.pojo.DefaultInstance;
-import com.tencent.polaris.api.pojo.DefaultServiceInstances;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.FlowControlParam;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.MetadataContainer;
+import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.ratelimit.client.pojo.CommonQuotaRequest;
-import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
+import com.tencent.polaris.ratelimit.client.sync.PolarisRemoteSyncTask;
+import com.tencent.polaris.ratelimit.client.sync.tsf.TsfRemoteSyncTask;
 import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
+import com.tencent.polaris.ratelimit.client.utils.RateLimiterEventUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimitCluster;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+import org.slf4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.tencent.polaris.metadata.core.constant.MetadataConstants.LOCAL_NAMESPACE;
+import static com.tencent.polaris.metadata.core.constant.MetadataConstants.LOCAL_SERVICE;
 
 /**
  * 限流窗口
@@ -104,18 +110,23 @@ public class RateLimitWindow {
     //限流模式
     private int configMode;
 
+    // 是否是TSF限流模式
+    private boolean isTsfCluster = false;
+
     //限流配置
     private final RateLimitConfig rateLimitConfig;
+
+    private final AtomicReference<QuotaResult.Code> lastCode = new AtomicReference<>(QuotaResult.Code.QuotaResultOk);
 
     /**
      * 构造函数
      *
-     * @param windowSet 集合
+     * @param windowSet    集合
      * @param quotaRequest 请求
-     * @param labelsStr 标签
+     * @param labelsStr    标签
      */
     public RateLimitWindow(RateLimitWindowSet windowSet, CommonQuotaRequest quotaRequest, String labelsStr,
-            RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
+                           RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
         status.set(WindowStatus.CREATED.ordinal());
         Rule rule = initCriteria.getRule();
         this.rule = rule;
@@ -179,6 +190,13 @@ public class RateLimitWindow {
             LOG.warn("remote limiter service or addresses not configured, degrade to local mode");
             return;
         }
+        if (rule.getMetadataMap().containsKey("limiter")
+                && StringUtils.equalsIgnoreCase("tsf", rule.getMetadataMap().get("limiter"))) {
+            // tsf的集群限流也用单机限流的方式执行逻辑，但是需要从远端更新令牌数
+            this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
+            this.isTsfCluster = true;
+            return;
+        }
         this.configMode = RateLimitConstants.CONFIG_QUOTA_GLOBAL_MODE;
     }
 
@@ -188,9 +206,10 @@ public class RateLimitWindow {
 
     private static QuotaBucket getQuotaBucket(InitCriteria criteria, RateLimitExtension extension) {
         String action = criteria.getRule().getAction().getValue();
+        Rule.Resource resource = criteria.getRule().getResource();
         ServiceRateLimiter rateLimiter = null;
         if (StringUtils.isNotBlank(action)) {
-            rateLimiter = extension.getRateLimiter(action);
+            rateLimiter = extension.getRateLimiter(resource, action);
         }
         if (null == rateLimiter) {
             rateLimiter = extension.getDefaultRateLimiter();
@@ -231,13 +250,18 @@ public class RateLimitWindow {
                 //确保初始化一次
                 return;
             }
-            if (configMode == RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE) {
+            if (configMode == RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE && !isTsfCluster) {
                 //本地限流，则直接可用
                 status.set(WindowStatus.INITIALIZED.ordinal());
                 return;
             }
             //加入轮询队列，走异步调度
-            windowSet.getRateLimitExtension().submitSyncTask(new RemoteSyncTask(this));
+            if (rule.getMetadataMap().containsKey("limiter")
+                    && StringUtils.equalsIgnoreCase("tsf", rule.getMetadataMap().get("limiter"))) {
+                windowSet.getRateLimitExtension().submitSyncTask(new TsfRemoteSyncTask(this), 0L, 1000L);
+            } else {
+                windowSet.getRateLimitExtension().submitSyncTask(new PolarisRemoteSyncTask(this));
+            }
         }
     }
 
@@ -252,10 +276,28 @@ public class RateLimitWindow {
         }
     }
 
-    public QuotaResult allocateQuota(int count) {
-        long curTimeMs = System.currentTimeMillis();
+    public QuotaResult allocateQuota(CommonQuotaRequest request) {
+        long curTimeMs = request.getCurrentTimestamp();
         lastAccessTimeMs.set(curTimeMs);
-        return allocatingBucket.allocateQuota(curTimeMs, count);
+        QuotaResult quotaResult = allocatingBucket.allocateQuota(curTimeMs, request.getCount());
+        if (!Objects.equals(lastCode.get(), quotaResult.getCode())) {
+            String sourceNamespace = "";
+            String sourceService = "";
+            if (Objects.nonNull(request.getMetadataContext())
+                    && Objects.nonNull(request.getMetadataContext().getMetadataContainer(MetadataType.APPLICATION, true))) {
+                MetadataContainer metadataContainer = request.getMetadataContext().getMetadataContainer(MetadataType.APPLICATION, true);
+                sourceNamespace = metadataContainer.getRawMetadataStringValue(LOCAL_NAMESPACE);
+                sourceService = metadataContainer.getRawMetadataStringValue(LOCAL_SERVICE);
+            }
+            RateLimiterEventUtils.reportEvent(windowSet.getExtensions(), svcKey, rule, lastCode.get(),
+                    quotaResult.getCode(), sourceNamespace, sourceService, labels, quotaResult.getInfo());
+        }
+        lastCode.set(quotaResult.getCode());
+        return quotaResult;
+    }
+
+    public void returnQuota(CommonQuotaRequest request) {
+        allocatingBucket.returnQuota(request.getCurrentTimestamp(), request.getCount());
     }
 
     /**

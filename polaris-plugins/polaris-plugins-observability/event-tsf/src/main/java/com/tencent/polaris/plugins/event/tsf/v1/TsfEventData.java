@@ -53,4 +53,16 @@ public class TsfEventData {
     public void setAdditionalMsg(List<TsfEventDataPair> additionalMsg) {
         this.additionalMsg = additionalMsg;
     }
+
+    @Override
+    public String toString() {
+        return "TsfEventData{" +
+                "occurTime=" + occurTime +
+                ", eventName='" + eventName + '\'' +
+                ", status=" + status +
+                ", instanceId='" + instanceId + '\'' +
+                ", dimensions=" + dimensions +
+                ", additionalMsg=" + additionalMsg +
+                '}';
+    }
 }

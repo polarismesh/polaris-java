@@ -15,25 +15,26 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.event.tsf.v1;
+package com.tencent.polaris.plugins.event.tsf.report;
 
 public class EventResponse {
-    private Integer retCode;
-    private String retMsg;
 
-    public Integer getRetCode() {
-        return retCode;
+    private String requestId;
+    private String errorInfo;
+
+    public String getRequestId() {
+        return requestId;
     }
 
-    public void setRetCode(Integer retCode) {
-        this.retCode = retCode;
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
-    public String getRetMsg() {
-        return retMsg;
+    public String getErrorInfo() {
+        return errorInfo;
     }
 
-    public void setRetMsg(String retMsg) {
-        this.retMsg = retMsg;
+    public void setErrorInfo(String errorInfo) {
+        this.errorInfo = errorInfo;
     }
 }

@@ -26,7 +26,10 @@ import com.tencent.polaris.specification.api.v1.model.ModelProto;
 public class TagConditionUtil {
 
     public static ModelProto.MatchString.MatchStringType parseMatchStringType(TagCondition tagCondition) {
-        String tagOperator = tagCondition.getTagOperator();
+        return parseMatchStringType(tagCondition.getTagOperator());
+    }
+
+    public static ModelProto.MatchString.MatchStringType parseMatchStringType(String tagOperator) {
         if (StringUtils.equals(tagOperator, TagConstant.OPERATOR.EQUAL)) {
             // 匹配关系  等于
             return ModelProto.MatchString.MatchStringType.EXACT;
