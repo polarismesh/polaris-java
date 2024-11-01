@@ -169,12 +169,12 @@ consumer:
     beforeChain:
       # 隔离路由
       - isolatedRouter
+      # 泳道路由
+      - laneRouter
     #描述: 服务路由链
     chain:
       # 命名空间就近路由
       - namespaceRouter
-      # 泳道路由
-      - laneRouter
       # 元数据路由
       - metadataRouter
       # 规则路由

@@ -35,7 +35,7 @@ public class CompareUtils {
             return 0;
         }
         if (serviceWildcard1) {
-            // 1 before 2
+            // 2 before 1
             return 1;
         }
         if (serviceWildcard2) {
@@ -51,5 +51,15 @@ public class CompareUtils {
             return nsResult;
         }
         return CompareUtils.compareSingleValue(service1, service2);
+    }
+
+    /**
+     * compare two boolean.
+     */
+    public static int compareBoolean(boolean b1, boolean b2) {
+        if (b1 == b2) {
+            return 0;
+        }
+        return b1 ? -1 : 1;
     }
 }
