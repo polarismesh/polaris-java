@@ -42,4 +42,67 @@ public class ApiTrieUtilTest {
         assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echoo/test-GET")).isFalse();
         assertThat(ApiTrieUtil.checkSimple(rootWithoutMethod, "/echo/-GET")).isFalse();
     }
+
+    @Test
+    public void testCheckConfig() {
+        TrieNode<String> root1 = ApiTrieUtil.buildConfigTrieNode("provider.config");
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.test")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.test.aaa")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config2.test")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.nameList[1]")).isTrue();
+
+        TrieNode<String> root2 = ApiTrieUtil.buildConfigTrieNode("provider.conf");
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.conf.test")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.conf.test.aaa")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.config2.test")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.config")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.conf")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.conf.nameList[1]")).isTrue();
+
+        TrieNode<String> root3 = new TrieNode<>(TrieNode.ROOT_PATH);
+        assertThat(ApiTrieUtil.checkConfig(root3, "provider.config.test")).isFalse();
+    }
+
+    @Test
+    public void testCheckConfig2() {
+        TrieNode<String> root1 = ApiTrieUtil.buildConfigTrieNode("provider.config.list");
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.list[1]")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.list[1].name")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.name")).isFalse();
+
+        TrieNode<String> root2 = ApiTrieUtil.buildConfigTrieNode("provider.config.map");
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.config.map.key1")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root2, "provider.config.map.key2")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.name")).isFalse();
+
+        TrieNode<String> root3 = new TrieNode<>(TrieNode.ROOT_PATH);
+        assertThat(ApiTrieUtil.checkConfig(root3, "provider.config.test")).isFalse();
+    }
+
+    @Test
+    public void testCheckConfigMergeRoot() {
+        TrieNode<String> root = new TrieNode<>(TrieNode.ROOT_PATH);
+
+        ApiTrieUtil.buildConfigTrieNode("provider.config", root);
+        ApiTrieUtil.buildConfigTrieNode("provider.conf", root);
+
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config.test")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config.test.aaa")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config2.test")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config.nameList[1]")).isTrue();
+
+
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.conf.test")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.conf.test.aaa")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config2.test")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider")).isFalse();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.config")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.conf")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root, "provider.conf.nameList[1]")).isTrue();
+    }
 }

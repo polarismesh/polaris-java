@@ -108,4 +108,53 @@ public class ApiTrieUtil {
         return false;
     }
 
+    public static TrieNode<String> buildConfigTrieNode(String prefix) {
+        TrieNode<String> root = new TrieNode<>(TrieNode.ROOT_PATH);
+        return buildConfigTrieNode(prefix, root);
+    }
+
+    public static TrieNode<String> buildConfigTrieNode(String prefix, TrieNode<String> root) {
+        if (StringUtils.isEmpty(prefix)) {
+            return null;
+        }
+        // split by .
+        String[] prefixes = prefix.split("\\.");
+        TrieNode<String> node = root;
+		for (String s : prefixes) {
+			node = node.getOrCreateSubNode(s);
+		}
+        return root;
+    }
+
+    public static boolean checkConfig(TrieNode<String> root, String config) {
+        if (root == null || root.isEmptyChildren()) {
+            return false;
+        }
+
+        String[] entities = config.split("\\.");
+
+        TrieNode<String> node = root;
+		for (String entity : entities) {
+            // empty children means leaf in config matching
+			if (node.isEmptyChildren()) {
+				return true;
+			}
+            // for list
+            if (entity.indexOf("[") < entity.indexOf("]")) {
+                entity = entity.substring(0, entity.indexOf("["));
+            }
+			node = node.getSubNode(entity);
+			if (node == null) {
+				return false;
+			}
+		}
+
+        if (node != null && node.isEmptyChildren()) {
+            // exact match
+            return true;
+        } else {
+            // not match or config is shorter than prefix
+            return false;
+        }
+    }
 }
