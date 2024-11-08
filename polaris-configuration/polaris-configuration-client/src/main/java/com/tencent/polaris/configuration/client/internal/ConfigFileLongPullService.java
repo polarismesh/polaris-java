@@ -107,15 +107,6 @@ public class ConfigFileLongPullService {
         }
     }
 
-    public void removeConfigFile(RemoteConfigFileRepo remoteConfigFileRepo) {
-        ConfigFileMetadata configFileMetadata = remoteConfigFileRepo.getConfigFileMetadata();
-        long version = remoteConfigFileRepo.getConfigFileVersion();
-        LOGGER.info("[Config] remove long polling config file. file = {}, version = {}", configFileMetadata, version);
-        configFilePool.remove(configFileMetadata);
-        //长轮询起始的配置文件版本号应该以第一次同步拉取为准
-        notifiedVersion.remove(configFileMetadata);
-    }
-
     private void startLongPollingTask() {
         if (!started.compareAndSet(false, true)) {
             return;
@@ -157,7 +148,7 @@ public class ConfigFileLongPullService {
                             changedConfigFile.getFileGroup(),
                             changedConfigFile.getFileName());
                     long newNotifiedVersion = changedConfigFile.getVersion();
-                    long oldNotifiedVersion = notifiedVersion.get(metadata);
+                    long oldNotifiedVersion = notifiedVersion.getOrDefault(metadata, -1L);
 
                     long maxVersion = newNotifiedVersion;
                     if (connector.isNotifiedVersionIncreaseStrictly()) {

@@ -119,17 +119,6 @@ public class ConfigFileManager {
         return configFile;
     }
 
-    public ConfigKVFile removeConfigKVFile(ConfigFileMetadata configFileMetadata) {
-        ConfigKVFile configFile = null;
-        synchronized (this) {
-            configFile = configPropertiesFileCache.get(configFileMetadata);
-            if (configFile != null) {
-                configFile = configPropertiesFileCache.remove(configFileMetadata);
-            }
-        }
-        return configFile;
-    }
-
     public ConfigFileResponse createConfigFile(CreateConfigFileRequest request) {
         com.tencent.polaris.api.plugin.configuration.ConfigFile configFile =
                 new com.tencent.polaris.api.plugin.configuration.ConfigFile(request.getNamespace(),
@@ -172,7 +161,7 @@ public class ConfigFileManager {
     public ConfigFile createConfigFile(ConfigFileMetadata configFileMetadata) {
 
         ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain,
-                connector, configFileMetadata, persistentHandler, this);
+                connector, configFileMetadata, persistentHandler);
 
         return new DefaultConfigFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
                 configFileMetadata.getFileName(), configFileRepo,
@@ -181,7 +170,7 @@ public class ConfigFileManager {
 
     public ConfigKVFile createConfigKVFile(ConfigFileMetadata configFileMetadata, ConfigFileFormat format) {
         ConfigFileRepo configFileRepo = new RemoteConfigFileRepo(context, longPullService, configFileFilterChain,
-                connector, configFileMetadata, persistentHandler, this);
+                connector, configFileMetadata, persistentHandler);
         switch (format) {
             case Properties: {
                 return new ConfigPropertiesFile(configFileMetadata.getNamespace(), configFileMetadata.getFileGroup(),
