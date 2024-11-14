@@ -383,11 +383,8 @@ public class QuotaFlow extends Destroyable {
                         labelValue = getLabelValue(matchArgument, stringStringMap);
                     }
 
-                    if (null == labelValue) {
-                        matched = false;
-                    } else {
-                        matched = RuleUtils.matchStringValue(matchArgument.getValue(), labelValue, function);
-                    }
+                    matched = RuleUtils.matchStringValue(matchArgument.getValue(), labelValue, function);
+
                     if (!matched) {
                         break;
                     }

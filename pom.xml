@@ -60,6 +60,7 @@
         <module>polaris-distribution</module>
         <module>polaris-examples</module>
         <module>polaris-configuration</module>
+        <module>polaris-auth</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 

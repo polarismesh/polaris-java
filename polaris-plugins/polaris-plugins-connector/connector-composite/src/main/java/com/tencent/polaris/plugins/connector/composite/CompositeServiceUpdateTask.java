@@ -113,7 +113,6 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                 entry.getValue().execute(this);
             }
         }
-        // TODO 全部规则实现完后改成StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_CONSUL)
         if (ifMainConnectorTypeSet && isServiceUpdateTaskExecuted
                 && (StringUtils.equals(mainConnectorType, SERVER_CONNECTOR_GRPC)
                 || (serviceEventKey.getEventType().equals(EventType.INSTANCE)
@@ -123,7 +122,8 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                 || serviceEventKey.getEventType().equals(EventType.LOSSLESS)
                 || serviceEventKey.getEventType().equals(EventType.CIRCUIT_BREAKING)
                 || serviceEventKey.getEventType().equals(EventType.RATE_LIMITING)
-                || serviceEventKey.getEventType().equals(EventType.LANE_RULE)))) {
+                || serviceEventKey.getEventType().equals(EventType.LANE_RULE)
+                || serviceEventKey.getEventType().equals(EventType.BLOCK_ALLOW_RULE)))) {
             return;
         }
         boolean svcDeleted = this.notifyServerEvent(
@@ -405,6 +405,15 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
             subTask.setType(ServiceUpdateTaskConstant.Type.FIRST, ServiceUpdateTaskConstant.Type.LONG_RUNNING);
         }
         return svcDeleted;
+    }
+
+    public boolean setStatus(Status last, Status current, boolean isSpread) {
+        if (isSpread) {
+            for (Map.Entry<String, ServiceUpdateTask> entry : subServiceUpdateTaskMap.entrySet()) {
+                entry.getValue().setStatus(last, current);
+            }
+        }
+        return taskStatus.compareAndSet(last, current);
     }
 
     private boolean canExecute(String connectorType, ServiceUpdateTask serviceUpdateTask) {

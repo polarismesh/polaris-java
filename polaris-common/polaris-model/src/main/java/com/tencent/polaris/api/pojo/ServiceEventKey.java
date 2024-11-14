@@ -34,6 +34,7 @@ public class ServiceEventKey implements Service {
         LANE_RULE,
         NEARBY_ROUTE_RULE,
         LOSSLESS,
+        BLOCK_ALLOW_RULE,
     }
 
     private final ServiceKey serviceKey;
