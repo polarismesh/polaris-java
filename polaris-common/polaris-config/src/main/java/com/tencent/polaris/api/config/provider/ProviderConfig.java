@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.config.provider;
 
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +73,15 @@ public interface ProviderConfig extends Verifier {
 
     /**
      * get the lossless configuration
+     *
      * @return configuration
      */
     LosslessConfig getLossless();
+
+    /**
+     * get the auth configuration
+     *
+     * @return AuthConfig
+     */
+    AuthConfig getAuth();
 }

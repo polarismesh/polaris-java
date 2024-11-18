@@ -303,6 +303,14 @@ provider:
     delayRegisterInterval: 30s
     # 优雅上线的探测周期
     healthCheckInterval: 5s
+  # 服务鉴权
+  auth:
+    # 是否启用服务鉴权
+    enable: false
+    #描述: 服务鉴权插件链
+    chain:
+      # 黑白名单鉴权插件
+      - blockAllowList
   # 限流配置
   rateLimit:
     # 是否开启限流功能

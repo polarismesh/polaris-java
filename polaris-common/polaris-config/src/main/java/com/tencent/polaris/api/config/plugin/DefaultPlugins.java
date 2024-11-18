@@ -89,4 +89,9 @@ public interface DefaultPlugins {
      * TSF 事件上报插件名
      */
     String TSF_EVENT_REPORTER_TYPE = "tsf";
+
+    /**
+     * 黑白名单鉴权插件名
+     */
+    String BLOCK_ALLOW_LIST_AUTHENTICATOR_TYPE = "blockAllowList";
 }

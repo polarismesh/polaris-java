@@ -30,5 +30,6 @@
 		<module>polaris-plugins-location</module>
         <module>polaris-plugins-configfilefilter</module>
         <module>polaris-plugins-lossless</module>
+        <module>polaris-plugins-auth</module>
     </modules>
 </project>

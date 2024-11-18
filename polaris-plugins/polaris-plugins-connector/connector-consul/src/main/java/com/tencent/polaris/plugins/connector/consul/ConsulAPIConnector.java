@@ -49,6 +49,7 @@ import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
 import com.tencent.polaris.plugins.connector.consul.service.InstanceService;
 import com.tencent.polaris.plugins.connector.consul.service.ServiceService;
+import com.tencent.polaris.plugins.connector.consul.service.authority.AuthorityService;
 import com.tencent.polaris.plugins.connector.consul.service.circuitbreaker.CircuitBreakingService;
 import com.tencent.polaris.plugins.connector.consul.service.lossless.LosslessService;
 import com.tencent.polaris.plugins.connector.consul.service.lane.LaneService;
@@ -236,6 +237,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         consulServiceMap.put(ServiceEventKey.EventType.CIRCUIT_BREAKING, new CircuitBreakingService(consulClient, consulRawClient, consulContext, "consul-circuit-breaking", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.RATE_LIMITING, new RateLimitingService(consulClient, consulRawClient, consulContext, "consul-rate-limiting", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.LANE_RULE, new LaneService(consulClient, consulRawClient, consulContext, "consul-lane", mapper));
+        consulServiceMap.put(ServiceEventKey.EventType.BLOCK_ALLOW_RULE, new AuthorityService(consulClient, consulRawClient, consulContext, "consul-auth", mapper));
         initialized = true;
     }
 

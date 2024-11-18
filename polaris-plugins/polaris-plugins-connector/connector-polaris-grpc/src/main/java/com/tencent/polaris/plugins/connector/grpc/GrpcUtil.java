@@ -239,6 +239,8 @@ public class GrpcUtil {
                 return DiscoverRequestType.NEARBY_ROUTE_RULE;
             case LOSSLESS:
                 return DiscoverRequestType.LOSSLESS;
+            case BLOCK_ALLOW_RULE:
+                return DiscoverRequestType.BLOCK_ALLOW_RULE;
             default:
                 return DiscoverRequestType.UNKNOWN;
         }
@@ -265,6 +267,8 @@ public class GrpcUtil {
                 return DiscoverResponseType.NEARBY_ROUTE_RULE;
             case LOSSLESS:
                 return DiscoverResponseType.LOSSLESS;
+            case BLOCK_ALLOW_RULE:
+                return DiscoverResponseType.BLOCK_ALLOW_RULE;
             default:
                 return DiscoverResponseType.UNKNOWN;
         }
@@ -290,6 +294,8 @@ public class GrpcUtil {
                 return EventType.NEARBY_ROUTE_RULE;
             case LOSSLESS:
                 return EventType.LOSSLESS;
+            case BLOCK_ALLOW_RULE:
+                return EventType.BLOCK_ALLOW_RULE;
             default:
                 return EventType.UNKNOWN;
         }

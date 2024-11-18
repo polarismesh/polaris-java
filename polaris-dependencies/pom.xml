@@ -145,7 +145,29 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- polaris-ratelimit-->
+            <!-- polaris-auth -->
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-auth-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-auth-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-auth-factory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>auth-block-allow-list</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- polaris-assembly-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-assembly-api</artifactId>

@@ -23,9 +23,10 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskConstant.Status;
+import org.slf4j.Logger;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
 
 /**
  * Destroyable server connector.
@@ -52,7 +53,7 @@ public abstract class DestroyableServerConnector extends Destroyable implements 
      */
     public void retryServiceUpdateTask(ServiceUpdateTask updateTask) {
         LOG.info("[ServerConnector]retry schedule task for {}, retry delay {}", updateTask, TASK_RETRY_INTERVAL_MS);
-        updateTask.setStatus(Status.RUNNING, Status.READY);
+        updateTask.setStatus(Status.RUNNING, Status.READY, true);
         if (isDestroyed()) {
             return;
         }

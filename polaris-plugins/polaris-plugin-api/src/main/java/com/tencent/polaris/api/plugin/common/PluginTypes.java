@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.plugin.common;
 
 import com.tencent.polaris.api.plugin.PluginType;
+import com.tencent.polaris.api.plugin.auth.Authenticator;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
@@ -135,7 +136,12 @@ public enum PluginTypes {
     /**
      * 无损上下线策略扩展点
      */
-    LOSSLESS_POLICY(new PluginType(LosslessPolicy.class, 2));
+    LOSSLESS_POLICY(new PluginType(LosslessPolicy.class, 2)),
+
+    /**
+     * 服务鉴权扩展点
+     */
+    AUTHENTICATOR(new PluginType(Authenticator.class, 2));
 
     private PluginType baseType;
 

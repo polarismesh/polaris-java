@@ -83,8 +83,12 @@ public abstract class ServiceUpdateTask implements Runnable, Comparable<ServiceU
         return taskType.compareAndSet(last, current);
     }
 
-    public boolean setStatus(Status last, Status current) {
+    public boolean setStatus(Status last, Status current, boolean isSpread) {
         return taskStatus.compareAndSet(last, current);
+    }
+
+    public boolean setStatus(Status last, Status current) {
+        return setStatus(last, current, false);
     }
 
     public void setLastUpdateTime(long currentTime) {

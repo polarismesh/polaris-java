@@ -23,6 +23,7 @@ import com.tencent.polaris.api.config.provider.LosslessConfig;
 import com.tencent.polaris.api.config.provider.ProviderConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,9 @@ public class ProviderConfigImpl implements ProviderConfig {
     @JsonProperty
     private LosslessConfigImpl lossless;
 
+    @JsonProperty
+    private AuthConfigImpl auth;
+
     @Override
     public RateLimitConfigImpl getRateLimit() {
         return rateLimit;
@@ -81,6 +85,11 @@ public class ProviderConfigImpl implements ProviderConfig {
     @Override
     public LosslessConfig getLossless() {
         return lossless;
+    }
+
+    @Override
+    public AuthConfigImpl getAuth() {
+        return auth;
     }
 
     @Override
@@ -113,6 +122,7 @@ public class ProviderConfigImpl implements ProviderConfig {
     public void verify() {
         ConfigUtils.validateNull(rateLimit, "rateLimitConfig");
         ConfigUtils.validateNull(lossless, "losslessConfig");
+        ConfigUtils.validateNull(auth, "authConfig");
 
         rateLimit.verify();
         if (CollectionUtils.isNotEmpty(registers)) {
@@ -131,6 +141,9 @@ public class ProviderConfigImpl implements ProviderConfig {
         if (null == lossless) {
             lossless = new LosslessConfigImpl();
         }
+        if (null == auth) {
+            auth = new AuthConfigImpl();
+        }
         if (null == service) {
             service = new ServiceConfigImpl();
         }
@@ -144,6 +157,7 @@ public class ProviderConfigImpl implements ProviderConfig {
             ProviderConfig providerConfig = (ProviderConfig) defaultObject;
             rateLimit.setDefault(providerConfig.getRateLimit());
             lossless.setDefault(providerConfig.getLossless());
+            auth.setDefault(providerConfig.getAuth());
             if (CollectionUtils.isNotEmpty(registers)) {
                 for (RegisterConfigImpl registerConfig : registers) {
                     registerConfig.setDefault(providerConfig.getRegisters().get(0));
@@ -175,6 +189,7 @@ public class ProviderConfigImpl implements ProviderConfig {
                 ", minRegisterInterval=" + minRegisterInterval +
                 ", heartbeatWorkerSize=" + heartbeatWorkerSize +
                 ", lossless=" + lossless +
+                ", auth=" + auth +
                 '}';
     }
 }
