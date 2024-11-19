@@ -29,7 +29,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
-import com.tencent.polaris.api.utils.ApiTrieUtil;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -221,7 +221,7 @@ public class BlockAllowListAuthenticator implements Authenticator {
                 return null;
             }
             FlowCache flowCache = extensions.getFlowCache();
-            return flowCache.loadPluginCacheObject(API_ID, key, path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+            return flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path));
         };
     }
 

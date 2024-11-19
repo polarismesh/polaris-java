@@ -20,20 +20,20 @@ package com.tencent.polaris.api.utils;
 import com.tencent.polaris.api.pojo.HttpElement;
 import com.tencent.polaris.api.pojo.TrieNode;
 
-public class ApiTrieUtil {
+public class TrieUtil {
 
     /**
      * @param apiPath
      * @return TrieNode
      */
-    public static TrieNode<String> buildSimpleTrieNode(String apiPath) {
+    public static TrieNode<String> buildSimpleApiTrieNode(String apiPath) {
         if (StringUtils.isEmpty(apiPath)) {
             return null;
         }
-        return buildSimpleTrieNode(new String[]{apiPath});
+        return buildSimpleApiTrieNode(new String[]{apiPath});
     }
 
-    public static TrieNode<String> buildSimpleTrieNode(String[] apiPathInfoList) {
+    public static TrieNode<String> buildSimpleApiTrieNode(String[] apiPathInfoList) {
         if (apiPathInfoList.length == 0) {
             return null;
         }
@@ -72,7 +72,7 @@ public class ApiTrieUtil {
         return root;
     }
 
-    public static boolean checkSimple(TrieNode<String> root, String apiPathInfo) {
+    public static boolean checkSimpleApi(TrieNode<String> root, String apiPathInfo) {
         if (root == null) {
             return false;
         }
