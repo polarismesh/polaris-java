@@ -127,7 +127,7 @@ public class ApiTrieUtil {
     }
 
     public static boolean checkConfig(TrieNode<String> root, String config) {
-        if (root == null || root.isEmptyChildren()) {
+        if (root == null || root.isEmptyChildren() || StringUtils.isEmpty(config)) {
             return false;
         }
 

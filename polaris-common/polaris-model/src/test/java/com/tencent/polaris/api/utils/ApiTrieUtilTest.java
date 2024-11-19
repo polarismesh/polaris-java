@@ -52,6 +52,7 @@ public class ApiTrieUtilTest {
         assertThat(ApiTrieUtil.checkConfig(root1, "provider")).isFalse();
         assertThat(ApiTrieUtil.checkConfig(root1, "provider.config")).isTrue();
         assertThat(ApiTrieUtil.checkConfig(root1, "provider.config.nameList[1]")).isTrue();
+        assertThat(ApiTrieUtil.checkConfig(root1, null)).isFalse();
 
         TrieNode<String> root2 = ApiTrieUtil.buildConfigTrieNode("provider.conf");
         assertThat(ApiTrieUtil.checkConfig(root2, "provider.conf.test")).isTrue();
