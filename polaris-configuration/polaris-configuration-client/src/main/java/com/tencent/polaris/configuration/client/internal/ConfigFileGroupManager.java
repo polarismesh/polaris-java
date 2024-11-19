@@ -26,6 +26,8 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileGroup;
 import com.tencent.polaris.configuration.api.core.ConfigFileGroupMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ConfigFileGroupManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileGroupManager.class);
     private final Map<ConfigFileGroupMetadata, RevisableConfigFileGroup> configFileGroupCache =
             new ConcurrentHashMap<>();
     private RetryableConfigFileGroupConnector rpcConnector;
@@ -69,7 +72,8 @@ public class ConfigFileGroupManager {
 
     public ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata metadata) {
         if (!enabled) {
-            throw new RuntimeException("Config file group manager is disabled.");
+            LOGGER.warn("config file group is not enabled, metadata: {}", metadata);
+            return null;
         }
         RevisableConfigFileGroup configFileGroup = configFileGroupCache.get(metadata);
         if (configFileGroup == null) {
