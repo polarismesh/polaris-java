@@ -155,7 +155,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
 
             matched = RuleUtils.matchMetadata(source.getMetadataMap(), trafficLabels, metadataContainerGroup, true,
                     multiEnvRouterParamMap, globalVariablesConfig,
-                    key -> flowCache.loadPluginCacheObject(API_ID, key, path -> ApiTrieUtil.buildSimpleTrieNode((String) path)));
+                    key -> flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
             if (matched) {
                 break;
             }

@@ -37,7 +37,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.*;
-import com.tencent.polaris.api.utils.ApiTrieUtil;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.NamedThreadFactory;
@@ -348,7 +348,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
                 return null;
             }
             FlowCache flowCache = extensions.getFlowCache();
-            return flowCache.loadPluginCacheObject(API_ID, key, path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+            return flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path));
         };
     }
 

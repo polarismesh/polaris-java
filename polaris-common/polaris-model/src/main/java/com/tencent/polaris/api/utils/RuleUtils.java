@@ -93,7 +93,7 @@ public class RuleUtils {
         switch (matchType) {
             case EXACT: {
                 if (useTrieNode && trieNodeFunction != null) {
-                    return ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue);
+                    return TrieUtil.checkSimpleApi(trieNodeFunction.apply(matchValue), actualValue);
                 }
                 return StringUtils.equalsIgnoreCase(actualValue, matchValue);
             }
@@ -104,7 +104,7 @@ public class RuleUtils {
             }
             case NOT_EQUALS: {
                 if (useTrieNode && trieNodeFunction != null) {
-                    return !ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue);
+                    return !TrieUtil.checkSimpleApi(trieNodeFunction.apply(matchValue), actualValue);
                 }
                 return !StringUtils.equalsIgnoreCase(actualValue, matchValue);
             }
@@ -112,7 +112,7 @@ public class RuleUtils {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
                     if (useTrieNode && trieNodeFunction != null) {
-                        if (ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue)) {
+                        if (TrieUtil.checkSimpleApi(trieNodeFunction.apply(matchValue), actualValue)) {
                             return true;
                         }
                     } else {
@@ -127,7 +127,7 @@ public class RuleUtils {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
                     if (useTrieNode && trieNodeFunction != null) {
-                        if (ApiTrieUtil.checkSimple(trieNodeFunction.apply(matchValue), actualValue)) {
+                        if (TrieUtil.checkSimpleApi(trieNodeFunction.apply(matchValue), actualValue)) {
                             return false;
                         }
                     } else {

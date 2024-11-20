@@ -50,6 +50,10 @@ public class TrieNode<T> {
         return null;
     }
 
+    public boolean isEmptyChildren() {
+        return children.isEmpty();
+    }
+
     // only for build trie
     public TrieNode<T> getOrCreateSubNode(String path) {
         if (path.startsWith("{") && path.endsWith("}")) {

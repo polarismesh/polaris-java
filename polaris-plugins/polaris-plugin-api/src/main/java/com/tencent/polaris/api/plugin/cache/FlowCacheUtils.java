@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.api.plugin.cache;
 
-import com.tencent.polaris.api.utils.ApiTrieUtil;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 
 import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
@@ -31,12 +31,12 @@ public class FlowCacheUtils {
         if (matchString != null && matchString.getType() != ModelProto.MatchString.MatchStringType.REGEX) {
             if (matchString.getType() == ModelProto.MatchString.MatchStringType.EXACT || matchString.getType() == ModelProto.MatchString.MatchStringType.NOT_EQUALS) {
                 flowCache.loadPluginCacheObject(API_ID, matchString.getValue().getValue(),
-                        path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+                        path -> TrieUtil.buildSimpleApiTrieNode((String) path));
             } else if (matchString.getType() == ModelProto.MatchString.MatchStringType.IN || matchString.getType() == ModelProto.MatchString.MatchStringType.NOT_IN) {
                 String[] apis = matchString.getValue().getValue().split(",");
                 for (String api : apis) {
                     flowCache.loadPluginCacheObject(API_ID, api,
-                            path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+                            path -> TrieUtil.buildSimpleApiTrieNode((String) path));
                 }
             }
         }

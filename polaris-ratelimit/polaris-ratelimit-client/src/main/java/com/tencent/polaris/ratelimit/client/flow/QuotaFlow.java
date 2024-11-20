@@ -90,7 +90,7 @@ public class QuotaFlow extends Destroyable {
         extensions.getLocalRegistry().registerResourceListener(new RateLimitRuleListener());
         trieNodeFunction = key -> {
             FlowCache flowCache = extensions.getFlowCache();
-            return flowCache.loadPluginCacheObject(API_ID, key, path -> ApiTrieUtil.buildSimpleTrieNode((String) path));
+            return flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path));
         };
 
         // init tsf rate limit master utils if need
