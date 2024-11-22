@@ -198,11 +198,23 @@ public class AuthorityService extends ConsulService {
                             } else if (StringUtils.equals(authTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME)) {
                                 matchArgumentBuilder.setType(BlockAllowListProto.BlockAllowConfig.MatchArgument.Type.CALLER_SERVICE);
                                 matchArgumentBuilder.setKey("*");
-                                String[] split = authTag.getTagValue().split("/");
-                                if (split.length == 2) {
-                                    matchArgumentBuilder.setKey(split[0]);
-                                    authTag.setTagValue(split[1]);
+                                String[] tagValues = authTag.getTagValue().split(",");
+                                StringBuilder serviceNameStringBuilder = new StringBuilder();
+                                for (String tagValue : tagValues) {
+                                    if (StringUtils.isNotEmpty(tagValue)) {
+                                        String[] split = tagValue.split("/");
+                                        if (split.length == 2) {
+                                            serviceNameStringBuilder.append(split[1]).append(",");
+                                        } else {
+                                            serviceNameStringBuilder.append(tagValue).append(",");
+                                        }
+                                    }
                                 }
+                                String serviceNameString = serviceNameStringBuilder.toString();
+                                if (serviceNameString.endsWith(",")) {
+                                    serviceNameString = serviceNameString.substring(0, serviceNameString.length() - 1);
+                                }
+                                authTag.setTagValue(serviceNameString);
                             } else if (StringUtils.equals(authTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_APPLICATION_ID)) {
                                 matchArgumentBuilder.setType(BlockAllowListProto.BlockAllowConfig.MatchArgument.Type.CALLER_METADATA);
                                 matchArgumentBuilder.setKey(TsfMetadataConstants.TSF_APPLICATION_ID);
@@ -238,7 +250,11 @@ public class AuthorityService extends ConsulService {
                                 ModelProto.API.Builder apiBuilder = ModelProto.API.newBuilder();
                                 apiBuilder.setPath(matchStringBuilder);
                                 apiBuilder.setProtocol("*");
-                                apiBuilder.setMethod(authTag.getTagValue());
+                                String method = authTag.getTagValue();
+                                if (authTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL)) {
+                                    method = "!" + method;
+                                }
+                                apiBuilder.setMethod(method);
                                 blockAllowConfigBuilder.setApi(apiBuilder.build());
                                 continue;
                             } else {

@@ -169,7 +169,7 @@ public class RuleUtils {
     // 匹配metadata
     public static boolean matchMetadata(Map<String, MatchString> ruleMeta, Map<String, String> destMeta,
                                         boolean isMatchSource, Map<String, String> multiEnvRouterParamMap, Map<String
-            , String> variables) {
+                    , String> variables) {
         return matchMetadata(ruleMeta, destMeta, null, isMatchSource, multiEnvRouterParamMap, variables, null);
     }
 
@@ -346,13 +346,19 @@ public class RuleUtils {
 
     public static boolean matchMethod(String path, String protocol, String method, ModelProto.API api,
                                       Function<String, Pattern> regexToPattern, Function<String, TrieNode<String>> trieNodeFunction) {
+        MatchStringType methodMatchStringType = MatchStringType.EXACT;
+        String apiMethod = api.getMethod();
+        if (StringUtils.isNotBlank(apiMethod) && apiMethod.startsWith("!")) {
+            methodMatchStringType = MatchStringType.NOT_EQUALS;
+            apiMethod = apiMethod.substring(1);
+        }
         if (trieNodeFunction != null) {
             return RuleUtils.matchStringValue(MatchString.MatchStringType.EXACT, protocol, api.getProtocol())
-                    && RuleUtils.matchStringValue(MatchString.MatchStringType.EXACT, method, api.getMethod())
+                    && RuleUtils.matchStringValue(methodMatchStringType, method, apiMethod)
                     && RuleUtils.matchStringValue(api.getPath().getType(), path, api.getPath().getValue().getValue(), regexToPattern, true, trieNodeFunction);
         } else {
             return RuleUtils.matchStringValue(MatchString.MatchStringType.EXACT, protocol, api.getProtocol())
-                    && RuleUtils.matchStringValue(MatchString.MatchStringType.EXACT, method, api.getMethod())
+                    && RuleUtils.matchStringValue(methodMatchStringType, method, apiMethod)
                     && RuleUtils.matchStringValue(api.getPath(), path, regexToPattern);
         }
     }
