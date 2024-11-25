@@ -255,11 +255,23 @@ public class RateLimitingService extends ConsulService {
                         } else if (StringUtils.equals(cond.get("tagField"), TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME)) {
                             matchArgumentBuilder.setType(RateLimitProto.MatchArgument.Type.CALLER_SERVICE);
                             matchArgumentBuilder.setKey("*");
-                            String[] split = cond.get("tagValue").split("/");
-                            if (split.length == 2) {
-                                matchArgumentBuilder.setKey(split[0]);
-                                cond.put("tagValue", split[1]);
+                            String[] tagValues = cond.get("tagValue").split(",");
+                            StringBuilder serviceNameStringBuilder = new StringBuilder();
+                            for (String tagValue : tagValues) {
+                                if (StringUtils.isNotEmpty(tagValue)) {
+                                    String[] split = tagValue.split("/");
+                                    if (split.length == 2) {
+                                        serviceNameStringBuilder.append(split[1]).append(",");
+                                    } else {
+                                        serviceNameStringBuilder.append(tagValue).append(",");
+                                    }
+                                }
                             }
+                            String serviceNameString = serviceNameStringBuilder.toString();
+                            if (serviceNameString.endsWith(",")) {
+                                serviceNameString = serviceNameString.substring(0, serviceNameString.length() - 1);
+                            }
+                            cond.put("tagValue", serviceNameString);
                         } else if (StringUtils.equals(cond.get("tagField"), TagConstant.SYSTEM_FIELD.SOURCE_APPLICATION_ID)) {
                             matchArgumentBuilder.setType(RateLimitProto.MatchArgument.Type.CALLER_METADATA);
                             matchArgumentBuilder.setKey(TsfMetadataConstants.TSF_APPLICATION_ID);
