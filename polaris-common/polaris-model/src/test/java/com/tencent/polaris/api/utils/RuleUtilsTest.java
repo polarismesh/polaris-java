@@ -108,6 +108,16 @@ public class RuleUtilsTest {
     }
 
     @Test
+    public void testInMatch() {
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.IN, "123", "123,456")).isTrue();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.IN, "123", "456,123")).isTrue();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.IN, "231", "123,456")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.NOT_IN, "123", "123,456")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.NOT_IN, "123", "456,123")).isFalse();
+        assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.NOT_IN, "231", "123,456")).isTrue();
+    }
+
+    @Test
     public void testRangeMatch() {
         assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "123", "123~456")).isTrue();
         assertThat(matchStringValue(ModelProto.MatchString.MatchStringType.RANGE, "231", "123~456")).isTrue();

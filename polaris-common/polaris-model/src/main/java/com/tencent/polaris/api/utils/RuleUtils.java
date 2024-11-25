@@ -112,7 +112,7 @@ public class RuleUtils {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
                     if (useTrieNode && trieNodeFunction != null) {
-                        if (TrieUtil.checkSimpleApi(trieNodeFunction.apply(matchValue), actualValue)) {
+                        if (TrieUtil.checkSimpleApi(trieNodeFunction.apply(token), actualValue)) {
                             return true;
                         }
                     } else {
@@ -127,7 +127,7 @@ public class RuleUtils {
                 String[] tokens = matchValue.split(",");
                 for (String token : tokens) {
                     if (useTrieNode && trieNodeFunction != null) {
-                        if (TrieUtil.checkSimpleApi(trieNodeFunction.apply(matchValue), actualValue)) {
+                        if (TrieUtil.checkSimpleApi(trieNodeFunction.apply(token), actualValue)) {
                             return false;
                         }
                     } else {
