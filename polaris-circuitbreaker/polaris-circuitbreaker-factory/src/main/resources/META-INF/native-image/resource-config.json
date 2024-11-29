@@ -1,0 +1,57 @@
+{
+  "resources":{
+  "includes":[{
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.config.ConfigProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.config.plugin.PluginConfigProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.flow.DiscoveryFlow\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.TypeProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.cache.FlowCache\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.detect.HealthChecker\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.loadbalance.LoadBalancer\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.location.LocationProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.registry.CacheHandler\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.registry.LocalRegistry\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.route.ServiceRouter\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.server.ServerConnector\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.api.plugin.stat.StatReporter\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/com.tencent.polaris.client.api.ServiceCallResultListener\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.LoadBalancerProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.ManagedChannelProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.NameResolverProvider\\E"
+  }, {
+    "pattern":"\\QMETA-INF/services/io.grpc.ServerProvider\\E"
+  }, {
+    "pattern":"\\QcircuitBreakerRule.json\\E"
+  }, {
+    "pattern":"\\Qconf/default-config.yml\\E"
+  }, {
+    "pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"
+  }, {
+    "pattern":"\\Qpolaris-logback.xml\\E"
+  }, {
+    "pattern":"\\Qpolaris.yml\\E"
+  }]},
+  "bundles":[]
+}
