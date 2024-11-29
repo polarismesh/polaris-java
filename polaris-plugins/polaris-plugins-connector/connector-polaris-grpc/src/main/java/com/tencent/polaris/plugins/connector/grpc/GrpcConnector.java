@@ -170,7 +170,7 @@ public class GrpcConnector extends DestroyableServerConnector {
         updateServiceExecutor = new ScheduledThreadPoolExecutor(1,
                 new NamedThreadFactory(getName() + "-update-service"));
         updateServiceExecutor.setMaximumPoolSize(1);
-        clientInstanceId = UUID.randomUUID().toString();
+        clientInstanceId = ctx.getValueContext().getClientId();
         initialized = true;
     }
 
