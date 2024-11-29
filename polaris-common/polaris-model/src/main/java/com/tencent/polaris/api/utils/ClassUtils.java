@@ -15,36 +15,35 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.plugin.stat;
+package com.tencent.polaris.api.utils;
 
-import com.tencent.polaris.api.plugin.Plugin;
-
-import java.util.Map;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
- * 【扩展点接口】上报调用链
+ * Utils for class.
  *
- * @author andrewshan
- * @date 2024/6/2
+ * @author Haotian Zhang
  */
-public interface TraceReporter extends Plugin {
+public class ClassUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RuleUtils.class);
 
     /**
-     * if the reporter is enabled
-     */
-    boolean isEnabled();
-
-    /**
-     * set the attributes in trace span
+     * Check if class is present.
      *
-     * @param attributes span attributes
+     * @param className class name
+     * @return true if present, false otherwise
      */
-    void setSpanAttributes(Map<String, String> attributes);
-
-    /**
-     * set the attributes in baggage span
-     *
-     * @param attributes baggage attributes
-     */
-    Object setBaggageAttributes(Map<String, String> attributes);
+    public static boolean isClassPresent(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        } catch (Throwable throwable) {
+            LOG.warn("Failed to check class present", throwable);
+            return false;
+        }
+    }
 }

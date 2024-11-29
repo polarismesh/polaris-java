@@ -191,18 +191,19 @@ public class DefaultAssemblyFlow implements AssemblyFlow {
             return;
         }
         TraceReporter traceReporter = extensions.getTraceReporter();
-        if (null == traceReporter) {
+        if (null == traceReporter || !traceReporter.isEnabled()) {
             return;
         }
         switch (traceAttributes.getAttributeLocation()) {
-        case SPAN:
-            traceReporter.setSpanAttributes(traceAttributes.getAttributes());
-            break;
-        case BAGGAGE:
-            traceReporter.setBaggageAttributes(traceAttributes.getAttributes());
-            break;
-        default:
-            break;
+            case SPAN:
+                traceReporter.setSpanAttributes(traceAttributes.getAttributes());
+                break;
+            case BAGGAGE:
+                Object otScope = traceReporter.setBaggageAttributes(traceAttributes.getAttributes());
+                traceAttributes.setOtScope(otScope);
+                break;
+            default:
+                break;
         }
     }
 

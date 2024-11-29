@@ -21,32 +21,41 @@ import java.util.Map;
 
 public class TraceAttributes {
 
-	/**
-	 * The location to put attributes
-	 */
-	public enum AttributeLocation {
-		SPAN,
-		BAGGAGE
-	}
+    /**
+     * The location to put attributes
+     */
+    public enum AttributeLocation {
+        SPAN,
+        BAGGAGE
+    }
 
-	private Map<String, String> attributes;
+    private Map<String, String> attributes;
 
+    private AttributeLocation attributeLocation;
 
-	private AttributeLocation attributeLocation;
+    private Object otScope;
 
-	public Map<String, String> getAttributes() {
-		return attributes;
-	}
+    public Map<String, String> getAttributes() {
+        return attributes;
+    }
 
-	public void setAttributes(Map<String, String> attributes) {
-		this.attributes = attributes;
-	}
+    public void setAttributes(Map<String, String> attributes) {
+        this.attributes = attributes;
+    }
 
-	public AttributeLocation getAttributeLocation() {
-		return attributeLocation;
-	}
+    public AttributeLocation getAttributeLocation() {
+        return attributeLocation;
+    }
 
-	public void setAttributeLocation(AttributeLocation attributeLocation) {
-		this.attributeLocation = attributeLocation;
-	}
+    public void setAttributeLocation(AttributeLocation attributeLocation) {
+        this.attributeLocation = attributeLocation;
+    }
+
+    public Object getOtScope() {
+        return otScope;
+    }
+
+    public void setOtScope(Object otScope) {
+        this.otScope = otScope;
+    }
 }
