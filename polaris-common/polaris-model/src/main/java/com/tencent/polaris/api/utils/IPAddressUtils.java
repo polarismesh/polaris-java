@@ -17,11 +17,18 @@
 
 package com.tencent.polaris.api.utils;
 
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
+import java.net.InetAddress;
+
 /**
  * @author Haotian Zhang
  */
 public class IPAddressUtils {
-    
+
+    private static final Logger LOG = LoggerFactory.getLogger(IPAddressUtils.class);
+
     public static String getIpCompatible(String ip) {
         if (StringUtils.isEmpty(ip)) {
             return ip;
@@ -30,5 +37,21 @@ public class IPAddressUtils {
             return "[" + ip + "]";
         }
         return ip;
+    }
+
+    public static String getHostName() {
+        try {
+            String hostname = System.getenv("HOSTNAME");
+            if (StringUtils.isBlank(hostname)) {
+                hostname = System.getProperty("HOSTNAME");
+            }
+            if (StringUtils.isBlank(hostname)) {
+                hostname = InetAddress.getLocalHost().getHostName();
+            }
+            return hostname;
+        } catch (Exception e) {
+            LOG.warn("get host name error", e);
+            return "";
+        }
     }
 }

@@ -43,6 +43,7 @@ import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.api.plugin.stat.ReporterMetaInfo;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.AbstractFlow;
 import com.tencent.polaris.client.util.NamedThreadFactory;
@@ -64,6 +65,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * SDK初始化相关的上下文信息
@@ -74,6 +76,12 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
 
     private static final Logger LOG = LoggerFactory.getLogger(SDKContext.class);
     private static final String DEFAULT_ADDRESS = "127.0.0.1";
+
+    /**
+     * 客户端ID自增序列
+     */
+    private static final AtomicInteger CLIENT_ID_SEQ = new AtomicInteger(0);
+
     /**
      * 配置对象
      */
@@ -105,7 +113,8 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
         this.configuration = configuration;
         this.plugins = plugins;
         this.valueContext = valueContext;
-        this.valueContext.setClientId(generateClientId(this.valueContext.getHost()));
+        this.valueContext.setClientId(generateClientId(getHostNameOrDefaultToHost(this.valueContext.getHost())));
+        LOG.info("init SDKContext with clientId={}", this.valueContext.getClientId());
         List<ServerServiceInfo> services = new ArrayList<>();
         //加载系统服务配置
         SystemConfig system = configuration.getGlobal().getSystem();
@@ -130,7 +139,24 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
     }
 
     private static String generateClientId(String host) {
-        return host + "-" + getProcessId("0");
+        if (!StringUtils.equalsIgnoreCase(host, DEFAULT_ADDRESS)) {
+            return host + "_" + getProcessId("0") + "_" + CLIENT_ID_SEQ.getAndIncrement();
+        } else {
+            return UUID.randomUUID().toString();
+        }
+    }
+
+    private static String getHostNameOrDefaultToHost(String host) {
+        try {
+            String hostName = IPAddressUtils.getHostName();
+            if (StringUtils.isBlank(hostName)) {
+                hostName = host;
+            }
+            return hostName;
+        } catch (Throwable throwable) {
+            LOG.error("fail to get host name", throwable);
+            return host;
+        }
     }
 
     private static String getProcessId(String fallback) {
