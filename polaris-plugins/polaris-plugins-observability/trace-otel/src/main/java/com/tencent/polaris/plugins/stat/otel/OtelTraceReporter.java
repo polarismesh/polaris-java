@@ -26,6 +26,7 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
+import com.tencent.polaris.api.utils.ClassUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.logging.PolarisLogging;
 import io.opentelemetry.api.baggage.Baggage;
@@ -35,45 +36,50 @@ import org.slf4j.Logger;
 
 public class OtelTraceReporter implements TraceReporter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PolarisLogging.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PolarisLogging.class);
 
-	@Override
-	public String getName() {
-		return TraceReporterConfig.DEFAULT_REPORTER_OTEL;
-	}
+    @Override
+    public String getName() {
+        return TraceReporterConfig.DEFAULT_REPORTER_OTEL;
+    }
 
-	@Override
-	public PluginType getType() {
-		return PluginTypes.TRACE_REPORTER.getBaseType();
-	}
+    @Override
+    public PluginType getType() {
+        return PluginTypes.TRACE_REPORTER.getBaseType();
+    }
 
-	@Override
-	public void init(InitContext ctx) throws PolarisException {
+    @Override
+    public void init(InitContext ctx) throws PolarisException {
 
-	}
+    }
 
-	@Override
-	public void postContextInit(Extensions ctx) throws PolarisException {
+    @Override
+    public void postContextInit(Extensions ctx) throws PolarisException {
 
-	}
+    }
 
-	@Override
-	public void destroy() {
+    @Override
+    public void destroy() {
 
-	}
+    }
 
-	@Override
-	public void setSpanAttributes(Map<String, String> attributes) {
-		LOGGER.debug("OtelTraceReporter: setSpanAttributes: {}", attributes);
-		Span span = Span.current();
-		attributes.forEach(span::setAttribute);
-	}
+    @Override
+    public boolean isEnabled() {
+        return ClassUtils.isClassPresent("io.opentelemetry.api.trace.Span");
+    }
 
-	@Override
-	public void setBaggageAttributes(Map<String, String> attributes) {
-		LOGGER.debug("OtelTraceReporter: setBaggageAttributes: {}", attributes);
-		BaggageBuilder builder = Baggage.current().toBuilder();
-		attributes.forEach(builder::put);
-		builder.build().makeCurrent();
-	}
+    @Override
+    public void setSpanAttributes(Map<String, String> attributes) {
+        LOGGER.debug("OtelTraceReporter: setSpanAttributes: {}", attributes);
+        Span span = Span.current();
+        attributes.forEach(span::setAttribute);
+    }
+
+    @Override
+    public Object setBaggageAttributes(Map<String, String> attributes) {
+        LOGGER.debug("OtelTraceReporter: setBaggageAttributes: {}", attributes);
+        BaggageBuilder builder = Baggage.current().toBuilder();
+        attributes.forEach(builder::put);
+        return builder.build().makeCurrent();
+    }
 }
