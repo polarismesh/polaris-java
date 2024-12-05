@@ -201,31 +201,66 @@ public class RoutingService extends ConsulService {
                 RoutingProto.Route.Builder routeBuilder = RoutingProto.Route.newBuilder();
                 routeBuilder.putExtendInfo(ROUTER_FAULT_TOLERANCE_ENABLE, String.valueOf(routeRuleGroup.getFallbackStatus()));
                 // parse sources
-                List<RoutingProto.Source> sources = Lists.newArrayList();
-                RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
-                sourceBuilder.setNamespace(StringValue.of("*"));
-                sourceBuilder.setService(StringValue.of("*"));
+                List<RoutingProto.Source> sources = new ArrayList<>();
+                List<RoutingProto.Source.Builder> sourceBuilders = new ArrayList<>();
+                List<RoutingProto.Source.Builder> metadataSourceBuilders = new ArrayList<>();
                 if (CollectionUtils.isNotEmpty(routeRule.getTagList())) {
                     for (RouteTag routeTag : routeRule.getTagList()) {
                         if (StringUtils.equals(routeTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_SERVICE_NAME)) {
-                            sourceBuilder.setService(StringValue.of(routeTag.getTagValue()));
+                            String[] tagValues = routeTag.getTagValue().split(",");
+                            for (String tagValue : tagValues) {
+                                if (StringUtils.isNotEmpty(tagValue)) {
+                                    RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
+                                    sourceBuilder.setNamespace(StringValue.of("*"));
+                                    String serviceName = tagValue;
+                                    if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL) || routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_IN)) {
+                                        serviceName = "!" + serviceName;
+                                    }
+                                    sourceBuilder.setService(StringValue.of(serviceName));
+                                    sourceBuilders.add(sourceBuilder);
+                                }
+                            }
                         } else if (StringUtils.equals(routeTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME)) {
-                            String[] split = routeTag.getTagValue().split("/");
-                            if (split.length == 2) {
-                                sourceBuilder.setNamespace(StringValue.of(split[0]));
-                                sourceBuilder.setService(StringValue.of(split[1]));
+                            String[] tagValues = routeTag.getTagValue().split(",");
+                            for (String tagValue : tagValues) {
+                                if (StringUtils.isNotEmpty(tagValue)) {
+                                    String[] split = tagValue.split("/");
+                                    RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
+                                    sourceBuilder.setNamespace(StringValue.of("*"));
+                                    String serviceName = tagValue;
+                                    if (split.length == 2) {
+                                        serviceName = split[1];
+                                    }
+                                    if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL) || routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_IN)) {
+                                        serviceName = "!" + serviceName;
+                                    } else if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.REGEX)) {
+                                        serviceName = "*" + serviceName;
+                                    }
+                                    sourceBuilder.setService(StringValue.of(serviceName));
+                                    sourceBuilders.add(sourceBuilder);
+                                }
                             }
                         } else {
+                            RoutingProto.Source.Builder metadataSourceBuilder = RoutingProto.Source.newBuilder();
+                            metadataSourceBuilder.setNamespace(StringValue.of("*"));
+                            metadataSourceBuilder.setService(StringValue.of("*"));
                             ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
                             matchStringBuilder.setType(parseMatchStringType(routeTag));
                             matchStringBuilder.setValue(StringValue.of(routeTag.getTagValue()));
                             matchStringBuilder.setValueType(ModelProto.MatchString.ValueType.TEXT);
                             String metadataKey = routeTag.getTagField();
-                            sourceBuilder.putMetadata(parseMetadataKey(metadataKey), matchStringBuilder.build());
+                            metadataSourceBuilder.putMetadata(parseMetadataKey(metadataKey), matchStringBuilder.build());
+                            metadataSourceBuilders.add(metadataSourceBuilder);
                         }
                     }
+                    for (RoutingProto.Source.Builder sourceBuilder : sourceBuilders) {
+                        for (RoutingProto.Source.Builder metadataSourceBuilder : metadataSourceBuilders) {
+                            sourceBuilder.putAllMetadata(metadataSourceBuilder.getMetadataMap());
+                        }
+                        sources.add(sourceBuilder.build());
+                    }
                 }
-                sources.add(sourceBuilder.build());
+
                 // parse destinations
                 List<RoutingProto.Destination> destinations = Lists.newArrayList();
                 for (RouteDest routeDest : routeRule.getDestList()) {

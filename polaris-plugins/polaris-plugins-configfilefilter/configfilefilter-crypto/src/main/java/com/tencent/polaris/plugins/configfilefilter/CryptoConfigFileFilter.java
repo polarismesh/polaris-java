@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.configfilefilter;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.configuration.ConfigFilterConfig;
 import com.tencent.polaris.api.config.configuration.CryptoConfig;
 import com.tencent.polaris.api.exception.PolarisException;
@@ -29,7 +30,7 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
 import com.tencent.polaris.api.plugin.filter.Crypto;
-import com.tencent.polaris.annonation.JustForTest;
+import com.tencent.polaris.api.utils.ClassUtils;
 import com.tencent.polaris.factory.config.configuration.CryptoConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
@@ -61,27 +62,31 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
         return new Function<ConfigFile, ConfigFileResponse>() {
             @Override
             public ConfigFileResponse apply(ConfigFile configFile) {
-                // do before
-                // Design doc: https://github.com/polarismesh/polaris/issues/966
-                configFile.setEncrypted(Boolean.TRUE);
-                configFile.setPublicKey(rsaService.getPKCS1PublicKey());
+                if (ClassUtils.isClassPresent("org.bouncycastle.asn1.x509.SubjectPublicKeyInfo")) {
+                    // do before
+                    // Design doc: https://github.com/polarismesh/polaris/issues/966
+                    configFile.setEncrypted(Boolean.TRUE);
+                    configFile.setPublicKey(rsaService.getPKCS1PublicKey());
 
-                ConfigFileResponse response = next.apply(configFile);
+                    ConfigFileResponse response = next.apply(configFile);
 
-                // do after
-                ConfigFile configFileResponse = response.getConfigFile();
-                if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
-                    String dataKey = configFileResponse.getDataKey();
-                    if (dataKey == null) {
-                        LOG.info("ConfigFile [namespace: {}, file group: {}, file name: {}] does not have data key. "
-                                        + "Return original response.",
-                                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
-                        return response;
+                    // do after
+                    ConfigFile configFileResponse = response.getConfigFile();
+                    if (response.getCode() == ServerCodes.EXECUTE_SUCCESS) {
+                        String dataKey = configFileResponse.getDataKey();
+                        if (dataKey == null) {
+                            LOG.info("ConfigFile [namespace: {}, file group: {}, file name: {}] does not have data key. "
+                                            + "Return original response.",
+                                    configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
+                            return response;
+                        }
+                        byte[] password = rsaService.decrypt(dataKey);
+                        crypto.doDecrypt(configFileResponse, password);
                     }
-                    byte[] password = rsaService.decrypt(dataKey);
-                    crypto.doDecrypt(configFileResponse, password);
+                    return response;
+                } else {
+                    return next.apply(configFile);
                 }
-                return response;
             }
         };
     }

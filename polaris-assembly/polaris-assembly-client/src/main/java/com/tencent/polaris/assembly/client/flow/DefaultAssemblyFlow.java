@@ -17,21 +17,13 @@
 
 package com.tencent.polaris.assembly.client.flow;
 
-import java.util.Collections;
-import java.util.List;
-
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.FlowConfig;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.SourceService;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -45,6 +37,9 @@ import com.tencent.polaris.client.api.ServiceCallResultListener;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.discovery.client.flow.CommonInstancesRequest;
+
+import java.util.Collections;
+import java.util.List;
 
 public class DefaultAssemblyFlow implements AssemblyFlow {
 

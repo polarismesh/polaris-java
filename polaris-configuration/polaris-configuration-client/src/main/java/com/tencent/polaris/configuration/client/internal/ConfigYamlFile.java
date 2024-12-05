@@ -20,8 +20,9 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.configuration.client.util.YamlParser;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.Properties;
 import org.slf4j.Logger;
+
+import java.util.Properties;
 
 /**
  * The yaml/yml file.
@@ -36,18 +37,13 @@ public class ConfigYamlFile extends ConfigPropertiesFile {
 
 
     public ConfigYamlFile(String namespace, String fileGroup, String fileName,
-            ConfigFileRepo configFileRepo,
-            ConfigFileConfig configFileConfig) {
+                          ConfigFileRepo configFileRepo,
+                          ConfigFileConfig configFileConfig) {
         super(namespace, fileGroup, fileName, configFileRepo, configFileConfig);
     }
 
     @Override
-    protected Properties convertToProperties(String content) {
-        Properties properties = new Properties();
-        if (content == null) {
-            return properties;
-        }
-
+    protected Properties convertToProperties(Properties properties, String content) {
         try {
             properties = YAML_PARSER.yamlToProperties(content);
         } catch (Throwable t) {
@@ -57,7 +53,6 @@ public class ConfigYamlFile extends ConfigPropertiesFile {
             LOGGER.error(msg, t);
             throw new IllegalStateException(msg);
         }
-
         return properties;
     }
 }

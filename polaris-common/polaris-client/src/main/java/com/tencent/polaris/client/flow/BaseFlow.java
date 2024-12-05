@@ -297,7 +297,7 @@ public class BaseFlow {
     }
 
     public static Instance processLoadBalance(LoadBalancer loadBalancer, Criteria criteria,
-            ServiceInstances dstInstances, List<WeightAdjuster> weightAdjusters) throws PolarisException {
+                                              ServiceInstances dstInstances, List<WeightAdjuster> weightAdjusters) throws PolarisException {
         if (criteria == null) {
             criteria = new Criteria();
         }
@@ -357,6 +357,9 @@ public class BaseFlow {
         }
         for (EventReporter eventReporter : eventReporterList) {
             try {
+                if (!eventReporter.isEnabled()) {
+                    continue;
+                }
                 if (!eventReporter.reportEvent(flowEvent)) {
                     LOG.warn("Report event by {} failed. Flow event detail: {}", eventReporter.getName(), flowEvent);
                 }

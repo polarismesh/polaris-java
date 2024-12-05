@@ -86,6 +86,12 @@ global:
     #描述: 事件上报插件名列表
     reporters:
       - logger
+    # 描述：事件上报插件配置
+    plugin:
+      # 描述：TSF 事件上报插件配置
+      tsf:
+        # 描述：TSF 事件上报开关
+        enable: false
   # 描述：Admin相关的配置
   admin:
     # 描述：Admin的监听的IP
@@ -286,7 +292,7 @@ consumer:
   weightAdjust:
     enable: true
     chain:
-      # 开启了服务预热插件，可以支持多个动态权重调整插件同时生效
+    # 开启了服务预热插件，可以支持多个动态权重调整插件同时生效
 #      - warmup
 # 被调方配置
 provider:

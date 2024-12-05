@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.plugins.stat.otel;
 
-import java.util.Map;
-
 import com.tencent.polaris.api.config.global.TraceReporterConfig;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -33,6 +31,8 @@ import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageBuilder;
 import io.opentelemetry.api.trace.Span;
 import org.slf4j.Logger;
+
+import java.util.Map;
 
 public class OtelTraceReporter implements TraceReporter {
 

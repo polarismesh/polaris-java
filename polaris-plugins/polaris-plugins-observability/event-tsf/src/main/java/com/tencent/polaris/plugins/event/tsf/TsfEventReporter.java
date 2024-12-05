@@ -21,6 +21,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.tencent.polaris.api.config.global.EventReporterConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
+import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -66,7 +68,7 @@ import static com.tencent.polaris.api.plugin.event.tsf.TsfEventDataConstants.*;
 /**
  * @author Haotian Zhang
  */
-public class TsfEventReporter implements EventReporter {
+public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(TsfEventReporter.class);
 
@@ -89,6 +91,11 @@ public class TsfEventReporter implements EventReporter {
 
     protected ScheduledExecutorService reportEventExecutors = Executors.newScheduledThreadPool(1,
             new NamedThreadFactory("event-tsf-report"));
+
+    @Override
+    public boolean isEnabled() {
+        return tsfEventReporterConfig.isEnable();
+    }
 
     @Override
     public boolean reportEvent(FlowEvent flowEvent) {
@@ -221,6 +228,11 @@ public class TsfEventReporter implements EventReporter {
     }
 
     @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return TsfEventReporterConfig.class;
+    }
+
+    @Override
     public PluginType getType() {
         return PluginTypes.EVENT_REPORTER.getBaseType();
     }
@@ -233,7 +245,10 @@ public class TsfEventReporter implements EventReporter {
                 if (StringUtils.equals(getName(), reporter)) {
                     this.tsfEventReporterConfig = ctx.getConfig().getGlobal().getEventReporter()
                             .getPluginConfig(getName(), TsfEventReporterConfig.class);
-                    init = false;
+                    if (tsfEventReporterConfig.isEnable()) {
+                        init = false;
+                    }
+                    return;
                 }
             }
         }
