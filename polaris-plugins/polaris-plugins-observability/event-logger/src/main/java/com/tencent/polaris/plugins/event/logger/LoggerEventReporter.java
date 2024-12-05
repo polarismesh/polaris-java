@@ -42,6 +42,11 @@ public class LoggerEventReporter implements EventReporter {
     private static final Logger LOG = LoggerFactory.getLogger(LoggerEventReporter.class);
 
     @Override
+    public boolean isEnabled() {
+        return true;
+    }
+
+    @Override
     public boolean reportEvent(FlowEvent flowEvent) {
         try {
             EVENT_LOG.info(convertMessage(flowEvent));

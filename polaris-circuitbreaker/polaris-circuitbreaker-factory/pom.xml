@@ -106,6 +106,11 @@
             <artifactId>event-logger</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>event-tsf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!--健康检查插件-->
         <dependency>

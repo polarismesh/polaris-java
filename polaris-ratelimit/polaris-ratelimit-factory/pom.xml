@@ -113,6 +113,11 @@
             <artifactId>event-logger</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>event-tsf</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--测试依赖插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

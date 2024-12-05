@@ -19,7 +19,7 @@ package com.tencent.polaris.plugins.configfilefilter.service;
 
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
-import com.tencent.polaris.plugins.configfilefilter.util.RSAUtil;
+import com.tencent.polaris.encrypt.util.RSAUtil;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
@@ -59,7 +59,7 @@ public class RSAService {
         try {
             primitive = spkInfo.parsePublicKey();
             byte[] publicKeyPKCS1 = primitive.getEncoded();
-            return  Base64.getEncoder().encodeToString(publicKeyPKCS1);
+            return Base64.getEncoder().encodeToString(publicKeyPKCS1);
         } catch (IOException e) {
             throw new PolarisException(ErrorCode.RSA_KEY_GENERATE_ERROR, e.getMessage());
         }

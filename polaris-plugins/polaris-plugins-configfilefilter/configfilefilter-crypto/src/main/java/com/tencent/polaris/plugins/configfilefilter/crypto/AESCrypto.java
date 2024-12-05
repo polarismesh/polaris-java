@@ -25,7 +25,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.filter.Crypto;
-import com.tencent.polaris.plugins.configfilefilter.util.AESUtil;
+import com.tencent.polaris.encrypt.util.AESUtil;
 
 /**
  * AES Crypto 加密

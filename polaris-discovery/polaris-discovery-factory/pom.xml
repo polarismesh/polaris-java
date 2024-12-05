@@ -164,6 +164,11 @@
             <artifactId>lossless-deregister</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>lossless-warmup</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- 元数据管理 -->
         <dependency>
@@ -176,6 +181,11 @@
         <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>event-logger</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>event-tsf</artifactId>
             <version>${project.version}</version>
         </dependency>
 

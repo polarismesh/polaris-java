@@ -52,6 +52,11 @@
                 <artifactId>polaris-threadlocal</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-encrypt</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- polaris-factory-->
             <dependency>

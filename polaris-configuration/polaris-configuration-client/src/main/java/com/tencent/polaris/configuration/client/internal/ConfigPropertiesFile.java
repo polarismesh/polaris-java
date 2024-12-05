@@ -26,6 +26,7 @@ import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 import com.tencent.polaris.configuration.client.util.ConvertFunctions;
+import com.tencent.polaris.encrypt.EncryptConfig;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -369,12 +370,15 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
         }
 
         //默认用 properties 格式解析
-        convertToProperties(properties, content);
+        properties = convertToProperties(properties, content);
+
+        // 解密
+        decryptProperties(properties);
 
         return properties;
     }
 
-    protected void convertToProperties(Properties properties, String content) {
+    protected Properties convertToProperties(Properties properties, String content) {
         try {
             properties.load(new InputStreamReader(new ByteArrayInputStream(content.getBytes())));
         } catch (IOException e) {
@@ -383,6 +387,26 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
                     getNamespace(), getFileGroup(), getFileName());
             LOGGER.error(msg, e);
             throw new IllegalStateException(msg);
+        }
+        return properties;
+    }
+
+    protected void decryptProperties(Properties properties) {
+        if (EncryptConfig.getEnabled()) {
+            // 启用加解密
+            for (Map.Entry<?, ?> entry : properties.entrySet()) {
+                if (EncryptConfig.needDecrypt(entry.getValue())) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Need Decrypt {}: {}", entry.getKey(), entry.getValue());
+                    }
+                    // 解密配置值
+                    String decryptedValue = EncryptConfig.getProvider()
+                            .decrypt(EncryptConfig.realContent(entry.getValue()), EncryptConfig.getPassword());
+                    properties.put(entry.getKey().toString(), decryptedValue);
+                } else {
+                    properties.put(entry.getKey().toString(), entry.getValue());
+                }
+            }
         }
     }
 

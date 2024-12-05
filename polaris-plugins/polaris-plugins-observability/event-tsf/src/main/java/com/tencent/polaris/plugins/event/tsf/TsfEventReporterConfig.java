@@ -11,6 +11,9 @@ import com.tencent.polaris.factory.util.ConfigUtils;
 public class TsfEventReporterConfig implements Verifier {
 
     @JsonProperty
+    private Boolean enable;
+
+    @JsonProperty
     private String eventMasterIp;
 
     @JsonProperty
@@ -39,21 +42,28 @@ public class TsfEventReporterConfig implements Verifier {
 
     @Override
     public void verify() {
-        ConfigUtils.validateString(eventMasterIp, "global.eventReporter.plugins.tsf.eventMasterIp");
-        ConfigUtils.validatePositiveInteger(eventMasterPort, "global.eventReporter.plugins.tsf.eventMasterPort");
-        ConfigUtils.validateString(appId, "global.eventReporter.plugins.tsf.appId");
-        ConfigUtils.validateString(region, "global.eventReporter.plugins.tsf.region");
-        ConfigUtils.validateString(instanceId, "global.eventReporter.plugins.tsf.instanceId");
-        ConfigUtils.validateString(tsfNamespaceId, "global.eventReporter.plugins.tsf.tsfNamespaceId");
-        ConfigUtils.validateString(serviceName, "global.eventReporter.plugins.tsf.serviceName");
-        ConfigUtils.validateString(token, "global.eventReporter.plugins.tsf.token");
-        ConfigUtils.validateString(applicationId, "global.eventReporter.plugins.tsf.applicationId");
+        ConfigUtils.validateNull(enable, "global.eventReporter.plugin.tsf.enable");
+        if (!enable) {
+            return;
+        }
+        ConfigUtils.validateString(eventMasterIp, "global.eventReporter.plugin.tsf.eventMasterIp");
+        ConfigUtils.validatePositiveInteger(eventMasterPort, "global.eventReporter.plugin.tsf.eventMasterPort");
+        ConfigUtils.validateString(appId, "global.eventReporter.plugin.tsf.appId");
+        ConfigUtils.validateString(region, "global.eventReporter.plugin.tsf.region");
+        ConfigUtils.validateString(instanceId, "global.eventReporter.plugin.tsf.instanceId");
+        ConfigUtils.validateString(tsfNamespaceId, "global.eventReporter.plugin.tsf.tsfNamespaceId");
+        ConfigUtils.validateString(serviceName, "global.eventReporter.plugin.tsf.serviceName");
+        ConfigUtils.validateString(token, "global.eventReporter.plugin.tsf.token");
+        ConfigUtils.validateString(applicationId, "global.eventReporter.plugin.tsf.applicationId");
     }
 
     @Override
     public void setDefault(Object defaultObject) {
         if (defaultObject instanceof TsfEventReporterConfig) {
             TsfEventReporterConfig tsfEventReporterConfig = (TsfEventReporterConfig) defaultObject;
+            if (null == enable) {
+                setEnable(tsfEventReporterConfig.isEnable());
+            }
             if (StringUtils.isBlank(eventMasterIp)) {
                 setEventMasterIp(tsfEventReporterConfig.getEventMasterIp());
             }
@@ -82,6 +92,17 @@ public class TsfEventReporterConfig implements Verifier {
                 setApplicationId(tsfEventReporterConfig.getApplicationId());
             }
         }
+    }
+
+    public boolean isEnable() {
+        if (null == enable) {
+            enable = false;
+        }
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
     }
 
     public String getEventMasterIp() {
@@ -154,5 +175,21 @@ public class TsfEventReporterConfig implements Verifier {
 
     public void setApplicationId(String applicationId) {
         this.applicationId = applicationId;
+    }
+
+    @Override
+    public String toString() {
+        return "TsfEventReporterConfig{" +
+                "enable=" + enable +
+                ", eventMasterIp='" + eventMasterIp + '\'' +
+                ", eventMasterPort=" + eventMasterPort +
+                ", appId='" + appId + '\'' +
+                ", region='" + region + '\'' +
+                ", instanceId='" + instanceId + '\'' +
+                ", tsfNamespaceId='" + tsfNamespaceId + '\'' +
+                ", serviceName='" + serviceName + '\'' +
+                ", token='" + token + '\'' +
+                ", applicationId='" + applicationId + '\'' +
+                '}';
     }
 }

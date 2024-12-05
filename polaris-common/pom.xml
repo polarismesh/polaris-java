@@ -24,5 +24,6 @@
         <module>polaris-logging</module>
         <module>polaris-metadata</module>
         <module>polaris-threadlocal</module>
+        <module>polaris-encrypt</module>
     </modules>
 </project>

@@ -44,6 +44,7 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Dest
 import org.slf4j.Logger;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
 import static com.tencent.polaris.api.plugin.route.RouterConstants.ROUTER_FAULT_TOLERANCE_ENABLE;
@@ -133,10 +134,27 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                         continue;
                     }
 
-                    if (!RuleUtils.MATCH_ALL.equals(source.getService().getValue()) && !source.getService()
-                            .getValue().equals(sourceService.getService())) {
+                    String service = source.getService().getValue();
+                    if (!RuleUtils.MATCH_ALL.equals(service) && !StringUtils.startsWith(service, "!")
+                            && !StringUtils.startsWith(service, "*")
+                            && !StringUtils.equals(service, sourceService.getService())) {
                         matched = false;
                         continue;
+                    }
+                    if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "!")) {
+                        String realService = StringUtils.substring(service, 1);
+                        if (StringUtils.equals(realService, sourceService.getService())) {
+                            matched = false;
+                            continue;
+                        }
+                    }
+                    if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "*")) {
+                        String regex = StringUtils.substring(service, 1);
+                        Pattern pattern = Pattern.compile(regex);
+                        if (!pattern.matcher(sourceService.getService()).find()) {
+                            matched = false;
+                            continue;
+                        }
                     }
                 }
             }

@@ -26,5 +26,7 @@ import com.tencent.polaris.api.plugin.Plugin;
  */
 public interface EventReporter extends Plugin {
 
+    boolean isEnabled();
+
     boolean reportEvent(FlowEvent flowEvent);
 }
