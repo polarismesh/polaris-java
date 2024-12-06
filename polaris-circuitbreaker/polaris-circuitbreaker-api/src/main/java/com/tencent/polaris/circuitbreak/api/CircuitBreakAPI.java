@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,54 +17,55 @@
 
 package com.tencent.polaris.circuitbreak.api;
 
-import java.io.Closeable;
-
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
 import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
 
+import java.io.Closeable;
+
 public interface CircuitBreakAPI extends AutoCloseable, Closeable {
 
-	/**
-	 * check and acquire circuitbreaker
-	 *
-	 * @param resource
-	 * @return pass or not, and fallback config if needed
-	 */
-	CheckResult check(Resource resource);
+    /**
+     * check and acquire circuitbreaker
+     *
+     * @param resource
+     * @return pass or not, and fallback config if needed
+     */
+    CheckResult check(Resource resource);
 
-	/**
-	 * report the resource invoke result
-	 *
-	 * @param reportStat
-	 */
-	void report(ResourceStat reportStat);
+    /**
+     * report the resource invoke result
+     *
+     * @param reportStat
+     */
+    void report(ResourceStat reportStat);
 
 
-	/**
-	 * make the function decorator
-	 *
-	 * @param functionalDecoratorRequest
-	 * @return decorator
-	 */
-	FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest functionalDecoratorRequest);
+    /**
+     * make the function decorator
+     *
+     * @param functionalDecoratorRequest
+     * @return decorator
+     */
+    FunctionalDecorator makeFunctionalDecorator(FunctionalDecoratorRequest functionalDecoratorRequest);
 
-	/**
-	 * make the invoke handler
-	 * @param requestContext
-	 * @return InvokeHandler
-	 */
-	InvokeHandler makeInvokeHandler(InvokeContext.RequestContext requestContext);
+    /**
+     * make the invoke handler
+     *
+     * @param requestContext
+     * @return InvokeHandler
+     */
+    InvokeHandler makeInvokeHandler(InvokeContext.RequestContext requestContext);
 
-	/**
-	 * 清理并释放资源
-	 */
-	void destroy();
+    /**
+     * 清理并释放资源
+     */
+    void destroy();
 
-	@Override
-	default void close() {
-		destroy();
-	}
+    @Override
+    default void close() {
+        destroy();
+    }
 }

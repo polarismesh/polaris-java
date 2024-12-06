@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,21 +24,23 @@ import com.tencent.polaris.circuitbreak.api.pojo.InvokeContext;
  */
 public interface InvokeHandler {
 
-	/**
-	 * acquire circuitbreaker permission, throw {@code CallAbortedException} when acquire failed
-	 */
-	void acquirePermission();
+    /**
+     * acquire circuitbreaker permission, throw {@code CallAbortedException} when acquire failed
+     */
+    void acquirePermission();
 
-	/**
-	 * post process method when invoke request succeed
-	 * @param responseContext
-	 */
-	void onSuccess(InvokeContext.ResponseContext responseContext);
+    /**
+     * post process method when invoke request succeed
+     *
+     * @param responseContext
+     */
+    void onSuccess(InvokeContext.ResponseContext responseContext);
 
-	/**
-	 * post process method when invoke request failed
-	 * @param responseContext
-	 */
-	void onError(InvokeContext.ResponseContext responseContext);
+    /**
+     * post process method when invoke request failed
+     *
+     * @param responseContext
+     */
+    void onError(InvokeContext.ResponseContext responseContext);
 
 }

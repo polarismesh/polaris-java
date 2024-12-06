@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,14 @@ import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import org.slf4j.Logger;
 
 /**
@@ -78,7 +80,7 @@ public class InstancesCircuitBreakTask implements Runnable, Comparable<Instances
     private final TaskPriority priority;
 
     public InstancesCircuitBreakTask(ServiceKey serviceKey, String cbName, Collection<Instance> instances,
-            String instId, Extensions extensions, TaskPriority priority) {
+                                     String instId, Extensions extensions, TaskPriority priority) {
         this.serviceKey = serviceKey;
         this.cbName = cbName;
         this.instId = instId;
@@ -149,7 +151,7 @@ public class InstancesCircuitBreakTask implements Runnable, Comparable<Instances
 
     @SuppressWarnings("unchecked")
     private void buildInstanceProperty(long now, Map<ResultKey, Instance> results, int maxRequestAfterHalfOpen,
-            Map<String, InstanceProperty> instanceProperties, String cbName, CircuitBreakerStatus.Status status) {
+                                       Map<String, InstanceProperty> instanceProperties, String cbName, CircuitBreakerStatus.Status status) {
         if (MapUtils.isEmpty(results)) {
             return;
         }

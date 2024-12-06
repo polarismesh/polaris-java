@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class DefaultFunctionalDecorator implements FunctionalDecorator {
     private final InvokeHandler invokeHandler;
 
     public DefaultFunctionalDecorator(FunctionalDecoratorRequest makeDecoratorRequest,
-            CircuitBreakAPI circuitBreakAPI) {
+                                      CircuitBreakAPI circuitBreakAPI) {
         this.invokeHandler = new DefaultInvokeHandler(makeDecoratorRequest, circuitBreakAPI);
     }
 

@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,24 +31,24 @@ import org.junit.Assert;
 
 public class CbTestUtils {
 
-	public static CircuitBreakerProto.CircuitBreakerRule loadCbRule(String fileName) throws IOException {
-		CircuitBreakerProto.CircuitBreakerRule.Builder circuitBreakerRuleBuilder = CircuitBreakerProto.CircuitBreakerRule
-				.newBuilder();
-		InputStream inputStream = CbTestUtils.class.getClassLoader().getResourceAsStream(fileName);
-		Assert.assertNotNull(inputStream);
-		String json = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-				.collect(Collectors.joining(""));
-		JsonFormat.parser().ignoringUnknownFields().merge(json, circuitBreakerRuleBuilder);
-		return circuitBreakerRuleBuilder.build();
-	}
+    public static CircuitBreakerProto.CircuitBreakerRule loadCbRule(String fileName) throws IOException {
+        CircuitBreakerProto.CircuitBreakerRule.Builder circuitBreakerRuleBuilder = CircuitBreakerProto.CircuitBreakerRule
+                .newBuilder();
+        InputStream inputStream = CbTestUtils.class.getClassLoader().getResourceAsStream(fileName);
+        Assert.assertNotNull(inputStream);
+        String json = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
+                .collect(Collectors.joining(""));
+        JsonFormat.parser().ignoringUnknownFields().merge(json, circuitBreakerRuleBuilder);
+        return circuitBreakerRuleBuilder.build();
+    }
 
-	public static FaultDetectorProto.FaultDetectRule loadFdRule(String fileName) throws IOException {
-		FaultDetectorProto.FaultDetectRule.Builder builder = FaultDetectorProto.FaultDetectRule.newBuilder();
-		InputStream inputStream = CbTestUtils.class.getClassLoader().getResourceAsStream(fileName);
-		Assert.assertNotNull(inputStream);
-		String json = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
-				.collect(Collectors.joining(""));
-		JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
-		return builder.build();
-	}
+    public static FaultDetectorProto.FaultDetectRule loadFdRule(String fileName) throws IOException {
+        FaultDetectorProto.FaultDetectRule.Builder builder = FaultDetectorProto.FaultDetectRule.newBuilder();
+        InputStream inputStream = CbTestUtils.class.getClassLoader().getResourceAsStream(fileName);
+        Assert.assertNotNull(inputStream);
+        String json = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
+                .collect(Collectors.joining(""));
+        JsonFormat.parser().ignoringUnknownFields().merge(json, builder);
+        return builder.build();
+    }
 }

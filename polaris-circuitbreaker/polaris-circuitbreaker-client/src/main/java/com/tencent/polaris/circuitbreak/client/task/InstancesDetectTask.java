@@ -1,7 +1,7 @@
 /*
- * Tencent is pleased to support the open source community by making Polaris available.
+ * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -116,7 +117,7 @@ public class InstancesDetectTask implements Runnable {
     }
 
     private ServiceUpdateRequest buildInstanceUpdateResult(ServiceKey serviceKey,
-            Map<Instance, DetectResult> aliveResults) {
+                                                           Map<Instance, DetectResult> aliveResults) {
         List<InstanceProperty> instances = new ArrayList<>();
         int notChange = 0;
         for (Map.Entry<Instance, DetectResult> entry : aliveResults.entrySet()) {
