@@ -3,15 +3,16 @@
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
  *
- * Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in
- * compliance with the License. You may obtain a copy of the License at
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
  */
 
 package com.tencent.polaris.api.core;
@@ -32,6 +33,7 @@ import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceRequest;
 import com.tencent.polaris.api.rpc.WatchServiceResponse;
+
 import java.io.Closeable;
 
 /**
@@ -77,9 +79,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @param req 请求
      * @return 单个服务实例
      * @throws PolarisException 错误码及错误信息
-     *
-     * @deprecated
-     *  * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#getOneInstance(com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest)} instead.
+     * @deprecated * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#getOneInstance(com.tencent.polaris.assembly.api.pojo.GetOneInstanceRequest)} instead.
      */
     @Deprecated
     InstancesResponse getOneInstance(GetOneInstanceRequest req) throws PolarisException;
@@ -90,9 +90,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * @param req 请求
      * @return 过滤后的服务列表
      * @throws PolarisException 错误码及错误信息
-     *
-     * @deprecated
-     *  * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#getReachableInstances(com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest)} instead.
+     * @deprecated * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#getReachableInstances(com.tencent.polaris.assembly.api.pojo.GetReachableInstancesRequest)} instead.
      */
     @Deprecated
     InstancesResponse getInstances(GetInstancesRequest req) throws PolarisException;
@@ -129,9 +127,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      *
      * @param req 调用结果（包括成功失败，返回码，以及时延）
      * @throws PolarisException 错误码及错误信息
-     *
-     * @deprecated
-     *  * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#updateServiceCallResult(ServiceCallResult)} instead.
+     * @deprecated * <p> Use {@link com.tencent.polaris.assembly.api.AssemblyAPI#updateServiceCallResult(ServiceCallResult)} instead.
      */
     @Deprecated
     void updateServiceCallResult(ServiceCallResult req) throws PolarisException;
@@ -167,7 +163,7 @@ public interface ConsumerAPI extends AutoCloseable, Closeable {
      * 取消服务的监听
      * case 1. 移除对 service 的所有 Listener
      * case 2. 只移除部分对 service 的 Listener
-     *
+     * <p>
      * 移除部分Listener与移除全部Listener是互斥的，每次 unWatch 只能执行其中的一种 case
      *
      * @param request 取消监听请求

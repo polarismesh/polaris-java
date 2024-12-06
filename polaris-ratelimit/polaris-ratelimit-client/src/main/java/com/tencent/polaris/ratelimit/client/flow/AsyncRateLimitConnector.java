@@ -1,3 +1,20 @@
+/*
+ * Tencent is pleased to support the open source community by making Polaris available.
+ *
+ * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+ *
+ * Licensed under the BSD 3-Clause License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://opensource.org/licenses/BSD-3-Clause
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
 package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
@@ -11,10 +28,12 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.logging.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.slf4j.Logger;
 
 /**
@@ -46,14 +65,14 @@ public class AsyncRateLimitConnector {
     /**
      * 获取连接流对象
      *
-     * @param extensions 插件容器
-     * @param remoteCluster 远程限流集群名
-     * @param uniqueKey 唯一主键
+     * @param extensions        插件容器
+     * @param remoteCluster     远程限流集群名
+     * @param uniqueKey         唯一主键
      * @param serviceIdentifier 服务标识
      * @return 连接流对象
      */
     public StreamCounterSet getStreamCounterSet(Extensions extensions, ServiceKey remoteCluster,
-            ServiceInstances remoteAddresses, String uniqueKey, ServiceIdentifier serviceIdentifier) {
+                                                ServiceInstances remoteAddresses, String uniqueKey, ServiceIdentifier serviceIdentifier) {
         HostIdentifier hostIdentifier = getServiceInstance(extensions, remoteCluster, remoteAddresses, uniqueKey);
         if (hostIdentifier == null) {
             LOG.error("[getStreamCounterSet] ratelimit cluster service not found.");
@@ -93,7 +112,7 @@ public class AsyncRateLimitConnector {
      * @return 节点标识
      */
     private HostIdentifier getServiceInstance(Extensions extensions, ServiceKey remoteCluster,
-            ServiceInstances remoteAddresses, String hashValue) {
+                                              ServiceInstances remoteAddresses, String hashValue) {
         Instance instance;
         if (null != remoteCluster) {
             instance = BaseFlow

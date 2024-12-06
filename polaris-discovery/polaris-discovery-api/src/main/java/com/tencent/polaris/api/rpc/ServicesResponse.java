@@ -1,5 +1,4 @@
 /*
- *
  * Tencent is pleased to support the open source community by making Polaris available.
  *
  * Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
@@ -14,7 +13,6 @@
  * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
  * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- *  
  */
 
 package com.tencent.polaris.api.rpc;
@@ -30,7 +28,7 @@ import java.util.List;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ServicesResponse extends BaseEntity  {
+public class ServicesResponse extends BaseEntity {
 
     private final Services services;
 
