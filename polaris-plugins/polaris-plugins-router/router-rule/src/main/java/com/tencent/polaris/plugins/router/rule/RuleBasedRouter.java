@@ -141,6 +141,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                         matched = false;
                         continue;
                     }
+                    // 如果服务名不等于“*”，且服务名规则以“!”开头，则使用取反匹配
                     if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "!")) {
                         String realService = StringUtils.substring(service, 1);
                         if (StringUtils.equals(realService, sourceService.getService())) {
@@ -148,6 +149,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
                             continue;
                         }
                     }
+                    // 如果服务名不等于“*”，且服务名规则以“*”开头，则使用正则匹配
                     if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "*")) {
                         String regex = StringUtils.substring(service, 1);
                         Pattern pattern = Pattern.compile(regex);

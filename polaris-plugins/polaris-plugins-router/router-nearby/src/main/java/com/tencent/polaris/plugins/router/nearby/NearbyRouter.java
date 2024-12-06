@@ -156,8 +156,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                         String.format("can not find any instance by level %s", minLevel.name()));
             }
             //已经循环了一圈
-            return new RouteResult(selectInstances(
-                    serviceInstances, minAvailableLevel, clientLocationInfo), RouteResult.State.Next);
+            return new RouteResult(instances, RouteResult.State.Next);
         }
         CheckResult checkResult = new CheckResult();
         for (int i = minLevel.ordinal(); i <= maxLevel.ordinal(); i++) {
