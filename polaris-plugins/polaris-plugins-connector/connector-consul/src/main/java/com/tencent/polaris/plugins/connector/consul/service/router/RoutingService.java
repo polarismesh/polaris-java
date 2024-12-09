@@ -253,7 +253,17 @@ public class RoutingService extends ConsulService {
                             metadataSourceBuilders.add(metadataSourceBuilder);
                         }
                     }
-                    for (RoutingProto.Source.Builder sourceBuilder : sourceBuilders) {
+                    if (CollectionUtils.isNotEmpty(sourceBuilders)) {
+                        for (RoutingProto.Source.Builder sourceBuilder : sourceBuilders) {
+                            for (RoutingProto.Source.Builder metadataSourceBuilder : metadataSourceBuilders) {
+                                sourceBuilder.putAllMetadata(metadataSourceBuilder.getMetadataMap());
+                            }
+                            sources.add(sourceBuilder.build());
+                        }
+                    } else {
+                        RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
+                        sourceBuilder.setNamespace(StringValue.of("*"));
+                        sourceBuilder.setService(StringValue.of("*"));
                         for (RoutingProto.Source.Builder metadataSourceBuilder : metadataSourceBuilders) {
                             sourceBuilder.putAllMetadata(metadataSourceBuilder.getMetadataMap());
                         }
