@@ -106,8 +106,10 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     @Override
     public void execute() {
         boolean isServiceUpdateTaskExecuted = false;
+        int subTaskSize = subServiceUpdateTaskMap.size();
         for (Map.Entry<String, ServiceUpdateTask> entry : subServiceUpdateTaskMap.entrySet()) {
-            if (canExecute(entry.getKey(), entry.getValue())) {
+            // TODO: check multi connector
+            if (subTaskSize == 1 || canExecute(entry.getKey(), entry.getValue())) {
                 isServiceUpdateTaskExecuted = true;
                 entry.getValue().setStatus(ServiceUpdateTaskConstant.Status.READY, ServiceUpdateTaskConstant.Status.RUNNING);
                 entry.getValue().execute(this);
@@ -126,6 +128,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                 || serviceEventKey.getEventType().equals(EventType.BLOCK_ALLOW_RULE)))) {
             return;
         }
+
         boolean svcDeleted = this.notifyServerEvent(
                 new ServerEvent(serviceEventKey, DiscoverResponse.newBuilder().build(), null));
         if (!svcDeleted) {
