@@ -29,7 +29,6 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.CircuitBreaker;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto.FaultDetectRule;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
 import com.tencent.polaris.specification.api.v1.service.manage.ClientProto.Client;
@@ -45,15 +44,10 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import io.grpc.stub.StreamObserver;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
@@ -205,7 +199,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
     /**
      * 批量增加服务实例
      *
-     * @param svcKey 服务名
+     * @param svcKey    服务名
      * @param portStart 起始端口
      * @param instCount 实例数
      * @param parameter 实例参数
@@ -259,7 +253,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     @Override
     public void registerInstance(ServiceProto.Instance request,
-            StreamObserver<ResponseProto.Response> responseObserver) {
+                                 StreamObserver<ResponseProto.Response> responseObserver) {
         ServiceKey serviceKey = new ServiceKey(request.getNamespace().getValue(), request.getService().getValue());
         if (!services.containsKey(serviceKey)) {
             services.put(serviceKey, new ArrayList<ServiceProto.Instance>());
@@ -306,7 +300,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     @Override
     public void deregisterInstance(ServiceProto.Instance request,
-            StreamObserver<ResponseProto.Response> responseObserver) {
+                                   StreamObserver<ResponseProto.Response> responseObserver) {
         ServiceKey serviceKey = new ServiceKey(request.getNamespace().getValue(), request.getService().getValue());
         if (!services.containsKey(serviceKey)) {
             responseObserver.onNext(
@@ -450,8 +444,14 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 break;
             case LANE:
                 builder.setType(DiscoverResponseType.LANE);
-            case UNRECOGNIZED:
                 break;
+            case LOSSLESS:
+                builder.setType(DiscoverResponseType.LOSSLESS);
+                break;
+            case BLOCK_ALLOW_RULE:
+                builder.setType(DiscoverResponseType.BLOCK_ALLOW_RULE);
+                break;
+            case UNRECOGNIZED:
             default:
                 break;
         }
