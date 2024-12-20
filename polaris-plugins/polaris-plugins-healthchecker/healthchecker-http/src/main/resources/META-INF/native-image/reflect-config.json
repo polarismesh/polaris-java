@@ -1,0 +1,311 @@
+[
+{
+  "name":"com.tencent.polaris.api.config.Configuration",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.configuration.ConfigFileConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.configuration.ConfigFilterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.configuration.ConnectorConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.CircuitBreakerConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.ConsumerConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.DiscoveryConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.LoadBalanceConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.LocalCacheConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.OutlierDetectionConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.OutlierDetectionConfig$When",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.ServiceRouterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.consumer.SubscribeConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.APIConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.ClusterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.FlowCacheConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.FlowConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.GlobalConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.LocationConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.LocationProviderConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.ServerConnectorConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.StatReporterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.global.SystemConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.plugin.PluginConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.ProviderConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.RateLimitConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.RateLimitConfig$Fallback",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.RegisterConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.provider.ServiceConfig",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.api.config.verify.Verifier",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.ConfigurationImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setConsumer","parameterTypes":["com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl"] }, {"name":"setGlobal","parameterTypes":["com.tencent.polaris.factory.config.global.GlobalConfigImpl"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.configuration.ConfigFilterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.CircuitBreakerConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setChain","parameterTypes":["java.util.List"] }, {"name":"setCheckPeriod","parameterTypes":["long"] }, {"name":"setEnable","parameterTypes":["boolean"] }, {"name":"setEnableRemotePull","parameterTypes":["boolean"] }, {"name":"setRequestCountAfterHalfOpen","parameterTypes":["int"] }, {"name":"setSleepWindow","parameterTypes":["long"] }, {"name":"setSuccessCountAfterHalfOpen","parameterTypes":["int"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.DiscoveryConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.LoadBalanceConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.LocalCacheConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.OutlierDetectionConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setChain","parameterTypes":["java.util.List"] }, {"name":"setCheckPeriod","parameterTypes":["long"] }, {"name":"setWhen","parameterTypes":["com.tencent.polaris.api.config.consumer.OutlierDetectionConfig$When"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.ServiceRouterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.consumer.SubscribeConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.APIConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setTimeout","parameterTypes":["long"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.ClusterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.FlowCacheConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.FlowConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.GlobalConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setServerConnector","parameterTypes":["com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.LocationConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.LocationProviderConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setAddresses","parameterTypes":["java.util.List"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.StatReporterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.global.SystemConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setVariables","parameterTypes":["java.util.Map"] }]
+},
+{
+  "name":"com.tencent.polaris.factory.config.plugin.PluginConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.ProviderConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.RateLimitConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.RegisterConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.config.provider.ServiceConfigImpl",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.tencent.polaris.factory.util.TimeStrJsonDeserializer",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.outlier.detector.http.Config",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"setPath","parameterTypes":["java.lang.String"] }, {"name":"setTimeout","parameterTypes":["java.lang.Long"] }]
+},
+{
+  "name":"com.tencent.polaris.plugins.outlier.detector.http.HttpHealthCheckerTest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllPublicConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }, {"name":"before","parameterTypes":[] }, {"name":"detectInstanceFail","parameterTypes":[] }, {"name":"detectInstanceSuccess","parameterTypes":[] }, {"name":"suite","parameterTypes":[] }]
+}
+]
