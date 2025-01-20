@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.client.pojo;
 
-import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DetectResult;
@@ -31,7 +30,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * 通过PB对象封装的实例信息
@@ -80,8 +78,7 @@ public class InstanceByProto implements Instance {
 
     @Override
     public String getNamespace() {
-        return Optional.of(instance).map(ServiceProto.Instance::getNamespace).
-                map(StringValue::getValue).orElse(serviceKey.getNamespace());
+        return serviceKey.getNamespace();
     }
 
     @Override
