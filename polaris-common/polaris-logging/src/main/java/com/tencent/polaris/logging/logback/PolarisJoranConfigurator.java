@@ -18,23 +18,17 @@
 package com.tencent.polaris.logging.logback;
 
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.joran.event.SaxEvent;
 import ch.qos.logback.core.joran.spi.JoranException;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.List;
 
 /**
  * @author Haotian Zhang
  */
 public class PolarisJoranConfigurator extends JoranConfigurator {
-
-    @Override
-    public void registerSafeConfiguration(List<SaxEvent> eventList) {
-    }
 
     public void doPolarisConfigure(URL url) throws JoranException {
         InputStream in = null;
