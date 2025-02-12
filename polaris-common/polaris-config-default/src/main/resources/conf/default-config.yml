@@ -92,6 +92,14 @@ global:
       tsf:
         # 描述：TSF 事件上报开关
         enable: false
+      # 描述：PushGateway 事件上报插件配置
+      pushgateway:
+        # 描述：PushGateway 事件上报开关
+        enable: false
+        # 描述：PushGateway 事件上报队列长度
+        eventQueueSize: 10000;
+        # 描述：PushGateway 事件上报最大批量大小
+        maxBatchSize: 100
   # 描述：Admin相关的配置
   admin:
     # 描述：Admin的监听的IP

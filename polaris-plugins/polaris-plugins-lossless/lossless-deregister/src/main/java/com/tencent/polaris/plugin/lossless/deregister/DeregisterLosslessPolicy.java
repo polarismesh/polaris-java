@@ -27,6 +27,7 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.event.FlowEventConstants;
 import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
@@ -37,19 +38,14 @@ import com.tencent.polaris.client.pojo.Event;
 import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.logging.LoggingConsts;
+import com.tencent.polaris.plugin.lossless.common.LosslessEventUtils;
 import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware {
@@ -197,6 +193,8 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
         event.setBaseInstance(instance);
         event.setEventName(EVENT_LOSSLESS_DEREGISTER);
         EVENT_LOG.info(event.toString());
+        LosslessEventUtils.reportEvent(extensions, instance.getNamespace(), instance.getService(), instance.getHost(),
+                instance.getPort(), FlowEventConstants.EventName.LosslessOfflineStart);
     }
 
     private boolean isLosslessOfflineEnable(BaseInstance instance) {

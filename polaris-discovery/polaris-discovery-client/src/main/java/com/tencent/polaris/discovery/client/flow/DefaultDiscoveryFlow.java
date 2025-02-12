@@ -153,6 +153,8 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
                         response.getInstanceID());
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);
                 serviceCallResult.setRetCode(ErrorCode.Success.getCode());
+                sdkContext.getValueContext().setPort(req.getPort());
+                sdkContext.getValueContext().setInstanceId(response.getInstanceID());
                 return new InstanceRegisterResponse(response.getInstanceID(), response.isExists());
             } catch (PolarisException e) {
                 serviceCallResult.setRetStatus(RetStatus.RetFail);

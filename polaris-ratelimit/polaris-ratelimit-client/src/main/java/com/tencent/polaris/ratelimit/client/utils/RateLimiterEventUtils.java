@@ -27,7 +27,7 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import static com.tencent.polaris.api.plugin.event.tsf.TsfEventDataConstants.RULE_DETAIL_KEY;
 import static com.tencent.polaris.api.plugin.event.tsf.TsfEventDataConstants.RULE_ID_KEY;
@@ -43,23 +43,29 @@ public class RateLimiterEventUtils {
         if (extensions == null) {
             return;
         }
+
+        FlowEventConstants.Status currentFlowEventStatus = parseFlowEventStatus(currentCode);
+        FlowEventConstants.Status previousFlowEventStatus = parseFlowEventStatus(previousCode);
+
         FlowEvent.Builder flowEventBuilder = new FlowEvent.Builder()
                 .withEventType(ServiceEventKey.EventType.RATE_LIMITING)
-                .withTimestamp(Instant.now())
+                .withEventName(parseFlowEventName(currentFlowEventStatus, previousFlowEventStatus))
+                .withTimestamp(LocalDateTime.now())
                 .withClientId(extensions.getValueContext().getClientId())
                 .withClientIp(extensions.getValueContext().getHost())
                 .withNamespace(serviceKey.getNamespace())
                 .withService(serviceKey.getService())
                 .withApiPath(rule.getMethod().getValue().getValue())
+                .withInstanceId(extensions.getValueContext().getInstanceId())
                 .withHost(extensions.getValueContext().getHost())
+                .withPort(extensions.getValueContext().getPort())
                 .withSourceNamespace(sourceNamespace)
                 .withSourceService(sourceService)
                 .withLabels(labels)
-                .withCurrentStatus(parseFlowEventStatus(currentCode))
-                .withPreviousStatus(parseFlowEventStatus(previousCode))
+                .withCurrentStatus(currentFlowEventStatus)
+                .withPreviousStatus(previousFlowEventStatus)
                 .withResourceType(parseFlowEventResourceType(rule.getResource()))
-                .withRuleName(rule.getName().getValue())
-                .withReason(reason);
+                .withRuleName(rule.getName().getValue());
         if (StringUtils.isNotBlank(reason)) {
             flowEventBuilder.withReason(reason);
         }
@@ -89,6 +95,16 @@ public class RateLimiterEventUtils {
                 return FlowEventConstants.Status.LIMITED;
             default:
                 return FlowEventConstants.Status.UNKNOWN;
+        }
+    }
+
+    private static FlowEventConstants.EventName parseFlowEventName(FlowEventConstants.Status currentStatus, FlowEventConstants.Status previousStatus) {
+        if (currentStatus == FlowEventConstants.Status.LIMITED && previousStatus == FlowEventConstants.Status.UNLIMITED) {
+            return FlowEventConstants.EventName.RateLimitStart;
+        } else if (currentStatus == FlowEventConstants.Status.UNLIMITED && previousStatus == FlowEventConstants.Status.LIMITED) {
+            return FlowEventConstants.EventName.RateLimitEnd;
+        } else {
+            return FlowEventConstants.EventName.UNKNOWN;
         }
     }
 

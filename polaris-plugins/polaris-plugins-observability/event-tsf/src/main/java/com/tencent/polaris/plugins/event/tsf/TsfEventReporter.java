@@ -57,6 +57,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -115,7 +116,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
             }
 
             TsfEventData eventData = new TsfEventData();
-            eventData.setOccurTime(flowEvent.getTimestamp().getEpochSecond());
+            eventData.setOccurTime(flowEvent.getTimestamp().atZone(ZoneId.systemDefault()).toInstant().getEpochSecond());
             eventData.setEventName(TsfEventDataUtils.convertEventName(flowEvent));
             Byte status = TsfEventDataUtils.convertStatus(flowEvent);
             if (status == null || status == -1) {

@@ -22,6 +22,26 @@ package com.tencent.polaris.api.plugin.event;
  */
 public class FlowEventConstants {
 
+    public enum EventName {
+        LosslessOnlineStart,
+        LosslessOnlineEnd,
+        LosslessWarmupStart,
+        LosslessWarmupEnd,
+        LosslessOfflineStart,
+
+        InstanceThreadEnd,
+
+        CircuitBreakerOpen,
+        CircuitBreakerHalfOpen,
+        CircuitBreakerClose,
+        CircuitBreakerDestroy,
+
+        RateLimitStart,
+        RateLimitEnd,
+
+        UNKNOWN,
+    }
+
     public enum Status {
         // circuit breaker status
         OPEN,
@@ -47,5 +67,4 @@ public class FlowEventConstants {
 
         UNKNOWN,
     }
-
 }

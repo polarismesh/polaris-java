@@ -21,6 +21,7 @@
         <module>trace-otel</module>
         <module>event-logger</module>
         <module>event-tsf</module>
+        <module>event-pushgateway</module>
     </modules>
 
     <dependencies>

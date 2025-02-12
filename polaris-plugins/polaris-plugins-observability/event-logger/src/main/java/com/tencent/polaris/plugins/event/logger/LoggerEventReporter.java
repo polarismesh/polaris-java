@@ -95,6 +95,11 @@ public class LoggerEventReporter implements EventReporter {
             eventType = event.getEventType().name();
         }
 
+        String eventName = "";
+        if (event.getEventName() != null) {
+            eventName = event.getEventName().name();
+        }
+
         String currentStatus = "";
         if (event.getCurrentStatus() != null) {
             currentStatus = event.getCurrentStatus().name();
@@ -109,11 +114,12 @@ public class LoggerEventReporter implements EventReporter {
         if (event.getResourceType() != null) {
             resourceType = event.getResourceType().name();
         }
-        return eventType + "|" + formattedDateTime + "|" + event.getClientId() + "|"
+        return eventType + "|" + eventName + "|" + formattedDateTime + "|" + event.getClientId() + "|"
                 + event.getClientIp() + "|" + event.getNamespace() + "|" + event.getService() + "|"
                 + event.getApiProtocol() + "|" + event.getApiPath() + "|" + event.getApiMethod() + "|"
-                + event.getHost() + "|" + event.getPort() + "|" + event.getSourceNamespace() + "|"
-                + event.getSourceService() + "|" + event.getLabels() + "|" + currentStatus + "|" + previousStatus + "|"
-                + resourceType + "|" + event.getRuleName() + "|" + event.getReason();
+                + event.getInstanceId() + "|" + event.getHost() + "|" + event.getPort() + "|"
+                + event.getSourceNamespace() + "|" + event.getSourceService() + "|" + event.getLabels() + "|"
+                + currentStatus + "|" + previousStatus + "|" + resourceType + "|" + event.getRuleName() + "|"
+                + event.getReason();
     }
 }

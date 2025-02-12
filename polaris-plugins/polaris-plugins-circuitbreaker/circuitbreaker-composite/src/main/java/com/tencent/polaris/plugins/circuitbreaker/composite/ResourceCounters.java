@@ -34,9 +34,9 @@ import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.FallbackInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
-import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ConsecutiveCounter;
@@ -48,7 +48,7 @@ import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerPr
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.*;
 import org.slf4j.Logger;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -339,17 +339,23 @@ public class ResourceCounters implements StatusChangeHandler {
         if (extensions == null) {
             return;
         }
+
+        FlowEventConstants.Status currentFlowEventStatus = CircuitBreakerUtils.parseFlowEventStatus(currentStatus);
+        FlowEventConstants.Status previousFlowEventStatus = CircuitBreakerUtils.parseFlowEventStatus(previousStatus);
+
         FlowEvent.Builder flowEventBuilder = new FlowEvent.Builder()
                 .withEventType(ServiceEventKey.EventType.CIRCUIT_BREAKING)
-                .withTimestamp(Instant.now())
+                .withEventName(CircuitBreakerUtils.parseFlowEventName(currentFlowEventStatus, previousFlowEventStatus))
+                .withTimestamp(LocalDateTime.now())
                 .withClientId(extensions.getValueContext().getClientId())
                 .withClientIp(extensions.getValueContext().getHost())
                 .withNamespace(resource.getService().getNamespace())
                 .withService(resource.getService().getService())
+                .withInstanceId(extensions.getValueContext().getInstanceId())
                 .withSourceNamespace(resource.getCallerService().getNamespace())
                 .withSourceService(resource.getService().getService())
-                .withCurrentStatus(CircuitBreakerUtils.parseFlowEventStatus(currentStatus))
-                .withPreviousStatus(CircuitBreakerUtils.parseFlowEventStatus(previousStatus))
+                .withCurrentStatus(currentFlowEventStatus)
+                .withPreviousStatus(previousFlowEventStatus)
                 .withRuleName(ruleName);
         if (StringUtils.isNotBlank(reason)) {
             flowEventBuilder.withReason(reason);

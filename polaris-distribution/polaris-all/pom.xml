@@ -53,6 +53,11 @@
             <artifactId>bcpkix-jdk15to18</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-api</artifactId>
+            <version>${otel.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -180,6 +185,7 @@
                             <artifactSet>
                                 <excludes>
                                     <exclude>org.bouncycastle:*</exclude>
+                                    <exclude>io.opentelemetry:*</exclude>
                                 </excludes>
                             </artifactSet>
                         </configuration>

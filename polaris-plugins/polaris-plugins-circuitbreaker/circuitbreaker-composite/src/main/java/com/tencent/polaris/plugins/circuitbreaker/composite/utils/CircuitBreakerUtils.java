@@ -36,7 +36,7 @@ public class CircuitBreakerUtils {
 
     public static long DEFAULT_ERROR_RATE_INTERVAL_MS = 60 * 1000;
 
-	public static long MIN_CLEANUP_INTERVAL = 60 * 1000;
+    public static long MIN_CLEANUP_INTERVAL = 60 * 1000;
 
     public static boolean checkRule(CircuitBreakerProto.CircuitBreakerRule rule) {
         return checkLevel(rule.getLevel());
@@ -107,6 +107,20 @@ public class CircuitBreakerUtils {
                 return FlowEventConstants.Status.DESTROY;
             default:
                 return FlowEventConstants.Status.UNKNOWN;
+        }
+    }
+
+    public static FlowEventConstants.EventName parseFlowEventName(FlowEventConstants.Status currentStatus, FlowEventConstants.Status previousStatus) {
+        if (currentStatus == FlowEventConstants.Status.OPEN) {
+            return FlowEventConstants.EventName.CircuitBreakerOpen;
+        } else if (currentStatus == FlowEventConstants.Status.HALF_OPEN) {
+            return FlowEventConstants.EventName.CircuitBreakerHalfOpen;
+        } else if (currentStatus == FlowEventConstants.Status.CLOSE) {
+            return FlowEventConstants.EventName.CircuitBreakerClose;
+        } else if (currentStatus == FlowEventConstants.Status.DESTROY) {
+            return FlowEventConstants.EventName.CircuitBreakerDestroy;
+        } else {
+            return FlowEventConstants.EventName.UNKNOWN;
         }
     }
 
