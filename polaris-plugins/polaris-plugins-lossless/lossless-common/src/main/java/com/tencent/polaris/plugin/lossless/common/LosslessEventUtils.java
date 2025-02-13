@@ -44,7 +44,6 @@ public class LosslessEventUtils {
                 .withClientIp(extensions.getValueContext().getHost())
                 .withNamespace(namespace)
                 .withService(service)
-                .withInstanceId(extensions.getValueContext().getInstanceId())
                 .withHost(host)
                 .withPort(port);
 

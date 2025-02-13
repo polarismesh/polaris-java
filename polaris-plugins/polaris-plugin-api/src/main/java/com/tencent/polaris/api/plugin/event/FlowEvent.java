@@ -94,12 +94,6 @@ public class FlowEvent {
     private final String apiMethod;
 
     /**
-     * 实例ID
-     */
-    @JsonProperty("instance_id")
-    private final String instanceId;
-
-    /**
      * 实例IP
      */
     @JsonProperty("host")
@@ -168,7 +162,6 @@ public class FlowEvent {
         this.apiProtocol = builder.apiProtocol;
         this.apiPath = builder.apiPath;
         this.apiMethod = builder.apiMethod;
-        this.instanceId = builder.instanceId;
         this.host = builder.host;
         if (builder.port != null) {
             this.port = String.valueOf(builder.port);
@@ -197,7 +190,6 @@ public class FlowEvent {
         private String apiProtocol = "";
         private String apiPath = "";
         private String apiMethod = "";
-        private String instanceId = "";
         private String host = "";
         private Integer port;
         private String sourceNamespace = "";
@@ -256,11 +248,6 @@ public class FlowEvent {
 
         public Builder withApiMethod(String apiMethod) {
             this.apiMethod = apiMethod;
-            return this;
-        }
-
-        public Builder withInstanceId(String instanceId) {
-            this.instanceId = instanceId;
             return this;
         }
 
@@ -359,10 +346,6 @@ public class FlowEvent {
         return apiMethod;
     }
 
-    public String getInstanceId() {
-        return instanceId;
-    }
-
     public String getHost() {
         return host;
     }
@@ -420,7 +403,6 @@ public class FlowEvent {
                 ", apiProtocol='" + apiProtocol + '\'' +
                 ", apiPath='" + apiPath + '\'' +
                 ", apiMethod='" + apiMethod + '\'' +
-                ", instanceId='" + instanceId + '\'' +
                 ", host='" + host + '\'' +
                 ", port='" + port + '\'' +
                 ", sourceNamespace='" + sourceNamespace + '\'' +

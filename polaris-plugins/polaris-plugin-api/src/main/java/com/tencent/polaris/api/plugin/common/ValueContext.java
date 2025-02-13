@@ -34,11 +34,7 @@ public class ValueContext {
 
     private static final String KEY_HOST = "key_host";
 
-    private static final String KEY_PORT = "key_port";
-
     private static final String KEY_CLIENT_ID = "key_clientId";
-
-    private static final String KEY_INSTANCE_ID = "key_instanceId";
 
     private static final String KEY_ENGINE = "key_engine";
 
@@ -93,28 +89,12 @@ public class ValueContext {
         setValue(KEY_HOST, host);
     }
 
-    public Integer getPort() {
-        return getValue(KEY_PORT);
-    }
-
-    public void setPort(Integer port) {
-        setValue(KEY_PORT, port);
-    }
-
     public String getClientId() {
         return getValue(KEY_CLIENT_ID);
     }
 
     public void setClientId(String clientId) {
         setValue(KEY_CLIENT_ID, clientId);
-    }
-
-    public String getInstanceId() {
-        return getValue(KEY_INSTANCE_ID);
-    }
-
-    public void setInstanceId(String instanceId) {
-        setValue(KEY_INSTANCE_ID, instanceId);
     }
 
     public String getServerConnectorProtocol() {

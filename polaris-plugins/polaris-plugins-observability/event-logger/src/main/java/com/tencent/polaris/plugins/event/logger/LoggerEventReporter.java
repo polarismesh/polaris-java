@@ -117,9 +117,8 @@ public class LoggerEventReporter implements EventReporter {
         return eventType + "|" + eventName + "|" + formattedDateTime + "|" + event.getClientId() + "|"
                 + event.getClientIp() + "|" + event.getNamespace() + "|" + event.getService() + "|"
                 + event.getApiProtocol() + "|" + event.getApiPath() + "|" + event.getApiMethod() + "|"
-                + event.getInstanceId() + "|" + event.getHost() + "|" + event.getPort() + "|"
-                + event.getSourceNamespace() + "|" + event.getSourceService() + "|" + event.getLabels() + "|"
-                + currentStatus + "|" + previousStatus + "|" + resourceType + "|" + event.getRuleName() + "|"
-                + event.getReason();
+                + event.getHost() + "|" + event.getPort() + "|" + event.getSourceNamespace() + "|"
+                + event.getSourceService() + "|" + event.getLabels() + "|" + currentStatus + "|"
+                + previousStatus + "|" + resourceType + "|" + event.getRuleName() + "|" + event.getReason();
     }
 }

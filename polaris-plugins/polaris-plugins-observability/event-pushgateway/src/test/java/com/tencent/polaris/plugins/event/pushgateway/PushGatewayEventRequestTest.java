@@ -50,7 +50,6 @@ public class PushGatewayEventRequestTest {
                 .withClientIp("1.2.3.4")
                 .withNamespace("test-namespace")
                 .withService("test-service")
-                .withInstanceId("test-instance")
                 .withHost("1.2.3.4")
                 .withPort(8080)
                 .build();
@@ -62,6 +61,6 @@ public class PushGatewayEventRequestTest {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        assertThat(mapper.writeValueAsString(request)).isEqualTo("{\"batch\":[{\"currentStatus\":null,\"previousStatus\":null,\"resourceType\":null,\"ruleName\":\"\",\"additionalParams\":{},\"event_type\":\"LOSSLESS\",\"event_name\":\"LosslessOnlineStart\",\"event_time\":\"2025-01-13 11:58:42:0000\",\"client_id\":\"test-client\",\"client_ip\":\"1.2.3.4\",\"namespace\":\"test-namespace\",\"service\":\"test-service\",\"api_protocol\":\"\",\"api_path\":\"\",\"api_method\":\"\",\"instance_id\":\"test-instance\",\"host\":\"1.2.3.4\",\"port\":\"8080\",\"source_namespace\":\"\",\"source_service\":\"\",\"labels\":\"\",\"reason\":\"\"}]}");
+        assertThat(mapper.writeValueAsString(request)).isEqualTo("{\"batch\":[{\"currentStatus\":null,\"previousStatus\":null,\"resourceType\":null,\"ruleName\":\"\",\"additionalParams\":{},\"event_type\":\"LOSSLESS\",\"event_name\":\"LosslessOnlineStart\",\"event_time\":\"2025-01-13 11:58:42:0000\",\"client_id\":\"test-client\",\"client_ip\":\"1.2.3.4\",\"namespace\":\"test-namespace\",\"service\":\"test-service\",\"api_protocol\":\"\",\"api_path\":\"\",\"api_method\":\"\",\"host\":\"1.2.3.4\",\"port\":\"8080\",\"source_namespace\":\"\",\"source_service\":\"\",\"labels\":\"\",\"reason\":\"\"}]}");
     }
 }
