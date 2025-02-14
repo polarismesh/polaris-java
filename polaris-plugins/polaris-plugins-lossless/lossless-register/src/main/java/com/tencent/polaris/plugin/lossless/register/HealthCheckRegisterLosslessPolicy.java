@@ -27,6 +27,7 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.event.FlowEventConstants;
 import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
@@ -38,6 +39,7 @@ import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.logging.LoggingConsts;
+import com.tencent.polaris.plugin.lossless.common.LosslessEventUtils;
 import com.tencent.polaris.plugin.lossless.common.LosslessUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 import org.slf4j.Logger;
@@ -181,6 +183,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         }
 
         LOG.info("[HealthCheckRegisterLosslessPolicy] do losslessRegister for instance {}", instance);
+        LosslessEventUtils.reportEvent(extensions, instance.getNamespace(), instance.getService(), instance.getHost(),
+                instance.getPort(), FlowEventConstants.EventName.LosslessOnlineStart);
         if (!losslessActionProvider.isEnableHealthCheck()) {
             long delayRegisterInterval = getDelayRegisterInterval(instance);
             LOG.info("[HealthCheckRegisterLosslessPolicy] health check disabled, start lossless register after {}ms, plugin {}",
@@ -216,6 +220,8 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
         } else {
             EVENT_LOG.info(new Event(clientId, instance, EVENT_DIRECT_REGISTER).toString());
         }
+        LosslessEventUtils.reportEvent(extensions, instance.getNamespace(), instance.getService(), instance.getHost(),
+                instance.getPort(), FlowEventConstants.EventName.LosslessOnlineEnd);
 
         int warmupInterval = getWarmupInterval(instance);
         if (warmupInterval > 0) {
@@ -226,11 +232,15 @@ public class HealthCheckRegisterLosslessPolicy implements LosslessPolicy, HttpSe
 
             Event warmupStartEvent = new Event(clientId, instance, EVENT_LOSSLESS_WARMUP_START);
             EVENT_LOG.info(warmupStartEvent.toString());
+            LosslessEventUtils.reportEvent(extensions, instance.getNamespace(), instance.getService(), instance.getHost(),
+                    instance.getPort(), FlowEventConstants.EventName.LosslessWarmupStart);
 
             healthCheckExecutor.schedule(() -> {
                 LOG.info("[HealthCheckRegisterLosslessPolicy] warmup for instance {} finished", instance);
                 Event warmupEndEvent = new Event(clientId, instance, EVENT_LOSSLESS_WARMUP_END);
                 EVENT_LOG.info(warmupEndEvent.toString());
+                LosslessEventUtils.reportEvent(extensions, instance.getNamespace(), instance.getService(), instance.getHost(),
+                        instance.getPort(), FlowEventConstants.EventName.LosslessWarmupEnd);
             }, warmupInterval, TimeUnit.MILLISECONDS);
         } else {
             LOG.info("[HealthCheckRegisterLosslessPolicy] no warmup for instance {}", instance);

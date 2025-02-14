@@ -131,6 +131,11 @@
             <artifactId>event-tsf</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>event-pushgateway</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--配置加密插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>

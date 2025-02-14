@@ -329,6 +329,11 @@
                 <artifactId>event-tsf</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>event-pushgateway</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- polaris-plugins-ratelimiter-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>

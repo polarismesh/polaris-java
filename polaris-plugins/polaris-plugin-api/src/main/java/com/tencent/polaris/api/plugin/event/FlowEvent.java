@@ -17,9 +17,11 @@
 
 package com.tencent.polaris.api.plugin.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,71 +35,92 @@ public class FlowEvent {
     /**
      * 事件类型
      */
+    @JsonProperty("event_type")
     private final ServiceEventKey.EventType eventType;
+
+    /**
+     * 事件名称
+     */
+    @JsonProperty("event_name")
+    private final FlowEventConstants.EventName eventName;
 
     /**
      * 时间戳
      */
-    private final Instant timestamp;
+    @JsonProperty("event_time")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss:SSSS")
+    private final LocalDateTime timestamp;
 
     /**
      * 客户端ID
      */
+    @JsonProperty("client_id")
     private final String clientId;
 
     /**
      * 客户端IP
      */
+    @JsonProperty("client_ip")
     private final String clientIp;
 
     /**
      * 被调命名空间
      */
+    @JsonProperty("namespace")
     private final String namespace;
 
     /**
      * 被调服务名
      */
+    @JsonProperty("service")
     private final String service;
 
     /**
      * 接口协议
      */
+    @JsonProperty("api_protocol")
     private final String apiProtocol;
 
     /**
      * 接口路径
      */
+    @JsonProperty("api_path")
     private final String apiPath;
 
     /**
      * 接口方法
      */
+    @JsonProperty("api_method")
     private final String apiMethod;
 
     /**
      * 实例IP
      */
+    @JsonProperty("host")
     private final String host;
 
     /**
      * 实例端口
      */
+    @JsonProperty("port")
     private final String port;
 
     /**
      * 主调命名空间
      */
+    @JsonProperty("source_namespace")
     private final String sourceNamespace;
 
     /**
      * 主调服务名
      */
+    @JsonProperty("source_service")
     private final String sourceService;
 
     /**
      * 主调标签
      */
+    @JsonProperty("labels")
     private final String labels;
 
     /**
@@ -123,12 +146,14 @@ public class FlowEvent {
     /**
      * 状态转换原因
      */
+    @JsonProperty("reason")
     private final String reason;
 
     private final Map<String, String> additionalParams;
 
     private FlowEvent(Builder builder) {
         this.eventType = builder.eventType;
+        this.eventName = builder.eventName;
         this.timestamp = builder.timestamp;
         this.clientId = builder.clientId;
         this.clientIp = builder.clientIp;
@@ -156,7 +181,8 @@ public class FlowEvent {
 
     public static class Builder {
         private ServiceEventKey.EventType eventType;
-        private Instant timestamp;
+        private FlowEventConstants.EventName eventName;
+        private LocalDateTime timestamp;
         private String clientId = "";
         private String clientIp = "";
         private String namespace = "";
@@ -180,7 +206,12 @@ public class FlowEvent {
             return this;
         }
 
-        public Builder withTimestamp(Instant timestamp) {
+        public Builder withEventName(FlowEventConstants.EventName eventName) {
+            this.eventName = eventName;
+            return this;
+        }
+
+        public Builder withTimestamp(LocalDateTime timestamp) {
             this.timestamp = timestamp;
             return this;
         }
@@ -279,7 +310,11 @@ public class FlowEvent {
         return eventType;
     }
 
-    public Instant getTimestamp() {
+    public FlowEventConstants.EventName getEventName() {
+        return eventName;
+    }
+
+    public LocalDateTime getTimestamp() {
         return timestamp;
     }
 
@@ -359,6 +394,7 @@ public class FlowEvent {
     public String toString() {
         return "FlowEvent{" +
                 "eventType=" + eventType +
+                ", eventName=" + eventName +
                 ", timestamp=" + timestamp +
                 ", clientId='" + clientId + '\'' +
                 ", clientIp='" + clientIp + '\'' +
@@ -368,7 +404,7 @@ public class FlowEvent {
                 ", apiPath='" + apiPath + '\'' +
                 ", apiMethod='" + apiMethod + '\'' +
                 ", host='" + host + '\'' +
-                ", port=" + port +
+                ", port='" + port + '\'' +
                 ", sourceNamespace='" + sourceNamespace + '\'' +
                 ", sourceService='" + sourceService + '\'' +
                 ", labels='" + labels + '\'' +

@@ -26,29 +26,28 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
-import com.tencent.polaris.api.pojo.*;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.FallbackInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus.Status;
-import com.tencent.polaris.api.utils.TrieUtil;
-import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.pojo.HalfOpenStatus;
+import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ConsecutiveCounter;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.CounterOptions;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.ErrRateCounter;
 import com.tencent.polaris.plugins.circuitbreaker.composite.trigger.TriggerCounter;
+import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerEventUtils;
 import com.tencent.polaris.plugins.circuitbreaker.composite.utils.CircuitBreakerUtils;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.*;
 import org.slf4j.Logger;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +57,6 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
-import static com.tencent.polaris.api.plugin.event.tsf.TsfEventDataConstants.*;
 import static com.tencent.polaris.logging.LoggingConsts.LOGGING_CIRCUIT_BREAKER;
 
 /**
@@ -204,7 +202,8 @@ public class ResourceCounters implements StatusChangeHandler {
         CB_LOG.info("previous status {}, current status {}, resource {}, rule {}", preStatus.getStatus(),
                 newStatus.getStatus(), resource, circuitBreaker);
         reportCircuitStatus();
-        reportEvent(preStatus.getStatus(), newStatus.getStatus(), circuitBreaker, reason);
+        CircuitBreakerEventUtils.reportEvent(extensions, resource, currentActiveRule,
+                preStatus.getStatus(), newStatus.getStatus(), circuitBreaker, reason);
         long sleepWindow = CircuitBreakerUtils.getSleepWindowMilli(currentActiveRule, circuitBreakerConfig);
         // add callback after timeout
         stateChangeExecutors.schedule(new Runnable() {
@@ -233,7 +232,8 @@ public class ResourceCounters implements StatusChangeHandler {
                     circuitBreakerStatus.getStatus(),
                     halfOpenStatus.getStatus(), resource, circuitBreakerStatus.getCircuitBreaker());
             circuitBreakerStatusReference.set(halfOpenStatus);
-            reportEvent(circuitBreakerStatus.getStatus(), halfOpenStatus.getStatus(), circuitBreakerStatus.getCircuitBreaker());
+            CircuitBreakerEventUtils.reportEvent(extensions, resource, currentActiveRule,
+                    circuitBreakerStatus.getStatus(), halfOpenStatus.getStatus(), circuitBreakerStatus.getCircuitBreaker(), null);
             reportCircuitStatus();
         }
     }
@@ -256,7 +256,8 @@ public class ResourceCounters implements StatusChangeHandler {
                 for (TriggerCounter triggerCounter : counters) {
                     triggerCounter.resume();
                 }
-                reportEvent(circuitBreakerStatus.getStatus(), newStatus.getStatus(), circuitBreakerStatus.getCircuitBreaker());
+                CircuitBreakerEventUtils.reportEvent(extensions, resource, currentActiveRule,
+                        circuitBreakerStatus.getStatus(), newStatus.getStatus(), circuitBreakerStatus.getCircuitBreaker(), null);
                 reportCircuitStatus();
             }
         }
@@ -330,84 +331,6 @@ public class ResourceCounters implements StatusChangeHandler {
         return circuitBreakerStatusReference.get();
     }
 
-    private void reportEvent(CircuitBreakerStatus.Status previousStatus, CircuitBreakerStatus.Status currentStatus, String ruleName) {
-        reportEvent(previousStatus, currentStatus, ruleName, null);
-    }
-
-    private void reportEvent(CircuitBreakerStatus.Status previousStatus, CircuitBreakerStatus.Status currentStatus,
-                             String ruleName, String reason) {
-        if (extensions == null) {
-            return;
-        }
-        FlowEvent.Builder flowEventBuilder = new FlowEvent.Builder()
-                .withEventType(ServiceEventKey.EventType.CIRCUIT_BREAKING)
-                .withTimestamp(Instant.now())
-                .withClientId(extensions.getValueContext().getClientId())
-                .withClientIp(extensions.getValueContext().getHost())
-                .withNamespace(resource.getService().getNamespace())
-                .withService(resource.getService().getService())
-                .withSourceNamespace(resource.getCallerService().getNamespace())
-                .withSourceService(resource.getService().getService())
-                .withCurrentStatus(CircuitBreakerUtils.parseFlowEventStatus(currentStatus))
-                .withPreviousStatus(CircuitBreakerUtils.parseFlowEventStatus(previousStatus))
-                .withRuleName(ruleName);
-        if (StringUtils.isNotBlank(reason)) {
-            flowEventBuilder.withReason(reason);
-        }
-        String isolationObject = "";
-        switch (resource.getLevel()) {
-            case SERVICE:
-                flowEventBuilder = flowEventBuilder.withResourceType(FlowEventConstants.ResourceType.SERVICE);
-                isolationObject = CircuitBreakerUtils.getServiceCircuitBreakerName(
-                        resource.getService().getNamespace(), resource.getService().getService());
-                break;
-            case METHOD:
-                MethodResource methodResource = (MethodResource) resource;
-                flowEventBuilder = flowEventBuilder.withResourceType(FlowEventConstants.ResourceType.METHOD)
-                        .withApiProtocol(methodResource.getProtocol())
-                        .withApiPath(methodResource.getPath())
-                        .withApiMethod(methodResource.getMethod());
-                isolationObject = CircuitBreakerUtils.getApiCircuitBreakerName(
-                        methodResource.getService().getNamespace(), methodResource.getService().getService(),
-                        methodResource.getPath(), methodResource.getMethod());
-                break;
-            case INSTANCE:
-                InstanceResource instanceResource = (InstanceResource) resource;
-                flowEventBuilder = flowEventBuilder.withResourceType(FlowEventConstants.ResourceType.INSTANCE)
-                        .withHost(instanceResource.getHost())
-                        .withPort(instanceResource.getPort());
-                isolationObject = CircuitBreakerUtils.getInstanceCircuitBreakerName(
-                        instanceResource.getHost(), instanceResource.getPort());
-                break;
-        }
-
-        FlowEvent flowEvent = flowEventBuilder.build();
-
-        String failureRate = "";
-        String slowCallRate = "";
-        if (CollectionUtils.isNotEmpty(currentActiveRule.getBlockConfigsList())) {
-            for (BlockConfig blockConfig : currentActiveRule.getBlockConfigsList()) {
-                if (CollectionUtils.isNotEmpty(blockConfig.getTriggerConditionsList())) {
-                    if (StringUtils.equals(blockConfig.getName(), "failure")) {
-                        failureRate = String.valueOf(blockConfig.getTriggerConditions(0).getErrorPercent());
-                    } else if (StringUtils.equals(blockConfig.getName(), "slow")) {
-                        slowCallRate = String.valueOf(blockConfig.getTriggerConditions(0).getErrorPercent());
-                    }
-                }
-            }
-        }
-        if (StringUtils.isNotBlank(isolationObject)) {
-            flowEvent.getAdditionalParams().put(ISOLATION_OBJECT_KEY, isolationObject);
-        }
-        if (StringUtils.isNotBlank(failureRate)) {
-            flowEvent.getAdditionalParams().put(FAILURE_RATE_KEY, failureRate);
-        }
-        if (StringUtils.isNotBlank(slowCallRate)) {
-            flowEvent.getAdditionalParams().put(SLOW_CALL_DURATION_KEY, slowCallRate);
-        }
-        BaseFlow.reportFlowEvent(extensions, flowEvent);
-    }
-
     public void reportCircuitStatus() {
         if (Objects.isNull(extensions)) {
             return;
@@ -473,7 +396,8 @@ public class ResourceCounters implements StatusChangeHandler {
             for (TriggerCounter triggerCounter : counters) {
                 triggerCounter.resume();
             }
-            reportEvent(circuitBreakerStatus.getStatus(), Status.DESTROY, circuitBreakerStatus.getCircuitBreaker());
+            CircuitBreakerEventUtils.reportEvent(extensions, resource, currentActiveRule,
+                    circuitBreakerStatus.getStatus(), Status.CLOSE, circuitBreakerStatus.getCircuitBreaker(), null);
             reportCircuitStatus();
         }
     }

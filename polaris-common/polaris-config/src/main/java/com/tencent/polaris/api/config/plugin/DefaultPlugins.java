@@ -91,6 +91,11 @@ public interface DefaultPlugins {
     String TSF_EVENT_REPORTER_TYPE = "tsf";
 
     /**
+     * PushGateway 事件上报插件名
+     */
+    String PUSH_GATEWAY_EVENT_REPORTER_TYPE = "pushgateway";
+
+    /**
      * 黑白名单鉴权插件名
      */
     String BLOCK_ALLOW_LIST_AUTHENTICATOR_TYPE = "blockAllowList";
