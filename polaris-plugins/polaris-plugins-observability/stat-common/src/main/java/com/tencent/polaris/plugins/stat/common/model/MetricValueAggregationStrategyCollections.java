@@ -37,6 +37,7 @@ public class MetricValueAggregationStrategyCollections {
                 new UpstreamRequestSuccessStrategy(),
                 new UpstreamRequestTimeoutStrategy(),
                 new UpstreamRequestMaxTimeoutStrategy(),
+                new UpstreamRequestMinTimeoutStrategy(),
         };
 
         RATE_LIMIT_STRATEGY = new MetricValueAggregationStrategy[]{
@@ -161,6 +162,48 @@ public class MetricValueAggregationStrategyCollections {
 
             while (true) {
                 if (dataSource.getDelay() > targetValue.getValue()) {
+                    if (targetValue.compareAndSet((long) targetValue.getValue(), dataSource.getDelay())) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
+            }
+        }
+
+        @Override
+        public double initMetricValue(InstanceGauge dataSource) {
+            if (null == dataSource.getDelay()) {
+                return 0.0;
+            }
+
+            return dataSource.getDelay();
+        }
+    }
+
+    /**
+     * 服务调用最小时延
+     */
+    public static class UpstreamRequestMinTimeoutStrategy implements MetricValueAggregationStrategy<InstanceGauge> {
+
+        @Override
+        public String getStrategyDescription() {
+            return "minimum request delay per period";
+        }
+
+        @Override
+        public String getStrategyName() {
+            return "upstream_rq_min_timeout";
+        }
+
+        @Override
+        public void updateMetricValue(StatMetric targetValue, InstanceGauge dataSource) {
+            if (null == dataSource.getDelay()) {
+                return;
+            }
+
+            while (true) {
+                if (dataSource.getDelay() < targetValue.getValue()) {
                     if (targetValue.compareAndSet((long) targetValue.getValue(), dataSource.getDelay())) {
                         return;
                     }

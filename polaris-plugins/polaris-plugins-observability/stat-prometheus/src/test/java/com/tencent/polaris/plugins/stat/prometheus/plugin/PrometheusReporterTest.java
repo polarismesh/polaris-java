@@ -19,8 +19,6 @@ package com.tencent.polaris.plugins.stat.prometheus.plugin;
 
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
-import com.tencent.polaris.api.plugin.stat.DefaultRateLimitResult;
-import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.InstanceGauge;
@@ -38,22 +36,16 @@ import com.tencent.polaris.plugins.stat.prometheus.handler.PrometheusHandlerConf
 import io.prometheus.client.Collector;
 import io.prometheus.client.Collector.MetricFamilySamples;
 import io.prometheus.client.CollectorRegistry;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class PrometheusReporterTest {
@@ -198,7 +190,7 @@ public class PrometheusReporterTest {
     }
 
     @Test
-    public void testServiceCallSumAndMaxStrategy() throws InterruptedException {
+    public void testServiceCallSumAndMaxAndMinStrategy() throws InterruptedException {
         List<Integer> delayList = Collections.synchronizedList(new ArrayList<>());
         int count = 20;
         batchDone(() -> {
@@ -216,18 +208,24 @@ public class PrometheusReporterTest {
         handler.destroy();
 
         int maxExpected = 0;
+        int minExpected = 10000;
         int sumExpected = 0;
         for (Integer i : delayList) {
             if (i > maxExpected) {
                 maxExpected = i;
+            }
+            if (i < minExpected) {
+                minExpected = i;
             }
             sumExpected += i;
         }
 
         ServiceCallResult example = mockFixedLabelServiceCallResult(200, 1000);
         Double maxResult = getServiceCallMaxResult(example);
+        Double minResult = getServiceCallMinResult(example);
         Double sumResult = getServiceCallSumResult(example);
         Assert.assertEquals(new Double(maxExpected), maxResult);
+        Assert.assertEquals(new Double(minExpected), minResult);
         Assert.assertEquals(new Double(sumExpected), sumResult);
     }
 
@@ -333,6 +331,11 @@ public class PrometheusReporterTest {
     private Double getServiceCallMaxResult(ServiceCallResult example) {
         return getServiceCallResult(example,
                 new MetricValueAggregationStrategyCollections.UpstreamRequestMaxTimeoutStrategy());
+    }
+
+    private Double getServiceCallMinResult(ServiceCallResult example) {
+        return getServiceCallResult(example,
+                new MetricValueAggregationStrategyCollections.UpstreamRequestMinTimeoutStrategy());
     }
 
     private Double getServiceCallResult(ServiceCallResult example,
