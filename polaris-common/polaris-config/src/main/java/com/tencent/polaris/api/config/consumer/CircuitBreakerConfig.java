@@ -19,6 +19,7 @@ package com.tencent.polaris.api.config.consumer;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
 
 /**
@@ -84,5 +85,39 @@ public interface CircuitBreakerConfig extends PluginConfig, Verifier {
      */
     long getCountersExpireInterval();
 
+    /**
+     * 是否启用默认规则
+     *
+     * @return boolean
+     */
+    boolean isDefaultRuleEnable();
+
+    /**
+     * 连续错误数熔断器默认连续错误数
+     *
+     * @return 连续错误数
+     */
+    int getDefaultErrorCount();
+
+    /**
+     * 错误率熔断器默认错误率
+     *
+     * @return 错误率
+     */
+    int getDefaultErrorPercent();
+
+    /**
+     * 错误率熔断器默认统计周期
+     *
+     * @return 统计周期
+     */
+    int getDefaultInterval();
+
+    /**
+     * 错误率熔断器默认最小请求数
+     *
+     * @return 最小请求数
+     */
+    int getDefaultMinimumRequest();
 
 }

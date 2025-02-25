@@ -37,8 +37,8 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.*;
-import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -240,6 +240,8 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
                 LOG.warn("fail to get circuitBreaker rule resource for {}", cbEventKey, t);
                 throw t;
             }
+
+            cbSvcRule = CircuitBreakerUtils.fillDefaultCircuitBreakerRuleInNeeded(resource, cbSvcRule, circuitBreakerConfig);
 
             // pull fd rule
             ServiceEventKey fdEventKey = new ServiceEventKey(resource.getService(),

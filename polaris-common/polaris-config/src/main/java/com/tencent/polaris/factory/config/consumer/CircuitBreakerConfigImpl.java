@@ -24,6 +24,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
+
 import java.util.List;
 
 /**
@@ -60,6 +61,21 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long countersExpireInterval;
+
+    @JsonProperty
+    private Boolean defaultRuleEnable;
+
+    @JsonProperty
+    private Integer defaultErrorCount;
+
+    @JsonProperty
+    private Integer defaultErrorPercent;
+
+    @JsonProperty
+    private Integer defaultInterval;
+
+    @JsonProperty
+    private Integer defaultMinimumRequest;
 
     @Override
     public boolean isEnable() {
@@ -149,6 +165,54 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     }
 
     @Override
+    public boolean isDefaultRuleEnable() {
+        if (null == defaultRuleEnable) {
+            defaultRuleEnable = true;
+        }
+        return defaultRuleEnable;
+    }
+
+    public void setDefaultRuleEnable(Boolean defaultRuleEnable) {
+        this.defaultRuleEnable = defaultRuleEnable;
+    }
+
+    @Override
+    public int getDefaultErrorCount() {
+        return defaultErrorCount;
+    }
+
+    public void setDefaultErrorCount(Integer defaultErrorCount) {
+        this.defaultErrorCount = defaultErrorCount;
+    }
+
+    @Override
+    public int getDefaultErrorPercent() {
+        return defaultErrorPercent;
+    }
+
+    public void setDefaultErrorPercent(Integer defaultErrorPercent) {
+        this.defaultErrorPercent = defaultErrorPercent;
+    }
+
+    @Override
+    public int getDefaultInterval() {
+        return defaultInterval;
+    }
+
+    public void setDefaultInterval(Integer defaultInterval) {
+        this.defaultInterval = defaultInterval;
+    }
+
+    @Override
+    public int getDefaultMinimumRequest() {
+        return defaultMinimumRequest;
+    }
+
+    public void setDefaultMinimumRequest(Integer defaultMinimumRequest) {
+        this.defaultMinimumRequest = defaultMinimumRequest;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(enable, "circuitBreaker.enable");
         if (!enable) {
@@ -163,6 +227,11 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
         ConfigUtils.validatePositive(requestCountAfterHalfOpen, "circuitBreaker.requestCountAfterHalfOpen");
         ConfigUtils.validatePositive(successCountAfterHalfOpen, "circuitBreaker.successCountAfterHalfOpen");
         ConfigUtils.validateNull(enableRemotePull, "circuitBreaker.enableRemotePull");
+        ConfigUtils.validateNull(defaultRuleEnable, "circuitBreaker.defaultRuleEnable");
+        ConfigUtils.validatePositive(defaultErrorCount, "circuitBreaker.defaultErrorCount");
+        ConfigUtils.validatePositive(defaultErrorPercent, "circuitBreaker.defaultErrorPercent");
+        ConfigUtils.validatePositive(defaultInterval, "circuitBreaker.defaultInterval");
+        ConfigUtils.validatePositive(defaultMinimumRequest, "circuitBreaker.defaultMinimumRequest");
         verifyPluginConfig();
     }
 
@@ -194,6 +263,21 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
             if (null == enableRemotePull) {
                 setEnableRemotePull(circuitBreakerConfig.isEnableRemotePull());
             }
+            if (null == defaultRuleEnable) {
+                setDefaultRuleEnable(circuitBreakerConfig.isDefaultRuleEnable());
+            }
+            if (null == defaultErrorCount) {
+                setDefaultErrorCount(circuitBreakerConfig.getDefaultErrorCount());
+            }
+            if (null == defaultErrorPercent) {
+                setDefaultErrorPercent(circuitBreakerConfig.getDefaultErrorPercent());
+            }
+            if (null == defaultInterval) {
+                setDefaultInterval(circuitBreakerConfig.getDefaultInterval());
+            }
+            if (null == defaultMinimumRequest) {
+                setDefaultMinimumRequest(circuitBreakerConfig.getDefaultMinimumRequest());
+            }
             if (enable) {
                 setDefaultPluginConfig(circuitBreakerConfig);
             }
@@ -211,6 +295,11 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
                 ", successCountAfterHalfOpen=" + successCountAfterHalfOpen +
                 ", enableRemotePull=" + enableRemotePull +
                 ", countersExpireInterval=" + countersExpireInterval +
+                ", defaultRuleEnable=" + defaultRuleEnable +
+                ", defaultErrorCount=" + defaultErrorCount +
+                ", defaultErrorPercent=" + defaultErrorPercent +
+                ", defaultInterval=" + defaultInterval +
+                ", defaultMinimumRequest=" + defaultMinimumRequest +
                 '}';
     }
 }

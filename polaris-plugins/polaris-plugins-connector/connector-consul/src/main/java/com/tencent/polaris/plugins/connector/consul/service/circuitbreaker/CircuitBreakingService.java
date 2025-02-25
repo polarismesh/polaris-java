@@ -208,6 +208,7 @@ public class CircuitBreakingService extends ConsulService {
                 destinationServiceBuilder.setNamespace(namespace);
                 destinationServiceBuilder.setService(service);
                 ruleMatcher.setDestination(destinationServiceBuilder);
+                circuitBreakerRuleBuilder.setRuleMatcher(ruleMatcher);
 
                 // build blockConfigs
                 List<CircuitBreakerProto.BlockConfig> blockConfigList = Lists.newArrayList();
