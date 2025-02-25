@@ -248,6 +248,16 @@ consumer:
     #描述:熔断策略，SDK会根据策略名称加载对应的熔断器插件（已注册的熔断器插件名）
     chain:
       - composite
+    # 描述：是否启用默认熔断规则
+    defaultRuleEnable: true
+    # 描述：连续错误数熔断器默认连续错误数
+    defaultErrorCount: 10
+    # 描述：错误率熔断器默认错误率
+    defaultErrorPercent: 50
+    # 描述：错误率熔断器默认统计周期（单位：毫秒）
+    defaultInterval: 60000
+    # 描述：错误率熔断器默认最小请求数
+    defaultMinimumRequest: 10
     #描述: 熔断插件配置
     plugin:
       #描述:基于周期连续错误数熔断策略配置
