@@ -25,8 +25,6 @@ import com.ecwid.consul.v1.kv.model.GetValue;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.exception.ErrorCode;
@@ -69,8 +67,6 @@ import static com.tencent.polaris.plugins.connector.consul.service.common.TagCon
 public class AuthorityService extends ConsulService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuthorityService.class);
-
-    private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
     private final Map<AuthorityKey, Long> authorityConsulIndexMap = new ConcurrentHashMap<>();
 

@@ -66,7 +66,7 @@ public class CircuitBreakingService extends ConsulService {
 
     private static final Logger LOG = LoggerFactory.getLogger(CircuitBreakingService.class);
 
-    private final Map<CircuitBreakingKey, Long> circuitBreakingConsulIndexMap = new ConcurrentHashMap<>();
+    private final Map<CircuitBreakingKey, CircuitBreakingValue> circuitBreakingConsulIndexMap = new ConcurrentHashMap<>();
 
     public CircuitBreakingService(ConsulClient consulClient, ConsulRawClient consulRawClient, ConsulContext consulContext,
                                   String threadName, ObjectMapper mapper) {
@@ -83,6 +83,7 @@ public class CircuitBreakingService extends ConsulService {
         circuitBreakingKey.setNamespace(namespace);
         circuitBreakingKey.setService(service);
         Long currentIndex = getCircuitBreakingConsulIndex(circuitBreakingKey);
+        CircuitBreakingValue currentCircuitBreakingValue = getCircuitBreakingValue(circuitBreakingKey);
         QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), currentIndex);
         int code = ServerCodes.DATA_NO_CHANGE;
         try {
@@ -100,6 +101,7 @@ public class CircuitBreakingService extends ConsulService {
                 }
 
                 Long newIndex = response.getConsulIndex();
+                boolean is404 = false;
                 // create service.
                 ServiceProto.Service.Builder newServiceBuilder = ServiceProto.Service.newBuilder();
                 newServiceBuilder.setNamespace(StringValue.of(namespace));
@@ -130,9 +132,16 @@ public class CircuitBreakingService extends ConsulService {
                                 }
                             }
                         } else {
+                            if (currentCircuitBreakingValue != null && currentCircuitBreakingValue.isLast404) {
+                                code = ServerCodes.DATA_NO_CHANGE;
+                            }
+                            is404 = true;
                             LOG.info("empty circuit breaker rule: {}", response);
                         }
                     } else {
+                        if (currentCircuitBreakingValue != null && currentCircuitBreakingValue.isLast404) {
+                            is404 = true;
+                        }
                         LOG.debug("[TSF CIRCUIT BREAKER] Consul data is not changed");
                     }
                 } else {
@@ -146,7 +155,7 @@ public class CircuitBreakingService extends ConsulService {
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 if (newIndex != null) {
-                    setCircuitBreakingConsulIndex(circuitBreakingKey, currentIndex, newIndex);
+                    setCircuitBreakingConsulIndex(circuitBreakingKey, currentIndex, newIndex, is404);
                 }
                 if (!svcDeleted) {
                     serviceUpdateTask.addUpdateTaskSet();
@@ -244,17 +253,21 @@ public class CircuitBreakingService extends ConsulService {
     }
 
     private Long getCircuitBreakingConsulIndex(CircuitBreakingKey circuitBreakingKey) {
-        Long index = circuitBreakingConsulIndexMap.get(circuitBreakingKey);
-        if (index != null) {
-            return index;
+        CircuitBreakingValue circuitBreakingValue = circuitBreakingConsulIndexMap.get(circuitBreakingKey);
+        if (circuitBreakingValue != null && circuitBreakingValue.getIndex() != null) {
+            return circuitBreakingValue.getIndex();
         }
-        setCircuitBreakingConsulIndex(circuitBreakingKey, null, -1L);
+        setCircuitBreakingConsulIndex(circuitBreakingKey, null, -1L, false);
         return -1L;
     }
 
-    private void setCircuitBreakingConsulIndex(CircuitBreakingKey circuitBreakingKey, Long lastIndex, Long newIndex) {
-        LOG.debug("CircuitBreakingKey: {}; lastIndex: {}; newIndex: {}", circuitBreakingKey, lastIndex, newIndex);
-        circuitBreakingConsulIndexMap.put(circuitBreakingKey, newIndex);
+    private CircuitBreakingValue getCircuitBreakingValue(CircuitBreakingKey circuitBreakingKey) {
+        return circuitBreakingConsulIndexMap.get(circuitBreakingKey);
+    }
+
+    private void setCircuitBreakingConsulIndex(CircuitBreakingKey circuitBreakingKey, Long lastIndex, Long newIndex, Boolean is404) {
+        LOG.debug("CircuitBreakingKey: {}; lastIndex: {}; newIndex: {}, is404: {}", circuitBreakingKey, lastIndex, newIndex, is404);
+        circuitBreakingConsulIndexMap.put(circuitBreakingKey, new CircuitBreakingValue(newIndex, is404));
     }
 
     static class CircuitBreakingKey {
@@ -305,6 +318,40 @@ public class CircuitBreakingService extends ConsulService {
                     "namespace='" + namespace + '\'' +
                     ", serviceName='" + service + '\'' +
                     ", fetchGroup=" + fetchGroup +
+                    '}';
+        }
+    }
+
+    static class CircuitBreakingValue {
+        private Long index;
+        private Boolean isLast404 = false;
+
+        public CircuitBreakingValue(Long index, Boolean isLast404) {
+            this.index = index;
+            this.isLast404 = isLast404;
+        }
+
+        public Long getIndex() {
+            return index;
+        }
+
+        public void setIndex(Long index) {
+            this.index = index;
+        }
+
+        public Boolean getLast404() {
+            return isLast404;
+        }
+
+        public void setLast404(Boolean last404) {
+            isLast404 = last404;
+        }
+
+        @Override
+        public String toString() {
+            return "CircuitBreakingValue{" +
+                    "index=" + index +
+                    ", isLast404=" + isLast404 +
                     '}';
         }
     }

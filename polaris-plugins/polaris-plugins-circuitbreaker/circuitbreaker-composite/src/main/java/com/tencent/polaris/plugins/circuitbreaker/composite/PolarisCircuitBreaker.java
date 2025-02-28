@@ -149,6 +149,12 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         Resource ruleResource = getActualResource(resource, false);
         Optional<ResourceCounters> resourceCounters = getResourceCounters(ruleResource);
         boolean reloadFaultDetect = false;
+        /*
+          这里不判断!resourceCounters.isPresent()，因为在初始化的时候，
+          如果没有对应的资源，就会生成Optional.empty进行资源占位，防止每次请求都去后端获取熔断规则。
+          如果有对应的资源，但是没有熔断规则，也会生成Optional.empty进行资源占位。如果后续新增熔断规则，会等到资源过期清理后，再创建熔断器。
+          如果有对应的资源，且有熔断规则，就会正常获取到熔断器。
+         */
         if (null == resourceCounters) {
             synchronized (countersCache) {
                 resourceCounters = getResourceCounters(ruleResource);
