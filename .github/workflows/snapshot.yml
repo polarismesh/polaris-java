@@ -14,7 +14,7 @@ jobs:
       IS_SNAPSHOT: ${{ steps.set_output_1.outputs.IS_SNAPSHOT }}
     steps:
       - name: Checkout codes
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check deploy type
         id: set_output_1
         run: |
@@ -30,9 +30,9 @@ jobs:
     needs: check-snapshot
     if: ${{ needs.check-snapshot.outputs.IS_SNAPSHOT == 'true' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Maven Central Repository
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '8'
           distribution: 'temurin'

@@ -66,7 +66,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>2.0.1.0-RC1</revision>
+        <revision>2.0.1.0-SNAPSHOT</revision>
 
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
@@ -105,7 +105,6 @@
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
         <maven.shaded.plugin.version>3.2.4</maven.shaded.plugin.version>
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
-        <maven.failsafe.plugin.version>3.0.0-M5</maven.failsafe.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
@@ -196,19 +195,6 @@
                         <exclude>**/integration/*</exclude>
                     </excludes>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${maven.failsafe.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

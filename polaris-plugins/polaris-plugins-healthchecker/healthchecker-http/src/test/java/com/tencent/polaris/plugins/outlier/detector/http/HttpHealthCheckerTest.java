@@ -45,16 +45,11 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
@@ -263,7 +258,9 @@ public class HttpHealthCheckerTest {
 
         @Override
         public void close() throws IOException {
-            this.thread.stop();
+            if (this.thread != null && this.thread.isAlive()) {
+                this.thread.interrupt();
+            }
         }
     }
 }
