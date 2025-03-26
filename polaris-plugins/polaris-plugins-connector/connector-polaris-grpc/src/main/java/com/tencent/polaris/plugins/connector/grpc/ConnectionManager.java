@@ -470,6 +470,8 @@ public class ConnectionManager extends Destroyable {
         private Connection connectTarget(ConnID connID) throws PolarisException {
             try {
                 ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(connID.getHost(), connID.getPort())
+                        .keepAliveTime(2, TimeUnit.MINUTES)
+                        .keepAliveWithoutCalls(true)
                         .usePlaintext();
                 if (tlsCertificates != null) {
                     ManagedChannelUtil.setChannelTls(builder, tlsCertificates);
