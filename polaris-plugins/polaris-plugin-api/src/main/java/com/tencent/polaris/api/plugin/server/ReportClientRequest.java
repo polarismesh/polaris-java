@@ -39,6 +39,8 @@ public class ReportClientRequest {
 
     private TargetServer targetServer;
 
+    private long timeoutMs;
+
     private List<ReporterMetaInfo> reporterMetaInfos;
 
     public List<ReporterMetaInfo> getReporterMetaInfos() {
@@ -89,6 +91,14 @@ public class ReportClientRequest {
         this.targetServer = targetServer;
     }
 
+    public long getTimeoutMs() {
+        return timeoutMs;
+    }
+
+    public void setTimeoutMs(long timeoutMs) {
+        this.timeoutMs = timeoutMs;
+    }
+
     @Override
     public String toString() {
         return "ReportClientRequest{" +
@@ -97,6 +107,8 @@ public class ReportClientRequest {
                 ", clientHost='" + clientHost + '\'' +
                 ", version='" + version + '\'' +
                 ", targetServer=" + targetServer +
+                ", timeoutMs=" + timeoutMs +
+                ", reporterMetaInfos=" + reporterMetaInfos +
                 '}';
     }
 }
