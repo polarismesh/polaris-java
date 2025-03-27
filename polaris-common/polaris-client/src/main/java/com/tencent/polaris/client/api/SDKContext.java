@@ -376,6 +376,7 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
                     }
                 }
                 reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
+                reportClientRequest.setTimeoutMs(extensions.getConfiguration().getGlobal().getAPI().getTimeout());
 
                 try {
                     ReportClientResponse reportClientResponse = serverConnector.reportClient(reportClientRequest);
