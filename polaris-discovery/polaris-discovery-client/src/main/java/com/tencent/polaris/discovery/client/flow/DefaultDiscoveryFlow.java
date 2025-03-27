@@ -147,6 +147,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             long start = System.currentTimeMillis();
             ServiceCallResult serviceCallResult = new ServiceCallResult();
             CommonProviderRequest request = req.getRequest();
+            request.setTimeoutMs(timeout);
             try {
                 CommonProviderResponse response = serverConnector.registerInstance(request, customHeader);
                 LOG.info("register {}/{} instance {} successfully", req.getNamespace(), req.getService(),
@@ -183,6 +184,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             long start = System.currentTimeMillis();
             ServiceCallResult serviceCallResult = new ServiceCallResult();
             CommonProviderRequest request = req.getRequest();
+            request.setTimeoutMs(timeout);
             try {
                 serverConnector.deregisterInstance(request);
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);
@@ -250,6 +252,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
         while (timeout > 0) {
             long start = System.currentTimeMillis();
             ServiceCallResult serviceCallResult = new ServiceCallResult();
+            req.setTimeoutMs(timeout);
             try {
                 ReportServiceContractResponse response = serverConnector.reportServiceContract(req);
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);
@@ -286,6 +289,7 @@ public class DefaultDiscoveryFlow implements DiscoveryFlow {
             CommonServiceContractRequest request = req.getRequest();
             request.setNamespace(req.getNamespace());
             request.setService(req.getService());
+            request.setTimeoutMs(timeout);
             try {
                 ServiceRuleByProto response = serverConnector.getServiceContract(request);
                 serviceCallResult.setRetStatus(RetStatus.RetSuccess);

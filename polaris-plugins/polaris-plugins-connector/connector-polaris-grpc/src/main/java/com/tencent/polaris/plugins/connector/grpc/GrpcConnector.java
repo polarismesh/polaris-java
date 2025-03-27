@@ -309,7 +309,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
             stub = GrpcUtil.attachRequestHeader(stub, customHeader);
             stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
-            ResponseProto.Response registerInstanceResponse = stub.registerInstance(buildRegisterInstanceRequest(req));
+            ResponseProto.Response registerInstanceResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
+                    TimeUnit.MILLISECONDS).registerInstance(buildRegisterInstanceRequest(req));
             GrpcUtil.checkResponse(registerInstanceResponse);
             if (!registerInstanceResponse.hasInstance()) {
                 throw new PolarisException(ErrorCode.SERVER_USER_ERROR,
@@ -470,8 +471,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
             stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceDeRegisterReqId());
             stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
-            ResponseProto.Response deregisterInstanceResponse = stub
-                    .deregisterInstance(buildDeregisterInstanceRequest(req));
+            ResponseProto.Response deregisterInstanceResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
+                    TimeUnit.MILLISECONDS).deregisterInstance(buildDeregisterInstanceRequest(req));
             GrpcUtil.checkResponse(deregisterInstanceResponse);
             LOG.debug("received deregister response {}", deregisterInstanceResponse);
         } catch (Throwable t) {
@@ -551,7 +552,8 @@ public class GrpcConnector extends DestroyableServerConnector {
             stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
             stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             ClientProto.Client request = buildReportRequest(req);
-            ResponseProto.Response response = stub.reportClient(request);
+            ResponseProto.Response response = stub.withDeadlineAfter(req.getTimeoutMs(),
+                    TimeUnit.MILLISECONDS).reportClient(request);
             LOG.debug("reportClient req:{}, rsp:{}", req, TextFormat.shortDebugString(response));
             GrpcUtil.checkResponse(response);
             ReportClientResponse rsp = new ReportClientResponse();
@@ -625,8 +627,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
             stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
             stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
-            ResponseProto.Response reportServiceContractResponse =
-                    stub.reportServiceContract(buildReportServiceContractRequest(req));
+            ResponseProto.Response reportServiceContractResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
+                    TimeUnit.MILLISECONDS).reportServiceContract(buildReportServiceContractRequest(req));
             GrpcUtil.checkResponse(reportServiceContractResponse);
             return new ReportServiceContractResponse();
         } catch (Throwable t) {
@@ -663,7 +665,8 @@ public class GrpcConnector extends DestroyableServerConnector {
                     PolarisServiceContractGRPCGrpc.newBlockingStub(connection.getChannel());
             stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextReportServiceContractReqId());
             stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
-            ResponseProto.Response response = stub.getServiceContract(req.toQuerySpec());
+            ResponseProto.Response response = stub.withDeadlineAfter(req.getTimeoutMs(),
+                    TimeUnit.MILLISECONDS).getServiceContract(req.toQuerySpec());
             GrpcUtil.checkResponse(response);
             ServiceContractProto.ServiceContract remoteVal = response.getServiceContract();
             return new ServiceRuleByProto(remoteVal, remoteVal.getRevision(), false, EventType.SERVICE_CONTRACT);
