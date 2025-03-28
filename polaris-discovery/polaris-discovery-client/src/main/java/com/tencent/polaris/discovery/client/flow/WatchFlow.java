@@ -56,7 +56,7 @@ import org.slf4j.Logger;
  */
 public class WatchFlow {
 
-    private static final Logger LOG = LoggerFactory.getLogger(SyncFlow.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WatchFlow.class);
     private static final Logger UPDATE_EVENT_LOG = LoggerFactory.getLogger(LOGGING_UPDATE_EVENT_ASYNC);
     private static final Map<ServiceKey, Set<ServiceListener>> watchers = new ConcurrentHashMap<>();
     private final AtomicBoolean initialize = new AtomicBoolean(false);
@@ -90,7 +90,13 @@ public class WatchFlow {
                     .addInstances(Arrays.asList(response.getInstances()))
                     .allInstances(Arrays.asList(response.getInstances())).build();
             firstAddedListeners.forEach(
-                    serviceListener -> executor.execute(event.getServiceKey(), () -> serviceListener.onEvent(event)));
+                    serviceListener -> executor.execute(event.getServiceKey(), () -> {
+                        try {
+                            serviceListener.onEvent(event);
+                        } catch (Throwable e) {
+                            LOG.error("Notify error When listener is first added, service key:{}, event:{}", event.getServiceKey(), event, e);
+                        }
+                    }));
         }
         boolean result = existListeners.addAll(addListeners);
         return new WatchServiceResponse(response, result);
@@ -168,7 +174,11 @@ public class WatchFlow {
 
         private final BiConsumer<ServiceChangeEvent, ServiceListener> consumer = (event, listener) -> {
             WatchFlow.this.executor.execute(event.getServiceKey(), () -> {
-                listener.onEvent(event);
+                try {
+                    listener.onEvent(event);
+                } catch (Throwable e) {
+                    LOG.error("Notify error, service key:{}, event:{}", event.getServiceKey(), event, e);
+                }
             });
         };
 
