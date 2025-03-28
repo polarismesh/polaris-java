@@ -21,6 +21,7 @@ import com.tencent.polaris.api.rpc.CommonProviderBaseEntity;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.client.api.SDKContext;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +48,9 @@ public class RegisterStateManager {
         String registerStateKey = buildRegisterStateKey(instanceRegisterRequest);
         Map<String, RegisterState> sdkRegisterStates = REGISTER_STATES.computeIfAbsent(
                 sdkContext.getValueContext().getClientId(), clientId -> new ConcurrentHashMap<>());
-        if (sdkRegisterStates.containsKey(registerStateKey)) {
+        RegisterState existsRegisterState = sdkRegisterStates.get(registerStateKey);
+        if (existsRegisterState != null) {
+             existsRegisterState.setInstanceRegisterRequest(instanceRegisterRequest);
             return null;
         }
         return sdkRegisterStates.computeIfAbsent(registerStateKey, unused -> {
@@ -90,7 +93,7 @@ public class RegisterStateManager {
 
     public static final class RegisterState {
 
-        private InstanceRegisterRequest instanceRegisterRequest;
+        private volatile InstanceRegisterRequest instanceRegisterRequest;
         private long firstRegisterTime;
         private ScheduledFuture<?> taskFuture;
         private int heartbeatFailCounter = 0;
