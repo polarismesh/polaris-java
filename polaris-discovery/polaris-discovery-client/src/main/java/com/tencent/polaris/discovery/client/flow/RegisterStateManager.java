@@ -21,10 +21,16 @@ import com.tencent.polaris.api.rpc.CommonProviderBaseEntity;
 import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
 import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 注册状态管理器
@@ -32,6 +38,8 @@ import java.util.concurrent.ScheduledFuture;
  * @author wallezhang
  */
 public class RegisterStateManager {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RegisterStateManager.class);
 
     private final static Map<String, Map<String, RegisterState>> REGISTER_STATES = new ConcurrentHashMap<>();
 
@@ -69,7 +77,7 @@ public class RegisterStateManager {
                 .ifPresent(sdkRegisterStates -> {
                     String registerStateKey = buildRegisterStateKey(instanceDeregisterRequest);
                     Optional.ofNullable(sdkRegisterStates.remove(registerStateKey))
-                            .ifPresent(registerState -> registerState.getTaskFuture().cancel(false));
+                            .ifPresent(RegisterState::destroy);
                 });
     }
 
@@ -77,7 +85,7 @@ public class RegisterStateManager {
         Optional.ofNullable(REGISTER_STATES.remove(sdkContext.getValueContext().getClientId()))
                 .ifPresent(sdkRegisterStates -> {
                     for (RegisterState registerState : sdkRegisterStates.values()) {
-                        registerState.getTaskFuture().cancel(false);
+                        registerState.destroy();
                     }
                     sdkRegisterStates.clear();
                 });
@@ -88,26 +96,33 @@ public class RegisterStateManager {
                 baseEntity.getPort());
     }
 
-    public static final class RegisterState {
+    public static class RegisterState {
 
         private InstanceRegisterRequest instanceRegisterRequest;
         private long firstRegisterTime;
         private ScheduledFuture<?> taskFuture;
-        private int heartbeatFailCounter = 0;
+        private final AtomicInteger heartbeatFailCounter = new AtomicInteger(0);
+        private ScheduledFuture<?> reRegisterFuture;
+        private final ScheduledExecutorService reRegisterExecutor;
+        private final AtomicInteger reRegisterCounter = new AtomicInteger(0);
+
+        public RegisterState() {
+            this.reRegisterExecutor = Executors.newSingleThreadScheduledExecutor();
+        }
 
         /**
          * Increment fail count by one
          */
         public void incrementFailCount() {
-            heartbeatFailCounter += 1;
+            heartbeatFailCounter.incrementAndGet();
         }
 
         public int getHeartbeatFailCounter() {
-            return heartbeatFailCounter;
+            return heartbeatFailCounter.get();
         }
 
         public void resetFailCount() {
-            heartbeatFailCounter = 0;
+            heartbeatFailCounter.set(0);
         }
 
         public InstanceRegisterRequest getInstanceRegisterRequest() {
@@ -132,6 +147,42 @@ public class RegisterStateManager {
 
         public void setTaskFuture(ScheduledFuture<?> taskFuture) {
             this.taskFuture = taskFuture;
+        }
+
+        public ScheduledFuture<?> getReRegisterFuture() {
+            return reRegisterFuture;
+        }
+
+        public void setReRegisterFuture(ScheduledFuture<?> reRegisterFuture) {
+            this.reRegisterFuture = reRegisterFuture;
+        }
+
+        public ScheduledExecutorService getReRegisterExecutor() {
+            return reRegisterExecutor;
+        }
+
+        public int getReRegisterCounter() {
+            return reRegisterCounter.get();
+        }
+
+        public void incrementReRegisterCounter() {
+            reRegisterCounter.incrementAndGet();
+        }
+
+        public void resetReRegisterCounter() {
+            reRegisterCounter.set(0);
+        }
+
+        public void destroy() {
+            try {
+                getTaskFuture().cancel(false);
+                getReRegisterFuture().cancel(false);
+                getReRegisterExecutor().shutdownNow();
+            } catch (Throwable throwable) {
+                LOG.warn("[RegisterState] destroy error. namespace:{}, service:{}, host:{}, port:{}.",
+                        getInstanceRegisterRequest().getNamespace(), getInstanceRegisterRequest().getService(),
+                        getInstanceRegisterRequest().getHost(), getInstanceRegisterRequest().getPort(), throwable);
+            }
         }
     }
 }
