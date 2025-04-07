@@ -92,19 +92,17 @@ public class RegisterFlow {
         } catch (PolarisException e) {
             if (e.getServerErrCode() == ServerCodes.NOT_FOUND_RESOURCE) {
                 registerState.incrementFailCount();
-                LOG.debug("[AsyncHeartbeat]Instance heartbeat failed because of NOT_FOUND_RESOURCE. Increase fail count. namespace:{}, service:{}, host:{}, port:{}, heartbeat fail count:{}",
+                LOG.error("[AsyncHeartbeat]Instance heartbeat failed because of NOT_FOUND_RESOURCE. Increase fail count. " +
+                                "namespace:{}, service:{}, host:{}, port:{}, heartbeat fail count:{}",
                         registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                        registerRequest.getPort(), registerState.getHeartbeatFailCounter());
+                        registerRequest.getPort(), registerState.getHeartbeatFailCounter(), e);
             } else {
                 registerState.resetFailCount();
-                LOG.debug("[AsyncHeartbeat]Instance heartbeat failed not because of NOT_FOUND_RESOURCE. Reset fail count. namespace:{}, service:{}, host:{}, port:{}, heartbeat fail count:{}",
+                LOG.error("[AsyncHeartbeat]Instance heartbeat failed not because of NOT_FOUND_RESOURCE. Reset fail count. " +
+                                "namespace:{}, service:{}, host:{}, port:{}, heartbeat fail count:{}",
                         registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                        registerRequest.getPort(), registerState.getHeartbeatFailCounter());
+                        registerRequest.getPort(), registerState.getHeartbeatFailCounter(), e);
             }
-            LOG.error(
-                    "[AsyncHeartbeat]Instance heartbeat failed, namespace:{}, service:{}, host:{}, port:{}, heartbeat fail count:{}",
-                    registerRequest.getNamespace(), registerRequest.getService(), registerRequest.getHost(),
-                    registerRequest.getPort(), registerState.getHeartbeatFailCounter(), e);
         }
 
         long minRegisterInterval = sdkContext.getConfig().getProvider().getMinRegisterInterval();
