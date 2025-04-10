@@ -251,6 +251,7 @@ public class PolarisConfigFileConnector extends AbstractPolarisConfigConnector i
         configFile.setContent(configFileDTO.getContent().getValue());
         configFile.setMd5(configFileDTO.getMd5().getValue());
         configFile.setVersion(configFileDTO.getVersion().getValue());
+        configFile.setEncrypted(configFileDTO.getEncrypted().getValue());
         if (configFileDTO.getEncrypted().getValue()) {
             configFileDTO.getTagsList().forEach(tag -> {
                 if (tag.getKey().getValue().equals("internal-datakey")) {
