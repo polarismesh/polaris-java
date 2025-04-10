@@ -20,6 +20,8 @@ package com.tencent.polaris.configuration.api.core;
 import java.util.Map;
 import java.util.Set;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+
 /**
  * @author lepdou 2022-03-01
  */
@@ -27,8 +29,11 @@ public class ConfigKVFileChangeEvent {
 
     private final Map<String, ConfigPropertyChangeInfo> propertyChangeInfos;
 
-    public ConfigKVFileChangeEvent(Map<String, ConfigPropertyChangeInfo> changeInfos) {
+    private final com.tencent.polaris.api.plugin.configuration.ConfigFile configFile;
+
+    public ConfigKVFileChangeEvent(Map<String, ConfigPropertyChangeInfo> changeInfos, com.tencent.polaris.api.plugin.configuration.ConfigFile configFile) {
         this.propertyChangeInfos = changeInfos;
+        this.configFile = configFile;
     }
 
     public Set<String> changedKeys() {
@@ -67,4 +72,7 @@ public class ConfigKVFileChangeEvent {
         return ChangeType.NOT_CHANGED;
     }
 
+    public ConfigFile getConfigFile() {
+        return configFile;
+    }
 }

@@ -22,9 +22,8 @@ import com.tencent.polaris.api.plugin.circuitbreaker.entity.MethodResource;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
@@ -47,11 +46,11 @@ public class CircuitBreakerEventUtils {
             return;
         }
 
-        FlowEventConstants.Status currentFlowEventStatus = CircuitBreakerUtils.parseFlowEventStatus(currentStatus);
-        FlowEventConstants.Status previousFlowEventStatus = CircuitBreakerUtils.parseFlowEventStatus(previousStatus);
+        EventConstants.Status currentFlowEventStatus = CircuitBreakerUtils.parseFlowEventStatus(currentStatus);
+        EventConstants.Status previousFlowEventStatus = CircuitBreakerUtils.parseFlowEventStatus(previousStatus);
 
         FlowEvent.Builder flowEventBuilder = new FlowEvent.Builder()
-                .withEventType(ServiceEventKey.EventType.CIRCUIT_BREAKING)
+                .withEventType(EventConstants.EventType.CIRCUIT_BREAKING)
                 .withEventName(CircuitBreakerUtils.parseFlowEventName(currentFlowEventStatus, previousFlowEventStatus))
                 .withTimestamp(LocalDateTime.now())
                 .withClientId(extensions.getValueContext().getClientId())
@@ -69,13 +68,13 @@ public class CircuitBreakerEventUtils {
         String isolationObject = "";
         switch (resource.getLevel()) {
             case SERVICE:
-                flowEventBuilder = flowEventBuilder.withResourceType(FlowEventConstants.ResourceType.SERVICE);
+                flowEventBuilder = flowEventBuilder.withResourceType(EventConstants.ResourceType.SERVICE);
                 isolationObject = CircuitBreakerUtils.getServiceCircuitBreakerName(
                         resource.getService().getNamespace(), resource.getService().getService());
                 break;
             case METHOD:
                 MethodResource methodResource = (MethodResource) resource;
-                flowEventBuilder = flowEventBuilder.withResourceType(FlowEventConstants.ResourceType.METHOD)
+                flowEventBuilder = flowEventBuilder.withResourceType(EventConstants.ResourceType.METHOD)
                         .withApiProtocol(methodResource.getProtocol())
                         .withApiPath(methodResource.getPath())
                         .withApiMethod(methodResource.getMethod());
@@ -85,7 +84,7 @@ public class CircuitBreakerEventUtils {
                 break;
             case INSTANCE:
                 InstanceResource instanceResource = (InstanceResource) resource;
-                flowEventBuilder = flowEventBuilder.withResourceType(FlowEventConstants.ResourceType.INSTANCE)
+                flowEventBuilder = flowEventBuilder.withResourceType(EventConstants.ResourceType.INSTANCE)
                         .withHost(instanceResource.getHost())
                         .withPort(instanceResource.getPort());
                 isolationObject = CircuitBreakerUtils.getInstanceCircuitBreakerName(

@@ -15,34 +15,34 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.event.pushgateway;
+package com.tencent.polaris.api.plugin.event;
 
-import com.tencent.polaris.api.plugin.event.BaseEvent;
-
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalDateTime;
 
 /**
- * Polaris push gateway event request.
- *
- * @author Haotian Zhang
+ * 事件接口类。
  */
-public class PushGatewayEventRequest {
+public interface BaseEvent {
 
-    private List<BaseEvent> batch = new ArrayList<>();
+    EventConstants.EventType getEventType();
 
-    public List<BaseEvent> getBatch() {
-        return batch;
-    }
+    EventConstants.EventName getEventName();
 
-    public void setBatch(List<BaseEvent> batch) {
-        this.batch = batch;
-    }
+    LocalDateTime getTimestamp();
 
-    @Override
-    public String toString() {
-        return "PushGatewayEventRequest{" +
-                "batch=" + batch +
-                '}';
-    }
+    String getClientId();
+
+    String getClientIp();
+
+    String getNamespace();
+
+    EventConstants.Status getCurrentStatus();
+
+    EventConstants.Status getPreviousStatus();
+
+    EventConstants.ResourceType getResourceType();
+
+    String getReason();
+
+    String convertMessage();
 }

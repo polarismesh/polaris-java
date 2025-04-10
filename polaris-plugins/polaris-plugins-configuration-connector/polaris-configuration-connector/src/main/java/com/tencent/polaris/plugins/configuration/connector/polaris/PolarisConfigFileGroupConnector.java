@@ -120,6 +120,7 @@ public class PolarisConfigFileGroupConnector extends AbstractPolarisConfigConnec
             ConfigFile configFile = new ConfigFile(clientConfigFileInfo.getNamespace().getValue(),
                     clientConfigFileInfo.getGroup().getValue(),
                     clientConfigFileInfo.getFileName().getValue());
+            configFile.setName(clientConfigFileInfo.getName().getValue());
             configFile.setReleaseTime(dateFormat.parse(clientConfigFileInfo.getReleaseTime().getValue()));
             configFileList.add(configFile);
         }

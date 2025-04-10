@@ -17,21 +17,19 @@
 
 package com.tencent.polaris.api.plugin.event;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
- * 流程事件。
- *
- * @author Haotian Zhang
+ * 配置事件。
  */
-public class FlowEvent implements BaseEvent {
+public class ConfigEvent implements BaseEvent {
 
     /**
      * 事件类型
@@ -70,60 +68,14 @@ public class FlowEvent implements BaseEvent {
     @JsonProperty("namespace")
     private final String namespace;
 
-    /**
-     * 被调服务名
-     */
-    @JsonProperty("service")
-    private final String service;
+    @JsonProperty("config_group")
+    private final String configGroup;
 
-    /**
-     * 接口协议
-     */
-    @JsonProperty("api_protocol")
-    private final String apiProtocol;
+    @JsonProperty("config_file_name")
+    private final String configFileName;
 
-    /**
-     * 接口路径
-     */
-    @JsonProperty("api_path")
-    private final String apiPath;
-
-    /**
-     * 接口方法
-     */
-    @JsonProperty("api_method")
-    private final String apiMethod;
-
-    /**
-     * 实例IP
-     */
-    @JsonProperty("host")
-    private final String host;
-
-    /**
-     * 实例端口
-     */
-    @JsonProperty("port")
-    private final String port;
-
-    /**
-     * 主调命名空间
-     */
-    @JsonProperty("source_namespace")
-    private final String sourceNamespace;
-
-    /**
-     * 主调服务名
-     */
-    @JsonProperty("source_service")
-    private final String sourceService;
-
-    /**
-     * 主调标签
-     */
-    @JsonProperty("labels")
-    private final String labels;
-
+    @JsonProperty("config_file_version")
+    private final String configFileVersion;
     /**
      * 当前事件状态
      */
@@ -140,11 +92,6 @@ public class FlowEvent implements BaseEvent {
     private final EventConstants.ResourceType resourceType;
 
     /**
-     * 治理规则名
-     */
-    private final String ruleName;
-
-    /**
      * 状态转换原因
      */
     @JsonProperty("reason")
@@ -152,30 +99,19 @@ public class FlowEvent implements BaseEvent {
 
     private final Map<String, String> additionalParams;
 
-    private FlowEvent(Builder builder) {
+    private ConfigEvent(Builder builder) {
         this.eventType = builder.eventType;
         this.eventName = builder.eventName;
         this.timestamp = builder.timestamp;
         this.clientId = builder.clientId;
         this.clientIp = builder.clientIp;
         this.namespace = builder.namespace;
-        this.service = builder.service;
-        this.apiProtocol = builder.apiProtocol;
-        this.apiPath = builder.apiPath;
-        this.apiMethod = builder.apiMethod;
-        this.host = builder.host;
-        if (builder.port != null) {
-            this.port = String.valueOf(builder.port);
-        } else {
-            this.port = "";
-        }
-        this.sourceNamespace = builder.sourceNamespace;
-        this.sourceService = builder.sourceService;
-        this.labels = builder.labels;
+        this.configGroup = builder.configGroup;
+        this.configFileName = builder.configFileName;
+        this.configFileVersion = builder.configVersion;
         this.currentStatus = builder.currentStatus;
         this.previousStatus = builder.previousStatus;
         this.resourceType = builder.resourceType;
-        this.ruleName = builder.ruleName;
         this.reason = builder.reason;
         additionalParams = new HashMap<>();
     }
@@ -187,19 +123,12 @@ public class FlowEvent implements BaseEvent {
         private String clientId = "";
         private String clientIp = "";
         private String namespace = "";
-        private String service = "";
-        private String apiProtocol = "";
-        private String apiPath = "";
-        private String apiMethod = "";
-        private String host = "";
-        private Integer port;
-        private String sourceNamespace = "";
-        private String sourceService = "";
-        private String labels = "";
+        private String configGroup = "";
+        private String configFileName = "";
+        private String configVersion = "";
         private EventConstants.Status currentStatus;
         private EventConstants.Status previousStatus;
         private EventConstants.ResourceType resourceType;
-        private String ruleName = "";
         private String reason = "";
 
         public Builder withEventType(EventConstants.EventType eventType) {
@@ -232,48 +161,18 @@ public class FlowEvent implements BaseEvent {
             return this;
         }
 
-        public Builder withService(String service) {
-            this.service = service;
+        public Builder withConfigGroup(String configGroup) {
+            this.configGroup = configGroup;
             return this;
         }
 
-        public Builder withApiProtocol(String apiProtocol) {
-            this.apiProtocol = apiProtocol;
+        public Builder withConfigFileName(String configFileName) {
+            this.configFileName = configFileName;
             return this;
         }
 
-        public Builder withApiPath(String apiPath) {
-            this.apiPath = apiPath;
-            return this;
-        }
-
-        public Builder withApiMethod(String apiMethod) {
-            this.apiMethod = apiMethod;
-            return this;
-        }
-
-        public Builder withHost(String host) {
-            this.host = host;
-            return this;
-        }
-
-        public Builder withPort(Integer port) {
-            this.port = port;
-            return this;
-        }
-
-        public Builder withSourceNamespace(String sourceNamespace) {
-            this.sourceNamespace = sourceNamespace;
-            return this;
-        }
-
-        public Builder withSourceService(String sourceService) {
-            this.sourceService = sourceService;
-            return this;
-        }
-
-        public Builder withLabels(String labels) {
-            this.labels = labels;
+        public Builder withConfigVersion(String configVersion) {
+            this.configVersion = configVersion;
             return this;
         }
 
@@ -292,18 +191,13 @@ public class FlowEvent implements BaseEvent {
             return this;
         }
 
-        public Builder withRuleName(String ruleName) {
-            this.ruleName = ruleName;
-            return this;
-        }
-
         public Builder withReason(String reason) {
             this.reason = reason;
             return this;
         }
 
-        public FlowEvent build() {
-            return new FlowEvent(this);
+        public ConfigEvent build() {
+            return new ConfigEvent(this);
         }
     }
 
@@ -331,40 +225,16 @@ public class FlowEvent implements BaseEvent {
         return namespace;
     }
 
-    public String getService() {
-        return service;
+    public String getConfigGroup() {
+        return configGroup;
     }
 
-    public String getApiProtocol() {
-        return apiProtocol;
+    public String getConfigFileName() {
+        return configFileName;
     }
 
-    public String getApiPath() {
-        return apiPath;
-    }
-
-    public String getApiMethod() {
-        return apiMethod;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public String getPort() {
-        return port;
-    }
-
-    public String getSourceNamespace() {
-        return sourceNamespace;
-    }
-
-    public String getSourceService() {
-        return sourceService;
-    }
-
-    public String getLabels() {
-        return labels;
+    public String getConfigFileVersion() {
+        return configFileVersion;
     }
 
     public EventConstants.Status getCurrentStatus() {
@@ -377,10 +247,6 @@ public class FlowEvent implements BaseEvent {
 
     public EventConstants.ResourceType getResourceType() {
         return resourceType;
-    }
-
-    public String getRuleName() {
-        return ruleName;
     }
 
     public String getReason() {
@@ -406,27 +272,9 @@ public class FlowEvent implements BaseEvent {
             eventName = this.getEventName().name();
         }
 
-        String currentStatus = "";
-        if (this.getCurrentStatus() != null) {
-            currentStatus = this.getCurrentStatus().name();
-        }
-
-        String previousStatus = "";
-        if (this.getPreviousStatus() != null) {
-            previousStatus = this.getPreviousStatus().name();
-        }
-
-        String resourceType = "";
-        if (this.getResourceType() != null) {
-            resourceType = this.getResourceType().name();
-        }
-
         return eventType + "|" + eventName + "|" + formattedDateTime + "|" + this.getClientId() + "|"
-                + this.getClientIp() + "|" + this.getNamespace() + "|" + this.getService() + "|"
-                + this.getApiProtocol() + "|" + this.getApiPath() + "|" + this.getApiMethod() + "|"
-                + this.getHost() + "|" + this.getPort() + "|" + this.getSourceNamespace() + "|"
-                + this.getSourceService() + "|" + this.getLabels() + "|" + currentStatus + "|"
-                + previousStatus + "|" + resourceType + "|" + this.getRuleName() + "|" + this.getReason();
+                + this.getClientIp() + "|" + this.getNamespace() + "|" + this.getConfigGroup() + "|"
+                + this.getConfigFileName() + "|" + this.getConfigFileVersion();
     }
 
     public Map<String, String> getAdditionalParams() {
@@ -435,26 +283,19 @@ public class FlowEvent implements BaseEvent {
 
     @Override
     public String toString() {
-        return "FlowEvent{" +
+        return "ConfigEvent{" +
                 "eventType=" + eventType +
                 ", eventName=" + eventName +
                 ", timestamp=" + timestamp +
                 ", clientId='" + clientId + '\'' +
                 ", clientIp='" + clientIp + '\'' +
                 ", namespace='" + namespace + '\'' +
-                ", service='" + service + '\'' +
-                ", apiProtocol='" + apiProtocol + '\'' +
-                ", apiPath='" + apiPath + '\'' +
-                ", apiMethod='" + apiMethod + '\'' +
-                ", host='" + host + '\'' +
-                ", port='" + port + '\'' +
-                ", sourceNamespace='" + sourceNamespace + '\'' +
-                ", sourceService='" + sourceService + '\'' +
-                ", labels='" + labels + '\'' +
+                ", configGroup='" + configGroup + '\'' +
+                ", configFileName='" + configFileName + '\'' +
+                ", configFileVersion='" + configFileVersion + '\'' +
                 ", currentStatus=" + currentStatus +
                 ", previousStatus=" + previousStatus +
                 ", resourceType=" + resourceType +
-                ", ruleName='" + ruleName + '\'' +
                 ", reason='" + reason + '\'' +
                 ", additionalParams=" + additionalParams +
                 '}';

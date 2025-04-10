@@ -22,7 +22,7 @@ import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.config.consumer.CircuitBreakerConfig;
 import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
 import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceRule;
@@ -106,32 +106,32 @@ public class CircuitBreakerUtils {
         return RetStatus.RetSuccess;
     }
 
-    public static FlowEventConstants.Status parseFlowEventStatus(CircuitBreakerStatus.Status status) {
+    public static EventConstants.Status parseFlowEventStatus(CircuitBreakerStatus.Status status) {
         switch (status) {
             case OPEN:
-                return FlowEventConstants.Status.OPEN;
+                return EventConstants.Status.OPEN;
             case CLOSE:
-                return FlowEventConstants.Status.CLOSE;
+                return EventConstants.Status.CLOSE;
             case HALF_OPEN:
-                return FlowEventConstants.Status.HALF_OPEN;
+                return EventConstants.Status.HALF_OPEN;
             case DESTROY:
-                return FlowEventConstants.Status.DESTROY;
+                return EventConstants.Status.DESTROY;
             default:
-                return FlowEventConstants.Status.UNKNOWN;
+                return EventConstants.Status.UNKNOWN;
         }
     }
 
-    public static FlowEventConstants.EventName parseFlowEventName(FlowEventConstants.Status currentStatus, FlowEventConstants.Status previousStatus) {
-        if (currentStatus == FlowEventConstants.Status.OPEN) {
-            return FlowEventConstants.EventName.CircuitBreakerOpen;
-        } else if (currentStatus == FlowEventConstants.Status.HALF_OPEN) {
-            return FlowEventConstants.EventName.CircuitBreakerHalfOpen;
-        } else if (currentStatus == FlowEventConstants.Status.CLOSE) {
-            return FlowEventConstants.EventName.CircuitBreakerClose;
-        } else if (currentStatus == FlowEventConstants.Status.DESTROY) {
-            return FlowEventConstants.EventName.CircuitBreakerDestroy;
+    public static EventConstants.EventName parseFlowEventName(EventConstants.Status currentStatus, EventConstants.Status previousStatus) {
+        if (currentStatus == EventConstants.Status.OPEN) {
+            return EventConstants.EventName.CircuitBreakerOpen;
+        } else if (currentStatus == EventConstants.Status.HALF_OPEN) {
+            return EventConstants.EventName.CircuitBreakerHalfOpen;
+        } else if (currentStatus == EventConstants.Status.CLOSE) {
+            return EventConstants.EventName.CircuitBreakerClose;
+        } else if (currentStatus == EventConstants.Status.DESTROY) {
+            return EventConstants.EventName.CircuitBreakerDestroy;
         } else {
-            return FlowEventConstants.EventName.UNKNOWN;
+            return EventConstants.EventName.UNKNOWN;
         }
     }
 

@@ -23,8 +23,8 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.event.BaseEvent;
 import com.tencent.polaris.api.plugin.event.EventReporter;
-import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -47,9 +47,9 @@ public class LoggerEventReporter implements EventReporter {
     }
 
     @Override
-    public boolean reportEvent(FlowEvent flowEvent) {
+    public boolean reportEvent(BaseEvent flowEvent) {
         try {
-            EVENT_LOG.info(convertMessage(flowEvent));
+            EVENT_LOG.info(flowEvent.convertMessage());
             return true;
         } catch (Throwable throwable) {
             LOG.warn("Failed to log flow event. {}", flowEvent, throwable);
@@ -80,45 +80,5 @@ public class LoggerEventReporter implements EventReporter {
     @Override
     public void destroy() {
 
-    }
-
-    public String convertMessage(FlowEvent event) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-                .withZone(ZoneId.systemDefault());
-        String formattedDateTime = "";
-        if (event.getTimestamp() != null) {
-            formattedDateTime = formatter.format(event.getTimestamp());
-        }
-
-        String eventType = "";
-        if (event.getEventType() != null) {
-            eventType = event.getEventType().name();
-        }
-
-        String eventName = "";
-        if (event.getEventName() != null) {
-            eventName = event.getEventName().name();
-        }
-
-        String currentStatus = "";
-        if (event.getCurrentStatus() != null) {
-            currentStatus = event.getCurrentStatus().name();
-        }
-
-        String previousStatus = "";
-        if (event.getPreviousStatus() != null) {
-            previousStatus = event.getPreviousStatus().name();
-        }
-
-        String resourceType = "";
-        if (event.getResourceType() != null) {
-            resourceType = event.getResourceType().name();
-        }
-        return eventType + "|" + eventName + "|" + formattedDateTime + "|" + event.getClientId() + "|"
-                + event.getClientIp() + "|" + event.getNamespace() + "|" + event.getService() + "|"
-                + event.getApiProtocol() + "|" + event.getApiPath() + "|" + event.getApiMethod() + "|"
-                + event.getHost() + "|" + event.getPort() + "|" + event.getSourceNamespace() + "|"
-                + event.getSourceService() + "|" + event.getLabels() + "|" + currentStatus + "|"
-                + previousStatus + "|" + resourceType + "|" + event.getRuleName() + "|" + event.getReason();
     }
 }

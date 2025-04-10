@@ -20,7 +20,19 @@ package com.tencent.polaris.api.plugin.event;
 /**
  * @author Haotian Zhang
  */
-public class FlowEventConstants {
+public class EventConstants {
+
+    public enum EventType {
+        CIRCUIT_BREAKING,
+
+        LOSSLESS,
+
+        RATE_LIMITING,
+
+        INSTANCE,
+
+        CONFIG,
+    }
 
     public enum EventName {
         LosslessOnlineStart,
@@ -38,6 +50,8 @@ public class FlowEventConstants {
 
         RateLimitStart,
         RateLimitEnd,
+
+        ConfigUpdated,
 
         UNKNOWN,
     }

@@ -33,6 +33,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -170,8 +171,9 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
     }
 
     @Override
-    public void onChange(ConfigFileMetadata configFileMetadata, String newContent) {
+    public void onChange(ConfigFileMetadata configFileMetadata, com.tencent.polaris.api.plugin.configuration.ConfigFile configFile) {
         String oldContent = this.content;
+        String newContent = Optional.ofNullable(configFile).map(com.tencent.polaris.api.plugin.configuration.ConfigFile::getContent).orElse(null);
         this.content = newContent;
 
         ChangeType changeType = ChangeType.MODIFIED;

@@ -18,6 +18,7 @@
 package com.tencent.polaris.configuration.client.internal;
 
 import com.google.common.collect.Lists;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -65,10 +66,10 @@ public abstract class AbstractConfigFileRepo implements ConfigFileRepo {
         listeners.remove(listener);
     }
 
-    protected void fireChangeEvent(String newContent) {
+    protected void fireChangeEvent(ConfigFile configFile) {
         for (ConfigFileRepoChangeListener listener : listeners) {
             try {
-                listener.onChange(configFileMetadata, newContent);
+                listener.onChange(configFileMetadata, configFile);
             } catch (Throwable t) {
                 LOGGER.error("[Config] invoke config file repo change listener failed. config file = {}, listener = {}",
                         configFileMetadata, listener.getClass(), t);

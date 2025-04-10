@@ -17,8 +17,8 @@
 
 package com.tencent.polaris.plugins.event.tsf;
 
-import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
+import com.tencent.polaris.api.plugin.event.BaseEvent;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.event.tsf.TsfEventDataConstants;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 
@@ -29,7 +29,7 @@ import java.util.Objects;
  */
 public class TsfEventDataUtils {
 
-    public static String convertEventName(FlowEvent flowEvent) {
+    public static String convertEventName(BaseEvent flowEvent) {
         if (Objects.equals(flowEvent.getEventType(), ServiceEventKey.EventType.CIRCUIT_BREAKING)) {
             return TsfEventDataConstants.CIRCUIT_BREAKER_EVENT_NAME;
         } else if (Objects.equals(flowEvent.getEventType(), ServiceEventKey.EventType.RATE_LIMITING)) {
@@ -38,17 +38,17 @@ public class TsfEventDataUtils {
         return "";
     }
 
-    public static Byte convertStatus(FlowEvent flowEvent) {
-        if (Objects.equals(flowEvent.getCurrentStatus(), FlowEventConstants.Status.OPEN) &&
-                Objects.equals(flowEvent.getPreviousStatus(), FlowEventConstants.Status.CLOSE)) {
+    public static Byte convertStatus(BaseEvent flowEvent) {
+        if (Objects.equals(flowEvent.getCurrentStatus(), EventConstants.Status.OPEN) &&
+                Objects.equals(flowEvent.getPreviousStatus(), EventConstants.Status.CLOSE)) {
             return TsfEventDataConstants.STATUS_TRIGGER;
-        } else if (Objects.equals(flowEvent.getCurrentStatus(), FlowEventConstants.Status.CLOSE) ||
-                (Objects.equals(flowEvent.getCurrentStatus(), FlowEventConstants.Status.DESTROY) &&
-                        !Objects.equals(flowEvent.getPreviousStatus(), FlowEventConstants.Status.CLOSE))) {
+        } else if (Objects.equals(flowEvent.getCurrentStatus(), EventConstants.Status.CLOSE) ||
+                (Objects.equals(flowEvent.getCurrentStatus(), EventConstants.Status.DESTROY) &&
+                        !Objects.equals(flowEvent.getPreviousStatus(), EventConstants.Status.CLOSE))) {
             return TsfEventDataConstants.STATUS_RECOVER;
-        } else if (Objects.equals(flowEvent.getCurrentStatus(), FlowEventConstants.Status.LIMITED)) {
+        } else if (Objects.equals(flowEvent.getCurrentStatus(), EventConstants.Status.LIMITED)) {
             return TsfEventDataConstants.STATUS_TRIGGER;
-        } else if (Objects.equals(flowEvent.getCurrentStatus(), FlowEventConstants.Status.UNLIMITED)) {
+        } else if (Objects.equals(flowEvent.getCurrentStatus(), EventConstants.Status.UNLIMITED)) {
             return TsfEventDataConstants.STATUS_RECOVER;
         }
         return -1;

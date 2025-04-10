@@ -22,13 +22,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
 
-import static com.tencent.polaris.api.plugin.event.FlowEventConstants.EventName.LosslessOnlineStart;
+import static com.tencent.polaris.api.plugin.event.EventConstants.EventName.LosslessOnlineStart;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -43,7 +43,7 @@ public class PushGatewayEventRequestTest {
     @Test
     public void test() throws JsonProcessingException {
         FlowEvent flowEvent = new FlowEvent.Builder()
-                .withEventType(ServiceEventKey.EventType.LOSSLESS)
+                .withEventType(EventConstants.EventType.LOSSLESS)
                 .withEventName(LosslessOnlineStart)
                 .withTimestamp(LocalDateTime.of(2025, 1, 13, 11, 58, 42))
                 .withClientId("test-client")

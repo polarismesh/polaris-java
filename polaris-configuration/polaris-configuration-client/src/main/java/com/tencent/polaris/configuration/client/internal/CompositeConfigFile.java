@@ -193,4 +193,9 @@ public class CompositeConfigFile implements ConfigKVFile {
     public String getFileName() {
         return "";
     }
+
+    @Override
+    public String getFileVersion() {
+        return "";
+    }
 }
