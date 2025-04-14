@@ -20,12 +20,5 @@
             <artifactId>polaris-client</artifactId>
             <version>${project.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-plugin-api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
     </dependencies>
 </project>

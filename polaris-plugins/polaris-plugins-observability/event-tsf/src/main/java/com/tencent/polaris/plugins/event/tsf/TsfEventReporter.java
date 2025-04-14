@@ -109,6 +109,8 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
                 return reportReportEvent((FlowEvent) baseEvent);
             }
         }
+
+        LOG.debug("event {} is not supported for reporting, return true.", baseEvent);
         return true;
     }
 
