@@ -134,7 +134,8 @@ public class DefaultRevisableConfigFileGroupPullService implements RevisableConf
 
                         List<ConfigFileMetadata> configFileMetadataList = new ArrayList<>();
                         for (ConfigFile configFile : configFileList) {
-                            ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName());
+                            ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(configFile.getNamespace(),
+                                    configFile.getFileGroup(), configFile.getFileName(), configFile.getName());
                             configFileMetadataList.add(configFileMetadata);
                         }
                         if (configFileGroupCache.containsKey(metadata)) {

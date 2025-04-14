@@ -19,9 +19,8 @@ package com.tencent.polaris.ratelimit.client.utils;
 
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
@@ -44,11 +43,11 @@ public class RateLimiterEventUtils {
             return;
         }
 
-        FlowEventConstants.Status currentFlowEventStatus = parseFlowEventStatus(currentCode);
-        FlowEventConstants.Status previousFlowEventStatus = parseFlowEventStatus(previousCode);
+        EventConstants.Status currentFlowEventStatus = parseFlowEventStatus(currentCode);
+        EventConstants.Status previousFlowEventStatus = parseFlowEventStatus(previousCode);
 
         FlowEvent.Builder flowEventBuilder = new FlowEvent.Builder()
-                .withEventType(ServiceEventKey.EventType.RATE_LIMITING)
+                .withEventType(EventConstants.EventType.RATE_LIMITING)
                 .withEventName(parseFlowEventName(currentFlowEventStatus, previousFlowEventStatus))
                 .withTimestamp(LocalDateTime.now())
                 .withClientId(extensions.getValueContext().getClientId())
@@ -85,35 +84,35 @@ public class RateLimiterEventUtils {
         BaseFlow.reportFlowEvent(extensions, flowEvent);
     }
 
-    private static FlowEventConstants.Status parseFlowEventStatus(QuotaResult.Code code) {
+    private static EventConstants.Status parseFlowEventStatus(QuotaResult.Code code) {
         switch (code) {
             case QuotaResultOk:
-                return FlowEventConstants.Status.UNLIMITED;
+                return EventConstants.Status.UNLIMITED;
             case QuotaResultLimited:
-                return FlowEventConstants.Status.LIMITED;
+                return EventConstants.Status.LIMITED;
             default:
-                return FlowEventConstants.Status.UNKNOWN;
+                return EventConstants.Status.UNKNOWN;
         }
     }
 
-    private static FlowEventConstants.EventName parseFlowEventName(FlowEventConstants.Status currentStatus, FlowEventConstants.Status previousStatus) {
-        if (currentStatus == FlowEventConstants.Status.LIMITED && previousStatus == FlowEventConstants.Status.UNLIMITED) {
-            return FlowEventConstants.EventName.RateLimitStart;
-        } else if (currentStatus == FlowEventConstants.Status.UNLIMITED && previousStatus == FlowEventConstants.Status.LIMITED) {
-            return FlowEventConstants.EventName.RateLimitEnd;
+    private static EventConstants.EventName parseFlowEventName(EventConstants.Status currentStatus, EventConstants.Status previousStatus) {
+        if (currentStatus == EventConstants.Status.LIMITED && previousStatus == EventConstants.Status.UNLIMITED) {
+            return EventConstants.EventName.RateLimitStart;
+        } else if (currentStatus == EventConstants.Status.UNLIMITED && previousStatus == EventConstants.Status.LIMITED) {
+            return EventConstants.EventName.RateLimitEnd;
         } else {
-            return FlowEventConstants.EventName.UNKNOWN;
+            return EventConstants.EventName.UNKNOWN;
         }
     }
 
-    private static FlowEventConstants.ResourceType parseFlowEventResourceType(RateLimitProto.Rule.Resource resource) {
+    private static EventConstants.ResourceType parseFlowEventResourceType(RateLimitProto.Rule.Resource resource) {
         switch (resource) {
             case QPS:
-                return FlowEventConstants.ResourceType.QPS;
+                return EventConstants.ResourceType.QPS;
             case CONCURRENCY:
-                return FlowEventConstants.ResourceType.CONCURRENCY;
+                return EventConstants.ResourceType.CONCURRENCY;
             default:
-                return FlowEventConstants.ResourceType.UNKNOWN;
+                return EventConstants.ResourceType.UNKNOWN;
         }
     }
 }

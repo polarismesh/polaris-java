@@ -30,8 +30,8 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.event.BaseEvent;
 import com.tencent.polaris.api.plugin.event.EventReporter;
-import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
@@ -64,7 +64,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
     private final ObjectMapper mapper = new ObjectMapper();
 
-    private BlockingQueue<FlowEvent> eventQueue;
+    private BlockingQueue<BaseEvent> eventQueue;
 
     private volatile boolean init = true;
 
@@ -81,7 +81,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
     }
 
     @Override
-    public boolean reportEvent(FlowEvent flowEvent) {
+    public boolean reportEvent(BaseEvent flowEvent) {
         if (eventUri == null) {
             LOG.warn("build event request url fail, can not sent event.");
             return false;
@@ -184,7 +184,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
             try {
                 // 每次把eventQueue发空结束
                 while (CollectionUtils.isNotEmpty(eventQueue)) {
-                    List<FlowEvent> eventDataList = new ArrayList<>();
+                    List<BaseEvent> eventDataList = new ArrayList<>();
                     PushGatewayEventRequest request = new PushGatewayEventRequest();
 
                     eventQueue.drainTo(eventDataList, config.getMaxBatchSize());

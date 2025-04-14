@@ -19,8 +19,7 @@ package com.tencent.polaris.plugin.lossless.common;
 
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.client.flow.BaseFlow;
 
 import java.time.LocalDateTime;
@@ -31,13 +30,13 @@ import java.time.LocalDateTime;
 public class LosslessEventUtils {
 
     public static void reportEvent(Extensions extensions, String namespace, String service, String host,
-                                   int port, FlowEventConstants.EventName eventName) {
+                                   int port, EventConstants.EventName eventName) {
         if (extensions == null) {
             return;
         }
 
         FlowEvent.Builder flowEventBuilder = new FlowEvent.Builder()
-                .withEventType(ServiceEventKey.EventType.LOSSLESS)
+                .withEventType(EventConstants.EventType.LOSSLESS)
                 .withEventName(eventName)
                 .withTimestamp(LocalDateTime.now())
                 .withClientId(extensions.getValueContext().getClientId())

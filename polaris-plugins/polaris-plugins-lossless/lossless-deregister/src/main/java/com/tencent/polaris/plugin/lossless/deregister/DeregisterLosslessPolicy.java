@@ -27,7 +27,7 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.event.FlowEventConstants;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.lossless.InstanceProperties;
 import com.tencent.polaris.api.plugin.lossless.LosslessActionProvider;
 import com.tencent.polaris.api.plugin.lossless.LosslessPolicy;
@@ -194,7 +194,7 @@ public class DeregisterLosslessPolicy implements LosslessPolicy, HttpServerAware
         event.setEventName(EVENT_LOSSLESS_DEREGISTER);
         EVENT_LOG.info(event.toString());
         LosslessEventUtils.reportEvent(extensions, instance.getNamespace(), instance.getService(), instance.getHost(),
-                instance.getPort(), FlowEventConstants.EventName.LosslessOfflineStart);
+                instance.getPort(), EventConstants.EventName.LosslessOfflineStart);
     }
 
     private boolean isLosslessOfflineEnable(BaseInstance instance) {

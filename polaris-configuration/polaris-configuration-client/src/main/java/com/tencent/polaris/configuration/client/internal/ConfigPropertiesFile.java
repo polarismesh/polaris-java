@@ -23,6 +23,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 import com.tencent.polaris.configuration.client.util.ConvertFunctions;
@@ -321,9 +322,9 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
     }
 
     @Override
-    public void onChange(ConfigFileMetadata configFileMetadata, String newContent) {
-        super.onChange(configFileMetadata, newContent);
-
+    public void onChange(ConfigFileMetadata configFileMetadata, ConfigFile configFile) {
+        super.onChange(configFileMetadata, configFile);
+        String newContent = Optional.ofNullable(configFile).map(ConfigFile::getContent).orElse(null);
         Properties oldProperties = this.properties.get();
         if (oldProperties == null) {
             oldProperties = new Properties();
@@ -358,7 +359,7 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
         clearConfigCache();
 
-        ConfigKVFileChangeEvent event = new ConfigKVFileChangeEvent(changeInfos);
+        ConfigKVFileChangeEvent event = new ConfigKVFileChangeEvent(changeInfos, configFile);
 
         fireChangeEvent(event);
     }

@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 
 /**
@@ -24,6 +25,6 @@ import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
  */
 public interface ConfigFileRepoChangeListener {
 
-    void onChange(ConfigFileMetadata configFileMetadata, String newContent);
+    void onChange(ConfigFileMetadata configFileMetadata, ConfigFile configFile);
 
 }

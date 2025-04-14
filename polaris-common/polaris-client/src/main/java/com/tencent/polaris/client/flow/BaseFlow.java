@@ -27,6 +27,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.DefaultRouterChainGroup;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.RouterChainGroup;
+import com.tencent.polaris.api.plugin.event.ConfigEvent;
 import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
@@ -365,6 +366,25 @@ public class BaseFlow {
                 }
             } catch (Throwable throwable) {
                 LOG.warn("Report event by {} failed. Flow event detail: {}", eventReporter.getName(), flowEvent, throwable);
+            }
+        }
+    }
+
+    public static void reportConfigEvent(Extensions extensions, ConfigEvent flowEvent) {
+        List<EventReporter> eventReporterList = extensions.getEventReporterList();
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Reporting config event: {}", flowEvent);
+        }
+        for (EventReporter eventReporter : eventReporterList) {
+            try {
+                if (!eventReporter.isEnabled()) {
+                    continue;
+                }
+                if (!eventReporter.reportEvent(flowEvent)) {
+                    LOG.warn("Report event by {} failed. Config event detail: {}", eventReporter.getName(), flowEvent);
+                }
+            } catch (Throwable throwable) {
+                LOG.warn("Report event by {} failed. Config event detail: {}", eventReporter.getName(), flowEvent, throwable);
             }
         }
     }

@@ -29,11 +29,20 @@ public class DefaultConfigFileMetadata implements ConfigFileMetadata {
     private final String namespace;
     private final String fileGroup;
     private final String fileName;
+    private final String fileVersion;
 
     public DefaultConfigFileMetadata(String namespace, String fileGroup, String fileName) {
         this.namespace = namespace;
         this.fileGroup = fileGroup;
         this.fileName = fileName;
+        this.fileVersion = null;
+    }
+
+    public DefaultConfigFileMetadata(String namespace, String fileGroup, String fileName, String fileVersion) {
+        this.namespace = namespace;
+        this.fileGroup = fileGroup;
+        this.fileName = fileName;
+        this.fileVersion = fileVersion;
     }
 
     @Override
@@ -49,6 +58,11 @@ public class DefaultConfigFileMetadata implements ConfigFileMetadata {
     @Override
     public String getFileName() {
         return fileName;
+    }
+
+    @Override
+    public String getFileVersion() {
+        return fileVersion;
     }
 
     @Override

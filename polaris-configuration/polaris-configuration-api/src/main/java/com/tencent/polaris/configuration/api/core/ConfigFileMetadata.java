@@ -29,4 +29,6 @@ public interface ConfigFileMetadata {
     String getFileGroup();
 
     String getFileName();
+
+    String getFileVersion();
 }

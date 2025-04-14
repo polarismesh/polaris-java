@@ -28,6 +28,7 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.event.BaseEvent;
 import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
@@ -99,11 +100,17 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
     }
 
     @Override
-    public boolean reportEvent(FlowEvent flowEvent) {
-        if (flowEvent.getEventType().equals(ServiceEventKey.EventType.CIRCUIT_BREAKING)) {
-            return reportV1Event(flowEvent);
-        } else if (flowEvent.getEventType().equals(ServiceEventKey.EventType.RATE_LIMITING)) {
-            return reportReportEvent(flowEvent);
+    public boolean reportEvent(BaseEvent baseEvent) {
+        if (baseEvent instanceof FlowEvent) {
+            if (baseEvent.getEventType().equals(ServiceEventKey.EventType.CIRCUIT_BREAKING)) {
+                return reportV1Event((FlowEvent) baseEvent);
+            }
+            else if (baseEvent.getEventType().equals(ServiceEventKey.EventType.RATE_LIMITING)) {
+                return reportReportEvent((FlowEvent) baseEvent);
+            }
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("event {} is not supported for reporting, return true.", baseEvent);
         }
         return true;
     }

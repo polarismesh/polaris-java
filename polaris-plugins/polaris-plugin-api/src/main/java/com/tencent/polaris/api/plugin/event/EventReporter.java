@@ -28,5 +28,5 @@ public interface EventReporter extends Plugin {
 
     boolean isEnabled();
 
-    boolean reportEvent(FlowEvent flowEvent);
+    boolean reportEvent(BaseEvent flowEvent);
 }

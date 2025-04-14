@@ -166,9 +166,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     if (shouldUpdateLocalCache) {
                         ConfigFile copiedConfigFile = deepCloneConfigFile(pulledConfigFile);
                         remoteConfigFile.set(copiedConfigFile);
-
                         //配置有更新，触发回调
-                        fireChangeEvent(copiedConfigFile.getContent());
+                        fireChangeEvent(copiedConfigFile);
 
                         // update local file cache
                         this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
@@ -220,7 +219,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache success.{}.", configFileRes);
                 remoteConfigFile.set(configFileRes);
                 //配置有更新，触发回调
-                fireChangeEvent(configFileRes.getContent());
+                fireChangeEvent(configFileRes);
                 return;
             }
             LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache fail.{}.", configFileReq);
@@ -277,6 +276,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                         sourceConfigFile.getFileName());
         configFile.setContent(sourceConfigFile.getContent());
         configFile.setVersion(sourceConfigFile.getVersion());
+        configFile.setName(sourceConfigFile.getName());
         configFile.setMd5(sourceConfigFile.getMd5());
         return configFile;
     }

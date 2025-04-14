@@ -36,6 +36,7 @@ public class ConfigFile extends BaseEntity {
     private String fileName;
     private String content;
     private long version;
+    private String name;
     private String md5;
     private String publicKey;
     private String dataKey;
@@ -86,6 +87,14 @@ public class ConfigFile extends BaseEntity {
 
     public void setVersion(long version) {
         this.version = version;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getMd5() {
@@ -159,6 +168,7 @@ public class ConfigFile extends BaseEntity {
                ", fileName='" + fileName + '\'' +
                ", content='" + content + '\'' +
                ", version=" + version +
+                ", name=" + name +
                ", md5='" + md5 + '\'' +
                ", releaseTime=" + releaseTime + '\'' +
                '}';
