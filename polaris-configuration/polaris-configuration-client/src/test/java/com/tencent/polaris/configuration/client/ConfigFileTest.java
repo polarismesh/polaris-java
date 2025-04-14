@@ -150,7 +150,9 @@ public class ConfigFileTest {
             }
         });
 
-        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), "hello2");
+        com.tencent.polaris.api.plugin.configuration.ConfigFile newConfigFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile("ns", "group", "file");
+        newConfigFile.setContent("hello2");
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
 
         TimeUnit.MILLISECONDS.sleep(100);
 
@@ -207,7 +209,10 @@ public class ConfigFileTest {
             }
         });
 
-        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), content);
+        com.tencent.polaris.api.plugin.configuration.ConfigFile newConfigFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile("ns", "group", "file");
+        newConfigFile.setContent(content);
+
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
 
         TimeUnit.MILLISECONDS.sleep(100);
 
@@ -260,7 +265,10 @@ public class ConfigFileTest {
             }
         });
 
-        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), content);
+        com.tencent.polaris.api.plugin.configuration.ConfigFile newConfigFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile("ns", "group", "file");
+        newConfigFile.setContent(content);
+
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
 
         TimeUnit.MILLISECONDS.sleep(100);
 
@@ -290,7 +298,9 @@ public class ConfigFileTest {
         };
         configFile.addChangeListener(listener);
 
-        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), content2);
+        com.tencent.polaris.api.plugin.configuration.ConfigFile newConfigFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile("ns", "group", "file");
+        newConfigFile.setContent(content2);
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
 
         TimeUnit.MILLISECONDS.sleep(100);
 
@@ -302,7 +312,9 @@ public class ConfigFileTest {
         configFile.removeChangeListener(listener);
 
         String content3 = "hello3";
-        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), content3);
+        newConfigFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile("ns", "group", "file");
+        newConfigFile.setContent(content3);
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
 
         TimeUnit.MILLISECONDS.sleep(100);
         

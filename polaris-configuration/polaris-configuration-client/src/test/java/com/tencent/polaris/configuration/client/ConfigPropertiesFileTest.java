@@ -167,7 +167,10 @@ public class ConfigPropertiesFileTest {
             }
         });
 
-        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newContent);
+        com.tencent.polaris.api.plugin.configuration.ConfigFile newConfigFile = new com.tencent.polaris.api.plugin.configuration.ConfigFile("ns", "group", "file");
+        newConfigFile.setContent(newContent);
+
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
 
         TimeUnit.MILLISECONDS.sleep(500);
 
