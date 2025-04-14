@@ -52,7 +52,6 @@ public class ServiceEventKey implements Service {
         NEARBY_ROUTE_RULE,
         LOSSLESS,
         BLOCK_ALLOW_RULE,
-        CONFIG_UPDATED,
     }
 
     private final ServiceKey serviceKey;
