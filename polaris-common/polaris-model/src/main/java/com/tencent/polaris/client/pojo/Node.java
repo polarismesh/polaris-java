@@ -17,13 +17,12 @@
 
 package com.tencent.polaris.client.pojo;
 
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
-
-import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.logging.LoggerFactory;
-import org.slf4j.Logger;
 
 public class Node {
 
@@ -44,6 +43,10 @@ public class Node {
 
     public int getPort() {
         return port;
+    }
+
+    public String getHostPort() {
+        return host + ":" + port;
     }
 
     @Override

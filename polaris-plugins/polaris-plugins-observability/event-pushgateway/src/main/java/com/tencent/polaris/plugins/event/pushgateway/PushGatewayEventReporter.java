@@ -32,9 +32,12 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.event.BaseEvent;
 import com.tencent.polaris.api.plugin.event.EventReporter;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
+import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.client.remote.ServiceAddressRepository;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.apache.http.HttpResponse;
@@ -50,7 +53,9 @@ import org.slf4j.Logger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -70,7 +75,9 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
     private PushGatewayEventReporterConfig config;
 
-    private URI eventUri;
+    private ServiceAddressRepository serviceAddressRepository;
+
+    private final Map<Node, URI> eventUriMap = new ConcurrentHashMap<>();
 
     private final ScheduledExecutorService eventExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("event-pushgateway"));
@@ -82,7 +89,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
     @Override
     public boolean reportEvent(BaseEvent flowEvent) {
-        if (eventUri == null) {
+        if (serviceAddressRepository == null) {
             LOG.warn("build event request url fail, can not sent event.");
             return false;
         }
@@ -144,32 +151,46 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
                         eventQueue = new LinkedBlockingQueue<>(config.getEventQueueSize());
 
-                        // 分割主机名和端口号
-                        if (StringUtils.isBlank(config.getAddress())) {
-                            throw new RuntimeException("PushGateway address is empty.");
-                        }
-                        String[] parts = config.getAddress().split(":");
-                        if (parts.length != 2) {
-                            throw new RuntimeException(String.format("PushGateway address %s format error.", config.getAddress()));
-                        }
-                        String host = parts[0];
-                        int port = Integer.parseInt(parts[1]);
-                        eventUri = new URIBuilder()
-                                .setHost(host)
-                                .setPort(port)
-                                .setScheme("http")
-                                .setPath("/polaris/client/events")
-                                .build();
-                        LOG.info("PushGateway event reporter init with uri: {}", eventUri);
+                        serviceAddressRepository = new ServiceAddressRepository(Collections.singletonList(this.config.getAddress()),
+                                ctx.getValueContext().getClientId(), ctx, new ServiceKey(config.getNamespace(), config.getService()));
 
                         eventExecutors.scheduleWithFixedDelay(new PushGatewayEventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
                         LOG.info("PushGateway event reporter starts reporting task.");
-                    } catch (URISyntaxException e) {
-                        LOG.error("Build event request url fail.", e);
+                    } catch (Throwable e) {
+                        LOG.error("Init PushGateway event reporter fail.", e);
                     }
                 }
             }
         }
+    }
+
+    private URI getEventUri() {
+        return getEventUriByNode(serviceAddressRepository.getServiceAddressNode());
+    }
+
+    private URI getEventUriByNode(Node node) {
+        if (node != null) {
+            // First try to get URI from cache.
+            URI cachedUri = eventUriMap.get(node);
+            if (cachedUri != null) {
+                return cachedUri;
+            }
+
+            // If not in cache, build new URI.
+            try {
+                URI uri = new URIBuilder()
+                        .setHost(node.getHost())
+                        .setPort(node.getPort())
+                        .setScheme("http")
+                        .setPath("/polaris/client/events")
+                        .build();
+                URI existingUri = eventUriMap.putIfAbsent(node, uri);
+                return existingUri != null ? existingUri : uri;
+            } catch (URISyntaxException e) {
+                LOG.error("Build event request url with node {} fail.", node, e);
+            }
+        }
+        return null;
     }
 
     @Override
@@ -201,7 +222,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
             StringEntity postBody = null;
             RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
             try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                HttpPost httpPost = new HttpPost(eventUri);
+                HttpPost httpPost = new HttpPost(getEventUri());
                 postBody = new StringEntity(mapper.writeValueAsString(request));
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("postPushGatewayEvent body:{}", postBody);

@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.stat.prometheus.plugin;
 
 import com.sun.net.httpserver.HttpHandler;
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.global.StatReporterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
@@ -29,9 +30,10 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.stat.*;
 import com.tencent.polaris.api.pojo.InstanceGauge;
-import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.client.remote.ServiceAddressRepository;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.*;
@@ -45,7 +47,11 @@ import io.prometheus.client.Gauge;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -80,8 +86,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
     private ScheduledExecutorService executorService;
 
-    private PushGateway pushGateway;
-
     private Extensions extensions;
 
     private boolean enable;
@@ -91,6 +95,10 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
     private String path;
 
     private Map<String, HttpHandler> handlers;
+
+    private ServiceAddressRepository serviceAddressRepository;
+
+    private final Map<String, PushGateway> pushGatewayMap = new ConcurrentHashMap<>();
 
     public PrometheusReporter() {
         this.container = new StatInfoCollectorContainer();
@@ -118,6 +126,10 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
         this.enable = extensions.getConfiguration().getGlobal().getStatReporter().isEnable();
         this.executorService = Executors.newScheduledThreadPool(4, new NamedThreadFactory(getName()));
         this.port = extensions.getConfiguration().getGlobal().getAdmin().getPort();
+
+        this.serviceAddressRepository = new ServiceAddressRepository(Collections.singletonList(this.config.getAddress()),
+                extensions.getValueContext().getClientId(), extensions, new ServiceKey(config.getNamespace(), config.getService()));
+
         this.initHandle();
     }
 
@@ -282,15 +294,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
 
     private void startSchedulePushTask() {
-        if (StringUtils.isBlank(config.getAddress())) {
-            List<String> addresses = extensions.getConfiguration().getGlobal().getServerConnector().getAddresses();
-            if (CollectionUtils.isNotEmpty(addresses)) {
-                String address = addresses.get(0);
-                config.setAddress(address.split(":")[0] + ":" + 9091);
-            }
-        }
-
-        if (null != container && null != executorService && null != sampleMapping) {
+        if (null != serviceAddressRepository && null != container && null != executorService && null != sampleMapping) {
             this.executorService.scheduleWithFixedDelay(this::doPush,
                     config.getPushInterval(),
                     config.getPushInterval(),
@@ -300,6 +304,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
     }
 
     private void doPush() {
+        String address = serviceAddressRepository.getServiceAddress();
         try {
             CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getInsCollector(),
                     container.getInsCollector().getCurrentRevision(),
@@ -311,9 +316,12 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
                     container.getRateLimitCollector().getCurrentRevision(),
                     SystemMetricLabelOrder.RATELIMIT_GAUGE_LABEL_ORDER);
             try {
-                if (Objects.isNull(pushGateway)) {
-                    LOGGER.info("init push-gateway {} ", config.getAddress());
-                    pushGateway = new PushGateway(config.getAddress());
+                PushGateway pushGateway;
+                if (pushGatewayMap.containsKey(address)) {
+                    pushGateway = pushGatewayMap.get(address);
+                } else {
+                    pushGateway = pushGatewayMap.computeIfAbsent(address, k -> new PushGateway(address));
+                    LOGGER.info("init push-gateway {} ", address);
                 }
                 if (config.isOpenGzip()) {
                     pushGateway.pushAddByGzip(promRegistry, CommonHandler.PUSH_DEFAULT_JOB_NAME,
@@ -323,11 +331,11 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
                             Collections.singletonMap(CommonHandler.PUSH_GROUP_KEY, instanceID));
                 }
 
-                LOGGER.info("push result to push-gateway {} success, open gzip {}", config.getAddress(), config.isOpenGzip());
+                LOGGER.info("push result to push-gateway {} success, open gzip {}", address, config.isOpenGzip());
             } catch (IOException exception) {
                 LOGGER.error("push result to push-gateway {} open gzip {} encountered exception, exception:{}",
-                        config.getAddress(), config.isOpenGzip(), exception.getMessage());
-                pushGateway = null;
+                        address, config.isOpenGzip(), exception.getMessage());
+                pushGatewayMap.remove(address);
                 return;
             }
 
@@ -339,7 +347,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
             }
         } catch (Exception e) {
             LOGGER.error("push result to push-gateway {} open gzip {} encountered exception, exception:{}",
-                    config.getAddress(), config.isOpenGzip(), e.getMessage());
+                    address, config.isOpenGzip(), e.getMessage());
         }
     }
 
@@ -357,14 +365,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
     public void setPromRegistry(CollectorRegistry promRegistry) {
         this.promRegistry = promRegistry;
-    }
-
-    public PushGateway getPushGateway() {
-        return pushGateway;
-    }
-
-    public void setPushGateway(PushGateway pushGateway) {
-        this.pushGateway = pushGateway;
     }
 
     String getSdkIP() {
@@ -389,5 +389,15 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
             return Collections.emptyMap();
         }
         return handlers;
+    }
+
+    @JustForTest
+    void setServiceAddressRepository(ServiceAddressRepository serviceAddressRepository) {
+        this.serviceAddressRepository = serviceAddressRepository;
+    }
+
+    @JustForTest
+    Map<String, PushGateway> getPushGatewayMap() {
+        return pushGatewayMap;
     }
 }

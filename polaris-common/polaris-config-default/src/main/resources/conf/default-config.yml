@@ -97,9 +97,13 @@ global:
         # 描述：PushGateway 事件上报开关
         enable: false
         # 描述：PushGateway 事件上报队列长度
-        eventQueueSize: 10000;
+        eventQueueSize: 1000;
         # 描述：PushGateway 事件上报最大批量大小
         maxBatchSize: 100
+        # 描述：事件服务的命名空间
+        namespace: Polaris
+        # 描述：事件服务的服务名
+        service: polaris.pushgateway
   # 描述：Admin相关的配置
   admin:
     # 描述：Admin的监听的IP
@@ -131,6 +135,10 @@ global:
         # #范围:[1s:...]
         # #默认值:10s
         # pushInterval: 10s
+        # 描述：监控服务的命名空间
+        namespace: Polaris
+        # 描述：监控服务的服务名
+        service: polaris.pushgateway
   location:
     providers:
       - type: local

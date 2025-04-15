@@ -20,11 +20,9 @@ package com.tencent.polaris.plugins.stat.prometheus.plugin;
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.InstanceGauge;
-import com.tencent.polaris.api.pojo.RetStatus;
-import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.client.remote.ServiceAddressRepository;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
@@ -71,7 +69,9 @@ public class PrometheusReporterTest {
         handler.setEnable(true);
         handler.setSdkIP("127.0.0.1");
         handler.setConfig(config);
-        handler.setPushGateway(pgw);
+        handler.setServiceAddressRepository(new ServiceAddressRepository(Collections.singletonList(PUSH_DEFAULT_ADDRESS),
+                null, null, new ServiceKey("Polaris", "polaris.pushgateway")));
+        handler.getPushGatewayMap().put(PUSH_DEFAULT_ADDRESS, pgw);
         handler.setExecutorService(Executors.newScheduledThreadPool(4));
         handler.initHandle();
     }
