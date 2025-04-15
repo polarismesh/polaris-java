@@ -36,10 +36,16 @@ public class PushGatewayEventReporterConfig implements Verifier {
     private String address;
 
     @JsonProperty
-    private Integer eventQueueSize = 1000;
+    private Integer eventQueueSize;
 
     @JsonProperty
-    private Integer maxBatchSize = 100;
+    private Integer maxBatchSize;
+
+    @JsonProperty
+    private String namespace;
+
+    @JsonProperty
+    private String service;
 
     @Override
     public void verify() {
@@ -48,6 +54,10 @@ public class PushGatewayEventReporterConfig implements Verifier {
             return;
         }
         ConfigUtils.validateString(address, "global.eventReporter.plugin.pushgateway.address");
+        ConfigUtils.validatePositive(eventQueueSize, "global.eventReporter.plugin.pushgateway.eventQueueSize");
+        ConfigUtils.validatePositive(maxBatchSize, "global.eventReporter.plugin.pushgateway.maxBatchSize");
+        ConfigUtils.validateString(namespace, "global.eventReporter.plugin.pushgateway.namespace");
+        ConfigUtils.validateString(service, "global.eventReporter.plugin.pushgateway.service");
     }
 
     @Override
@@ -59,6 +69,18 @@ public class PushGatewayEventReporterConfig implements Verifier {
             }
             if (StringUtils.isBlank(address)) {
                 setAddress(pushGatewayEventReporterConfig.getAddress());
+            }
+            if (null == eventQueueSize) {
+                setEventQueueSize(pushGatewayEventReporterConfig.getEventQueueSize());
+            }
+            if (null == maxBatchSize) {
+                setMaxBatchSize(pushGatewayEventReporterConfig.getMaxBatchSize());
+            }
+            if (StringUtils.isBlank(namespace)) {
+                setNamespace(pushGatewayEventReporterConfig.getNamespace());
+            }
+            if (StringUtils.isBlank(service)) {
+                setService(pushGatewayEventReporterConfig.getService());
             }
         }
     }
@@ -96,5 +118,33 @@ public class PushGatewayEventReporterConfig implements Verifier {
 
     public void setMaxBatchSize(Integer maxBatchSize) {
         this.maxBatchSize = maxBatchSize;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
+    }
+
+    @Override
+    public String toString() {
+        return "PushGatewayEventReporterConfig{" +
+                "enable=" + enable +
+                ", address='" + address + '\'' +
+                ", eventQueueSize=" + eventQueueSize +
+                ", maxBatchSize=" + maxBatchSize +
+                ", namespace='" + namespace + '\'' +
+                ", service='" + service + '\'' +
+                '}';
     }
 }

@@ -38,6 +38,12 @@ public class PrometheusHandlerConfig implements Verifier {
     private String address;
 
     @JsonProperty
+    private String namespace;
+
+    @JsonProperty
+    private String service;
+
+    @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
     private Long pushInterval = 10000L;
 
@@ -87,6 +93,12 @@ public class PrometheusHandlerConfig implements Verifier {
                     setOpenGzip(false);
                 }
             }
+            if (StringUtils.isBlank(namespace)) {
+                setNamespace(config.getNamespace());
+            }
+            if (StringUtils.isBlank(service)) {
+                setService(config.getService());
+            }
         }
     }
 
@@ -130,12 +142,30 @@ public class PrometheusHandlerConfig implements Verifier {
         this.openGzip = openGzip;
     }
 
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
+    }
+
     @Override
     public String toString() {
         return "PrometheusHandlerConfig{" +
-                ", path='" + path + '\'' +
+                "path='" + path + '\'' +
                 ", type='" + type + '\'' +
                 ", address='" + address + '\'' +
+                ", namespace='" + namespace + '\'' +
+                ", service='" + service + '\'' +
                 ", pushInterval=" + pushInterval +
                 ", openGzip=" + openGzip +
                 '}';

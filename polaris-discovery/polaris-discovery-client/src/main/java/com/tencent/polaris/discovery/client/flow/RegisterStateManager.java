@@ -175,9 +175,15 @@ public class RegisterStateManager {
 
         public void destroy() {
             try {
-                getTaskFuture().cancel(false);
-                getReRegisterFuture().cancel(false);
-                getReRegisterExecutor().shutdownNow();
+                if (getTaskFuture() != null) {
+                    getTaskFuture().cancel(false);
+                }
+                if (getReRegisterFuture() != null) {
+                    getReRegisterFuture().cancel(false);
+                }
+                if (getReRegisterExecutor() != null) {
+                    getReRegisterExecutor().shutdownNow();
+                }
             } catch (Throwable throwable) {
                 LOG.warn("[RegisterState] destroy error. namespace:{}, service:{}, host:{}, port:{}.",
                         getInstanceRegisterRequest().getNamespace(), getInstanceRegisterRequest().getService(),

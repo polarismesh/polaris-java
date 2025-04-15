@@ -16,6 +16,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-client</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
             <version>${httpclient.version}</version>
