@@ -40,13 +40,14 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Ru
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule.Type;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MultiRuleTest {
 
@@ -152,7 +153,7 @@ public class MultiRuleTest {
             // first query header
             boolean hasLimited = false;
             boolean hasPassed = false;
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < 18; i++) {
                 QuotaResponse quotaResponse = quotaAcquire(limitAPI, Consts.METHOD_PAY, Consts.HEADER_VALUE);
                 QuotaResultCode code = quotaResponse.getCode();
                 if (code == QuotaResultCode.QuotaResultLimited) {

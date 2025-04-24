@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
@@ -27,11 +28,9 @@ import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -58,6 +57,17 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     private String token;
 
+    private final boolean emptyProtection;
+
+    private final long emptyProtectionExpiredInterval;
+
+    /**
+     * 淘汰线程
+     */
+    private final ScheduledExecutorService emptyProtectionExpireExecutor;
+
+    private ScheduledFuture<?> emptyProtectionExpireFuture;
+
     static {
         createPullExecutorService();
     }
@@ -80,6 +90,9 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         //获取远程调用插件实现类
         this.configFileConnector = connector;
         this.fallbackToLocalCache = sdkContext.getConfig().getConfigFile().getServerConnector().getFallbackToLocalCache();
+        this.emptyProtection = sdkContext.getConfig().getConfigFile().getServerConnector().isEmptyProtectionEnable();
+        this.emptyProtectionExpiredInterval = sdkContext.getConfig().getConfigFile().getServerConnector().getEmptyProtectionExpiredInterval();
+        this.emptyProtectionExpireExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("polaris-config-empty-protection"));
         //注册 destroy hook
         registerRepoDestroyHook(sdkContext);
         //同步从远程仓库拉取一次
@@ -163,7 +176,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     } else {
                         shouldUpdateLocalCache = remoteConfigFile.get() == null || pulledConfigFile.getVersion() != remoteConfigFile.get().getVersion();
                     }
-                    if (shouldUpdateLocalCache) {
+                    // 构造更新回调动作
+                    Runnable runnable = () -> {
                         ConfigFile copiedConfigFile = deepCloneConfigFile(pulledConfigFile);
                         remoteConfigFile.set(copiedConfigFile);
                         //配置有更新，触发回调
@@ -171,24 +185,40 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
                         // update local file cache
                         this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
+                    };
+                    if (shouldUpdateLocalCache && checkEmptyProtect(response)) {
+                        shouldUpdateLocalCache = false;
+                        submitEmptyProtectionExpireTask(runnable);
+                    }
+                    if (shouldUpdateLocalCache) {
+                        runnable.run();
+                        cancelEmptyProtectionExpireTask();
                     }
                     return;
                 }
 
                 //远端没有此配置文件
                 if (response.getCode() == ServerCodes.NOT_FOUND_RESOURCE) {
-                    LOGGER.warn("[Config] config file not found, please check whether config file released. {}",
-                            configFileMetadata);
-                    //delete local file cache
-                    this.configFilePersistHandler
-                            .asyncDeleteConfigFile(new ConfigFile(configFileMetadata.getNamespace(),
-                                    configFileMetadata.getFileGroup(), configFileMetadata.getFileName()));
+                    // 构造更新回调动作
+                    Runnable runnable = () -> {
+                        //delete local file cache
+                        this.configFilePersistHandler
+                                .asyncDeleteConfigFile(new ConfigFile(configFileMetadata.getNamespace(),
+                                        configFileMetadata.getFileGroup(), configFileMetadata.getFileName()));
 
-                    //删除配置文件
-                    if (remoteConfigFile.get() != null) {
-                        remoteConfigFile.set(null);
-                        //删除配置文件也需要触发通知
-                        fireChangeEvent(null);
+                        //删除配置文件
+                        if (remoteConfigFile.get() != null) {
+                            remoteConfigFile.set(null);
+                            //删除配置文件也需要触发通知
+                            fireChangeEvent(null);
+                        }
+                    };
+                    if (checkEmptyProtect(response)) {
+                        submitEmptyProtectionExpireTask(runnable);
+                    } else {
+                        LOGGER.warn("[Config] config file not found, please check whether config file released. {}",
+                                configFileMetadata);
+                        runnable.run();
                     }
                     return;
                 }
@@ -292,5 +322,40 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     static void destroyPullExecutor() {
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{pullExecutorService});
+    }
+
+    /**
+     * 若配置为空，则推空保护开启，则不刷新配置
+     *
+     * @param configFileResponse
+     * @return
+     */
+    private boolean checkEmptyProtect(ConfigFileResponse configFileResponse) {
+        if (emptyProtection && ConfigFileUtils.checkConfigContentEmpty(configFileResponse)) {
+            LOGGER.warn("Empty response from remote with {}, will not refresh config.", getIdentifier());
+            return true;
+        }
+        return false;
+    }
+
+    private void submitEmptyProtectionExpireTask(Runnable runnable) {
+        if (emptyProtectionExpireFuture == null || emptyProtectionExpireFuture.isCancelled() || emptyProtectionExpireFuture.isDone()) {
+            LOGGER.info("Empty protection expire task of {} submit.", getIdentifier());
+            emptyProtectionExpireFuture = emptyProtectionExpireExecutor.schedule(runnable, emptyProtectionExpiredInterval, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void cancelEmptyProtectionExpireTask() {
+        if (emptyProtectionExpireFuture != null && !emptyProtectionExpireFuture.isCancelled() && !emptyProtectionExpireFuture.isDone()) {
+            emptyProtectionExpireFuture.cancel(true);
+            LOGGER.info("Empty protection expire task of {} cancel.", getIdentifier());
+        }
+    }
+
+    @JustForTest
+    String getIdentifier() {
+        return configFileMetadata.getNamespace() + "."
+                + configFileMetadata.getFileGroup() + "."
+                + configFileMetadata.getFileName();
     }
 }
