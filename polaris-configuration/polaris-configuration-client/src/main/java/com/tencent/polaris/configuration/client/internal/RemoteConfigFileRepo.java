@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
@@ -343,7 +344,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         }
     }
 
-    private String getIdentifier() {
+    @JustForTest
+    String getIdentifier() {
         return configFileMetadata.getNamespace() + "."
                 + configFileMetadata.getFileGroup() + "."
                 + configFileMetadata.getFileName();
