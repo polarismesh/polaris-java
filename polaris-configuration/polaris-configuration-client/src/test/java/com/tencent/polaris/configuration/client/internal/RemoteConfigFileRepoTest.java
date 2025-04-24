@@ -104,7 +104,6 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null);
 
         when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
-        doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
