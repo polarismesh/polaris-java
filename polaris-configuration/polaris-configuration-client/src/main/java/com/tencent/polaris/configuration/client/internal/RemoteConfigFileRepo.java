@@ -192,6 +192,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     }
                     if (shouldUpdateLocalCache) {
                         runnable.run();
+                        cancelEmptyProtectionExpireTask();
                     }
                     return;
                 }
@@ -341,6 +342,13 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         if (emptyProtectionExpireFuture == null || emptyProtectionExpireFuture.isCancelled() || emptyProtectionExpireFuture.isDone()) {
             LOGGER.info("Empty protection expire task of {} submit.", getIdentifier());
             emptyProtectionExpireFuture = emptyProtectionExpireExecutor.schedule(runnable, emptyProtectionExpiredInterval, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private void cancelEmptyProtectionExpireTask() {
+        if (emptyProtectionExpireFuture != null && !emptyProtectionExpireFuture.isCancelled() && !emptyProtectionExpireFuture.isDone()) {
+            emptyProtectionExpireFuture.cancel(true);
+            LOGGER.info("Empty protection expire task of {} cancel.", getIdentifier());
         }
     }
 
