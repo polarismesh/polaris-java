@@ -18,8 +18,13 @@
 package com.tencent.polaris.configuration.client.util;
 
 import com.google.common.collect.Maps;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Map;
@@ -30,6 +35,8 @@ import java.util.Set;
  * @author lepdou 2022-03-04
  */
 public class ConfigFileUtils {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConfigFileUtils.class);
 
     public static void checkConfigFileMetadata(ConfigFileMetadata configFileMetadata) {
         if (StringUtils.isBlank(configFileMetadata.getNamespace())) {
@@ -56,5 +63,26 @@ public class ConfigFileUtils {
             }
         }
         return map.keySet();
+    }
+
+    public static boolean checkConfigContentEmpty(ConfigFileResponse configFileResponse) {
+        if (configFileResponse == null) {
+            LOGGER.debug("config file response is null.");
+            return true;
+        }
+        if (configFileResponse.getCode() == ServerCodes.NOT_FOUND_RESOURCE) {
+            LOGGER.debug("config file not found. maybe not exist or deleted.");
+            return true;
+        }
+        ConfigFile configFile = configFileResponse.getConfigFile();
+        if (configFile == null) {
+            LOGGER.debug("config file is null.");
+            return true;
+        }
+        if (StringUtils.isBlank(configFile.getContent())) {
+            LOGGER.debug("config file content is empty.");
+            return true;
+        }
+        return false;
     }
 }
