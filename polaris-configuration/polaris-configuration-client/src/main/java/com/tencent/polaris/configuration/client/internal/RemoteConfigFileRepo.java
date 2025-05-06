@@ -30,6 +30,8 @@ import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -45,6 +47,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private static final int PULL_CONFIG_RETRY_TIMES = 3;
 
     private static ScheduledExecutorService pullExecutorService;
+
+    private static Set<String> configFileInitSet = new HashSet<>();
 
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
@@ -188,6 +192,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     };
                     if (shouldUpdateLocalCache && checkEmptyProtect(response)) {
                         shouldUpdateLocalCache = false;
+                        fallbackIfNecessaryWhenStartingUp(pullConfigFileReq);
                         submitEmptyProtectionExpireTask(runnable);
                     }
                     if (shouldUpdateLocalCache) {
@@ -214,6 +219,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                         }
                     };
                     if (checkEmptyProtect(response)) {
+                        fallbackIfNecessaryWhenStartingUp(pullConfigFileReq);
                         submitEmptyProtectionExpireTask(runnable);
                     } else {
                         LOGGER.warn("[Config] config file not found, please check whether config file released. {}",
@@ -243,16 +249,39 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     private void fallbackIfNecessary(final int retryTimes, ConfigFile configFileReq) {
-        if (retryTimes >= PULL_CONFIG_RETRY_TIMES && fallbackToLocalCache) {
+        if (retryTimes >= PULL_CONFIG_RETRY_TIMES) {
+            LOGGER.info("[Config] failed to pull config file from remote.");
+            //重试次数超过上限，从本地缓存拉取
+            loadLocalCache(configFileReq);
+        }
+    }
+
+    private void fallbackIfNecessaryWhenStartingUp(ConfigFile configFileReq) {
+        String identifier = getIdentifier();
+        boolean initFlag = false;
+        if (configFileInitSet.contains(identifier)) {
+            initFlag = true;
+        } else {
+            configFileInitSet.add(identifier);
+        }
+        if (!initFlag) {
+            // 第一次启动的时候，如果拉取到空配置，则尝试从缓存中获取
+            LOGGER.info("[Config] load local cache because of empty config when starting up.");
+            loadLocalCache(configFileReq);
+        }
+    }
+
+    private void loadLocalCache(ConfigFile configFileReq) {
+        if (fallbackToLocalCache) {
             ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq);
             if (configFileRes != null) {
-                LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache success.{}.", configFileRes);
+                LOGGER.info("[Config] load local cache success.{}.", configFileRes);
                 remoteConfigFile.set(configFileRes);
                 //配置有更新，触发回调
                 fireChangeEvent(configFileRes);
                 return;
             }
-            LOGGER.info("[Config] failed to pull config file from remote,fallback to local cache fail.{}.", configFileReq);
+            LOGGER.info("[Config] load local cache fail.{}.", configFileReq);
         }
     }
 
