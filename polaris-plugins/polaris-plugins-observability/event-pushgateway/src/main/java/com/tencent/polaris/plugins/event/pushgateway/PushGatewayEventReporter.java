@@ -52,6 +52,7 @@ import org.slf4j.Logger;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -223,7 +224,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
             RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
             try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
                 HttpPost httpPost = new HttpPost(getEventUri());
-                postBody = new StringEntity(mapper.writeValueAsString(request));
+                postBody = new StringEntity(mapper.writeValueAsString(request), StandardCharsets.UTF_8);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("postPushGatewayEvent body:{}", postBody);
                 }
