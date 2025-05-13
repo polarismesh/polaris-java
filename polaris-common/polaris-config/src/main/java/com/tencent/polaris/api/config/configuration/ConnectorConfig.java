@@ -33,4 +33,18 @@ public interface ConnectorConfig extends ServerConnectorConfig {
      * @return 连接器类型
      */
     String getConnectorType();
+
+    /**
+     * 是否开启推空保护
+     *
+     * @return 是否开启推空保护
+     */
+    Boolean isEmptyProtectionEnable();
+
+    /**
+     * 推空保护过期时间，单位毫秒
+     *
+     * @return 推空保护过期时间
+     */
+    Long getEmptyProtectionExpiredInterval();
 }
