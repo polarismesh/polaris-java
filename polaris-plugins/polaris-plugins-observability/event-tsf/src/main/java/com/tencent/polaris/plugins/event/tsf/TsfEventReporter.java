@@ -29,9 +29,9 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.event.BaseEvent;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
@@ -102,10 +102,9 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
     @Override
     public boolean reportEvent(BaseEvent baseEvent) {
         if (baseEvent instanceof FlowEvent) {
-            if (baseEvent.getEventType().equals(ServiceEventKey.EventType.CIRCUIT_BREAKING)) {
+            if (baseEvent.getEventType().equals(EventConstants.EventType.CIRCUIT_BREAKING)) {
                 return reportV1Event((FlowEvent) baseEvent);
-            }
-            else if (baseEvent.getEventType().equals(ServiceEventKey.EventType.RATE_LIMITING)) {
+            } else if (baseEvent.getEventType().equals(EventConstants.EventType.RATE_LIMITING)) {
                 return reportReportEvent((FlowEvent) baseEvent);
             }
         }

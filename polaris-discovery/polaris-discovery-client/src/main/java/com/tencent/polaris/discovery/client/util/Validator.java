@@ -24,25 +24,13 @@ import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.rpc.BaseEntity;
-import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
-import com.tencent.polaris.api.rpc.GetHealthyInstancesRequest;
-import com.tencent.polaris.api.rpc.GetInstancesRequest;
-import com.tencent.polaris.api.rpc.GetOneInstanceRequest;
-import com.tencent.polaris.api.rpc.GetResourcesRequest;
-import com.tencent.polaris.api.rpc.GetServiceContractRequest;
-import com.tencent.polaris.api.rpc.GetServiceRuleRequest;
-import com.tencent.polaris.api.rpc.InstanceDeregisterRequest;
-import com.tencent.polaris.api.rpc.InstanceHeartbeatRequest;
-import com.tencent.polaris.api.rpc.InstanceRegisterRequest;
-import com.tencent.polaris.api.rpc.ServiceCallResult;
-import com.tencent.polaris.api.rpc.UnWatchServiceRequest;
-import com.tencent.polaris.api.rpc.WatchServiceRequest;
+import com.tencent.polaris.api.rpc.*;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.CommonValidator;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -52,6 +40,8 @@ import java.util.Set;
  * @date 2019/8/21
  */
 public class Validator {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Validator.class);
 
     private static final int MAX_PORT = 65536;
 
@@ -164,7 +154,7 @@ public class Validator {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "delay can not be less than 0");
         }
         if (!RetStatus.RetReject.equals(serviceCallResult.getRetStatus())) {
-            validateHostPort(serviceCallResult.getHost(), serviceCallResult.getPort());
+            validateServiceCallResultHostPort(serviceCallResult.getHost(), serviceCallResult.getPort());
         }
     }
 
@@ -184,6 +174,29 @@ public class Validator {
         if (port <= 0 || port >= MAX_PORT) {
             throw new PolarisException(
                     ErrorCode.API_INVALID_ARGUMENT, "port value should be in range (0, 65536).");
+        }
+    }
+
+    /**
+     * 校验服务请求端口信息。某些场景下端口号为0，例如Dubbo的本地调用。
+     *
+     * @param host
+     * @param port
+     * @throws PolarisException
+     */
+    private static void validateServiceCallResultHostPort(String host, Integer port) throws PolarisException {
+        if (StringUtils.isBlank(host)) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "host can not be blank");
+        }
+        if (port == null) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "port can not be null");
+        }
+        if (port == 0) {
+            LOG.warn("port is 0 with host {}. Please check if it meets expectations.", host);
+        }
+        if (port < 0 || port >= MAX_PORT) {
+            throw new PolarisException(
+                    ErrorCode.API_INVALID_ARGUMENT, "port value should be in range [0, 65536).");
         }
     }
 
