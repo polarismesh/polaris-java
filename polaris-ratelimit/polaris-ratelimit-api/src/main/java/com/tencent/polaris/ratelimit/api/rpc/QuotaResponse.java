@@ -68,6 +68,10 @@ public class QuotaResponse {
         return activeRuleName;
     }
 
+    public String getActiveRuleId() {
+        return this.getActiveRule().getId().getValue();
+    }
+
     public Rule getActiveRule() {
         return activeRule;
     }
