@@ -67,6 +67,20 @@ public class RegisterStateManager {
     }
 
     /**
+     * Get instance register state from cache
+     *
+     * @param sdkContext              sdk context
+     * @param instanceRegisterRequest instance register request
+     * @return Return instance register state object if it is cached, otherwise null
+     */
+    public static RegisterState getRegisterState(SDKContext sdkContext, InstanceRegisterRequest instanceRegisterRequest) {
+        String registerStateKey = buildRegisterStateKey(instanceRegisterRequest);
+        Map<String, RegisterState> sdkRegisterStates = REGISTER_STATES.computeIfAbsent(
+                sdkContext.getValueContext().getClientId(), clientId -> new ConcurrentHashMap<>());
+        return sdkRegisterStates.get(registerStateKey);
+    }
+
+    /**
      * Remove the instance heartbeat task and cancel the task
      *
      * @param sdkContext sdk context

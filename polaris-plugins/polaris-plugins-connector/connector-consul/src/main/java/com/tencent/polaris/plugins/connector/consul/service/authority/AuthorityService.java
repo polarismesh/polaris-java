@@ -293,8 +293,17 @@ public class AuthorityService extends ConsulService {
     }
 
     private void setAuthorityConsulIndex(AuthorityKey authorityKey, Long lastIndex, Long newIndex) {
-        LOG.debug("AuthorityKey: {}; lastIndex: {}; newIndex: {}", authorityKey, lastIndex, newIndex);
-        authorityConsulIndexMap.put(authorityKey, newIndex);
+        if (isEnable() && isReset) {
+            LOG.info("AuthorityKey: {} is reset.", authorityKey);
+            authorityConsulIndexMap.remove(authorityKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("AuthorityKey: {}; lastIndex: {}; newIndex: {}", authorityKey, lastIndex, newIndex);
+            authorityConsulIndexMap.put(authorityKey, newIndex);
+        } else {
+            LOG.info("AuthorityKey: {} is disabled.", authorityKey);
+            authorityConsulIndexMap.remove(authorityKey);
+        }
     }
 
     static class AuthorityKey {

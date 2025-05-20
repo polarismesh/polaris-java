@@ -17,13 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.consul.service.lossless;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.ecwid.consul.SingleUrlParameters;
 import com.ecwid.consul.UrlParameters;
 import com.ecwid.consul.json.GsonFactory;
@@ -52,6 +45,9 @@ import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LosslessProto;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
+
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
 
@@ -231,8 +227,17 @@ public class LosslessService extends ConsulService {
     }
 
     private void setWarmupRuleConsulIndex(WarmupRuleKey warmupRuleKey, Long lastIndex, Long newIndex) {
-        LOG.debug("WarmupRuleKey: {}; lastIndex: {}; newIndex: {}", warmupRuleKey, lastIndex, newIndex);
-        warmupRuleConsulIndexMap.put(warmupRuleKey, newIndex);
+        if (isEnable() && isReset) {
+            LOG.info("WarmupRuleKey: {} is reset.", warmupRuleKey);
+            warmupRuleConsulIndexMap.remove(warmupRuleKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("WarmupRuleKey: {}; lastIndex: {}; newIndex: {}", warmupRuleKey, lastIndex, newIndex);
+            warmupRuleConsulIndexMap.put(warmupRuleKey, newIndex);
+        } else {
+            LOG.info("WarmupRuleKey: {} is disabled.", warmupRuleKey);
+            warmupRuleConsulIndexMap.remove(warmupRuleKey);
+        }
     }
 
     static class WarmupRuleKey {

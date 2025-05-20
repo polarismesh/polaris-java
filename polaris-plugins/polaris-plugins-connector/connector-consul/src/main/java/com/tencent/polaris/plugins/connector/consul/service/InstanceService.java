@@ -209,7 +209,17 @@ public class InstanceService extends ConsulService {
     }
 
     private void setServersConsulIndex(String serviceId, Long lastIndex, Long newIndex) {
-        LOG.debug("serviceId: {}; lastIndex: {}; newIndex: {}", serviceId, lastIndex, newIndex);
-        serviceConsulIndexMap.put(serviceId, newIndex);
+        if (isEnable() && isReset) {
+            // 长轮询之后出现关闭又开启的情况，需要清空index，否则后续拉不到
+            LOG.info("serviceId: {} is reset.", serviceId);
+            serviceConsulIndexMap.remove(serviceId);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("serviceId: {}; lastIndex: {}; newIndex: {}", serviceId, lastIndex, newIndex);
+            serviceConsulIndexMap.put(serviceId, newIndex);
+        } else {
+            LOG.info("serviceId: {} is disabled.", serviceId);
+            serviceConsulIndexMap.remove(serviceId);
+        }
     }
 }

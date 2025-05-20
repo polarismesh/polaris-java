@@ -28,6 +28,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.server.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServiceRuleByProto;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
@@ -305,5 +306,14 @@ public class CompositeConnector extends DestroyableServerConnector {
 
     public boolean isNeedTestConnectivity() {
         return zeroProtectionConfig.isNeedTestConnectivity();
+    }
+
+    public DestroyableServerConnector getServerConnectorByType(String type) {
+        for (DestroyableServerConnector sc : serverConnectors) {
+            if (StringUtils.equals(sc.getName(), type)) {
+                return sc;
+            }
+        }
+        return null;
     }
 }

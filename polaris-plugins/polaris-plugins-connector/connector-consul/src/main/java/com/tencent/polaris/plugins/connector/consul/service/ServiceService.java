@@ -104,7 +104,17 @@ public class ServiceService extends ConsulService {
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
             boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
             if (consulIndex != null) {
-                catalogConsulIndex.set(consulIndex);
+                if (isEnable() && isReset) {
+                    LOG.info("service is reset.");
+                    catalogConsulIndex.set(-1L);
+                    isReset = false;
+                } else if (isEnable()) {
+                    LOG.debug("lastIndex: {}; newIndex: {}", index, consulIndex);
+                    catalogConsulIndex.set(consulIndex);
+                } else {
+                    LOG.info("service is disabled.");
+                    catalogConsulIndex.set(-1L);
+                }
             }
             if (!svcDeleted) {
                 serviceUpdateTask.addUpdateTaskSet();
