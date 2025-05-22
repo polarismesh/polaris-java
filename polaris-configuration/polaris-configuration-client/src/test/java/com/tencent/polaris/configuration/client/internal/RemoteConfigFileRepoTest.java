@@ -40,6 +40,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -104,7 +105,6 @@ public class RemoteConfigFileRepoTest {
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null);
 
         when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
-        doNothing().when(configFilePersistHandler).asyncDeleteConfigFile(any());
 
         RemoteConfigFileRepo remoteConfigFileRepo =
                 new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
@@ -233,5 +233,62 @@ public class RemoteConfigFileRepoTest {
         Assert.assertEquals(2, cbCnt.get()); //不触发回调，所以还是2次
         Assert.assertEquals(newContent, remoteConfigFileRepo.getContent());
         Assert.assertEquals(newVersion, remoteConfigFileRepo.getConfigFileVersion());
+    }
+
+    @Test
+    public void testGetIdentifierWithNormalValues() {
+        // 准备
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("testNamespace", "testGroup", "testFile");
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                        configFileMetadata, configFilePersistHandler);
+        // 验证
+        assertThat(remoteConfigFileRepo.getIdentifier()).isEqualTo("testNamespace.testGroup.testFile");
+    }
+
+    @Test
+    public void testGetIdentifierWithEmptyValues() {
+        // 准备
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("", "", "");
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                        configFileMetadata, configFilePersistHandler);
+        // 验证
+        assertThat(remoteConfigFileRepo.getIdentifier()).isEqualTo("..");
+    }
+
+    @Test
+    public void testGetIdentifierWithSpecialCharacters() {
+        // 准备
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("test@namespace", "test-group", "test_file.properties");
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                        configFileMetadata, configFilePersistHandler);
+        // 验证
+        assertThat(remoteConfigFileRepo.getIdentifier()).isEqualTo("test@namespace.test-group.test_file.properties");
+    }
+
+    @Test
+    public void testGetIdentifierWithNullValues() {
+        // 准备
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata(null, null, null);
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                        configFileMetadata, configFilePersistHandler);
+
+        // 验证
+        assertThat(remoteConfigFileRepo.getIdentifier()).isEqualTo("null.null.null");
+    }
+
+    @Test
+    public void testGetIdentifierWithMixedValues() {
+        // 准备
+        ConfigFileMetadata configFileMetadata = new DefaultConfigFileMetadata("prod", "", "application.yaml");
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain, configFileConnector,
+                        configFileMetadata, configFilePersistHandler);
+
+        // 验证
+        assertThat(remoteConfigFileRepo.getIdentifier()).isEqualTo("prod..application.yaml");
     }
 }

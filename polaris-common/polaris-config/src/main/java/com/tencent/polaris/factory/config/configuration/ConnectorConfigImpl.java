@@ -61,6 +61,13 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
     @JsonProperty
     private Integer configFileGroupThreadNum = 10;
 
+    @JsonProperty
+    private Boolean emptyProtectionEnable = true;
+
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long emptyProtectionExpiredInterval = 7 * 24 * 3600 * 1000L;
+
     @Override
     public void verify() {
         ConfigUtils.validateString(connectorType, "configConnectorType");
@@ -90,6 +97,12 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
             ConnectorConfig connectorConfig = (ConnectorConfig) defaultObject;
             if (connectorType == null) {
                 this.connectorType = connectorConfig.getConnectorType();
+            }
+            if (emptyProtectionEnable == null) {
+                this.emptyProtectionEnable = connectorConfig.isEmptyProtectionEnable();
+            }
+            if (emptyProtectionExpiredInterval == null) {
+                this.emptyProtectionExpiredInterval = connectorConfig.getEmptyProtectionExpiredInterval();
             }
         }
     }
@@ -159,4 +172,21 @@ public class ConnectorConfigImpl extends ServerConnectorConfigImpl implements Co
         this.configFileGroupThreadNum = configFileGroupThreadNum;
     }
 
+    @Override
+    public Boolean isEmptyProtectionEnable() {
+        return emptyProtectionEnable;
+    }
+
+    public void setEmptyProtectionEnable(Boolean emptyProtectionEnable) {
+        this.emptyProtectionEnable = emptyProtectionEnable;
+    }
+
+    @Override
+    public Long getEmptyProtectionExpiredInterval() {
+        return emptyProtectionExpiredInterval;
+    }
+
+    public void setEmptyProtectionExpiredInterval(Long emptyProtectionExpiredInterval) {
+        this.emptyProtectionExpiredInterval = emptyProtectionExpiredInterval;
+    }
 }
