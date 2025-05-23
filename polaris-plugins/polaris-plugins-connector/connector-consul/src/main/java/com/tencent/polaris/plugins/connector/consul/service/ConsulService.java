@@ -48,6 +48,10 @@ public abstract class ConsulService extends Destroyable {
 
     protected final ExecutorService refreshExecutor;
 
+    protected boolean enable = true;
+
+    protected boolean isReset = false;
+
     public ConsulService(ConsulClient consulClient, ConsulRawClient consulRawClient, ConsulContext consulContext,
                          String threadName, ObjectMapper mapper) {
         this.consulClient = consulClient;
@@ -73,5 +77,16 @@ public abstract class ConsulService extends Destroyable {
     @Override
     protected void doDestroy() {
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{refreshExecutor});
+    }
+
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        if (!this.enable && enable) {
+            this.isReset = true;
+        }
+        this.enable = enable;
     }
 }

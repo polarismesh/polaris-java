@@ -115,9 +115,20 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         return isRegisterEnable;
     }
 
+    public void setRegisterEnable(boolean registerEnable) {
+        isRegisterEnable = registerEnable;
+    }
+
     @Override
     public boolean isDiscoveryEnable() {
         return isDiscoveryEnable;
+    }
+
+    public void setDiscoveryEnable(boolean discoveryEnable) {
+        isDiscoveryEnable = discoveryEnable;
+        for (ConsulService consulService : consulServiceMap.values()) {
+            consulService.setEnable(discoveryEnable);
+        }
     }
 
     @Override

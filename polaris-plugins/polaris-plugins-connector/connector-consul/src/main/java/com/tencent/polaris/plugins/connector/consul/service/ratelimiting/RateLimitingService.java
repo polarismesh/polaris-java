@@ -368,8 +368,17 @@ public class RateLimitingService extends ConsulService {
     }
 
     private void setRateLimitingConsulIndex(RateLimitingKey rateLimitingKey, Long lastIndex, Long newIndex) {
-        LOG.debug("RateLimitingKey: {}; lastIndex: {}; newIndex: {}", rateLimitingKey, lastIndex, newIndex);
-        rateLimitingConsulIndexMap.put(rateLimitingKey, newIndex);
+        if (isEnable() && isReset) {
+            LOG.info("RateLimitingKey: {} is reset.", rateLimitingKey);
+            rateLimitingConsulIndexMap.remove(rateLimitingKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("RateLimitingKey: {}; lastIndex: {}; newIndex: {}", rateLimitingKey, lastIndex, newIndex);
+            rateLimitingConsulIndexMap.put(rateLimitingKey, newIndex);
+        } else {
+            LOG.info("RateLimitingKey: {} is disabled.", rateLimitingKey);
+            rateLimitingConsulIndexMap.remove(rateLimitingKey);
+        }
     }
 
     static class RateLimitingKey {
