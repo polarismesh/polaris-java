@@ -353,7 +353,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             compositeRevision.setRevision(serverEventConnectorType, discoverResponse.getService().getRevision().getValue());
                             // 按照事件来源更新对应的列表
                             List<Service> serverEventServicesList = servicesMap.computeIfAbsent(serverEventConnectorType, key -> new ArrayList<>());
-                            if (discoverResponse.getCode().getValue() == ServerCodes.DATA_NO_CHANGE) {
+                            if (discoverResponse.getCode().getValue() != ServerCodes.DATA_NO_CHANGE) {
                                 serverEventServicesList.clear();
                                 serverEventServicesList.addAll(discoverResponse.getServicesList());
                             }
