@@ -70,4 +70,13 @@ public class ConsulServiceUpdateTask extends ServiceUpdateTask {
     public boolean notifyServerEvent(ServerEvent serverEvent) {
         return false;
     }
+
+    @Override
+    public boolean needUpdate() {
+        if (serverConnector.isDiscoveryEnable()) {
+            return super.needUpdate();
+        } else {
+            return false;
+        }
+    }
 }

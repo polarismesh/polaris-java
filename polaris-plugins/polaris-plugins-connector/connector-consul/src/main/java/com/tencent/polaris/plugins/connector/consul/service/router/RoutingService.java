@@ -308,8 +308,17 @@ public class RoutingService extends ConsulService {
     }
 
     private void setRouterRuleConsulIndex(RouterRuleKey routerRuleKey, Long lastIndex, Long newIndex) {
-        LOG.debug("RouterRuleKey: {}; lastIndex: {}; newIndex: {}", routerRuleKey, lastIndex, newIndex);
-        routerRuleConsulIndexMap.put(routerRuleKey, newIndex);
+        if (isEnable() && isReset) {
+            LOG.info("RouterRuleKey: {} is reset.", routerRuleKey);
+            routerRuleConsulIndexMap.remove(routerRuleKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("RouterRuleKey: {}; lastIndex: {}; newIndex: {}", routerRuleKey, lastIndex, newIndex);
+            routerRuleConsulIndexMap.put(routerRuleKey, newIndex);
+        } else {
+            LOG.info("RouterRuleKey: {} is disabled.", routerRuleKey);
+            routerRuleConsulIndexMap.remove(routerRuleKey);
+        }
     }
 
     static class RouterRuleKey {

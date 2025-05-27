@@ -53,6 +53,12 @@ public class CompositeRevision {
         return "";
     }
 
+    public void removeRevision(String name) {
+        if (ORDER_LIST.contains(name)) {
+            content[ORDER_LIST.indexOf(name)] = "";
+        }
+    }
+
     /**
      * Generate composite revision string.
      *

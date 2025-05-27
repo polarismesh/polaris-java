@@ -266,8 +266,17 @@ public class CircuitBreakingService extends ConsulService {
     }
 
     private void setCircuitBreakingConsulIndex(CircuitBreakingKey circuitBreakingKey, Long lastIndex, Long newIndex, Boolean is404) {
-        LOG.debug("CircuitBreakingKey: {}; lastIndex: {}; newIndex: {}, is404: {}", circuitBreakingKey, lastIndex, newIndex, is404);
-        circuitBreakingConsulIndexMap.put(circuitBreakingKey, new CircuitBreakingValue(newIndex, is404));
+        if (isEnable() && isReset) {
+            LOG.info("CircuitBreakingKey: {} is reset.", circuitBreakingKey);
+            circuitBreakingConsulIndexMap.remove(circuitBreakingKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("CircuitBreakingKey: {}; lastIndex: {}; newIndex: {}, is404: {}", circuitBreakingKey, lastIndex, newIndex, is404);
+            circuitBreakingConsulIndexMap.put(circuitBreakingKey, new CircuitBreakingValue(newIndex, is404));
+        } else {
+            LOG.info("CircuitBreakingKey: {} is disabled.", circuitBreakingKey);
+            circuitBreakingConsulIndexMap.remove(circuitBreakingKey);
+        }
     }
 
     static class CircuitBreakingKey {
