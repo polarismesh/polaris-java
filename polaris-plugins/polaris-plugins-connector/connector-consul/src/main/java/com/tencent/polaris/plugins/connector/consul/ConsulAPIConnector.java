@@ -41,6 +41,7 @@ import com.tencent.polaris.api.plugin.server.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -176,7 +177,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
         String address = connectorConfig.getAddresses().get(0);
         int lastIndex = address.lastIndexOf(":");
-        String agentHost = address.substring(0, lastIndex);
+        String agentHost = IPAddressUtils.getIpCompatible(address.substring(0, lastIndex));
         int agentPort = Integer.parseInt(address.substring(lastIndex + 1));
         LOG.debug("Consul Server : [{}]", address);
         consulRawClient = new ConsulRawClient(agentHost, agentPort);

@@ -20,7 +20,9 @@ package com.tencent.polaris.api.utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * @author Haotian Zhang
@@ -53,5 +55,22 @@ public class IPAddressUtils {
             LOG.warn("get host name error", e);
             return "";
         }
+    }
+
+    /**
+     * 检查主机地址是否为IPv6格式
+     *
+     * @param host
+     * @return
+     */
+    public static boolean checkIpv6Host(String host) {
+        try {
+            if (StringUtils.isNotBlank(host)) {
+                return InetAddress.getByName(host) instanceof Inet6Address;
+            }
+        } catch (UnknownHostException e) {
+            // ignore
+        }
+        return false;
     }
 }

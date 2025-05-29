@@ -26,15 +26,15 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.slf4j.Logger;
 
 /**
  * 连接器，单线程调用，不考虑并发
@@ -131,7 +131,7 @@ public class AsyncRateLimitConnector {
             LOG.error("can not found any instance by serviceKye:{}", remoteCluster);
             return null;
         }
-        String host = instance.getHost();
+        String host = IPAddressUtils.getIpCompatible(instance.getHost());
         int port = instance.getPort();
         return new HostIdentifier(host, port);
     }

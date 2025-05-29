@@ -31,6 +31,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.pojo.Node;
@@ -39,20 +40,13 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.grpc.Connection.ConnID;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import org.slf4j.Logger;
 
 /**
  * 用于管理与后端服务器的GRPC连接.
@@ -299,7 +293,7 @@ public class ConnectionManager extends Destroyable {
         ServerAddressList(List<String> addresses, ClusterType clusterType) {
             for (String address : addresses) {
                 int colonIdx = address.lastIndexOf(":");
-                String host = address.substring(0, colonIdx);
+                String host = IPAddressUtils.getIpCompatible(address.substring(0, colonIdx));
                 int port = Integer.parseInt(address.substring(colonIdx + 1));
                 nodes.add(new Node(host, port));
             }
@@ -399,7 +393,7 @@ public class ConnectionManager extends Destroyable {
             }
             Extensions extensions = ConnectionManager.this.extensions;
             Instance instance = getDiscoverInstance(extensions);
-            return new Node(instance.getHost(), instance.getPort());
+            return new Node(IPAddressUtils.getIpCompatible(instance.getHost()), instance.getPort());
         }
 
         public void switchClientOnFail(ConnID lastConn) throws PolarisException {

@@ -25,6 +25,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.pojo.Node;
@@ -76,7 +77,7 @@ public class ServiceAddressRepository {
                 if (StringUtils.isNotBlank(address)) {
                     int colonIdx = address.lastIndexOf(":");
                     if (colonIdx > 0 && colonIdx < address.length() - 1) {
-                        String host = address.substring(0, colonIdx);
+                        String host = IPAddressUtils.getIpCompatible(address.substring(0, colonIdx));
                         try {
                             int port = Integer.parseInt(address.substring(colonIdx + 1));
                             nodes.add(new Node(host, port));
@@ -128,10 +129,11 @@ public class ServiceAddressRepository {
             return node;
         }
         Instance instance = getDiscoverInstance();
+        String host = IPAddressUtils.getIpCompatible(instance.getHost());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, instance.getHost(), instance.getPort());
+            LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, host, instance.getPort());
         }
-        return new Node(instance.getHost(), instance.getPort());
+        return new Node(IPAddressUtils.getIpCompatible(host), instance.getPort());
     }
 
     private Instance getDiscoverInstance() throws PolarisException {
