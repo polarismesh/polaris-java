@@ -138,11 +138,29 @@ public interface ServerConnector extends Plugin {
     boolean isRegisterEnable();
 
     /**
+     * Set if register enabled.
+     *
+     * @param registerEnable
+     */
+    default void setRegisterEnable(boolean registerEnable) {
+
+    }
+
+    /**
      * Check if discovery enabled.
      *
      * @return boolean
      */
     boolean isDiscoveryEnable();
+
+    /**
+     * Set if discovery enabled.
+     *
+     * @param discoveryEnable
+     */
+    default void setDiscoveryEnable(boolean discoveryEnable) {
+        
+    }
 
     /**
      * Check if service contract reporting enabled.

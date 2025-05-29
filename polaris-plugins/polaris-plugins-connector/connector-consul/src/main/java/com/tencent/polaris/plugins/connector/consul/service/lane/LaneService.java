@@ -442,32 +442,50 @@ public class LaneService extends ConsulService {
         return laneRuleList;
     }
 
-    private Long getLaneInfoConsulIndex(LaneRuleKey routerRuleKey) {
-        Long index = laneInfoConsulIndexMap.get(routerRuleKey);
+    private Long getLaneInfoConsulIndex(LaneRuleKey laneInfoKey) {
+        Long index = laneInfoConsulIndexMap.get(laneInfoKey);
         if (index != null) {
             return index;
         }
-        setLaneInfoConsulIndex(routerRuleKey, null, -1L);
+        setLaneInfoConsulIndex(laneInfoKey, null, -1L);
         return -1L;
     }
 
-    private void setLaneInfoConsulIndex(LaneRuleKey routerRuleKey, Long lastIndex, Long newIndex) {
-        LOG.debug("LaneRuleKey: {}; lastIndex: {}; newIndex: {}", routerRuleKey, lastIndex, newIndex);
-        laneInfoConsulIndexMap.put(routerRuleKey, newIndex);
+    private void setLaneInfoConsulIndex(LaneRuleKey laneInfoKey, Long lastIndex, Long newIndex) {
+        if (isEnable() && isReset) {
+            LOG.info("LaneInfoKey: {} is reset.", laneInfoKey);
+            laneInfoConsulIndexMap.remove(laneInfoKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("LaneInfoKey: {}; lastIndex: {}; newIndex: {}", laneInfoKey, lastIndex, newIndex);
+            laneInfoConsulIndexMap.put(laneInfoKey, newIndex);
+        } else {
+            LOG.info("LaneInfoKey: {} is disabled.", laneInfoKey);
+            laneInfoConsulIndexMap.remove(laneInfoKey);
+        }
     }
 
-    private Long getLaneRuleConsulIndex(LaneRuleKey routerRuleKey) {
-        Long index = laneRuleConsulIndexMap.get(routerRuleKey);
+    private Long getLaneRuleConsulIndex(LaneRuleKey laneRuleKey) {
+        Long index = laneRuleConsulIndexMap.get(laneRuleKey);
         if (index != null) {
             return index;
         }
-        setLaneRuleConsulIndex(routerRuleKey, null, -1L);
+        setLaneRuleConsulIndex(laneRuleKey, null, -1L);
         return -1L;
     }
 
-    private void setLaneRuleConsulIndex(LaneRuleKey routerRuleKey, Long lastIndex, Long newIndex) {
-        LOG.debug("LaneRuleKey: {}; lastIndex: {}; newIndex: {}", routerRuleKey, lastIndex, newIndex);
-        laneRuleConsulIndexMap.put(routerRuleKey, newIndex);
+    private void setLaneRuleConsulIndex(LaneRuleKey laneRuleKey, Long lastIndex, Long newIndex) {
+        if (isEnable() && isReset) {
+            LOG.info("LaneRuleKey: {} is reset.", laneRuleKey);
+            laneRuleConsulIndexMap.remove(laneRuleKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("LaneRuleKey: {}; lastIndex: {}; newIndex: {}", laneRuleKey, lastIndex, newIndex);
+            laneRuleConsulIndexMap.put(laneRuleKey, newIndex);
+        } else {
+            LOG.info("LaneRuleKey: {} is disabled.", laneRuleKey);
+            laneRuleConsulIndexMap.remove(laneRuleKey);
+        }
     }
 
     static class LaneRuleKey {

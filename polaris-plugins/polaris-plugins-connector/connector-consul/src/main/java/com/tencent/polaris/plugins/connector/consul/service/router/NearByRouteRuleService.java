@@ -210,8 +210,17 @@ public class NearByRouteRuleService extends ConsulService {
     }
 
     private void setRouterRuleConsulIndex(NearByRouteRuleKey nearByRouteRuleKey, Long lastIndex, Long newIndex) {
-        LOG.debug("NearByRouteRuleKey: {}; lastIndex: {}; newIndex: {}", nearByRouteRuleKey, lastIndex, newIndex);
-        affinityConsulIndexMap.put(nearByRouteRuleKey, newIndex);
+        if (isEnable() && isReset) {
+            LOG.info("NearByRouteRuleKey: {} is reset.", nearByRouteRuleKey);
+            affinityConsulIndexMap.remove(nearByRouteRuleKey);
+            isReset = false;
+        } else if (isEnable()) {
+            LOG.debug("NearByRouteRuleKey: {}; lastIndex: {}; newIndex: {}", nearByRouteRuleKey, lastIndex, newIndex);
+            affinityConsulIndexMap.put(nearByRouteRuleKey, newIndex);
+        } else {
+            LOG.info("NearByRouteRuleKey: {} is disabled.", nearByRouteRuleKey);
+            affinityConsulIndexMap.remove(nearByRouteRuleKey);
+        }
     }
 
     static class NearByRouteRuleKey {

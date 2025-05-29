@@ -176,16 +176,25 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             CompositeRevision compositeRevision = new CompositeRevision();
                             Object value = getEventHandler().getValue();
                             Map<String, List<Instance>> instancesMap = new HashMap<>();
+                            boolean isDiscoveryChanged = false;
                             if (taskType.get() == ServiceUpdateTaskConstant.Type.LONG_RUNNING && value instanceof ServiceInstancesByProto) {
                                 ServiceInstancesByProto cacheValue = (ServiceInstancesByProto) value;
                                 compositeRevision = CompositeRevision.of(cacheValue.getRevision());
                                 List<Instance> oldInstancesList = cacheValue.getOriginInstancesList();
                                 for (Instance oldInstance : oldInstancesList) {
                                     String serverConnectorType = oldInstance.getMetadataOrDefault(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_GRPC);
-                                    if (!instancesMap.containsKey(serverConnectorType)) {
-                                        instancesMap.put(serverConnectorType, new ArrayList<>());
+                                    DestroyableServerConnector serverConnector = connector.getServerConnectorByType(serverConnectorType);
+                                    if (serverConnector != null && serverConnector.isDiscoveryEnable()) {
+                                        if (!instancesMap.containsKey(serverConnectorType)) {
+                                            instancesMap.put(serverConnectorType, new ArrayList<>());
+                                        }
+                                        instancesMap.get(serverConnectorType).add(oldInstance);
+                                    } else if (serverConnector != null && !serverConnector.isDiscoveryEnable()) {
+                                        compositeRevision.removeRevision(serverConnectorType);
+                                        isDiscoveryChanged = true;
+                                        LOG.info("server connector {} is not enabled for discovery instance {}:{}",
+                                                serverConnectorType, oldInstance.getHost().getValue(), oldInstance.getPort().getValue());
                                     }
-                                    instancesMap.get(serverConnectorType).add(oldInstance);
                                 }
                             }
 
@@ -200,6 +209,8 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                                 // 按照事件来源更新对应的列表
                                 serverEventInstancesList.clear();
                                 serverEventInstancesList.addAll(discoverResponse.getInstancesList());
+                            } else if (newDiscoverResponseBuilder.getCode().getValue() == ServerCodes.DATA_NO_CHANGE && isDiscoveryChanged) {
+                                newDiscoverResponseBuilder.setCode(UInt32Value.of(ServerCodes.EXECUTE_SUCCESS));
                             }
                             if (LOG.isDebugEnabled()) {
                                 String newInstancesMapStr = convertToString(instancesMap);
@@ -336,16 +347,24 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             CompositeRevision compositeRevision = new CompositeRevision();
                             Object value = getEventHandler().getValue();
                             Map<String, List<Service>> servicesMap = new HashMap<>();
+                            boolean isDiscoveryChanged = false;
                             if (taskType.get() == ServiceUpdateTaskConstant.Type.LONG_RUNNING && value instanceof ServicesByProto) {
                                 ServicesByProto cacheValue = (ServicesByProto) value;
                                 compositeRevision = CompositeRevision.of(cacheValue.getRevision());
-                                List<Service> oldInstancesList = cacheValue.getOriginServicesList();
-                                for (Service oldService : oldInstancesList) {
+                                List<Service> oldServiceList = cacheValue.getOriginServicesList();
+                                for (Service oldService : oldServiceList) {
                                     String serverConnectorType = oldService.getMetadataOrDefault(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_GRPC);
-                                    if (!servicesMap.containsKey(serverConnectorType)) {
-                                        servicesMap.put(serverConnectorType, new ArrayList<>());
+                                    DestroyableServerConnector serverConnector = connector.getServerConnectorByType(serverConnectorType);
+                                    if (serverConnector != null && serverConnector.isDiscoveryEnable()) {
+                                        if (!servicesMap.containsKey(serverConnectorType)) {
+                                            servicesMap.put(serverConnectorType, new ArrayList<>());
+                                        }
+                                        servicesMap.get(serverConnectorType).add(oldService);
+                                    } else if (serverConnector != null && !serverConnector.isDiscoveryEnable()) {
+                                        compositeRevision.removeRevision(serverConnectorType);
+                                        isDiscoveryChanged = true;
+                                        LOG.info("server connector {} is not enabled for discovery service {}", serverConnectorType, oldService);
                                     }
-                                    servicesMap.get(serverConnectorType).add(oldService);
                                 }
                             }
 
@@ -353,9 +372,11 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                             compositeRevision.setRevision(serverEventConnectorType, discoverResponse.getService().getRevision().getValue());
                             // 按照事件来源更新对应的列表
                             List<Service> serverEventServicesList = servicesMap.computeIfAbsent(serverEventConnectorType, key -> new ArrayList<>());
-                            if (discoverResponse.getCode().getValue() != ServerCodes.DATA_NO_CHANGE) {
+                            if (newDiscoverResponseBuilder.getCode().getValue() != ServerCodes.DATA_NO_CHANGE) {
                                 serverEventServicesList.clear();
                                 serverEventServicesList.addAll(discoverResponse.getServicesList());
+                            } else if (newDiscoverResponseBuilder.getCode().getValue() == ServerCodes.DATA_NO_CHANGE && isDiscoveryChanged) {
+                                newDiscoverResponseBuilder.setCode(UInt32Value.of(ServerCodes.EXECUTE_SUCCESS));
                             }
                             // 由于合并多个发现结果会修改版本号，所以将 polaris 的版本号保存一份
                             if (StringUtils.equals(serverEvent.getConnectorType(), SERVER_CONNECTOR_GRPC)) {
