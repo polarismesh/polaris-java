@@ -206,24 +206,32 @@ public class ConfigFilePersistentHandler {
      * @param configFile 配置文件
      * @return 配置文件
      */
-    public ConfigFile loadPersistedConfigFile(ConfigFile configFile) {
+    public ConfigFile loadPersistedConfigFile(ConfigFile configFile, boolean needRetry) {
         String fileName = configFileToFileName(configFile);
         String persistFilePathStr = persistDirPath + File.separator + fileName;
         Path persistPath = FileSystems.getDefault().getPath(persistFilePathStr);
-        int retryTimes = 0;
         ConfigFile resConfigFile = null;
-        while (retryTimes <= maxReadRetry) {
-            retryTimes++;
+        if (needRetry) {
+            int retryTimes = 0;
+            while (retryTimes <= maxReadRetry) {
+                retryTimes++;
+                resConfigFile = loadConfigFile(persistPath.toFile(), configFile);
+                if (null == resConfigFile) {
+                    Utils.sleepUninterrupted(retryInterval);
+                    continue;
+                }
+                break;
+            }
+            if (null == resConfigFile) {
+                LOG.debug("fail to read config file from {} after retry {} times", fileName, retryTimes);
+                return null;
+            }
+        } else {
             resConfigFile = loadConfigFile(persistPath.toFile(), configFile);
             if (null == resConfigFile) {
-                Utils.sleepUninterrupted(retryInterval);
-                continue;
+                LOG.debug("fail to read config file from {}.", fileName);
+                return null;
             }
-            break;
-        }
-        if (null == resConfigFile) {
-            LOG.debug("fail to read config file from {} after retry {} times", fileName, retryTimes);
-            return null;
         }
         return resConfigFile;
     }

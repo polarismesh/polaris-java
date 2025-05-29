@@ -253,7 +253,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         if (retryTimes >= PULL_CONFIG_RETRY_TIMES) {
             LOGGER.info("[Config] failed to pull config file from remote.");
             //重试次数超过上限，从本地缓存拉取
-            loadLocalCache(configFileReq);
+            loadLocalCache(configFileReq, true);
         }
     }
 
@@ -268,13 +268,14 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         if (!initFlag) {
             // 第一次启动的时候，如果拉取到空配置，则尝试从缓存中获取
             LOGGER.info("[Config] load local cache because of empty config when starting up.");
-            loadLocalCache(configFileReq);
+            // 不需要重试
+            loadLocalCache(configFileReq, false);
         }
     }
 
-    private void loadLocalCache(ConfigFile configFileReq) {
+    private void loadLocalCache(ConfigFile configFileReq, boolean needRetry) {
         if (fallbackToLocalCache) {
-            ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq);
+            ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq, needRetry);
             if (configFileRes != null) {
                 LOGGER.info("[Config] load local cache success.{}.", configFileRes);
                 remoteConfigFile.set(configFileRes);
