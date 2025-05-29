@@ -43,4 +43,14 @@ public class MetadataConstants {
      * local host port.
      */
     public static final String LOCAL_PORT = "LOCAL_PORT";
+
+    /**
+     * IPV4.
+     */
+    public static String ADDRESS_IPV4 = "ADDRESS_IPV4";
+
+    /**
+     * IPV6.
+     */
+    public static String ADDRESS_IPV6 = "ADDRESS_IPV6";
 }

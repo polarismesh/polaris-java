@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * 获取全量服务实例请求
  */
-public class GetAllInstancesRequest extends RequestBaseEntity {
+public class GetAllInstancesRequest extends InstanceRequest {
 
     /**
      * 服务元数据信息，用于服务路由过滤

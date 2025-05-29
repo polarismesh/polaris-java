@@ -29,6 +29,7 @@ import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
+import com.tencent.polaris.discovery.client.util.DiscoveryUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -65,6 +66,9 @@ public class SyncFlow {
     public InstancesResponse commonSyncGetInstances(CommonInstancesRequest request) throws PolarisException {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
+        if (request.isPreferIpv6()) {
+            dstInstances = DiscoveryUtils.generateIpv6ServiceInstances(dstInstances);
+        }
         if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
             return new InstancesResponse(dstInstances, "", null);
         }
@@ -118,7 +122,11 @@ public class SyncFlow {
      */
     private void syncGetServiceInstances(CommonInstancesRequest request) throws PolarisException {
         ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, request, request);
-        request.setDstInstances(resourcesResponse.getServiceInstances(request.getDstInstanceEventKey()));
+        ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(request.getDstInstanceEventKey());
+        if (request.isPreferIpv6()) {
+
+        }
+        request.setDstInstances(serviceInstances);
         if (null != request.getDstRuleEventKey()) {
             request.getRouteInfo().setDestRouteRule(resourcesResponse.getServiceRule(request.getDstRuleEventKey()));
         }

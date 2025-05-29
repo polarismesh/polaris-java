@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.stat.*;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.remote.ServiceAddressRepository;
@@ -214,7 +215,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
         return ReporterMetaInfo.builder().
                 protocol("http").
                 path(path).
-                host(httpServerNode.getHost()).
+                host(IPAddressUtils.getIpCompatible(httpServerNode.getHost())).
                 port(httpServerNode.getPort()).
                 target(getName()).
                 build();

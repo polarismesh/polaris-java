@@ -33,6 +33,7 @@ import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
@@ -273,7 +274,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
                                 URLEncoder.encode(tsfEventReporterConfig.getInstanceId(), "UTF-8"));
                         v1EventUri = new URIBuilder()
                                 .setScheme("http")
-                                .setHost(tsfEventReporterConfig.getEventMasterIp())
+                                .setHost(IPAddressUtils.getIpCompatible(tsfEventReporterConfig.getEventMasterIp()))
                                 .setPort(tsfEventReporterConfig.getEventMasterPort())
                                 .setPath(v1Path)
                                 .setParameter("token", tsfEventReporterConfig.getToken())
@@ -283,7 +284,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
                         this.reportEventUri = new URIBuilder()
                                 .setScheme("http")
-                                .setHost(tsfEventReporterConfig.getEventMasterIp())
+                                .setHost(IPAddressUtils.getIpCompatible(tsfEventReporterConfig.getEventMasterIp()))
                                 .setPort(tsfEventReporterConfig.getEventMasterPort())
                                 .setPath("/event/report")
                                 .setParameter("token", tsfEventReporterConfig.getToken())

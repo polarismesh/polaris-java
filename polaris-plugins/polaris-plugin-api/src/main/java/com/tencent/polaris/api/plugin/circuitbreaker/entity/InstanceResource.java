@@ -18,9 +18,11 @@
 package com.tencent.polaris.api.plugin.circuitbreaker.entity;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.CommonValidator;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto.Level;
+
 import java.util.Objects;
 
 public class InstanceResource extends AbstractResource {
@@ -36,7 +38,7 @@ public class InstanceResource extends AbstractResource {
     public InstanceResource(ServiceKey service, String host, int port, ServiceKey callerService, String protocol) {
         super(service, callerService);
         CommonValidator.validateText(host, "host");
-        this.node = new Node(host, port);
+        this.node = new Node(IPAddressUtils.getIpCompatible(host), port);
         this.protocol = protocol;
     }
 

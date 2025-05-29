@@ -49,6 +49,7 @@ import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
 import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.client.util.NamedThreadFactory;
@@ -385,7 +386,7 @@ public class Extensions extends Destroyable {
         //启动监听
         httpServers = new HashMap<>();
         AdminConfig adminConfig = configuration.getGlobal().getAdmin();
-        node = new Node(adminConfig.getHost(), adminConfig.getPort());
+        node = new Node(IPAddressUtils.getIpCompatible(adminConfig.getHost()), adminConfig.getPort());
         try {
             HttpServer httpServer = HttpServer.create(
                     new InetSocketAddress(node.getHost(), node.getPort()), HTTP_SERVER_BACKLOG_SIZE);
@@ -457,7 +458,7 @@ public class Extensions extends Destroyable {
 
     private static boolean isPortAvailable(Node node) {
         try {
-            bindPort(node.getHost(), node.getPort());
+            bindPort(IPAddressUtils.getIpCompatible(node.getHost()), node.getPort());
             return true;
         } catch (Exception ignored) {
         }

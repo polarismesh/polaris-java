@@ -15,10 +15,30 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.discovery.client.util;
+package com.tencent.polaris.api.rpc;
 
 /**
  * @author Haotian Zhang
  */
-public class ValidatorTest {
+public abstract class InstanceRequest extends RequestBaseEntity {
+
+    /**
+     * if prefer ipv6.
+     */
+    private boolean preferIpv6 = false;
+
+    public boolean isPreferIpv6() {
+        return preferIpv6;
+    }
+
+    public void setPreferIpv6(boolean preferIpv6) {
+        this.preferIpv6 = preferIpv6;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceRequest{" +
+                "preferIpv6=" + preferIpv6 +
+                '}';
+    }
 }

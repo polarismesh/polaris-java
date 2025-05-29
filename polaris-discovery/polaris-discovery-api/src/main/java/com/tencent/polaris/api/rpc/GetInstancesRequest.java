@@ -20,11 +20,8 @@ package com.tencent.polaris.api.rpc;
 import com.tencent.polaris.api.pojo.RouteArgument;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.SourceService;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 
 /**
  * 批量服务实例查询请求
@@ -32,7 +29,7 @@ import java.util.Set;
  * @author andrewshan
  * @date 2019/8/21
  */
-public class GetInstancesRequest extends RequestBaseEntity {
+public class GetInstancesRequest extends InstanceRequest {
 
     /**
      * 服务元数据信息，用于服务路由过滤

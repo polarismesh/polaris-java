@@ -56,6 +56,11 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     private long retryIntervalMs;
 
     /**
+     * if prefer ipv6.
+     */
+    private boolean preferIpv6;
+
+    /**
      * 构造函数
      *
      * @param request       请求
@@ -69,6 +74,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         srcRuleEventKey = null;
         routeInfo = null;
         criteria = null;
+        preferIpv6 = request.isPreferIpv6();
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
 
@@ -100,6 +106,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
             routeInfo.setIncludeCircuitBreakInstances(true);
         }
         criteria = null;
+        preferIpv6 = request.isPreferIpv6();
 
         // 关闭非必要的 Router，只保留 isolatedRouter，recoverRouter 两个最基本的 Router。
         // 并且 recoverRouter 只过滤掉 unHealthy 的实例，不需要过滤被熔断的实例
@@ -143,6 +150,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         routeInfo.setCanary(request.getCanary());
         routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
         criteria = request.getCriteria();
+        preferIpv6 = request.isPreferIpv6();
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
 
@@ -178,6 +186,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         routeInfo.setCanary(request.getCanary());
         routeInfo.setMetadataFailoverType(request.getMetadataFailoverType());
         criteria = null;
+        preferIpv6 = request.isPreferIpv6();
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
 
@@ -197,6 +206,7 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
         }
         this.routeInfo = routeInfo;
         this.criteria = criteria;
+        preferIpv6 = false;
         BaseFlow.buildFlowControlParam(request, configuration, this);
     }
 
@@ -271,5 +281,13 @@ public class CommonInstancesRequest implements ServiceEventKeysProvider, FlowCon
     @Override
     public void setMaxRetry(int maxRetry) {
         this.maxRetry = maxRetry;
+    }
+
+    public boolean isPreferIpv6() {
+        return preferIpv6;
+    }
+
+    public void setPreferIpv6(boolean preferIpv6) {
+        this.preferIpv6 = preferIpv6;
     }
 }
