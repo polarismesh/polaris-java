@@ -28,16 +28,12 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceMetadata;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.circuitbreak.api.flow.CircuitBreakerFlow;
 import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
-import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -76,7 +72,7 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
 
         int healthyInstanceCount = healthyInstance.size();
         //如果过滤之后，没有实例，则返回全量的实例。推空保护
-        if (healthyInstanceCount == 0) {
+        if (recoverRouterConfig.isAllRecoverEnable() && healthyInstanceCount == 0) {
             return new RouteResult(instances.getInstances(), RouteResult.State.Next);
         }
 

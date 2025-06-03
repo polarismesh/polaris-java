@@ -160,8 +160,8 @@ public class APIConfigImpl implements APIConfig {
             if (null == reportInterval) {
                 setReportInterval(apiConfig.getReportInterval());
             }
-            if (null == reportInterval) {
-                setReportInterval(apiConfig.getReportInterval());
+            if (null == reportEnable) {
+                setReportEnable(apiConfig.isReportEnable());
             }
             if (null == retryInterval) {
                 setRetryInterval(apiConfig.getRetryInterval());

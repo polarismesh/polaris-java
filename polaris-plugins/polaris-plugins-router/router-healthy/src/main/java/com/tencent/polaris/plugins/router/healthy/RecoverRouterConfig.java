@@ -30,6 +30,9 @@ public class RecoverRouterConfig implements Verifier {
     @JsonProperty
     private Boolean excludeCircuitBreakInstances;
 
+    @JsonProperty
+    private Boolean allRecoverEnable;
+
     @Override
     public void verify() {
 
@@ -42,6 +45,9 @@ public class RecoverRouterConfig implements Verifier {
             if (excludeCircuitBreakInstances == null) {
                 setExcludeCircuitBreakInstances(recoverRouterConfig.isExcludeCircuitBreakInstances());
             }
+            if (allRecoverEnable == null) {
+                setAllRecoverEnable(recoverRouterConfig.isAllRecoverEnable());
+            }
         }
     }
 
@@ -51,5 +57,13 @@ public class RecoverRouterConfig implements Verifier {
 
     public void setExcludeCircuitBreakInstances(Boolean excludeCircuitBreakInstances) {
         this.excludeCircuitBreakInstances = excludeCircuitBreakInstances;
+    }
+
+    public Boolean isAllRecoverEnable() {
+        return allRecoverEnable;
+    }
+
+    public void setAllRecoverEnable(Boolean allRecoverEnable) {
+        this.allRecoverEnable = allRecoverEnable;
     }
 }
