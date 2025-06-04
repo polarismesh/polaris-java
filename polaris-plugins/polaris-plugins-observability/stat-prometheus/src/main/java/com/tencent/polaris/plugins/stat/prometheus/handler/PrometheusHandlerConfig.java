@@ -23,6 +23,9 @@ import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author wallezhang
  */
@@ -49,6 +52,9 @@ public class PrometheusHandlerConfig implements Verifier {
 
     @JsonProperty
     private Boolean openGzip = false;
+
+    @JsonProperty
+    private List<String> pathRegexList = new ArrayList<>();
 
     public PrometheusHandlerConfig() {
     }
@@ -158,6 +164,14 @@ public class PrometheusHandlerConfig implements Verifier {
         this.service = service;
     }
 
+    public List<String> getPathRegexList() {
+        return pathRegexList;
+    }
+
+    public void setPathRegexList(List<String> pathRegexList) {
+        this.pathRegexList = pathRegexList;
+    }
+
     @Override
     public String toString() {
         return "PrometheusHandlerConfig{" +
@@ -168,6 +182,7 @@ public class PrometheusHandlerConfig implements Verifier {
                 ", service='" + service + '\'' +
                 ", pushInterval=" + pushInterval +
                 ", openGzip=" + openGzip +
+                ", pathRegexList=" + pathRegexList +
                 '}';
     }
 }

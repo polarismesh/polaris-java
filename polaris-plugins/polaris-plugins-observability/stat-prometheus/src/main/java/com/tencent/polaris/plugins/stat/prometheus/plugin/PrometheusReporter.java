@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.stat.*;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
@@ -48,15 +49,13 @@ import io.prometheus.client.Gauge;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 /**
  * PrometheusReporter plugin
@@ -101,6 +100,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
     private final Map<String, PushGateway> pushGatewayMap = new ConcurrentHashMap<>();
 
+    private final List<Pattern> pathRegexPatternList = new ArrayList<>();
+
     public PrometheusReporter() {
         this.container = new StatInfoCollectorContainer();
         this.sampleMapping = new HashMap<>();
@@ -130,6 +131,12 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
         this.serviceAddressRepository = new ServiceAddressRepository(Collections.singletonList(this.config.getAddress()),
                 extensions.getValueContext().getClientId(), extensions, new ServiceKey(config.getNamespace(), config.getService()));
+
+        if (CollectionUtils.isNotEmpty(config.getPathRegexList())) {
+            for (String pathRegex : config.getPathRegexList()) {
+                pathRegexPatternList.add(Pattern.compile(pathRegex));
+            }
+        }
 
         this.initHandle();
     }
@@ -173,7 +180,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
     public void handleRouterGauge(InstanceGauge instanceGauge) {
         if (null != container && null != container.getInsCollector()) {
             container.getInsCollector().collectStatInfo(instanceGauge,
-                    CommonHandler.convertInsGaugeToLabels(instanceGauge, sdkIP),
+                    CommonHandler.convertInsGaugeToLabels(instanceGauge, sdkIP, pathRegexPatternList),
                     MetricValueAggregationStrategyCollections.SERVICE_CALL_STRATEGY);
         }
     }
@@ -181,7 +188,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
     public void handleCircuitBreakGauge(CircuitBreakGauge circuitBreakGauge) {
         if (null != container && null != container.getCircuitBreakerCollector()) {
             container.getCircuitBreakerCollector().collectStatInfo(circuitBreakGauge,
-                    CommonHandler.convertCircuitBreakToLabels(circuitBreakGauge, sdkIP),
+                    CommonHandler.convertCircuitBreakToLabels(circuitBreakGauge, sdkIP, pathRegexPatternList),
                     MetricValueAggregationStrategyCollections.CIRCUIT_BREAK_STRATEGY);
         }
     }
@@ -189,7 +196,7 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
     public void handleRateLimitGauge(RateLimitGauge rateLimitGauge) {
         if (null != container && null != container.getRateLimitCollector()) {
             container.getRateLimitCollector().collectStatInfo(rateLimitGauge,
-                    CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge),
+                    CommonHandler.convertRateLimitGaugeToLabels(rateLimitGauge, pathRegexPatternList),
                     MetricValueAggregationStrategyCollections.RATE_LIMIT_STRATEGY);
         }
     }

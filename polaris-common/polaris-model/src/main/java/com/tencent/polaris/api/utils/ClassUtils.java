@@ -27,7 +27,7 @@ import org.slf4j.Logger;
  */
 public class ClassUtils {
 
-    private static final Logger LOG = LoggerFactory.getLogger(RuleUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClassUtils.class);
 
     /**
      * Check if class is present.
