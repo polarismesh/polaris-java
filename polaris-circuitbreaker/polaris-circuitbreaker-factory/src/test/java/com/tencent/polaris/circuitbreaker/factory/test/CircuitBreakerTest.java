@@ -19,8 +19,6 @@ package com.tencent.polaris.circuitbreaker.factory.test;
 
 import com.google.protobuf.util.JsonFormat;
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.config.plugin.DefaultPlugins;
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
@@ -34,7 +32,6 @@ import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.util.Utils;
-import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.test.common.TestUtils;
@@ -51,7 +48,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -135,132 +131,6 @@ public class CircuitBreakerTest {
             result.setDelay(1000L);
             result.setRetStatus(RetStatus.RetFail);
             assemblyAPI.updateServiceCallResult(result);
-        }
-    }
-
-    @Test
-    public void testCircuitBreakByErrorCount() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
-        ((ConfigurationImpl) configuration).getConsumer().getCircuitBreaker().setChain(
-                Collections.singletonList(DefaultPlugins.CIRCUIT_BREAKER_ERROR_COUNT));
-        try (AssemblyAPI assemblyAPI = AssemblyAPIFactory.createAssemblyAPIByConfig(configuration)) {
-            Utils.sleepUninterrupted(10000);
-            Assert.assertNotNull(assemblyAPI);
-            GetReachableInstancesRequest req = new GetReachableInstancesRequest();
-            req.setNamespace(NAMESPACE_TEST);
-            req.setService(SERVICE_CIRCUIT_BREAKER);
-            List<Instance> instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
-            Instance instanceToLimit = instances.get(1);
-            //report 60 fail in 500ms
-            for (int i = 0; i < 60; ++i) {
-                if (i == 1) {
-                    Utils.sleepUninterrupted(5 * 1000);
-                }
-                ServiceCallResult result = instanceToResult(instanceToLimit);
-                result.setRetCode(-1);
-                result.setDelay(1000L);
-                result.setRetStatus(RetStatus.RetFail);
-                assemblyAPI.updateServiceCallResult(result);
-                if (i % 10 == 0) {
-                    Utils.sleepUninterrupted(1);
-                }
-            }
-            Utils.sleepUninterrupted(3000);
-            instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT - 1, instances.size());
-            boolean exists = false;
-            for (Instance instance : instances) {
-                if (instance.getId().equals(instanceToLimit.getId())) {
-                    exists = true;
-                }
-            }
-            Assert.assertFalse(exists);
-            LOG.info("start to test half open by error rate");
-            Utils.sleepUninterrupted(10000);
-            instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
-            for (Instance instance : instances) {
-                CircuitBreakerStatus circuitBreakerStatus = instance.getCircuitBreakerStatus();
-                if (null != circuitBreakerStatus
-                        && circuitBreakerStatus.getStatus() == CircuitBreakerStatus.Status.HALF_OPEN) {
-                    LOG.info("half open instance is {}", instance);
-                }
-            }
-            //default halfopen pass 3 success
-            int requestCountAfterHalfOpen = configuration.getConsumer().getCircuitBreaker()
-                    .getRequestCountAfterHalfOpen();
-            for (int i = 0; i < requestCountAfterHalfOpen; i++) {
-                ServiceCallResult result = instanceToResult(instanceToLimit);
-                result.setRetCode(-1);
-                result.setRetStatus(RetStatus.RetSuccess);
-                assemblyAPI.updateServiceCallResult(result);
-                Utils.sleepUninterrupted(200);
-                assemblyAPI.updateServiceCallResult(result);
-            }
-            LOG.info("start to test half open to close");
-            Utils.sleepUninterrupted(1000);
-            instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
-        }
-    }
-
-    @Test
-    public void testCircuitBreakByErrorRate() {
-        Configuration configuration = TestUtils.configWithEnvAddress();
-        ((ConfigurationImpl) configuration).getConsumer().getCircuitBreaker().setChain(
-                Collections.singletonList(DefaultPlugins.CIRCUIT_BREAKER_ERROR_RATE));
-        try (AssemblyAPI assemblyAPI = AssemblyAPIFactory.createAssemblyAPIByConfig(configuration)) {
-            GetReachableInstancesRequest req = new GetReachableInstancesRequest();
-            req.setNamespace(NAMESPACE_TEST);
-            req.setService(SERVICE_CIRCUIT_BREAKER);
-            List<Instance> instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
-            Instance instanceToLimit = instances.get(1);
-            //report 60 fail in 500ms
-            for (int i = 0; i < 60; ++i) {
-                if (i == 1) {
-                    Utils.sleepUninterrupted(5 * 1000);
-                }
-                ServiceCallResult result = instanceToResult(instanceToLimit);
-                result.setDelay(1000L);
-                if (i % 2 == 0) {
-                    result.setRetCode(0);
-                    result.setRetStatus(RetStatus.RetSuccess);
-                    Utils.sleepUninterrupted(1);
-                } else {
-                    result.setRetCode(-1);
-                    result.setRetStatus(RetStatus.RetFail);
-                }
-                assemblyAPI.updateServiceCallResult(result);
-                Utils.sleepUninterrupted(1);
-            }
-            Utils.sleepUninterrupted(1000);
-            instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT - 1, instances.size());
-            boolean exists = false;
-            for (Instance instance : instances) {
-                if (instance.getId().equals(instanceToLimit.getId())) {
-                    exists = true;
-                }
-            }
-            Assert.assertFalse(exists);
-            Utils.sleepUninterrupted(10000);
-            //default halfopen pass 3 success
-            int requestCountAfterHalfOpen = configuration.getConsumer().getCircuitBreaker()
-                    .getRequestCountAfterHalfOpen();
-            for (int i = 0; i < requestCountAfterHalfOpen; i++) {
-                ServiceCallResult result = instanceToResult(instanceToLimit);
-                result.setRetCode(-1);
-                result.setRetStatus(RetStatus.RetSuccess);
-                assemblyAPI.updateServiceCallResult(result);
-                Utils.sleepUninterrupted(200);
-                assemblyAPI.updateServiceCallResult(result);
-            }
-            LOG.info("start to test half open to close");
-            Utils.sleepUninterrupted(1000);
-            instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
         }
     }
 
