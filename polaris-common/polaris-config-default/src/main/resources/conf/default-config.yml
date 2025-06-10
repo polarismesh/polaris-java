@@ -284,7 +284,7 @@ consumer:
         requestVolumeThreshold: 10
   #描述:主动探测相关配置
   outlierDetection:
-    #描述：何时开启主动探测。never（永不开启）,on_recover（恢复时才开启主动探测）,always（一直开启主动探测）
+    #描述：何时开启主动探测。never（永不开启）,on_recover（废弃，恢复时才开启主动探测）,after_call（调用后开启探测）,always（一直开启主动探测）
     when: never
     #描述：主动探测周期
     checkPeriod: 30s

@@ -18,14 +18,10 @@
 package com.tencent.polaris.client.pojo;
 
 import com.google.protobuf.UInt32Value;
-import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
-import com.tencent.polaris.api.pojo.DetectResult;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.InstanceLocalValue;
-import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.StatusDimension;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.utils.TimeUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -113,6 +109,14 @@ public class InstanceByProto implements Instance {
             return null;
         }
         return instanceLocalValue.getCircuitBreakerStatus(statusDimension);
+    }
+
+    @Override
+    public RetStatus getDetectStatus() {
+        if (null == instanceLocalValue || null == instanceLocalValue.getDetectResult()) {
+            return null;
+        }
+        return instanceLocalValue.getDetectResult().getRetStatus();
     }
 
     public DetectResult getDetectResult() {

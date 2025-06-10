@@ -19,6 +19,7 @@ package com.tencent.polaris.api.config.consumer;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
 
 /**
@@ -30,7 +31,7 @@ import java.util.List;
 public interface OutlierDetectionConfig extends PluginConfig, Verifier {
 
     enum When {
-        never, on_recover, always
+        never, on_recover, after_call, always
     }
 
     /**

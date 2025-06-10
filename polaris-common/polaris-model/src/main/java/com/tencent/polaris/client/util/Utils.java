@@ -18,20 +18,17 @@
 package com.tencent.polaris.client.util;
 
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceChangeEvent;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.ServiceInstancesByProto;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import org.slf4j.Logger;
+
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
 
 /**
  * Common util class.
@@ -88,10 +85,10 @@ public class Utils {
 
 
     public static boolean isHealthyInstance(Instance instance) {
-        if (!instance.isHealthy()) {
-            return false;
+        if (instance.getDetectStatus() != null) {
+            return instance.getDetectStatus() == RetStatus.RetSuccess;
         }
-        return true;
+        return instance.isHealthy();
     }
 
 

@@ -70,6 +70,11 @@ public class InstanceWrap implements Instance {
     }
 
     @Override
+    public RetStatus getDetectStatus() {
+        return originalInstance.getDetectStatus();
+    }
+
+    @Override
     public boolean isHealthy() {
         return originalInstance.isHealthy();
     }
