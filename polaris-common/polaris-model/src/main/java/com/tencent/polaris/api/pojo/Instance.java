@@ -57,6 +57,13 @@ public interface Instance extends BaseInstance, Comparable<Instance> {
      */
     CircuitBreakerStatus getCircuitBreakerStatus(StatusDimension statusDimension);
 
+    /**
+     * 获取探测状态
+     *
+     * @return 探测状态
+     */
+    RetStatus getDetectStatus();
+
     boolean isHealthy();
 
     boolean isIsolated();

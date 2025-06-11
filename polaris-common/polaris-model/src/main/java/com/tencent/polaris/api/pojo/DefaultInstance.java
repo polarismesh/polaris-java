@@ -227,6 +227,11 @@ public class DefaultInstance extends DefaultBaseInstance implements Instance {
     }
 
     @Override
+    public RetStatus getDetectStatus() {
+        return null;
+    }
+
+    @Override
     public int compareTo(Instance instance) {
         String curHost = StringUtils.defaultString(this.getHost());
         String remoteHost = StringUtils.defaultString(instance.getHost());
