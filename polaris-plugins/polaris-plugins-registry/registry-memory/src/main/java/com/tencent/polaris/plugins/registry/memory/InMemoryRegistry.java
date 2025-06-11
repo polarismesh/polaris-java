@@ -371,6 +371,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
                 switch (entry.getKey()) {
                     case InstanceProperty.PROPERTY_DETECT_RESULT:
                         instanceLocalValue.setDetectResult((DetectResult) entry.getValue());
+                        changed = true;
                         break;
                     default:
                         break;
