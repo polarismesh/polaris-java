@@ -18,6 +18,7 @@
 package com.tencent.polaris.plugins.connector.grpc;
 
 import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.verify.DefaultValues;
@@ -91,7 +92,8 @@ public class ConnectionManager extends Destroyable {
         this.connectTimeoutMs = serverConnectorConfig.getConnectTimeout();
         this.protocol = serverConnectorConfig.getProtocol();
         List<String> addresses = serverConnectorConfig.getAddresses();
-        serverAddresses.put(ClusterType.BUILTIN_CLUSTER, new ServerAddressList(addresses, ClusterType.BUILTIN_CLUSTER));
+        String lbPolicy = serverConnectorConfig.getLbPolicy();
+        serverAddresses.put(ClusterType.BUILTIN_CLUSTER, new ServerAddressList(addresses, ClusterType.BUILTIN_CLUSTER, lbPolicy));
         Collection<ServerServiceInfo> serverServices = initContext.getServerServices();
         ServerServiceInfo discoverService = null;
         ServerServiceInfo healthCheckService = null;
@@ -112,7 +114,7 @@ public class ConnectionManager extends Destroyable {
         }
         if (null == discoverService) {
             serverAddresses.put(ClusterType.SERVICE_DISCOVER_CLUSTER,
-                    new ServerAddressList(addresses, ClusterType.SERVICE_DISCOVER_CLUSTER));
+                    new ServerAddressList(addresses, ClusterType.SERVICE_DISCOVER_CLUSTER, lbPolicy));
         } else {
             serverAddresses
                     .put(ClusterType.SERVICE_DISCOVER_CLUSTER,
@@ -120,7 +122,7 @@ public class ConnectionManager extends Destroyable {
         }
         if (null == configService) {
             serverAddresses.put(ClusterType.SERVICE_CONFIG_CLUSTER,
-                    new ServerAddressList(addresses, ClusterType.SERVICE_CONFIG_CLUSTER));
+                    new ServerAddressList(addresses, ClusterType.SERVICE_CONFIG_CLUSTER, lbPolicy));
         } else {
             serverAddresses
                     .put(ClusterType.SERVICE_CONFIG_CLUSTER,
@@ -128,7 +130,7 @@ public class ConnectionManager extends Destroyable {
         }
         if (null == healthCheckService) {
             serverAddresses.put(ClusterType.HEALTH_CHECK_CLUSTER,
-                    new ServerAddressList(addresses, ClusterType.HEALTH_CHECK_CLUSTER));
+                    new ServerAddressList(addresses, ClusterType.HEALTH_CHECK_CLUSTER, lbPolicy));
         } else {
             serverAddresses
                     .put(ClusterType.HEALTH_CHECK_CLUSTER,
@@ -283,14 +285,16 @@ public class ConnectionManager extends Destroyable {
         private final List<Node> nodes = new ArrayList<>();
         private final Object lock = new Object();
         private final AtomicBoolean ready = new AtomicBoolean(false);
+        private String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN;
         private int curIndex;
+        private Node curNode;
 
         /**
          * 埋点集群
          *
          * @param addresses 地址列表
          */
-        ServerAddressList(List<String> addresses, ClusterType clusterType) {
+        ServerAddressList(List<String> addresses, ClusterType clusterType, String lbPolicy) {
             for (String address : addresses) {
                 int colonIdx = address.lastIndexOf(":");
                 String host = IPAddressUtils.getIpCompatible(address.substring(0, colonIdx));
@@ -298,6 +302,7 @@ public class ConnectionManager extends Destroyable {
                 nodes.add(new Node(host, port));
             }
             this.clusterType = clusterType;
+            this.lbPolicy = lbPolicy;
             serverServiceInfo = null;
             makeReady();
         }
@@ -387,9 +392,25 @@ public class ConnectionManager extends Destroyable {
 
         private Node getServerAddress() throws PolarisException {
             if (null == serverServiceInfo) {
-                Node node = nodes.get(curIndex % nodes.size());
-                curIndex++;
-                return node;
+                switch (lbPolicy) {
+                    case LoadBalanceConfig.LOAD_BALANCE_NEARBY_BACKUP:
+                        curNode = LoadBalanceUtils.nearbyBackupLoadBalance(nodes, curNode);
+                        return curNode;
+                    case LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN:
+                    default:
+                        // 使用取模运算确保索引不越界
+                        int index = curIndex % nodes.size();
+                        Node node = nodes.get(index);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.info("Node {} is chosen with index {} in node list {}.", node, index, nodes);
+                        } else {
+                            LOG.info("Node {} is chosen with index {}.", node, index);
+                        }
+                        // 递增索引，并确保不超过nodes.size()
+                        curIndex = (curIndex + 1) % nodes.size();
+                        curNode = new Node(node);
+                        return node;
+                }
             }
             Extensions extensions = ConnectionManager.this.extensions;
             Instance instance = getDiscoverInstance(extensions);

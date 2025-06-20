@@ -44,6 +44,16 @@ public interface LoadBalanceConfig extends PluginConfig, Verifier {
     String LOAD_BALANCE_WEIGHTED_ROUND_ROBIN = "weightedRoundRobin";
 
     /**
+     * 轮询负载均衡插件名
+     */
+    String LOAD_BALANCE_ROUND_ROBIN = "roundRobin";
+
+    /**
+     * 就近主备负载均衡插件名
+     */
+    String LOAD_BALANCE_NEARBY_BACKUP = "nearbyBackup";
+
+    /**
      * 负载均衡类型
      *
      * @return String

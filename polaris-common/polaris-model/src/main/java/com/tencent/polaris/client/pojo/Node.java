@@ -37,6 +37,11 @@ public class Node {
         this.port = port;
     }
 
+    public Node(Node another) {
+        this.host = another.host;
+        this.port = another.port;
+    }
+
     public String getHost() {
         return host;
     }

@@ -19,6 +19,7 @@ package com.tencent.polaris.api.config.global;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
+
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,13 @@ public interface ServerConnectorConfig extends PluginConfig, Verifier {
      * @return 地址列表
      */
     List<String> getAddresses();
+
+    /**
+     * 远端server地址负载均衡策略
+     *
+     * @return 负载均衡策略
+     */
+    String getLbPolicy();
 
     /**
      * 与server对接的协议，默认GRPC
