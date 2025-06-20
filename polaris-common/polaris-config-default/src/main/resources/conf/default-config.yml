@@ -61,6 +61,8 @@ global:
     #描述：默认服务端埋点接入地址
     addresses:
       - 127.0.0.1:8091
+    #描述：默认服务端地址负载均衡策略
+    lbPolicy: roundRobin
     #描述: 访问server的连接协议，SDK会根据协议名称会加载对应的插件
     protocol: grpc
     #描述: 发起连接后的连接超时时间

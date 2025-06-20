@@ -19,12 +19,16 @@ package com.tencent.polaris.factory.config.global;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +45,8 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
     private final Map<String, String> metadata = new ConcurrentHashMap<>();
     @JsonProperty
     private List<String> addresses;
+    @JsonProperty
+    private String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN;
     @JsonProperty
     private String protocol;
     @JsonProperty
@@ -76,6 +82,15 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
 
     public void setAddresses(List<String> addresses) {
         this.addresses = addresses;
+    }
+
+    @Override
+    public String getLbPolicy() {
+        return lbPolicy;
+    }
+
+    public void setLbPolicy(String lbPolicy) {
+        this.lbPolicy = lbPolicy;
     }
 
     @Override
@@ -199,6 +214,10 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
                 throw new IllegalArgumentException(String.format("address [%s] of [%s] is invalid", address, protocol));
             }
         }
+        List<String> targetLbPolicyList = new ArrayList<>();
+        targetLbPolicyList.add(LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN);
+        targetLbPolicyList.add(LoadBalanceConfig.LOAD_BALANCE_NEARBY_BACKUP);
+        ConfigUtils.validateIn(lbPolicy, targetLbPolicyList, "serverConnector.lbPolicy");
         ConfigUtils.validateString(id, "serverConnector.id");
         if (DefaultPlugins.SERVER_CONNECTOR_GRPC.equals(protocol)) {
             ConfigUtils.validateString(protocol, "serverConnector.protocol");
@@ -217,6 +236,9 @@ public class ServerConnectorConfigImpl extends PluginConfigImpl implements Serve
             ServerConnectorConfig serverConnectorConfig = (ServerConnectorConfig) defaultObject;
             if (null == addresses) {
                 setAddresses(serverConnectorConfig.getAddresses());
+            }
+            if (StringUtils.isBlank(lbPolicy)) {
+                setLbPolicy(LoadBalanceConfig.LOAD_BALANCE_ROUND_ROBIN);
             }
             if (null == protocol) {
                 setProtocol(serverConnectorConfig.getProtocol());

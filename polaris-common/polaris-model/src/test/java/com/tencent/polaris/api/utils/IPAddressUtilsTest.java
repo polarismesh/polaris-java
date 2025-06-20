@@ -104,4 +104,9 @@ public class IPAddressUtilsTest {
         // 测试IPv6映射的IPv4地址
         assertThat(IPAddressUtils.checkIpv6Host("::ffff:192.168.1.1")).isFalse();
     }
+
+    @Test
+    public void testPing() {
+        assertThat(IPAddressUtils.ping("localhost")).isTrue();
+    }
 }

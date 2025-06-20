@@ -18,7 +18,10 @@
 package com.tencent.polaris.factory.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -112,6 +115,18 @@ public class ConfigUtils {
     public static void validateTrue(Boolean value, String name) {
         if (null == value || !value) {
             throw new IllegalArgumentException(name + " must not be false");
+        }
+    }
+
+    public static void validateIn(String value, List<String> targetList, String name) {
+        if (StringUtils.isBlank(value)) {
+            throw new IllegalArgumentException(name + " must not be empty");
+        }
+        if (CollectionUtils.isEmpty(targetList)) {
+            throw new IllegalArgumentException("target list must not be empty");
+        }
+        if (!targetList.contains(value)) {
+            throw new IllegalArgumentException(name + " must be one of " + targetList);
         }
     }
 }
