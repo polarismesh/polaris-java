@@ -55,7 +55,7 @@ public class LoadBalanceUtilsTest {
                     .thenAnswer(invocationOnMock -> {
                         Node node = invocationOnMock.getArgument(0);
                         if (node.equals(node1)) {
-                            return Long.MAX_VALUE; // node1: 不可用
+                            return 25L; // node1: 25ms
                         } else if (node.equals(node2)) {
                             return 5L; // node2: 5ms
                         } else if (node.equals(node3)) {
@@ -105,7 +105,6 @@ public class LoadBalanceUtilsTest {
         }
     }
 
-
     @Test
     public void testAllNodesUnavailableReturnFirstNode() {
         // 准备测试数据：所有节点都不可用
@@ -137,6 +136,36 @@ public class LoadBalanceUtilsTest {
     }
 
     @Test
+    public void testAllNodesUnavailableReturnFirstNodeWithCurNode() {
+        // 准备测试数据：所有节点都不可用
+        Node node1 = new Node("host1", 8080);
+        Node node2 = new Node("host2", 8080);
+        List<Node> nodes = Arrays.asList(node1, node2);
+
+        // 模拟随机数选择可用节点
+        try (MockedStatic<LoadBalanceUtils> mockedLoadBalanceUtils = mockStatic(LoadBalanceUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedLoadBalanceUtils.when(() -> LoadBalanceUtils.getDelay(any(Node.class)))
+                    .thenAnswer(invocationOnMock -> {
+                        Node node = invocationOnMock.getArgument(0);
+                        if (node.equals(node1)) {
+                            return Long.MAX_VALUE; // node1: 不可用
+                        } else if (node.equals(node2)) {
+                            return Long.MAX_VALUE; // node2: 不可用
+                        }
+                        return 500L;
+                    });
+
+            // 执行并验证
+            Node result = LoadBalanceUtils.nearbyBackupLoadBalance(nodes, node2);
+            assertThat(result)
+                    .isEqualTo(node1)
+                    .isIn(nodes)
+                    .extracting(Node::getPort)
+                    .isEqualTo(8080);
+        }
+    }
+
+    @Test
     public void testEmptyNodeListThrowsException() {
         // 准备测试数据：空节点列表
         List<Node> emptyList = Collections.emptyList();
@@ -157,6 +186,42 @@ public class LoadBalanceUtilsTest {
             mockedLoadBalanceUtils.when(() -> LoadBalanceUtils.getDelay(any(Node.class))).thenReturn(5L);
             // 执行并验证
             Node result = LoadBalanceUtils.nearbyBackupLoadBalance(singleNodeList, null);
+            assertThat(result)
+                    .isSameAs(node)
+                    .extracting("host", "port")
+                    .containsExactly("host1", 8080);
+        }
+    }
+
+    @Test
+    public void testSingleUnavailableNode() {
+        // 准备测试数据：单个可用节点
+        Node node = new Node("host1", 8080);
+        List<Node> singleNodeList = Collections.singletonList(node);
+
+        // 模拟时间差
+        try (MockedStatic<LoadBalanceUtils> mockedLoadBalanceUtils = mockStatic(LoadBalanceUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedLoadBalanceUtils.when(() -> LoadBalanceUtils.getDelay(any(Node.class))).thenReturn(Long.MAX_VALUE);
+            // 执行并验证
+            Node result = LoadBalanceUtils.nearbyBackupLoadBalance(singleNodeList, null);
+            assertThat(result)
+                    .isSameAs(node)
+                    .extracting("host", "port")
+                    .containsExactly("host1", 8080);
+        }
+    }
+
+    @Test
+    public void testSingleUnavailableNodeWithCurNode() {
+        // 准备测试数据：单个可用节点
+        Node node = new Node("host1", 8080);
+        List<Node> singleNodeList = Collections.singletonList(node);
+
+        // 模拟时间差
+        try (MockedStatic<LoadBalanceUtils> mockedLoadBalanceUtils = mockStatic(LoadBalanceUtils.class, Mockito.CALLS_REAL_METHODS)) {
+            mockedLoadBalanceUtils.when(() -> LoadBalanceUtils.getDelay(any(Node.class))).thenReturn(Long.MAX_VALUE);
+            // 执行并验证
+            Node result = LoadBalanceUtils.nearbyBackupLoadBalance(singleNodeList, node);
             assertThat(result)
                     .isSameAs(node)
                     .extracting("host", "port")

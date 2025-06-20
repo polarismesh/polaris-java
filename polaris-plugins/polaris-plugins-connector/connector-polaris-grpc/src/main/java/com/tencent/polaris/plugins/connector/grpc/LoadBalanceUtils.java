@@ -53,12 +53,14 @@ public class LoadBalanceUtils {
                 }
             }
         }
-        Node finalNode;
-        // 如果有不可用的节点，且和上一次使用的节点一样，则从可用的节点中随机选择一个
+        Node finalNode = null;
+        // 如果有不可用的节点，且和上一次使用的节点一样，且存在可用的节点，则从可用的节点中随机选择一个
         if (CollectionUtils.isNotEmpty(unAvailableNodeList) && unAvailableNodeList.contains(curNode)) {
-            Random random = new Random();
-            int index = random.nextInt(availableNodeList.size());
-            finalNode = availableNodeList.get(index);
+            if (CollectionUtils.isNotEmpty(availableNodeList)) {
+                Random random = new Random();
+                int index = random.nextInt(availableNodeList.size());
+                finalNode = availableNodeList.get(index);
+            }
         } else {
             finalNode = bestNode;
             if (finalNode != null) {
