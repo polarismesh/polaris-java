@@ -55,7 +55,7 @@ public class LoadBalanceUtils {
         }
         Node finalNode = null;
         // 如果有不可用的节点，且和上一次使用的节点一样，且存在可用的节点，则从可用的节点中随机选择一个
-        if (CollectionUtils.isNotEmpty(unAvailableNodeList) && unAvailableNodeList.contains(curNode)) {
+        if (CollectionUtils.isNotEmpty(unAvailableNodeList) && curNode != null && unAvailableNodeList.contains(curNode)) {
             if (CollectionUtils.isNotEmpty(availableNodeList)) {
                 Random random = new Random();
                 int index = random.nextInt(availableNodeList.size());
@@ -73,8 +73,13 @@ public class LoadBalanceUtils {
         }
         // 如果没有找到有效节点，默认返回第一个节点
         if (finalNode == null) {
-            LOG.info("Node {} has been chosen the first in node list {}.", bestNode, nodes);
-            finalNode = nodes.get(0);
+            if (curNode != null) {
+                finalNode = curNode;
+                LOG.info("Node {} has been chosen the last chosen node in node list {}.", bestNode, nodes);
+            } else {
+                finalNode = nodes.get(0);
+                LOG.info("Node {} has been chosen the first in node list {}.", bestNode, nodes);
+            }
         }
         return finalNode;
     }

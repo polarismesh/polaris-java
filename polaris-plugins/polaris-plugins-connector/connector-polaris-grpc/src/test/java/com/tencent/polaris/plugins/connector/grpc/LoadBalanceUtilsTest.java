@@ -65,7 +65,7 @@ public class LoadBalanceUtilsTest {
                     });
 
             // 执行并验证
-            Node result = LoadBalanceUtils.nearbyBackupLoadBalance(nodes, null);
+            Node result = LoadBalanceUtils.nearbyBackupLoadBalance(nodes, node1);
             assertThat(result)
                     .isEqualTo(node2)
                     .isIn(nodes)
@@ -136,7 +136,7 @@ public class LoadBalanceUtilsTest {
     }
 
     @Test
-    public void testAllNodesUnavailableReturnFirstNodeWithCurNode() {
+    public void testAllNodesUnavailableReturnLastNodeWithCurNode() {
         // 准备测试数据：所有节点都不可用
         Node node1 = new Node("host1", 8080);
         Node node2 = new Node("host2", 8080);
@@ -158,7 +158,7 @@ public class LoadBalanceUtilsTest {
             // 执行并验证
             Node result = LoadBalanceUtils.nearbyBackupLoadBalance(nodes, node2);
             assertThat(result)
-                    .isEqualTo(node1)
+                    .isEqualTo(node2)
                     .isIn(nodes)
                     .extracting(Node::getPort)
                     .isEqualTo(8080);
