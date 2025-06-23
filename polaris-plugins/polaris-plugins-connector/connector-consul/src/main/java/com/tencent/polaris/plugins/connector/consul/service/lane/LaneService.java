@@ -240,7 +240,7 @@ public class LaneService extends ConsulService {
             laneRuleBuilder.setName(laneRule.getLaneId());
             laneRuleBuilder.setGroupName("tsf");
             laneRuleBuilder.setEnable(true);
-            laneRuleBuilder.setMatchMode(LaneProto.LaneRule.LaneMatchMode.STRICT);
+            laneRuleBuilder.setMatchMode(LaneProto.LaneRule.LaneMatchMode.PERMISSIVE);
             laneRuleBuilder.setPriority(laneRule.getPriority());
             laneRuleBuilder.setLabelKey(TSF_GROUP_ID);
             // set TrafficMatchRule

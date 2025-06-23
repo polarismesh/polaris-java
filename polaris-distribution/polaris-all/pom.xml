@@ -52,6 +52,11 @@
             <artifactId>opentelemetry-api</artifactId>
             <version>${otel.version}</version>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons.io.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -191,6 +196,10 @@
                                 <relocation>
                                     <pattern>io.netty</pattern>
                                     <shadedPattern>shade.polaris.io.netty</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.io</pattern>
+                                    <shadedPattern>shade.polaris.org.apache.commons.io</shadedPattern>
                                 </relocation>
                             </relocations>
                             <artifactSet>

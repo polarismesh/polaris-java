@@ -87,13 +87,14 @@ public class InstanceService extends ConsulService {
         UrlParameters tagParams = StringUtils.isNotBlank(tag) ? new SingleUrlParameters("tag", tag) : null;
         UrlParameters passingParams = onlyPassing ? new SingleUrlParameters("passing") : null;
         UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
+        UrlParameters namespaceParameter = StringUtils.isNotBlank(namespace) ? new SingleUrlParameters("nid", namespace) : null;;
         Long currentIndex = getServersConsulIndex(serviceId);
         int code = ServerCodes.DATA_NO_CHANGE;
         QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), currentIndex);
         try {
-            LOG.debug("Begin get service instances of {} sync", serviceId);
+            LOG.debug("Begin get service instances of :{}/{} sync", namespace, serviceId);
             HttpResponse rawResponse = consulRawClient.makeGetRequest("/v1/health/service/" + serviceId, tagParams,
-                    passingParams, tokenParam, nsTypeParam, queryParams);
+                    passingParams, tokenParam, nsTypeParam, namespaceParameter, queryParams);
             if (rawResponse != null) {
                 if (!currentIndex.equals(rawResponse.getConsulIndex())) {
                     code = ServerCodes.EXECUTE_SUCCESS;

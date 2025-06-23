@@ -221,6 +221,7 @@ public class LaneRouter extends AbstractServiceRouter {
                     String[] split = defaultLabelValue.split(",");
                     laneKeyValueMap.get(labelKey).addAll(Arrays.asList(split));
                 }
+                LOG.debug("lane_group: {}, rulesList:{}, laneKeyValueMap: {}", laneGroup.getName(), laneGroup.getRulesList(), laneKeyValueMap);
                 if (CollectionUtils.isNotEmpty(laneKeyValueMap)) {
                     for (Map.Entry<String, String> entry : metadata.entrySet()) {
                         if (laneKeyValueMap.containsKey(entry.getKey()) && laneKeyValueMap.get(entry.getKey()).contains(entry.getValue())) {

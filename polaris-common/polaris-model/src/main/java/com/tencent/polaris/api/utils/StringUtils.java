@@ -25,6 +25,8 @@ public class StringUtils {
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
 
+    private static final int INDEX_NOT_FOUND = -1;
+
     public static boolean isBlank(String str) {
         int strLen;
         if (str != null && (strLen = str.length()) != 0) {
@@ -380,4 +382,53 @@ public class StringUtils {
         }
         return original.split(separator);
     }
+
+    public static int length(final CharSequence cs) {
+        return cs == null ? 0 : cs.length();
+    }
+
+    public static int ordinalIndexOf(final CharSequence str, final CharSequence searchStr, final int ordinal) {
+        return ordinalIndexOf(str, searchStr, ordinal, false);
+    }
+
+    /**
+     * <p>Finds the n-th index within a String, handling {@code null}.
+     * This method uses {@link String#indexOf(String)} if possible.</p>
+     * <p>Note that matches may overlap<p>
+     *
+     * <p>A {@code null} CharSequence will return {@code -1}.</p>
+     *
+     * @param str  the CharSequence to check, may be null
+     * @param searchStr  the CharSequence to find, may be null
+     * @param ordinal  the n-th {@code searchStr} to find, overlapping matches are allowed.
+     * @param lastIndex true if lastOrdinalIndexOf() otherwise false if ordinalIndexOf()
+     * @return the n-th index of the search CharSequence,
+     *  {@code -1} ({@code INDEX_NOT_FOUND}) if no match or {@code null} string input
+     */
+    // Shared code between ordinalIndexOf(String, String, int) and lastOrdinalIndexOf(String, String, int)
+    private static int ordinalIndexOf(final CharSequence str, final CharSequence searchStr, final int ordinal, final boolean lastIndex) {
+        if (str == null || searchStr == null || ordinal <= 0) {
+            return INDEX_NOT_FOUND;
+        }
+        if (searchStr.length() == 0) {
+            return lastIndex ? str.length() : 0;
+        }
+        int found = 0;
+        // set the initial index beyond the end of the string
+        // this is to allow for the initial index decrement/increment
+        int index = lastIndex ? str.length() : INDEX_NOT_FOUND;
+        do {
+            if (lastIndex) {
+                index = CharSequenceUtils.lastIndexOf(str, searchStr, index - 1); // step backwards thru string
+            } else {
+                index = CharSequenceUtils.indexOf(str, searchStr, index + 1); // step forwards through string
+            }
+            if (index < 0) {
+                return index;
+            }
+            found++;
+        } while (found < ordinal);
+        return index;
+    }
+
 }
