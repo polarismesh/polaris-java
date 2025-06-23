@@ -38,6 +38,11 @@ public class InstanceProperty {
      */
     public static final String PROPERTY_DETECT_RESULT = "detectResult";
 
+    /**
+     * 属性标签，标识实例统计信息
+     */
+    public static final String PROPERTY_INSTANCE_STATISTIC = "instanceStatistic";
+
     private final Instance instance;
 
     private final Map<String, Object> properties;

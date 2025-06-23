@@ -19,6 +19,7 @@ package com.tencent.polaris.discovery.client.stat;
 
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig;
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
+import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
@@ -48,12 +49,15 @@ public class ServiceCallResultCollector implements ServiceCallResultListener {
 
     private Set<ServiceKey> calledServiceSet = new HashSet<>();
 
+    private InstancesStatisticUpdater instancesStatisticUpdater;
     @Override
     public synchronized void init(SDKContext sdkContext) {
         if (!state.compareAndSet(0, 1)) {
             return;
         }
         outlierDetectionConfig = sdkContext.getConfig().getConsumer().getOutlierDetection();
+        LocalRegistry localRegistry = sdkContext.getExtensions().getLocalRegistry();
+        instancesStatisticUpdater = new InstancesStatisticUpdater(localRegistry);
         if (outlierDetectionConfig.getWhen() != When.never) {
             detectTaskExecutors = Executors.newSingleThreadScheduledExecutor();
             long checkPeriodMs = outlierDetectionConfig.getCheckPeriod();
@@ -68,6 +72,7 @@ public class ServiceCallResultCollector implements ServiceCallResultListener {
         if (outlierDetectionConfig.getWhen() == When.after_call) {
             calledServiceSet.add(new ServiceKey(result.getNamespace(), result.getService()));
         }
+        instancesStatisticUpdater.updateInstanceStatistic(result);
     }
 
     @Override
