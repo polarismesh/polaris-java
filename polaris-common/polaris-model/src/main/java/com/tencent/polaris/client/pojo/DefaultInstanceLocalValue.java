@@ -45,6 +45,10 @@ public class DefaultInstanceLocalValue implements InstanceLocalValue {
 
     private final AtomicReference<InstanceStatistic> instanceStatistic = new AtomicReference<>();
 
+    public  DefaultInstanceLocalValue() {
+        instanceStatistic.set(new InstanceStatistic());
+    }
+
     @Override
     public Collection<StatusDimension> getStatusDimensions() {
         return circuitBreakerStatus.keySet();

@@ -21,6 +21,7 @@
         <module>loadbalancer-ringhash</module>
         <module>loadbalancer-roundrobin</module>
         <module>loadbalancer-shortest-response-time</module>
+        <module>loadbalancer-least-connection</module>
     </modules>
 
     <dependencies>
