@@ -76,11 +76,10 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         }
         public long getSucceededAverageElapsed(InstanceStatistic instanceStatistic) {
             if (instanceStatistic != null) {
-                long succeed = instanceStatistic.getSucceededCount() - this.succeededOffset;
-                if (succeed == 0) {
+                if (instanceStatistic.getSucceededCount() - this.succeededOffset == 0) {
                     return 0;
                 }
-                return (instanceStatistic.getSucceededElapsed() - this.succeededElapsedOffset) / succeed;
+                return (instanceStatistic.getSucceededElapsed() - this.succeededElapsedOffset) / (instanceStatistic.getSucceededCount() - this.succeededOffset);
             }else{
                 return 0;
             }
