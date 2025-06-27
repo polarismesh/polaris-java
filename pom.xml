@@ -108,6 +108,7 @@
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
+        <central.publishing.maven.plugin.version>0.8.0</central.publishing.maven.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
         <httpclient.version>4.5.14</httpclient.version>
         <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
@@ -217,7 +218,7 @@
                     <execution>
                         <id>attach-sources</id>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -229,6 +230,7 @@
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
                         </goals>
@@ -240,6 +242,20 @@
                             <name>date</name>
                         </tag>
                     </tags>
+                    <show>public</show>
+                    <charset>UTF-8</charset>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <links>
+                        <link>http://docs.oracle.com/javase/8/docs/api</link>
+                    </links>
+                    <doclint>none</doclint>
+                    <excludePackageNames>
+                        com.tencent.polaris.*.example,com.tencent.polaris.*.example.*
+                    </excludePackageNames>
+                    <doctitle>Tencent Polaris Java SDK ${project.version} API</doctitle>
+                    <windowtitle>Tencent Polaris Java SDK ${project.version} API
+                    </windowtitle>
                 </configuration>
             </plugin>
             <plugin>
@@ -282,36 +298,47 @@
                     </filesets>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>${central.publishing.maven.plugin.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central-portal</publishingServerId>
+                    <excludeArtifacts>
+                        <excludeArtifact>polaris-examples</excludeArtifact>
+                        <excludeArtifact>circuitbreaker-example</excludeArtifact>
+                        <excludeArtifact>common-breaker</excludeArtifact>
+                        <excludeArtifact>instance-breaker-example</excludeArtifact>
+                        <excludeArtifact>method-breaker-example</excludeArtifact>
+                        <excludeArtifact>service-breaker-example</excludeArtifact>
+                        <excludeArtifact>configuration-example</excludeArtifact>
+                        <excludeArtifact>discovery-example</excludeArtifact>
+                        <excludeArtifact>location-example</excludeArtifact>
+                        <excludeArtifact>quickstart-example</excludeArtifact>
+                        <excludeArtifact>quickstart-example-consumer</excludeArtifact>
+                        <excludeArtifact>quickstart-example-provider</excludeArtifact>
+                        <excludeArtifact>ratelimit-example</excludeArtifact>
+                        <excludeArtifact>global-limiter-example</excludeArtifact>
+                        <excludeArtifact>ratelimit-remote-consumer</excludeArtifact>
+                        <excludeArtifact>ratelimit-remote-provider</excludeArtifact>
+                        <excludeArtifact>local-limiter-example</excludeArtifact>
+                        <excludeArtifact>ratelimit-local-consumer</excludeArtifact>
+                        <excludeArtifact>ratelimit-local-provider</excludeArtifact>
+                        <excludeArtifact>router-example</excludeArtifact>
+                        <excludeArtifact>router-multienv-example</excludeArtifact>
+                        <excludeArtifact>router-multienv-gateway</excludeArtifact>
+                        <excludeArtifact>router-multienv-provider</excludeArtifact>
+                        <excludeArtifact>router-version-example</excludeArtifact>
+                        <excludeArtifact>router-version-consumer</excludeArtifact>
+                        <excludeArtifact>router-version-provider</excludeArtifact>
+                    </excludeArtifacts>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
-        <profile>
-            <id>sonatype</id>
-            <repositories>
-                <repository>
-                    <id>nexus-snapshots</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                    <releases>
-                        <enabled>false</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                        <updatePolicy>always</updatePolicy>
-                    </snapshots>
-                </repository>
-                <repository>
-                    <id>nexus-releases</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>false</enabled>
-                    </snapshots>
-                </repository>
-            </repositories>
-        </profile>
         <profile>
             <id>javadoc-lint</id>
             <activation>
@@ -327,14 +354,6 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <version>${maven.deploy.plugin.version}</version>
-                        <configuration>
-                            <skip>${skip.maven.deploy}</skip>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
                         <version>${maven.gpg.plugin.version}</version>
                         <executions>
@@ -347,68 +366,23 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <version>${maven.source.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <tags>
-                                <tag>
-                                    <name>date</name>
-                                </tag>
-                            </tags>
-                            <show>public</show>
-                            <charset>UTF-8</charset>
-                            <encoding>UTF-8</encoding>
-                            <docencoding>UTF-8</docencoding>
-                            <links>
-                                <link>http://docs.oracle.com/javase/8/docs/api</link>
-                            </links>
-                            <doclint>none</doclint>
-                            <excludePackageNames>
-                                com.tencent.polaris.*.example,com.tencent.polaris.*.example.*
-                            </excludePackageNames>
-                            <doctitle>Tencent Polaris Java SDK ${project.version} API</doctitle>
-                            <windowtitle>Tencent Polaris Java SDK ${project.version} API
-                            </windowtitle>
-                        </configuration>
-                    </plugin>
                 </plugins>
             </build>
         </profile>
     </profiles>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-
-        </snapshotRepository>
+    <repositories>
         <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+            <name>Central Portal Snapshots</name>
+            <id>central-portal-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+            </snapshots>
         </repository>
-    </distributionManagement>
+    </repositories>
 </project>

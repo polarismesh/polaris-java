@@ -12,8 +12,8 @@
 
 	<artifactId>polaris-plugins-configuration-connector</artifactId>
 	<packaging>pom</packaging>
-	<name>Polaris Plugins Configuration</name>
-	<description>Polaris Plugins Configuration POM</description>
+	<name>Polaris Plugins Configuration Connector</name>
+	<description>Polaris Plugins Configuration Connector POM</description>
 
 	<modules>
 		<module>polaris-configuration-connector</module>
