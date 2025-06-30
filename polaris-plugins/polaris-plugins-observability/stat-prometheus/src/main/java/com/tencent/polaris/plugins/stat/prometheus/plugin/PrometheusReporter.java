@@ -266,7 +266,6 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
         }
         handlers = new HashMap<>();
         HttpMetricHandler metricHandler = new HttpMetricHandler(promRegistry);
-        handlers.put("/", metricHandler);
         handlers.put("/-/healthy", metricHandler);
         path = config.getPath();
         if (StringUtils.isBlank(path)) {

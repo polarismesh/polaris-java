@@ -52,6 +52,7 @@ import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.client.util.HttpServerUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -393,6 +394,10 @@ public class Extensions extends Destroyable {
             for (Map.Entry<String, HttpHandler> handlerEntry : allHandlers.entrySet()) {
                 httpServer.createContext(handlerEntry.getKey(), handlerEntry.getValue());
             }
+            // 设置默认处理器处理所有其他路径
+            httpServer.createContext("/", exchange -> {
+                HttpServerUtils.writeTextToHttpServer(exchange, "", 404);
+            });
             NamedThreadFactory threadFactory = new NamedThreadFactory("polaris-java-http");
             ExecutorService executor = Executors.newFixedThreadPool(3, threadFactory);
             httpServer.setExecutor(executor);
