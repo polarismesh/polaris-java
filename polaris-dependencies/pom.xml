@@ -302,6 +302,21 @@
                 <artifactId>loadbalancer-ringhash</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>loadbalancer-roundrobin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>loadbalancer-shortest-response-time</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>loadbalancer-least-connection</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- polaris-plugins-observability-->
             <dependency>
