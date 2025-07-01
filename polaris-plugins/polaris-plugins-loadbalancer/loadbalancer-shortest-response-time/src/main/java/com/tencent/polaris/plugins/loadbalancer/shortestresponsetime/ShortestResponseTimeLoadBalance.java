@@ -12,6 +12,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
+import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceStatistic;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
@@ -19,9 +20,13 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.client.flow.DefaultFlowControlParam;
+import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +41,8 @@ import org.slf4j.Logger;
 public class ShortestResponseTimeLoadBalance extends Destroyable implements LoadBalancer, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShortestResponseTimeLoadBalance.class);
+
+    Extensions extensions;
 
     LocalRegistry localRegistry;
 
@@ -98,8 +105,14 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
-        List<Instance> localInstanceList = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true))
-                .getInstances();
+        DefaultServiceEventKeysProvider svcKeysProvider = new DefaultServiceEventKeysProvider();
+        Set<ServiceEventKey> serviceEventKeySet = new HashSet<>();
+        serviceEventKeySet.add(serviceEventKey);
+        svcKeysProvider.setSvcEventKeys(serviceEventKeySet);
+        DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
+        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions,false, svcKeysProvider, engineFlowControlParam);
+        ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(serviceEventKey);
+        List<Instance> localInstanceList = serviceInstances.getInstances();
 
         // Use Set to optimize intersection lookup
         Set<String> instanceKeys = requestInstanceList.stream()
@@ -139,6 +152,9 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         long currentWeight = 0;
         Instance targetInstance = instanceList.get(0);
         for (int i = 0; i < length; i++) {
+            if (instanceWeight[i] == 0) {
+                continue;
+            }
             currentWeight += instanceWeight[i];
             if (currentWeight >= randomWeight) {
                 targetInstance = instanceList.get(i);
@@ -187,6 +203,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
 
     @Override
     public void postContextInit(Extensions ctx) throws PolarisException {
+        extensions = ctx;
         localRegistry = ctx.getLocalRegistry();
         slidePeriod = ctx.getConfiguration().getConsumer().getLoadbalancer().getPluginConfig(getName(),
                 ShortestResponseTimeLoadBalanceConfig.class).getSlidePeriod();
