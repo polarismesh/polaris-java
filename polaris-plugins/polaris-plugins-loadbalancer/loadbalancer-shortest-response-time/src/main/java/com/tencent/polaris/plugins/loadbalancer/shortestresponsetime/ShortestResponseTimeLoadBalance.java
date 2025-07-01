@@ -111,6 +111,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         serviceEventKeySet.add(serviceEventKey);
         svcKeysProvider.setSvcEventKeys(serviceEventKeySet);
         DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
+
         ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions,false, svcKeysProvider, engineFlowControlParam);
         ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(serviceEventKey);
         List<Instance> localInstanceList = serviceInstances.getInstances();

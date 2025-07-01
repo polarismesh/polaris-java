@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.loadbalancer.roundrobin;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -49,6 +50,7 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
     private final ConcurrentMap<String, ConcurrentMap<String, WeightedRoundRobin>> methodWeightMap = new ConcurrentHashMap<>();
 
     protected static class WeightedRoundRobin {
+
         private int weight;
         private final AtomicLong current = new AtomicLong(0);
         private long lastUpdate;
@@ -82,7 +84,8 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances svcInstances) throws PolarisException {
         String key = svcInstances.getNamespace() + "." + svcInstances.getService();
-        ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
+        ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key,
+                k -> new ConcurrentHashMap<>());
         int totalWeight = 0;
         long maxCurrent = Long.MIN_VALUE;
         long now = System.currentTimeMillis();
@@ -113,11 +116,13 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
         if (svcInstances.getInstances().size() != map.size()) {
             map.entrySet().removeIf(item -> now - item.getValue().getLastUpdate() > RECYCLE_PERIOD);
         }
-        if (selectedInstance != null) {
-            selectedWRR.sel(totalWeight);
-            return selectedInstance;
+        if (selectedInstance == null) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "no instance found for service:" + svcInstances.getServiceKey());
         }
-        return svcInstances.getInstances().get(0);
+        selectedWRR.sel(totalWeight);
+        return selectedInstance;
+
     }
 
     private int getWeight(Map<String, InstanceWeight> dynamicWeights, Instance instance) {
