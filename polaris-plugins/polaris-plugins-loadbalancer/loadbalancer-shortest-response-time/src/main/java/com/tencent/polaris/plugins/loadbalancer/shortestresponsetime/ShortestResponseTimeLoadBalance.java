@@ -124,8 +124,8 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
                 .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
                 .collect(Collectors.toList());
         if (instanceList.isEmpty()) {
-            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
-                    "[ShortestResponseTimeLoadBalancer] No instance found. serviceKey=" + serviceKey.toString());
+            LOG.error("[ShortestResponseTimeLoadBalancer] No instance found. serviceKey={}", serviceKey.toString());
+            return null;
         }
         int length = instanceList.size();
         long[] instanceElapsed = new long[length];
