@@ -29,7 +29,7 @@ public class InstancesStatisticUpdater {
         this.localRegistry = localRegistry;
     }
 
-    public void updateInstanceStatistic(InstanceGauge result) {
+    public void updateInstanceStatistic(InstanceGauge result) throws PolarisException {
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         ServiceInstances serviceInstances = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true));
