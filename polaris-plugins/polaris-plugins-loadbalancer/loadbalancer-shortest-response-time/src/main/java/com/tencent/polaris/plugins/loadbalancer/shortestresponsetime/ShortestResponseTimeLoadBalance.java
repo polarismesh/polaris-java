@@ -103,6 +103,9 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances instances) throws PolarisException {
+        if(instances==null){
+             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "instances is null");
+        }
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
@@ -125,8 +128,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
                 .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
                 .collect(Collectors.toList());
         if (instanceList.isEmpty()) {
-            LOG.error("[ShortestResponseTimeLoadBalancer] No instance found. serviceKey={}", serviceKey.toString());
-            return null;
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "No instance found. serviceKey=" + serviceKey.toString());
         }
         int length = instanceList.size();
         long[] instanceElapsed = new long[length];

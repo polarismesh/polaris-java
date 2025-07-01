@@ -56,18 +56,18 @@ public class ConsistentHashLoadBalance extends Destroyable implements LoadBalanc
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances instances) throws PolarisException {
-        if (instances == null || CollectionUtils.isEmpty(instances.getInstances())) {
-            return null;
+        if (instances == null) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "instances is null");
+        }
+        if (CollectionUtils.isEmpty(instances.getInstances())) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "no instance found, serviceKey: " + instances.getServiceKey());
         }
         TreeMap<Integer, Instance> ring = flowCache.loadPluginCacheObject(getId(), instances,
                 obj -> buildConsistentHashRing((ServiceInstances) obj));
         int invocationHashCode = hashStrategy.getHashCode(criteria.getHashKey());
-        Instance targetInstance = lookup(ring, invocationHashCode);
-        if (targetInstance == null) {
-            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
-                    "no instance found for service:" + instances.getServiceKey());
-        }
-        return targetInstance;
+        return lookup(ring, invocationHashCode);
     }
 
     @Override

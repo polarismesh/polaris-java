@@ -50,7 +50,6 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
     private final ConcurrentMap<String, ConcurrentMap<String, WeightedRoundRobin>> methodWeightMap = new ConcurrentHashMap<>();
 
     protected static class WeightedRoundRobin {
-
         private int weight;
         private final AtomicLong current = new AtomicLong(0);
         private long lastUpdate;
@@ -83,9 +82,16 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances svcInstances) throws PolarisException {
+        if (svcInstances == null) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "instances is null");
+        }
+        if (CollectionUtils.isEmpty(svcInstances.getInstances())) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "no instance found, serviceKey: " + svcInstances.getService());
+        }
         String key = svcInstances.getNamespace() + "." + svcInstances.getService();
-        ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key,
-                k -> new ConcurrentHashMap<>());
+        ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
         int totalWeight = 0;
         long maxCurrent = Long.MIN_VALUE;
         long now = System.currentTimeMillis();
@@ -116,13 +122,11 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
         if (svcInstances.getInstances().size() != map.size()) {
             map.entrySet().removeIf(item -> now - item.getValue().getLastUpdate() > RECYCLE_PERIOD);
         }
-        if (selectedInstance == null) {
-            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
-                    "no instance found for service:" + svcInstances.getServiceKey());
+        if (selectedInstance != null) {
+            selectedWRR.sel(totalWeight);
+            return selectedInstance;
         }
-        selectedWRR.sel(totalWeight);
-        return selectedInstance;
-
+        return svcInstances.getInstances().get(0);
     }
 
     private int getWeight(Map<String, InstanceWeight> dynamicWeights, Instance instance) {
