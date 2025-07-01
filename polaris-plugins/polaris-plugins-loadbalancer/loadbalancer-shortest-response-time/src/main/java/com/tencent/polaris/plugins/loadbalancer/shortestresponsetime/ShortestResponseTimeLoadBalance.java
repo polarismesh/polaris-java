@@ -4,6 +4,7 @@ import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -122,7 +123,10 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         List<Instance> instanceList = localInstanceList.stream()
                 .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
                 .collect(Collectors.toList());
-
+        if (instanceList.isEmpty()) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "[ShortestResponseTimeLoadBalancer] No instance found. serviceKey=" + serviceKey.toString());
+        }
         int length = instanceList.size();
         long[] instanceElapsed = new long[length];
         long[] instanceCount = new long[length];
@@ -140,10 +144,12 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         // calculate instance weight
         long totalWeight = 0;
         long[] instanceWeight = new long[length];
+
         long base = 100000;
         for (int i = 0; i < length; i++) {
             // weight = base * 100 if elapsed = 0
             // weight = base / elapsed if elapsed > 0
+            // if an instance elapsed over base time, weight will be 0
             instanceWeight[i] = (instanceElapsed[i] == 0) ? base * 100 : base / instanceElapsed[i];
             totalWeight += instanceWeight[i];
         }
