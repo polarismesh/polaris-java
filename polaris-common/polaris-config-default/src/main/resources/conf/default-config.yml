@@ -237,6 +237,11 @@ consumer:
   loadbalancer:
     #描述: 负载均衡类型（已注册的负载均衡插件名）
     type: weightedRandom
+    #描述: 负载均衡插件配置
+    plugin:
+      #描述: 最短响应时间负载均衡的窗口滑动周期
+      shortestResponseTime:
+        slidePeriod: 30000ms
   #描述:节点熔断相关配置
   circuitBreaker:
     #描述: 是否启用本地节点熔断功能

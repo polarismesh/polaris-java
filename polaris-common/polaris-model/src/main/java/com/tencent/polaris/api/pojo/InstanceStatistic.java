@@ -4,13 +4,37 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class InstanceStatistic {
 
+    /**
+     * 总调用次数统计
+     */
     private final AtomicLong totalCount;
+    /**
+     * 成功调用次数统计
+     */
     private final AtomicLong succeededCount;
+    /**
+     * 总调用耗时统计
+     */
     private final AtomicLong totalElapsed;
+    /**
+     * 成功调用耗时统计
+     */
     private final AtomicLong succeededElapsed;
+    /**
+     * 最后一次成功调用耗时
+     */
     private final AtomicLong lastSucceededElapsed;
+    /**
+     * 最大调用耗时
+     */
     private final AtomicLong maxElapsed;
+    /**
+     * 失败调用最大耗时
+     */
     private final AtomicLong failedMaxElapsed;
+    /**
+     * 成功调用最大耗时
+     */
     private final AtomicLong succeededMaxElapsed;
 
     public InstanceStatistic() {

@@ -10,7 +10,7 @@ public class ShortestResponseTimeLoadBalanceConfig implements Verifier {
 
     @JsonProperty
     @JsonDeserialize(using = TimeStrJsonDeserializer.class)
-    private long slidePeriod = 30000;
+    private long slidePeriod;
 
     public long getSlidePeriod() {
         return slidePeriod;
@@ -27,10 +27,10 @@ public class ShortestResponseTimeLoadBalanceConfig implements Verifier {
 
     @Override
     public void setDefault(Object defaultObject) {
-        if (null != defaultObject) {
-            ShortestResponseTimeLoadBalanceConfig shortestResponseTimeLoadBalanceConfig = (ShortestResponseTimeLoadBalanceConfig) defaultObject;
-            if (0 == slidePeriod) {
-                setSlidePeriod(shortestResponseTimeLoadBalanceConfig.getSlidePeriod());
+        if (defaultObject instanceof ShortestResponseTimeLoadBalanceConfig) {
+            ShortestResponseTimeLoadBalanceConfig defaultConfig = (ShortestResponseTimeLoadBalanceConfig) defaultObject;
+            if (slidePeriod == 0) {
+                slidePeriod = defaultConfig.getSlidePeriod();
             }
         }
     }

@@ -39,7 +39,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
 
     LocalRegistry localRegistry;
 
-    private long slidePeriod = 10000;
+    private long slidePeriod;
 
     private final ConcurrentMap<Instance, SlideWindowData> instanceMap = new ConcurrentHashMap<>();
 
@@ -49,41 +49,47 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
 
     private ExecutorService executorService;
 
+    /**
+     * Sliding window data class, used to record instance statistic offsets
+     */
     protected class SlideWindowData {
 
+        /**
+         * Offset of successful calls
+         */
         private long succeededOffset;
+        /**
+         * Offset of successful call elapsed time
+         */
         private long succeededElapsedOffset;
 
-
+        /**
+         * Constructor, initializes offsets to 0
+         */
         public SlideWindowData() {
             this.succeededOffset = 0;
             this.succeededElapsedOffset = 0;
         }
 
+        /**
+         * Reset sliding window data
+         */
         public void reset(InstanceStatistic instanceStatistic) {
             if (instanceStatistic != null) {
                 this.succeededOffset = instanceStatistic.getSucceededCount();
                 this.succeededElapsedOffset = instanceStatistic.getSucceededElapsed();
             }
+        }
 
-        }
-        public void update(InstanceStatistic instanceStatistic) {
-            if (instanceStatistic != null) {
-                long avgElapsed = getSucceededAverageElapsed(instanceStatistic);
-                this.succeededOffset++;
-                this.succeededElapsedOffset += avgElapsed;
-            }
-        }
+        /**
+         * Calculate average elapsed time within the sliding window
+         */
         public long getSucceededAverageElapsed(InstanceStatistic instanceStatistic) {
-            if (instanceStatistic != null) {
-                if (instanceStatistic.getSucceededCount() - this.succeededOffset == 0) {
-                    return 0;
-                }
-                return (instanceStatistic.getSucceededElapsed() - this.succeededElapsedOffset) / (instanceStatistic.getSucceededCount() - this.succeededOffset);
-            }else{
-                return 0;
+            if (instanceStatistic.getSucceededCount() - this.succeededOffset == 0) {
+                return 0;  // Returns 0 if there are no requests
             }
-
+            return (instanceStatistic.getSucceededElapsed() - this.succeededElapsedOffset) / (
+                    instanceStatistic.getSucceededCount() - this.succeededOffset);
         }
     }
 
@@ -92,37 +98,43 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
-        List<Instance> localInstanceList = localRegistry.getInstances(new ResourceFilter(serviceEventKey,true,true)).getInstances();
+        List<Instance> localInstanceList = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true))
+                .getInstances();
 
-        // 使用Set优化交集查找
+        // Use Set to optimize intersection lookup
         Set<String> instanceKeys = requestInstanceList.stream()
-            .map(instance -> instance.getHost() + ":" + instance.getPort())
-            .collect(Collectors.toSet());
+                .map(instance -> instance.getHost() + ":" + instance.getPort())
+                .collect(Collectors.toSet());
 
         List<Instance> instanceList = localInstanceList.stream()
-            .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
-            .collect(Collectors.toList());
+                .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
+                .collect(Collectors.toList());
 
         int length = instanceList.size();
         long[] instanceElapsed = new long[length];
         long[] instanceCount = new long[length];
+
+        // calculate instance avg elapsed time and count in slide window
         for (int i = 0; i < length; i++) {
             InstanceByProto instance = (InstanceByProto) instanceList.get(i);
-            InstanceStatistic instanceStatistic = Optional.ofNullable(instance.getInstanceLocalValue().getInstanceStatistic())
-                .orElse(new InstanceStatistic());
+            InstanceStatistic instanceStatistic = Optional.ofNullable(
+                            instance.getInstanceLocalValue().getInstanceStatistic())
+                    .orElse(new InstanceStatistic());
             SlideWindowData slideWindowData = instanceMap.computeIfAbsent(instance, k -> new SlideWindowData());
             instanceElapsed[i] = slideWindowData.getSucceededAverageElapsed(instanceStatistic);
             instanceCount[i] = instanceStatistic.getSucceededCount() - slideWindowData.succeededOffset;
         }
-
-
+        // calculate instance weight
         long totalWeight = 0;
         long[] instanceWeight = new long[length];
         long base = 100000;
-        for(int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++) {
+            // weight = base * 100 if elapsed = 0
+            // weight = base / elapsed if elapsed > 0
             instanceWeight[i] = (instanceElapsed[i] == 0) ? base * 100 : base / instanceElapsed[i];
             totalWeight += instanceWeight[i];
         }
+        // random select instance based on calculated weight
         long randomWeight = (long) (Math.random() * totalWeight);
         long currentWeight = 0;
         Instance targetInstance = instanceList.get(0);
@@ -133,22 +145,22 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
                 break;
             }
         }
-
         if (System.currentTimeMillis() - lastUpdateTime > slidePeriod
                 && onResetSlideWindow.compareAndSet(false, true)) {
-
-            // reset slideWindowData in async way
+            // Reset slideWindowData asynchronously
             executorService.execute(() -> {
-                LOG.info(String.format("[ShortestResponseTimeLoadBalance] Refresh windows. \nIn last window: Instances called: %s , avg elapsed :%s",Arrays.toString(instanceCount), Arrays.toString(instanceElapsed)));
+                LOG.info(String.format(
+                        "[ShortestResponseTimeLoadBalance] Refresh windows. \nIn last window: Instances called: %s , avg elapsed :%s",
+                        Arrays.toString(instanceCount), Arrays.toString(instanceElapsed)));
                 instanceMap.forEach((instance, slideWindowData) -> {
-                    InstanceStatistic instanceStatistic = ((InstanceByProto)instance).getInstanceLocalValue().getInstanceStatistic();
-                    slideWindowData.reset(instanceStatistic != null ? instanceStatistic : new InstanceStatistic());
+                    InstanceStatistic instanceStatistic = ((InstanceByProto) instance).getInstanceLocalValue()
+                            .getInstanceStatistic();
+                    slideWindowData.reset(instanceStatistic);
                 });
                 lastUpdateTime = System.currentTimeMillis();
                 onResetSlideWindow.set(false);
             });
         }
-
         return targetInstance;
     }
 
@@ -159,9 +171,10 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-         this.executorService = Executors.newSingleThreadExecutor();
+        this.executorService = Executors.newSingleThreadExecutor();
 
     }
+
     @Override
     public String getName() {
         return LoadBalanceConfig.LOAD_BALANCE_SHORTEST_RESPONSE_TIME;
