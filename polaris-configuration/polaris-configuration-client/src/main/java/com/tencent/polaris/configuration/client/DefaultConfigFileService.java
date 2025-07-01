@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,11 @@
 
 package com.tencent.polaris.configuration.client;
 
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.annonation.JustForTest;
+import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
-import com.tencent.polaris.configuration.api.core.ConfigFile;
-import com.tencent.polaris.configuration.api.core.ConfigFileGroup;
-import com.tencent.polaris.configuration.api.core.ConfigFileGroupMetadata;
-import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
-import com.tencent.polaris.configuration.api.core.ConfigFileService;
-import com.tencent.polaris.configuration.api.core.ConfigKVFile;
+import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
 import com.tencent.polaris.configuration.api.flow.ConfigFileGroupFlow;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileGroupMetadata;

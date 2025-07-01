@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@
 package com.tencent.polaris.configuration.client;
 
 import com.google.gson.reflect.TypeToken;
-
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.configuration.client.internal.ConfigFileRepo;
 import com.tencent.polaris.configuration.client.internal.ConfigYamlFile;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +28,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.List;
-import java.util.Properties;
 
 import static org.mockito.Mockito.when;
 

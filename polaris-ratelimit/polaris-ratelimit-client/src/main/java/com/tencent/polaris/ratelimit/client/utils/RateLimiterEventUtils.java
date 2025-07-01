@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
 package com.tencent.polaris.ratelimit.client.utils;
 
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.plugin.event.EventConstants;
+import com.tencent.polaris.api.plugin.event.FlowEvent;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;

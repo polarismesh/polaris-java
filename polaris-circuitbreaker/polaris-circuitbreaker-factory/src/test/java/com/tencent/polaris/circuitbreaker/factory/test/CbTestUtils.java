@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 
 package com.tencent.polaris.circuitbreaker.factory.test;
 
+import com.google.protobuf.util.JsonFormat;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
+import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto;
+import org.junit.Assert;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
-
-import com.google.protobuf.util.JsonFormat;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
-import com.tencent.polaris.specification.api.v1.fault.tolerance.FaultDetectorProto;
-import org.junit.Assert;
 
 public class CbTestUtils {
 

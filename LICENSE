@@ -1,6 +1,6 @@
 Tencent is pleased to support the open source community by making polaris-java available.
 
-Copyright (C) 2021 THL A29 Limited, a Tencent company.  All rights reserved. 
+Copyright (C) 2021 Tencent.  All rights reserved.
 
 A polaris-java is licensed under the BSD 3-Clause License. A copy of the BSD 3-Clause License is included in this file.
 
@@ -258,7 +258,7 @@ END OF TERMS AND CONDITIONS
 
 
 Open Source Software Licensed Under the MIT License:
-The below software in this distribution may have been modified by THL A29 Limited
+The below software in this distribution may have been modified by Tencent
 --------------------------------------------------------------------
 1. go-restful
 Copyright (c) 2012,2013 Ernest Micklei

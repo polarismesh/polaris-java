@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,10 @@ import com.google.gson.Gson;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
-import com.tencent.polaris.configuration.api.core.ChangeType;
-import com.tencent.polaris.configuration.api.core.ConfigFile;
-import com.tencent.polaris.configuration.api.core.ConfigFileChangeEvent;
-import com.tencent.polaris.configuration.api.core.ConfigFileChangeListener;
-import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
+import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Objects;
@@ -38,7 +36,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
 
 /**
  * @author lepdou 2022-03-01

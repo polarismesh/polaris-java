@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 
 package com.tencent.polaris.configuration.api.core;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+
 import java.util.Map;
 import java.util.Set;
-
-import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 
 /**
  * @author lepdou 2022-03-01
