@@ -42,14 +42,14 @@ public class InstancesStatisticUpdater {
             return;
         }
         if (serviceInstances == null) {
-            throw new PolarisException(SERVICE_NOT_FOUND,
-                    "[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
-                            + serviceKey.getNamespace() + " not found");
+            LOG.warn("[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
+                    + serviceKey.getNamespace() + " not found");
+            return;
         }
         if (CollectionUtils.isEmpty(serviceInstances.getInstances())) {
-            throw new PolarisException(INSTANCE_NOT_FOUND,
-                    "[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
-                            + serviceKey.getNamespace() + " has no instance");
+            LOG.warn("[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
+                    + serviceKey.getNamespace() + " has no instance");
+            return;
         }
 
         List<Instance> instances = serviceInstances.getInstances();
@@ -69,8 +69,7 @@ public class InstancesStatisticUpdater {
                             + instanceStatistic.getTotalCount() + "TotalElapsed"
                             + instanceStatistic.getTotalElapsed());
         } else {
-            throw new PolarisException(INSTANCE_NOT_FOUND,
-                    "[InstanceStatisticUpdater]: " + result.getHost() + ":" + result.getPort() + ": not found");
+            LOG.warn("[InstanceStatisticUpdater]: " + result.getHost() + ":" + result.getPort() + ": not found");
         }
     }
 }
