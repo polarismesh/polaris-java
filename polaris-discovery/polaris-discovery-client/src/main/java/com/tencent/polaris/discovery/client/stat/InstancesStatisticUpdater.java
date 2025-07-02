@@ -15,6 +15,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.List;
@@ -45,7 +46,7 @@ public class InstancesStatisticUpdater {
                     "[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
                             + serviceKey.getNamespace() + " not found");
         }
-        if (serviceInstances.getInstances() == null || serviceInstances.getInstances().isEmpty()) {
+        if (CollectionUtils.isEmpty(serviceInstances.getInstances())) {
             throw new PolarisException(INSTANCE_NOT_FOUND,
                     "[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
                             + serviceKey.getNamespace() + " has no instance");
