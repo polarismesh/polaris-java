@@ -38,6 +38,10 @@ public class InstancesStatisticUpdater {
             return;
         }
         List<Instance> instances = serviceInstances.getInstances();
+        if (instances.isEmpty()) {
+            throw new PolarisException(INSTANCE_NOT_FOUND,
+                    "[InstanceStatisticUpdater]: " + result.getHost() + ":" + result.getPort() + ": not found");
+        }
         InstanceByProto targetInstance = null;
         for (Instance instance : instances) {
             if (instance.getHost().equals(result.getHost()) && instance.getPort() == result.getPort()) {
