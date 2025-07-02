@@ -43,6 +43,7 @@ public interface LoadBalanceConfig extends PluginConfig, Verifier {
      */
     String LOAD_BALANCE_WEIGHTED_ROUND_ROBIN = "weightedRoundRobin";
 
+    String LOAD_BALANCE_SHORTEST_RESPONSE_TIME = "shortestResponseTime";
     /**
      * 轮询负载均衡插件名
      */
