@@ -1,6 +1,7 @@
 package com.tencent.polaris.discovery.client.stat;
 
 import static com.tencent.polaris.api.exception.ErrorCode.INSTANCE_NOT_FOUND;
+import static com.tencent.polaris.api.exception.ErrorCode.SERVICE_NOT_FOUND;
 import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_INSTANCE_STATISTIC;
 import static com.tencent.polaris.api.pojo.RetStatus.RetSuccess;
 
@@ -37,11 +38,18 @@ public class InstancesStatisticUpdater {
         if (serviceKey.getNamespace().equals("Polaris")) {
             return;
         }
-        List<Instance> instances = serviceInstances.getInstances();
-        if (instances.isEmpty()) {
-            throw new PolarisException(INSTANCE_NOT_FOUND,
-                    "[InstanceStatisticUpdater]: " + result.getHost() + ":" + result.getPort() + ": not found");
+        if (serviceInstances == null) {
+            throw new PolarisException(SERVICE_NOT_FOUND,
+                    "[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
+                            + serviceKey.getNamespace() + " not found");
         }
+        if (serviceInstances.getInstances() == null || serviceInstances.getInstances().isEmpty()) {
+            throw new PolarisException(INSTANCE_NOT_FOUND,
+                    "[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
+                            + serviceKey.getNamespace() + " has no instance");
+        }
+
+        List<Instance> instances = serviceInstances.getInstances();
         InstanceByProto targetInstance = null;
         for (Instance instance : instances) {
             if (instance.getHost().equals(result.getHost()) && instance.getPort() == result.getPort()) {
