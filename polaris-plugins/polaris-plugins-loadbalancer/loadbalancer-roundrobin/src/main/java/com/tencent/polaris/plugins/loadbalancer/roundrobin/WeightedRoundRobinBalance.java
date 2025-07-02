@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.loadbalancer.roundrobin;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.common.InitContext;
@@ -81,6 +82,14 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances svcInstances) throws PolarisException {
+        if (svcInstances == null) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "instances is null");
+        }
+        if (CollectionUtils.isEmpty(svcInstances.getInstances())) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "no instance found, serviceKey: " + svcInstances.getService());
+        }
         String key = svcInstances.getNamespace() + "." + svcInstances.getService();
         ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
         int totalWeight = 0;
