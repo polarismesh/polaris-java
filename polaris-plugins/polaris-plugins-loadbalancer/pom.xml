@@ -20,6 +20,7 @@
         <module>loadbalancer-random</module>
         <module>loadbalancer-ringhash</module>
         <module>loadbalancer-roundrobin</module>
+        <module>loadbalancer-shortest-response-time</module>
     </modules>
 
     <dependencies>
