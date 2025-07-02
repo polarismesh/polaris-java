@@ -26,6 +26,8 @@ public class InstancesStatisticUpdater {
 
     private final LocalRegistry localRegistry;
 
+    private static final String POLARIS_NAMESPACE = "Polaris";
+
     public InstancesStatisticUpdater(LocalRegistry localRegistry) {
         this.localRegistry = localRegistry;
     }
@@ -35,7 +37,7 @@ public class InstancesStatisticUpdater {
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         ServiceInstances serviceInstances = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true));
         // 如果调用的是北极星内部的服务，则不统计
-        if (serviceKey.getNamespace().equals("Polaris")) {
+        if (serviceKey.getNamespace().equals(POLARIS_NAMESPACE)) {
             return;
         }
         if (serviceInstances == null) {
