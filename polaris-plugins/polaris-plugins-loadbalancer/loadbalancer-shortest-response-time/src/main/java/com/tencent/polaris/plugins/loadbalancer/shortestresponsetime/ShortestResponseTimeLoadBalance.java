@@ -58,7 +58,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
-
+/**
+ * Shortest Response Time Load Balancer
+ *
+ * @author Yuwei Fu
+ */
 public class ShortestResponseTimeLoadBalance extends Destroyable implements LoadBalancer, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShortestResponseTimeLoadBalance.class);
