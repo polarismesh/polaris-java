@@ -34,6 +34,11 @@ import com.tencent.polaris.logging.LoggerFactory;
 import java.util.List;
 import org.slf4j.Logger;
 
+/**
+ * InstancesStatisticUpdater
+ *
+ * @author Yuwei Fu
+ */
 public class InstancesStatisticUpdater {
 
     private static final Logger LOG = LoggerFactory.getLogger(InstancesDetectTask.class);

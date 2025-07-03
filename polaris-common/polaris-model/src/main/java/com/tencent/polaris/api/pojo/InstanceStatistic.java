@@ -19,6 +19,12 @@ package com.tencent.polaris.api.pojo;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Instance Invocation Statistic
+ *
+ * @author Yuwei Fu
+ */
+
 public class InstanceStatistic {
 
     /**
