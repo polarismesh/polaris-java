@@ -105,6 +105,11 @@
             <artifactId>loadbalancer-shortest-response-time</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>loadbalancer-least-connection</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- 依赖节点级熔断插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
