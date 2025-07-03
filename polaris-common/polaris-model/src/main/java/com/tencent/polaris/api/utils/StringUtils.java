@@ -21,6 +21,10 @@ import java.util.*;
 
 public class StringUtils {
 
+    private static final int NOT_FOUND = -1;
+
+    private static final int TO_STRING_LIMIT = 16;
+
     public static final String EMPTY = "";
 
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
@@ -392,20 +396,9 @@ public class StringUtils {
     }
 
     /**
-     * <p>Finds the n-th index within a String, handling {@code null}.
-     * This method uses {@link String#indexOf(String)} if possible.</p>
-     * <p>Note that matches may overlap<p>
-     *
-     * <p>A {@code null} CharSequence will return {@code -1}.</p>
-     *
-     * @param str  the CharSequence to check, may be null
-     * @param searchStr  the CharSequence to find, may be null
-     * @param ordinal  the n-th {@code searchStr} to find, overlapping matches are allowed.
-     * @param lastIndex true if lastOrdinalIndexOf() otherwise false if ordinalIndexOf()
-     * @return the n-th index of the search CharSequence,
-     *  {@code -1} ({@code INDEX_NOT_FOUND}) if no match or {@code null} string input
+     * Copy from commons-lang3.
+     * {@link org.apache.commons.lang3.StringUtils#ordinalIndexOf(java.lang.CharSequence, java.lang.CharSequence, int, boolean)}
      */
-    // Shared code between ordinalIndexOf(String, String, int) and lastOrdinalIndexOf(String, String, int)
     private static int ordinalIndexOf(final CharSequence str, final CharSequence searchStr, final int ordinal, final boolean lastIndex) {
         if (str == null || searchStr == null || ordinal <= 0) {
             return INDEX_NOT_FOUND;
@@ -419,9 +412,9 @@ public class StringUtils {
         int index = lastIndex ? str.length() : INDEX_NOT_FOUND;
         do {
             if (lastIndex) {
-                index = CharSequenceUtils.lastIndexOf(str, searchStr, index - 1); // step backwards thru string
+                index = lastIndexOf(str, searchStr, index - 1); // step backwards thru string
             } else {
-                index = CharSequenceUtils.indexOf(str, searchStr, index + 1); // step forwards through string
+                index = indexOf(str, searchStr, index + 1); // step forwards through string
             }
             if (index < 0) {
                 return index;
@@ -429,6 +422,146 @@ public class StringUtils {
             found++;
         } while (found < ordinal);
         return index;
+    }
+
+    /**
+     * Copy from commons-lang3.
+     * {@link org.apache.commons.lang3.CharSequenceUtils#lastIndexOf(java.lang.CharSequence, java.lang.CharSequence, int)}
+     */
+    static int lastIndexOf(final CharSequence cs, final int searchChar, int start) {
+        if (cs instanceof String) {
+            return ((String) cs).lastIndexOf(searchChar, start);
+        }
+        final int sz = cs.length();
+        if (start < 0) {
+            return NOT_FOUND;
+        }
+        if (start >= sz) {
+            start = sz - 1;
+        }
+        if (searchChar < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
+            for (int i = start; i >= 0; --i) {
+                if (cs.charAt(i) == searchChar) {
+                    return i;
+                }
+            }
+            return NOT_FOUND;
+        }
+        //supplementary characters (LANG1300)
+        //NOTE - we must do a forward traversal for this to avoid duplicating code points
+        if (searchChar <= Character.MAX_CODE_POINT) {
+            final char[] chars = Character.toChars(searchChar);
+            //make sure it's not the last index
+            if (start == sz - 1) {
+                return NOT_FOUND;
+            }
+            for (int i = start; i >= 0; i--) {
+                final char high = cs.charAt(i);
+                final char low = cs.charAt(i + 1);
+                if (chars[0] == high && chars[1] == low) {
+                    return i;
+                }
+            }
+        }
+        return NOT_FOUND;
+    }
+
+    /**
+     * copy from commons-lang3.
+     * {@link org.apache.commons.lang3.CharSequenceUtils#lastIndexOf(java.lang.CharSequence, int, int)}
+     */
+    static int lastIndexOf(final CharSequence cs, final CharSequence searchChar, int start) {
+        if (searchChar == null || cs == null) {
+            return NOT_FOUND;
+        }
+        if (searchChar instanceof String) {
+            if (cs instanceof String) {
+                return ((String) cs).lastIndexOf((String) searchChar, start);
+            } else if (cs instanceof StringBuilder) {
+                return ((StringBuilder) cs).lastIndexOf((String) searchChar, start);
+            } else if (cs instanceof StringBuffer) {
+                return ((StringBuffer) cs).lastIndexOf((String) searchChar, start);
+            }
+        }
+
+        final int len1 = cs.length();
+        final int len2 = searchChar.length();
+
+        if (start > len1) {
+            start = len1;
+        }
+
+        if (start < 0 || len2 < 0 || len2 > len1) {
+            return NOT_FOUND;
+        }
+
+        if (len2 == 0) {
+            return start;
+        }
+
+        if (len2 <= TO_STRING_LIMIT) {
+            if (cs instanceof String) {
+                return ((String) cs).lastIndexOf(searchChar.toString(), start);
+            } else if (cs instanceof StringBuilder) {
+                return ((StringBuilder) cs).lastIndexOf(searchChar.toString(), start);
+            } else if (cs instanceof StringBuffer) {
+                return ((StringBuffer) cs).lastIndexOf(searchChar.toString(), start);
+            }
+        }
+
+        if (start + len2 > len1) {
+            start = len1 - len2;
+        }
+
+        final char char0 = searchChar.charAt(0);
+
+        int i = start;
+        while (true) {
+            while (cs.charAt(i) != char0) {
+                i--;
+                if (i < 0) {
+                    return NOT_FOUND;
+                }
+            }
+            if (checkLaterThan1(cs, searchChar, len2, i)) {
+                return i;
+            }
+            i--;
+            if (i < 0) {
+                return NOT_FOUND;
+            }
+        }
+    }
+
+    /**
+     * copy from commons-lang3.
+     * {link org.apache.commons.lang3.CharSequenceUtils#checkLaterThan1(java.lang.CharSequence, java.lang.CharSequence, int, int)}
+     */
+    private static boolean checkLaterThan1(final CharSequence cs, final CharSequence searchChar, final int len2, final int start1) {
+        for (int i = 1, j = len2 - 1; i <= j; i++, j--) {
+            if (cs.charAt(start1 + i) != searchChar.charAt(i)
+                    ||
+                    cs.charAt(start1 + j) != searchChar.charAt(j)
+            ) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * copy from commons-lang3.
+     * {@link org.apache.commons.lang3.CharSequenceUtils#indexOf(java.lang.CharSequence, java.lang.CharSequence, int)}
+     */
+    static int indexOf(final CharSequence cs, final CharSequence searchChar, final int start) {
+        if (cs instanceof String) {
+            return ((String) cs).indexOf(searchChar.toString(), start);
+        } else if (cs instanceof StringBuilder) {
+            return ((StringBuilder) cs).indexOf(searchChar.toString(), start);
+        } else if (cs instanceof StringBuffer) {
+            return ((StringBuffer) cs).indexOf(searchChar.toString(), start);
+        }
+        return cs.toString().indexOf(searchChar.toString(), start);
     }
 
 }
