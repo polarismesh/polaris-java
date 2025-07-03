@@ -84,9 +84,6 @@ public class TrieUtil {
         } else {
             method = null;
         }
-        // 因为前端的改动（最初的 tagValue 只有 path，某次前端组件改动后变成了 path-method，非客户提的），有兼容性问题，
-        // 临时简化处理，不处理 method，前面逻辑保留是为了取出正确的 path
-        method = null;
         String[] apiPaths = path.split("/");
 
         TrieNode<String> node = root;
@@ -100,12 +97,21 @@ public class TrieUtil {
                 if (node == null) {
                     return false;
                 } else {
-                    return StringUtils.equals(TrieNode.SIMPLE_VALID_INFO + "method:" + method, node.getNodeInfo());
+                    return checkApiNodeInfo(node, method);
                 }
             }
         }
 
         return false;
+    }
+
+    public static boolean checkApiNodeInfo(TrieNode<String> node, String method) {
+        // trie 的 node info 里 method 为 null，说明是旧规则，兼容作用，直接匹配
+        if (StringUtils.equals(TrieNode.SIMPLE_VALID_INFO + "method:" + "null", node.getNodeInfo())) {
+            return true;
+        } else {
+            return StringUtils.equals(TrieNode.SIMPLE_VALID_INFO + "method:" + method, node.getNodeInfo());
+        }
     }
 
     public static TrieNode<String> buildConfigTrieNode(String prefix) {

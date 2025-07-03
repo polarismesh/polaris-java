@@ -26,57 +26,57 @@ public final class TsfMetadataConstants {
     /**
      * tsf application id.
      */
-    public static String TSF_APPLICATION_ID = "TSF_APPLICATION_ID";
+    public static final String TSF_APPLICATION_ID = "TSF_APPLICATION_ID";
 
     /**
      * tsf program version.
      */
-    public static String TSF_PROG_VERSION = "TSF_PROG_VERSION";
+    public static final String TSF_PROG_VERSION = "TSF_PROG_VERSION";
 
     /**
      * tsf group id.
      */
-    public static String TSF_GROUP_ID = "TSF_GROUP_ID";
+    public static final String TSF_GROUP_ID = "TSF_GROUP_ID";
 
     /**
      * tsf namespace id.
      */
-    public static String TSF_NAMESPACE_ID = "TSF_NAMESPACE_ID";
+    public static final String TSF_NAMESPACE_ID = "TSF_NAMESPACE_ID";
 
     /**
      * tsf instance id.
      */
-    public static String TSF_INSTNACE_ID = "TSF_INSTNACE_ID";
+    public static final String TSF_INSTNACE_ID = "TSF_INSTNACE_ID";
 
     /**
      * tsf region.
      */
-    public static String TSF_REGION = "TSF_REGION";
+    public static final String TSF_REGION = "TSF_REGION";
 
     /**
      * tsf zone.
      */
-    public static String TSF_ZONE = "TSF_ZONE";
+    public static final String TSF_ZONE = "TSF_ZONE";
 
     /**
      * tsf SDK version.
      */
-    public static String TSF_SDK_VERSION = "TSF_SDK_VERSION";
+    public static final String TSF_SDK_VERSION = "TSF_SDK_VERSION";
 
     /**
      * tsf tags.
      */
-    public static String TSF_TAGS = "TSF_TAGS";
+    public static final String TSF_TAGS = "TSF_TAGS";
 
     /**
      * IPV4.
      */
-    public static String TSF_ADDRESS_IPV4 = "TSF_ADDRESS_IPV4";
+    public static final String TSF_ADDRESS_IPV4 = "TSF_ADDRESS_IPV4";
 
     /**
      * IPV6.
      */
-    public static String TSF_ADDRESS_IPV6 = "TSF_ADDRESS_IPV6";
+    public static final String TSF_ADDRESS_IPV6 = "TSF_ADDRESS_IPV6";
 
     private TsfMetadataConstants() {
     }
