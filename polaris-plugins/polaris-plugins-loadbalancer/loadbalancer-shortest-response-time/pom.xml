@@ -11,6 +11,8 @@
     </parent>
 
     <artifactId>loadbalancer-shortest-response-time</artifactId>
+    <name>Polaris Plugins Loadbalancer Shortest Response Time</name>
+    <description>Polaris Plugins Loadbalancer Shortest Response Time</description>
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

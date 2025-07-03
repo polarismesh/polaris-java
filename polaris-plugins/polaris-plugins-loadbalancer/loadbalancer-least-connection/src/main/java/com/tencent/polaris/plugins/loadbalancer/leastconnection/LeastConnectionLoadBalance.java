@@ -27,16 +27,23 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
-import com.tencent.polaris.api.plugin.registry.ResourceFilter;
+import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.client.flow.DefaultFlowControlParam;
+import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -50,39 +57,53 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
 
     private LocalRegistry localRegistry;
 
+    private Extensions extensions;
+
     private static final Logger LOG = LoggerFactory.getLogger(LeastConnectionLoadBalance.class);
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances instances) throws PolarisException {
-        if(instances==null){
-            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "instances is null");
+        if (instances == null||CollectionUtils.isEmpty(instances.getInstances())) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "request instances is empty");
         }
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
+        Map<String, Instance> requestInstanceMap = new HashMap<>(requestInstanceList.size());
+        requestInstanceList.forEach(
+                instance -> requestInstanceMap.put(instance.getHost() + ":" + instance.getPort(), instance));
+
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
-        List<Instance> localInstanceList = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true))
-                .getInstances();
+        Set<ServiceEventKey> serviceEventKeySet = new HashSet<>();
+        serviceEventKeySet.add(serviceEventKey);
+        DefaultServiceEventKeysProvider svcKeysProvider = new DefaultServiceEventKeysProvider();
+        svcKeysProvider.setSvcEventKeys(serviceEventKeySet);
+        DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
+        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, svcKeysProvider,
+                engineFlowControlParam);
+        ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(serviceEventKey);
 
-        Set<String> instanceKeys = requestInstanceList.stream()
-                .map(instance -> instance.getHost() + ":" + instance.getPort())
-                .collect(Collectors.toSet());
-
+        List<Instance> localInstanceList = serviceInstances.getInstances();
+        if (CollectionUtils.isEmpty(localInstanceList)) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "local instances is empty");
+        }
+        // intersection lookup
         List<Instance> instanceList = localInstanceList.stream()
-                .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
+                .filter(instance -> requestInstanceMap.containsKey(instance.getHost() + ":" + instance.getPort()))
                 .collect(Collectors.toList());
         if (instanceList.isEmpty()) {
-            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "No instance found. serviceKey=" + serviceKey.toString());
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "No instance found. serviceKey=" + serviceKey.toString());
         }
 
         int[] candidateIndexes = new int[instanceList.size()];
         int sameActiveCount = 0;
-        long leastActive = -1;
+        long leastActive = Long.MAX_VALUE;
         long[] instanceActive = new long[instanceList.size()];
         for (int i = 0; i < instanceList.size(); i++) {
             InstanceByProto instance = (InstanceByProto) instanceList.get(i);
             long curActive = instance.getInstanceLocalValue().getInstanceStatistic().getActive();
             instanceActive[i] = curActive;
-            if (leastActive == -1 || curActive < leastActive) {
+            if (curActive < leastActive) {
                 leastActive = curActive;
                 sameActiveCount = 0;
                 candidateIndexes[sameActiveCount++] = i;
@@ -94,9 +115,10 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
         // return it directly and increase its active count.
         if (sameActiveCount == 1) {
             InstanceByProto targetInstance = (InstanceByProto) instanceList.get(candidateIndexes[0]);
-            targetInstance.getInstanceLocalValue().getInstanceStatistic().getAndIncrementActive();
-            LOG.debug("[LeastConnectionLoadBalance] instances active count: {}, choose instance: {}:{}", instanceActive, targetInstance.getHost(), targetInstance.getPort());
-            return targetInstance;
+            targetInstance.getInstanceLocalValue().getInstanceStatistic().incrementAndGetActive();
+            LOG.debug("[LeastConnectionLoadBalance] instances active count: {}, choose instance: {}:{}", instanceActive,
+                    targetInstance.getHost(), targetInstance.getPort());
+            return requestInstanceMap.get(targetInstance.getHost() + ":" + targetInstance.getPort());
         }
 
         // If there are multiple instances with the same active connections,
@@ -112,15 +134,13 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
             randomWeight -= candidatesWeights[i];
             if (randomWeight < 0) {
                 InstanceByProto targetInstance = (InstanceByProto) instanceList.get(candidateIndexes[i]);
-                targetInstance.getInstanceLocalValue().getInstanceStatistic().getAndIncrementActive();
-                LOG.debug("[LeastConnectionLoadBalance] instances active count: {}, choose instance: {}:{}", instanceActive, targetInstance.getHost(), targetInstance.getPort());
-                return targetInstance;
+                targetInstance.getInstanceLocalValue().getInstanceStatistic().incrementAndGetActive();
+                LOG.debug("[LeastConnectionLoadBalance] instances active count: {}, choose instance: {}:{}",
+                        instanceActive, targetInstance.getHost(), targetInstance.getPort());
+                return requestInstanceMap.get(targetInstance.getHost() + ":" + targetInstance.getPort());
             }
         }
-        InstanceByProto targetInstance = (InstanceByProto) instances.getInstances().get(instances.getTotalWeight() % requestInstanceList.size());
-        targetInstance.getInstanceLocalValue().getInstanceStatistic().getAndIncrementActive();
-        LOG.debug("[LeastConnectionLoadBalance] instances active count: {}, choose instance: {}:{}", instanceActive, targetInstance.getHost(), targetInstance.getPort());
-        return targetInstance;
+        throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "No instance selected. serviceKey=" + serviceKey.toString());
     }
 
 
@@ -140,6 +160,7 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
 
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
+        this.extensions = extensions;
         localRegistry = extensions.getLocalRegistry();
     }
 

@@ -76,7 +76,7 @@ public class InstancesStatisticUpdater {
         if (targetInstance != null) {
             InstanceStatistic instanceStatistic = targetInstance.getInstanceLocalValue().getInstanceStatistic();
             instanceStatistic.count(result.getDelay(), RetSuccess.equals(result.getRetStatus()));
-            instanceStatistic.getAndDecrementActive();
+            instanceStatistic.decrementAndGetActive();
             LOG.debug(
                     "[InstanceStatisticUpdater]: " + targetInstance.getHost() + ":" + targetInstance.getPort() + ":"
                             + result.getPort() + ": Delay: " + result.getDelay() + "TotalCount"

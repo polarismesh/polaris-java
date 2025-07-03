@@ -121,11 +121,11 @@ public class InstanceStatistic {
          return active.get();
     }
 
-    public long getAndIncrementActive() {
+    public long incrementAndGetActive() {
         return active.incrementAndGet();
     }
 
-    public long getAndDecrementActive() {
+    public long decrementAndGetActive() {
         return active.decrementAndGet();
     }
 

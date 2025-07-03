@@ -11,8 +11,13 @@
     </parent>
 
     <artifactId>loadbalancer-least-connection</artifactId>
-
     <name>Polaris Plugins Loadbalancer Least Connection</name>
-    <description>Polaris Plugins Loadbalancer Least Connections JAR</description>
-
+    <description>Polaris Plugins Loadbalancer Least Connection </description>
+    <dependencies>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-client</artifactId>
+            <version>${revision}</version>
+        </dependency>
+    </dependencies>
 </project>
