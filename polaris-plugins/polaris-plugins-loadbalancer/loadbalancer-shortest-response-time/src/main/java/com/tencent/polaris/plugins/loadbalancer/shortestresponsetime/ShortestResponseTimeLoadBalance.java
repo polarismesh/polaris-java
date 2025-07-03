@@ -58,6 +58,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
+
 /**
  * Shortest Response Time Load Balancer
  *
@@ -132,9 +133,13 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         }
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
+
         Map<String, Instance> requestInstanceMap = new HashMap<>();
-        requestInstanceList.forEach(
-                instance -> requestInstanceMap.put(instance.getHost() + ":" + instance.getPort(), instance));
+        for (Instance instance : requestInstanceList) {
+            if (instance.getWeight() != 0) {
+                requestInstanceMap.put(instance.getHost() + ":" + instance.getPort(), instance);
+            }
+        }
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         DefaultServiceEventKeysProvider svcKeysProvider = new DefaultServiceEventKeysProvider();
         Set<ServiceEventKey> serviceEventKeySet = new HashSet<>();
@@ -165,8 +170,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         for (int i = 0; i < length; i++) {
             InstanceByProto instance = (InstanceByProto) instanceList.get(i);
             InstanceStatistic instanceStatistic = Optional.ofNullable(
-                            instance.getInstanceLocalValue().getInstanceStatistic())
-                    .orElse(new InstanceStatistic());
+                    instance.getInstanceLocalValue().getInstanceStatistic()).orElse(new InstanceStatistic());
             SlideWindowData slideWindowData = instanceMap.computeIfAbsent(instance, k -> new SlideWindowData());
             instanceElapsed[i] = slideWindowData.getSucceededAverageElapsed(instanceStatistic);
             instanceCount[i] = instanceStatistic.getSucceededCount() - slideWindowData.succeededOffset;
@@ -197,8 +201,8 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
                 break;
             }
         }
-        if (System.currentTimeMillis() - lastUpdateTime > slidePeriod
-                && onResetSlideWindow.compareAndSet(false, true)) {
+        if (System.currentTimeMillis() - lastUpdateTime > slidePeriod && onResetSlideWindow.compareAndSet(false,
+                true)) {
             // Reset slideWindowData asynchronously
             executorService.execute(() -> {
                 LOG.info(String.format(
@@ -241,8 +245,8 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
     public void postContextInit(Extensions ctx) throws PolarisException {
         extensions = ctx;
         localRegistry = ctx.getLocalRegistry();
-        slidePeriod = ctx.getConfiguration().getConsumer().getLoadbalancer().getPluginConfig(getName(),
-                ShortestResponseTimeLoadBalanceConfig.class).getSlidePeriod();
+        slidePeriod = ctx.getConfiguration().getConsumer().getLoadbalancer()
+                .getPluginConfig(getName(), ShortestResponseTimeLoadBalanceConfig.class).getSlidePeriod();
 
     }
 }

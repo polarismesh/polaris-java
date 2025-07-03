@@ -63,15 +63,17 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances instances) throws PolarisException {
-        if (instances == null||CollectionUtils.isEmpty(instances.getInstances())) {
+        if (instances == null || CollectionUtils.isEmpty(instances.getInstances())) {
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "request instances is empty");
         }
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
         Map<String, Instance> requestInstanceMap = new HashMap<>(requestInstanceList.size());
-        requestInstanceList.forEach(
-                instance -> requestInstanceMap.put(instance.getHost() + ":" + instance.getPort(), instance));
-
+        for (Instance instance : requestInstanceList) {
+            if (instance.getWeight() != 0) {
+                requestInstanceMap.put(instance.getHost() + ":" + instance.getPort(), instance);
+            }
+        }
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         Set<ServiceEventKey> serviceEventKeySet = new HashSet<>();
         serviceEventKeySet.add(serviceEventKey);
@@ -120,7 +122,6 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
                     targetInstance.getHost(), targetInstance.getPort());
             return requestInstanceMap.get(targetInstance.getHost() + ":" + targetInstance.getPort());
         }
-
         // If there are multiple instances with the same active connections,
         // randomly select one by weight and increase its active count.
         int[] candidatesWeights = new int[sameActiveCount];
@@ -140,7 +141,8 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
                 return requestInstanceMap.get(targetInstance.getHost() + ":" + targetInstance.getPort());
             }
         }
-        throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "No instance selected. serviceKey=" + serviceKey.toString());
+        throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                "No instance selected. serviceKey=" + serviceKey.toString());
     }
 
 
