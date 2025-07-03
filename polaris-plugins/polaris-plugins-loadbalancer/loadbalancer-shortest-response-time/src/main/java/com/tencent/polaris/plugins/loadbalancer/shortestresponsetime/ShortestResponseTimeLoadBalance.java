@@ -38,14 +38,17 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.Criteria;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +59,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 
+/**
+ * Shortest Response Time Load Balancer
+ *
+ * @author Yuwei Fu
+ */
 public class ShortestResponseTimeLoadBalance extends Destroyable implements LoadBalancer, PluginConfigProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(ShortestResponseTimeLoadBalance.class);
@@ -120,11 +128,18 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances instances) throws PolarisException {
-        if(instances==null){
-             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "instances is null");
+        if (instances == null || CollectionUtils.isEmpty(instances.getInstances())) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "instances is empty");
         }
         ServiceKey serviceKey = instances.getServiceKey();
         List<Instance> requestInstanceList = instances.getInstances();
+
+        Map<String, Instance> requestInstanceMap = new HashMap<>();
+        for (Instance instance : requestInstanceList) {
+            if (instance.getWeight() != 0) {
+                requestInstanceMap.put(instance.getHost() + ":" + instance.getPort(), instance);
+            }
+        }
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         DefaultServiceEventKeysProvider svcKeysProvider = new DefaultServiceEventKeysProvider();
         Set<ServiceEventKey> serviceEventKeySet = new HashSet<>();
@@ -132,20 +147,20 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         svcKeysProvider.setSvcEventKeys(serviceEventKeySet);
         DefaultFlowControlParam engineFlowControlParam = new DefaultFlowControlParam();
 
-        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions,false, svcKeysProvider, engineFlowControlParam);
+        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, svcKeysProvider,
+                engineFlowControlParam);
         ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(serviceEventKey);
         List<Instance> localInstanceList = serviceInstances.getInstances();
-
-        // Use Set to optimize intersection lookup
-        Set<String> instanceKeys = requestInstanceList.stream()
-                .map(instance -> instance.getHost() + ":" + instance.getPort())
-                .collect(Collectors.toSet());
-
+        if (CollectionUtils.isEmpty(localInstanceList)) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "local instances is empty");
+        }
+        // intersection lookup
         List<Instance> instanceList = localInstanceList.stream()
-                .filter(instance -> instanceKeys.contains(instance.getHost() + ":" + instance.getPort()))
+                .filter(instance -> requestInstanceMap.containsKey(instance.getHost() + ":" + instance.getPort()))
                 .collect(Collectors.toList());
         if (instanceList.isEmpty()) {
-            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "No instance found. serviceKey=" + serviceKey.toString());
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "No instance found. serviceKey=" + serviceKey.toString());
         }
         int length = instanceList.size();
         long[] instanceElapsed = new long[length];
@@ -155,8 +170,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
         for (int i = 0; i < length; i++) {
             InstanceByProto instance = (InstanceByProto) instanceList.get(i);
             InstanceStatistic instanceStatistic = Optional.ofNullable(
-                            instance.getInstanceLocalValue().getInstanceStatistic())
-                    .orElse(new InstanceStatistic());
+                    instance.getInstanceLocalValue().getInstanceStatistic()).orElse(new InstanceStatistic());
             SlideWindowData slideWindowData = instanceMap.computeIfAbsent(instance, k -> new SlideWindowData());
             instanceElapsed[i] = slideWindowData.getSucceededAverageElapsed(instanceStatistic);
             instanceCount[i] = instanceStatistic.getSucceededCount() - slideWindowData.succeededOffset;
@@ -187,8 +201,8 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
                 break;
             }
         }
-        if (System.currentTimeMillis() - lastUpdateTime > slidePeriod
-                && onResetSlideWindow.compareAndSet(false, true)) {
+        if (System.currentTimeMillis() - lastUpdateTime > slidePeriod && onResetSlideWindow.compareAndSet(false,
+                true)) {
             // Reset slideWindowData asynchronously
             executorService.execute(() -> {
                 LOG.info(String.format(
@@ -203,7 +217,7 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
                 onResetSlideWindow.set(false);
             });
         }
-        return targetInstance;
+        return requestInstanceMap.get(targetInstance.getHost() + ":" + targetInstance.getPort());
     }
 
     @Override
@@ -231,8 +245,8 @@ public class ShortestResponseTimeLoadBalance extends Destroyable implements Load
     public void postContextInit(Extensions ctx) throws PolarisException {
         extensions = ctx;
         localRegistry = ctx.getLocalRegistry();
-        slidePeriod = ctx.getConfiguration().getConsumer().getLoadbalancer().getPluginConfig(getName(),
-                ShortestResponseTimeLoadBalanceConfig.class).getSlidePeriod();
+        slidePeriod = ctx.getConfiguration().getConsumer().getLoadbalancer()
+                .getPluginConfig(getName(), ShortestResponseTimeLoadBalanceConfig.class).getSlidePeriod();
 
     }
 }
