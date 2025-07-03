@@ -23,6 +23,11 @@ import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
+/**
+ * ShortestResponseTimeLoadBalanceConfig
+ *
+ * @author Yuwei Fu
+ */
 public class ShortestResponseTimeLoadBalanceConfig implements Verifier {
 
     @JsonProperty

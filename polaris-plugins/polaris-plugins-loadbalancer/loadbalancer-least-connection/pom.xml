@@ -4,15 +4,15 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>polaris-plugins-loadbalancer</artifactId>
         <groupId>com.tencent.polaris</groupId>
+        <artifactId>polaris-plugins-loadbalancer</artifactId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>loadbalancer-shortest-response-time</artifactId>
-    <name>Polaris Plugins Loadbalancer Shortest Response Time</name>
-    <description>Polaris Plugins Loadbalancer Shortest Response Time</description>
+    <artifactId>loadbalancer-least-connection</artifactId>
+    <name>Polaris Plugins Loadbalancer Least Connection</name>
+    <description>Polaris Plugins Loadbalancer Least Connection </description>
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>

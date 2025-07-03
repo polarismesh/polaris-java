@@ -17,12 +17,8 @@
 
 package com.tencent.polaris.discovery.client.stat;
 
-import static com.tencent.polaris.api.exception.ErrorCode.INSTANCE_NOT_FOUND;
-import static com.tencent.polaris.api.exception.ErrorCode.SERVICE_NOT_FOUND;
-import static com.tencent.polaris.api.plugin.registry.InstanceProperty.PROPERTY_INSTANCE_STATISTIC;
 import static com.tencent.polaris.api.pojo.RetStatus.RetSuccess;
 
-import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
 import com.tencent.polaris.api.pojo.Instance;
@@ -38,6 +34,11 @@ import com.tencent.polaris.logging.LoggerFactory;
 import java.util.List;
 import org.slf4j.Logger;
 
+/**
+ * InstancesStatisticUpdater
+ *
+ * @author Yuwei Fu
+ */
 public class InstancesStatisticUpdater {
 
     private static final Logger LOG = LoggerFactory.getLogger(InstancesDetectTask.class);
@@ -50,7 +51,7 @@ public class InstancesStatisticUpdater {
         this.localRegistry = localRegistry;
     }
 
-    public void updateInstanceStatistic(InstanceGauge result) throws PolarisException {
+    public void updateInstanceStatistic(InstanceGauge result) {
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
         ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
         ServiceInstances serviceInstances = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true));
@@ -80,6 +81,7 @@ public class InstancesStatisticUpdater {
         if (targetInstance != null) {
             InstanceStatistic instanceStatistic = targetInstance.getInstanceLocalValue().getInstanceStatistic();
             instanceStatistic.count(result.getDelay(), RetSuccess.equals(result.getRetStatus()));
+            instanceStatistic.decrementAndGetActive();
             LOG.debug(
                     "[InstanceStatisticUpdater]: " + targetInstance.getHost() + ":" + targetInstance.getPort() + ":"
                             + result.getPort() + ": Delay: " + result.getDelay() + "TotalCount"

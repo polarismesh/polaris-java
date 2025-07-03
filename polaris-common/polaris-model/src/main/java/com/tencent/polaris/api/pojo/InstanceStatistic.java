@@ -19,6 +19,12 @@ package com.tencent.polaris.api.pojo;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * Instance Invocation Statistic
+ *
+ * @author Yuwei Fu
+ */
+
 public class InstanceStatistic {
 
     /**
@@ -53,6 +59,10 @@ public class InstanceStatistic {
      * 成功调用最大耗时
      */
     private final AtomicLong succeededMaxElapsed;
+    /**
+     * 当前实例的连接数
+     */
+    private final AtomicLong active =  new AtomicLong(0);
 
     public InstanceStatistic() {
         this(0, 0, 0, 0, 0, 0, 0, 0);
@@ -112,6 +122,20 @@ public class InstanceStatistic {
     public long getSucceededMaxElapsed() {
         return succeededMaxElapsed.get();
     }
+
+    public long getActive() {
+         return active.get();
+    }
+
+    public long incrementAndGetActive() {
+        return active.incrementAndGet();
+    }
+
+    public long decrementAndGetActive() {
+        return active.decrementAndGet();
+    }
+
+
 
     @Override
     public String toString() {
