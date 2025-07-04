@@ -67,6 +67,7 @@
             <artifactId>jose4j</artifactId>
             <version>${jose4j.version}</version>
         </dependency>
+
     </dependencies>
 
     <build>
