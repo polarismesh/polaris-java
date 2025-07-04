@@ -57,6 +57,16 @@
             <artifactId>commons-io</artifactId>
             <version>${commons.io.version}</version>
         </dependency>
+        <dependency>
+            <groupId>commons-beanutils</groupId>
+            <artifactId>commons-beanutils</artifactId>
+            <version>${commons.beanutils.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bitbucket.b_c</groupId>
+            <artifactId>jose4j</artifactId>
+            <version>${jose4j.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -200,6 +210,14 @@
                                 <relocation>
                                     <pattern>org.apache.commons.io</pattern>
                                     <shadedPattern>shade.polaris.org.apache.commons.io</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.commons.beanutils</pattern>
+                                    <shadedPattern>shade.polaris.org.apache.commons.beanutils</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jose4j</pattern>
+                                    <shadedPattern>shade.polaris.org.jose4j</shadedPattern>
                                 </relocation>
                             </relocations>
                             <artifactSet>
