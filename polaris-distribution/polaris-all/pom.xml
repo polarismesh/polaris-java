@@ -58,11 +58,6 @@
             <version>${commons.io.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-codec</groupId>
-            <artifactId>commons-codec</artifactId>
-            <version>${commons.codec.version}</version>
-        </dependency>
-        <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
             <version>${commons.beanutils.version}</version>
@@ -215,10 +210,6 @@
                                 <relocation>
                                     <pattern>org.apache.commons.io</pattern>
                                     <shadedPattern>shade.polaris.org.apache.commons.io</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.commons.codec</pattern>
-                                    <shadedPattern>shade.polaris.org.apache.commons.codec</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.apache.commons.beanutils</pattern>
