@@ -58,6 +58,11 @@ public class RouteRule implements Serializable {
      */
     private List<RouteDest> destList;
 
+    /**
+     * 路由规则项包含的镜像规则
+     */
+    private MirrorRule mirrorRule;
+
     public String getRouteRuleId() {
         return routeRuleId;
     }
@@ -90,6 +95,14 @@ public class RouteRule implements Serializable {
         this.destList = destList;
     }
 
+    public MirrorRule getMirrorRule() {
+        return mirrorRule;
+    }
+
+    public void setMirrorRule(MirrorRule mirrorRule) {
+        this.mirrorRule = mirrorRule;
+    }
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("RouteRule{");
@@ -97,6 +110,7 @@ public class RouteRule implements Serializable {
         sb.append(", routeId='").append(routeId).append('\'');
         sb.append(", tagList=").append(tagList);
         sb.append(", destList=").append(destList);
+        sb.append(", mirrorRule=").append(mirrorRule);
         sb.append('}');
         return sb.toString();
     }

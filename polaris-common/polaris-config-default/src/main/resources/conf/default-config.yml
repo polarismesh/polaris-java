@@ -197,6 +197,8 @@ consumer:
       - laneRouter
     #描述: 服务路由链
     chain:
+      # 流量镜像路由
+      - trafficMirroringRouter
       # 命名空间就近路由
       - namespaceRouter
       # 元数据路由
