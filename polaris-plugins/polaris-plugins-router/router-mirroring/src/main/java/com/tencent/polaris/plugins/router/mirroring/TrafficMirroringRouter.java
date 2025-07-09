@@ -86,7 +86,7 @@ public class TrafficMirroringRouter extends AbstractServiceRouter {
                         if (mirroringPercent < 0 || mirroringPercent > 100) {
                             mirroringPercent = 100;
                         }
-                        float randomValue = new Random().nextFloat(100);
+                        float randomValue = new Random().nextInt(100);
                         boolean percentMatched = randomValue < mirroringPercent;
                         if (!percentMatched) {
                             continue;
