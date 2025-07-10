@@ -564,4 +564,11 @@ public class StringUtils {
         return cs.toString().indexOf(searchChar.toString(), start);
     }
 
+
+    public static boolean contains(String str, String searchStr) {
+        if (str == null || searchStr == null) {
+            return false;
+        }
+        return str.indexOf(searchStr) >= 0;
+    }
 }

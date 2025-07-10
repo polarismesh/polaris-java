@@ -68,6 +68,7 @@
         <!-- Project revision -->
         <revision>2.1.0.0-SNAPSHOT</revision>
 
+        <specification.version>1.6.0-SNAPSHOT</specification.version>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -77,7 +78,6 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <jackson.version>2.14.2</jackson.version>
-        <specification.version>1.5.4</specification.version>
         <consul.version>1.4.5</consul.version>
         <gson.version>2.9.1</gson.version>
         <nacos.version>2.1.1</nacos.version>
