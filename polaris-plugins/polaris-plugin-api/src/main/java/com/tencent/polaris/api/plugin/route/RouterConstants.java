@@ -29,4 +29,6 @@ public interface RouterConstants {
 
     // 服务路由容错
     String ROUTER_FAULT_TOLERANCE_ENABLE = "internal-enable-router-faulttolerance";
+
+    String TRAFFIC_MIRRORING_NODE_KEY = "internal-traffic-mirroring-node";
 }

@@ -39,12 +39,12 @@ import com.tencent.polaris.api.utils.*;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
+import com.tencent.polaris.plugins.router.common.RoutingUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto.Destination;
 import org.slf4j.Logger;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
 import static com.tencent.polaris.api.plugin.route.RouterConstants.ROUTER_FAULT_TOLERANCE_ENABLE;
@@ -118,62 +118,13 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         for (RoutingProto.Source source : sources) {
             // 对于inbound规则, 需要匹配source服务
             if (ruleMatchType == RuleMatchType.destRouteRuleMatch) {
-                if (sourceService == null) {
-                    // 如果没有source服务信息, 判断rule是否支持全匹配
-                    if (!RuleUtils.MATCH_ALL.equals(source.getNamespace().getValue()) || !RuleUtils.MATCH_ALL
-                            .equals(source.getService().getValue())) {
-                        matched = false;
-                        continue;
-                    }
-                } else {
-                    // 如果有source服务信息, 需要匹配服务信息
-                    // 如果命名空间|服务不为"*"且不等于原服务, 则匹配失败
-                    if (!RuleUtils.MATCH_ALL.equals(source.getNamespace().getValue()) && !source.getNamespace()
-                            .getValue().equals(sourceService.getNamespace())) {
-                        matched = false;
-                        continue;
-                    }
-
-                    String service = source.getService().getValue();
-                    if (!RuleUtils.MATCH_ALL.equals(service) && !StringUtils.startsWith(service, "!")
-                            && !StringUtils.startsWith(service, "*")
-                            && !StringUtils.equals(service, sourceService.getService())) {
-                        matched = false;
-                        continue;
-                    }
-                    // 如果服务名不等于“*”，且服务名规则以“!”开头，则使用取反匹配
-                    if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "!")) {
-                        String realService = StringUtils.substring(service, 1);
-                        if (StringUtils.equals(realService, sourceService.getService())) {
-                            matched = false;
-                            continue;
-                        }
-                    }
-                    // 如果服务名不等于“*”，且服务名规则以“*”开头，则使用正则匹配
-                    if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "*")) {
-                        String regex = StringUtils.substring(service, 1);
-                        Pattern pattern = Pattern.compile(regex);
-                        if (!pattern.matcher(sourceService.getService()).find()) {
-                            matched = false;
-                            continue;
-                        }
-                    }
+                matched = RoutingUtils.matchSourceService(source, sourceService);
+                if (!matched) {
+                    continue;
                 }
             }
 
-            // 如果rule中metadata为空, 匹配成功, 结束
-            if (MapUtils.isEmpty(source.getMetadataMap())) {
-                matched = true;
-                break;
-            }
-
-            // 如果没有源服务信息, 本次匹配失败
-            if (sourceService == null) {
-                matched = false;
-                continue;
-            }
-
-            matched = RuleUtils.matchMetadata(source.getMetadataMap(), trafficLabels, metadataContainerGroup, true,
+            matched = RoutingUtils.matchSourceMetadata(source, sourceService, trafficLabels, metadataContainerGroup,
                     multiEnvRouterParamMap, globalVariablesConfig,
                     key -> flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
             if (matched) {

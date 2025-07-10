@@ -434,6 +434,11 @@
                 <artifactId>router-canary</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>router-mirroring</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- polaris-plugins-location-->
             <dependency>
