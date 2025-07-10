@@ -48,6 +48,7 @@ public interface ServiceRouterConfig extends PluginConfig, Verifier {
     
     String DEFAULT_ROUTER_NAMESPACE = "namespaceRouter";
 
+    String DEFAULT_ROUTER_TRAFFIC_MIRRORING = "trafficMirroringRouter";
 
     /**
      * services.consumer.serviceRouter.beforeChain

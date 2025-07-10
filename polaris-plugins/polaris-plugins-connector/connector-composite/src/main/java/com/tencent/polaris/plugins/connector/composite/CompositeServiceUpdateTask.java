@@ -131,7 +131,8 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                 || serviceEventKey.getEventType().equals(EventType.CIRCUIT_BREAKING)
                 || serviceEventKey.getEventType().equals(EventType.RATE_LIMITING)
                 || serviceEventKey.getEventType().equals(EventType.LANE_RULE)
-                || serviceEventKey.getEventType().equals(EventType.BLOCK_ALLOW_RULE)))) {
+                || serviceEventKey.getEventType().equals(EventType.BLOCK_ALLOW_RULE)
+                || serviceEventKey.getEventType().equals(EventType.TRAFFIC_MIRRORING)))) {
             return;
         }
 

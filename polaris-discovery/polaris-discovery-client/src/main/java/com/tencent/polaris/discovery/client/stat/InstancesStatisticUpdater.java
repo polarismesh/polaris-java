@@ -17,22 +17,19 @@
 
 package com.tencent.polaris.discovery.client.stat;
 
-import static com.tencent.polaris.api.pojo.RetStatus.RetSuccess;
-
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.registry.ResourceFilter;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.InstanceGauge;
-import com.tencent.polaris.api.pojo.InstanceStatistic;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.List;
 import org.slf4j.Logger;
+
+import java.util.List;
+
+import static com.tencent.polaris.api.pojo.RetStatus.RetSuccess;
 
 /**
  * InstancesStatisticUpdater
@@ -53,12 +50,16 @@ public class InstancesStatisticUpdater {
 
     public void updateInstanceStatistic(InstanceGauge result) {
         ServiceKey serviceKey = new ServiceKey(result.getNamespace(), result.getService());
-        ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
-        ServiceInstances serviceInstances = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true));
+        // 如果服务名或命名空间为空，则不统计
+        if (StringUtils.isBlank(serviceKey.getNamespace()) || StringUtils.isBlank(serviceKey.getService())) {
+            return;
+        }
         // 如果调用的是北极星内部的服务，则不统计
         if (serviceKey.getNamespace().equals(POLARIS_NAMESPACE)) {
             return;
         }
+        ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.INSTANCE);
+        ServiceInstances serviceInstances = localRegistry.getInstances(new ResourceFilter(serviceEventKey, true, true));
         if (serviceInstances == null) {
             LOG.warn("[InstanceStatisticUpdater]: " + "service: " + serviceKey.getService() + " in namespace: "
                     + serviceKey.getNamespace() + " not found");
