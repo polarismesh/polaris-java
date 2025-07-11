@@ -105,16 +105,15 @@ public class PrometheusReporterTest {
         ServiceCallResult callResult = mockServiceCallResult();
         statInfo.setRouterGauge(callResult);
         batchDone(() -> handler.reportStat(statInfo), count);
-
         // mock push
         LOG.info("first mock push finish...");
-        Thread.sleep(pushInterval + 1000);
+        Thread.sleep(pushInterval + 50);
         Double result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(count), result);
 
         // mock next push
         LOG.info("second mock push finish...");
-        Thread.sleep(pushInterval + 1000);
+        Thread.sleep(pushInterval + 50);
         result = getServiceCallTotalResult(callResult);
         Assert.assertEquals(new Double(0), result);
 
