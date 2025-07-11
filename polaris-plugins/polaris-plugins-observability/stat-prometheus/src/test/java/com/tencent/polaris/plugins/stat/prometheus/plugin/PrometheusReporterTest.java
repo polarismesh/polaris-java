@@ -105,7 +105,6 @@ public class PrometheusReporterTest {
         ServiceCallResult callResult = mockServiceCallResult();
         statInfo.setRouterGauge(callResult);
         batchDone(() -> handler.reportStat(statInfo), count);
-        // for github action 6
         // mock push
         LOG.info("first mock push finish...");
         Thread.sleep(pushInterval + 50);
