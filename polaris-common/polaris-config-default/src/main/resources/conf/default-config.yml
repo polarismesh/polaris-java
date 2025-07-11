@@ -331,6 +331,10 @@ consumer:
     chain:
     # 开启了服务预热插件，可以支持多个动态权重调整插件同时生效
 #      - warmup
+  # 故障注入相关配置
+  fault:
+    # 是否开启故障注入
+    enable: true
 # 被调方配置
 provider:
   # Switch of registration

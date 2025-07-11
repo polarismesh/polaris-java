@@ -20,6 +20,7 @@ package com.tencent.polaris.factory.config.consumer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
+import com.tencent.polaris.api.config.consumer.FaultConfig;
 import com.tencent.polaris.api.config.consumer.WeightAdjustConfig;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
@@ -66,6 +67,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
 
     @JsonProperty
     private WeightAdjustConfigImpl weightAdjust;
+
+    @JsonProperty
+    private FaultConfigImpl fault;
 
     @Override
     public LocalCacheConfigImpl getLocalCache() {
@@ -133,6 +137,11 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     }
 
     @Override
+    public FaultConfig getFault() {
+        return fault;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(localCache, "localCache");
         ConfigUtils.validateNull(serviceRouter, "serviceRouter");
@@ -140,6 +149,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         ConfigUtils.validateNull(circuitBreaker, "circuitBreaker");
         ConfigUtils.validateNull(outlierDetection, "outlierDetection");
         ConfigUtils.validateNull(weightAdjust, "weightAdjust");
+        ConfigUtils.validateNull(fault, "fault");
 
         localCache.verify();
         serviceRouter.verify();
@@ -149,6 +159,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         subscribe.verify();
         zeroProtection.verify();
         weightAdjust.verify();
+        fault.verify();
         if (CollectionUtils.isNotEmpty(discoveries)) {
             for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                 discoveryConfig.verify();
@@ -183,6 +194,9 @@ public class ConsumerConfigImpl implements ConsumerConfig {
         if (null == weightAdjust) {
             weightAdjust = new WeightAdjustConfigImpl();
         }
+        if (null == fault) {
+            fault = new FaultConfigImpl();
+        }
         if (null != defaultObject) {
             ConsumerConfig consumerConfig = (ConsumerConfig) defaultObject;
             localCache.setDefault(consumerConfig.getLocalCache());
@@ -193,6 +207,7 @@ public class ConsumerConfigImpl implements ConsumerConfig {
             subscribe.setDefault(consumerConfig.getSubscribe());
             zeroProtection.setDefault(consumerConfig.getZeroProtection());
             weightAdjust.setDefault(consumerConfig.getWeightAdjust());
+            fault.setDefault(consumerConfig.getFault());
             if (CollectionUtils.isNotEmpty(discoveries)) {
                 for (DiscoveryConfigImpl discoveryConfig : discoveries) {
                     discoveryConfig.setDefault(consumerConfig.getDiscoveries().get(0));
@@ -204,7 +219,6 @@ public class ConsumerConfigImpl implements ConsumerConfig {
     }
 
     @Override
-    @SuppressWarnings("checkstyle:all")
     public String toString() {
         return "ConsumerConfigImpl{" +
                 "localCache=" + localCache +
@@ -212,6 +226,12 @@ public class ConsumerConfigImpl implements ConsumerConfig {
                 ", loadbalancer=" + loadbalancer +
                 ", circuitBreaker=" + circuitBreaker +
                 ", outlierDetection=" + outlierDetection +
+                ", subscribe=" + subscribe +
+                ", zeroProtection=" + zeroProtection +
+                ", discoveries=" + discoveries +
+                ", discoveryConfigMap=" + discoveryConfigMap +
+                ", weightAdjust=" + weightAdjust +
+                ", fault=" + fault +
                 '}';
     }
 }

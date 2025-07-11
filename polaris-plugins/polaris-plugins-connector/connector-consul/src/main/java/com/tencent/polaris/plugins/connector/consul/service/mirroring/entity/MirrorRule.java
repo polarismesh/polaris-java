@@ -1,7 +1,7 @@
 /*
  * Tencent is pleased to support the open source community by making polaris-java available.
  *
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021 Tencent. All rights reserved.
  *
  * Licensed under the BSD 3-Clause License (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.connector.consul.service.router.entity;
+package com.tencent.polaris.plugins.connector.consul.service.mirroring.entity;
 
 import java.io.Serializable;
 

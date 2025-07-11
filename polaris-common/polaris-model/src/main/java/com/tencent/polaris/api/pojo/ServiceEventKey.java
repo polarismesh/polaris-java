@@ -53,6 +53,7 @@ public class ServiceEventKey implements Service {
         LOSSLESS,
         BLOCK_ALLOW_RULE,
         TRAFFIC_MIRRORING,
+        FAULT_INJECTION,
     }
 
     private final ServiceKey serviceKey;
