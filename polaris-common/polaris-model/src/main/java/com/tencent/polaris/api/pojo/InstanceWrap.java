@@ -20,6 +20,7 @@ package com.tencent.polaris.api.pojo;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.metadata.core.constant.MetadataConstants;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 
 import java.util.Collection;
 import java.util.Map;
@@ -40,8 +41,14 @@ public class InstanceWrap implements Instance {
         String host = "";
         if (isPreferIpv6 && MapUtils.isNotEmpty(originalInstance.getMetadata())) {
             host = originalInstance.getMetadata().get(MetadataConstants.ADDRESS_IPV6);
+            if (StringUtils.isEmpty(host)) {
+                host = originalInstance.getMetadata().get(TsfMetadataConstants.TSF_ADDRESS_IPV6);
+            }
         } else if (MapUtils.isNotEmpty(originalInstance.getMetadata())) {
             host = originalInstance.getMetadata().get(MetadataConstants.ADDRESS_IPV4);
+            if (StringUtils.isEmpty(host)) {
+                host = originalInstance.getMetadata().get(TsfMetadataConstants.TSF_ADDRESS_IPV4);
+            }
         }
         if (StringUtils.isBlank(host)) {
             host = originalInstance.getHost();

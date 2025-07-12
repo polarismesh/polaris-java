@@ -22,6 +22,7 @@ import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.metadata.core.constant.MetadataConstants;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +51,10 @@ public class DiscoveryUtils {
 
     static boolean checkIpv6Instance(Instance instance) {
         if (MapUtils.isNotEmpty(instance.getMetadata())
-                && instance.getMetadata().containsKey(MetadataConstants.ADDRESS_IPV6)
-                && StringUtils.isNotBlank(instance.getMetadata().get(MetadataConstants.ADDRESS_IPV6))) {
+                && ((instance.getMetadata().containsKey(MetadataConstants.ADDRESS_IPV6)
+                && StringUtils.isNotBlank(instance.getMetadata().get(MetadataConstants.ADDRESS_IPV6)))
+                || (instance.getMetadata().containsKey(TsfMetadataConstants.TSF_ADDRESS_IPV6)
+                && StringUtils.isNotBlank(instance.getMetadata().get(TsfMetadataConstants.TSF_ADDRESS_IPV6))))) {
             return true;
         }
         return IPAddressUtils.checkIpv6Host(instance.getHost());
