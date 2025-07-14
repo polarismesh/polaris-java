@@ -19,7 +19,10 @@ package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.constant.MetadataConstants;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.Map;
@@ -31,6 +34,8 @@ import java.util.Map;
  */
 public class InstanceWrap implements Instance {
 
+    private static final Logger LOG = LoggerFactory.getLogger(InstanceWrap.class);
+
     private final Instance originalInstance;
 
     private final String host;
@@ -40,11 +45,26 @@ public class InstanceWrap implements Instance {
         String host = "";
         if (isPreferIpv6 && MapUtils.isNotEmpty(originalInstance.getMetadata())) {
             host = originalInstance.getMetadata().get(MetadataConstants.ADDRESS_IPV6);
+            if (StringUtils.isBlank(host)) {
+                host = originalInstance.getMetadata().get(TsfMetadataConstants.TSF_ADDRESS_IPV6);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("get ipv6 address {} from metadata: {}", host, originalInstance.getMetadata());
+            }
         } else if (MapUtils.isNotEmpty(originalInstance.getMetadata())) {
             host = originalInstance.getMetadata().get(MetadataConstants.ADDRESS_IPV4);
+            if (StringUtils.isBlank(host)) {
+                host = originalInstance.getMetadata().get(TsfMetadataConstants.TSF_ADDRESS_IPV4);
+            }
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("get ipv4 address {} from metadata: {}", host, originalInstance.getMetadata());
+            }
         }
         if (StringUtils.isBlank(host)) {
             host = originalInstance.getHost();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("get address {} from host", host);
+            }
         }
         this.host = host;
     }
