@@ -21,7 +21,10 @@ import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.constant.MetadataConstants;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +36,8 @@ import java.util.Map;
  * @author Haotian Zhang
  */
 public class DiscoveryUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DiscoveryUtils.class);
 
     public static ServiceInstances generateIpv6ServiceInstances(ServiceInstances serviceInstances) {
         ServiceKey serviceKey = serviceInstances.getServiceKey();
@@ -49,11 +54,20 @@ public class DiscoveryUtils {
     }
 
     static boolean checkIpv6Instance(Instance instance) {
-        if (MapUtils.isNotEmpty(instance.getMetadata())
-                && instance.getMetadata().containsKey(MetadataConstants.ADDRESS_IPV6)
-                && StringUtils.isNotBlank(instance.getMetadata().get(MetadataConstants.ADDRESS_IPV6))) {
-            return true;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("check instance if ipv6: {}:{} with metadata {}", instance.getHost(), instance.getPort(), instance.getMetadata());
+        } else if (LOG.isTraceEnabled()) {
+            LOG.trace("check instance if ipv6: {}", instance.toString());
         }
-        return IPAddressUtils.checkIpv6Host(instance.getHost());
+        
+        Map<String, String> metadata = instance.getMetadata();
+        if (MapUtils.isEmpty(metadata)) {
+            return IPAddressUtils.checkIpv6Host(instance.getHost());
+        }
+
+        String ipv6Address = metadata.get(MetadataConstants.ADDRESS_IPV6);
+        String tsfIpv6Address = metadata.get(TsfMetadataConstants.TSF_ADDRESS_IPV6);
+        return StringUtils.isNotBlank(ipv6Address) || StringUtils.isNotBlank(tsfIpv6Address)
+                || IPAddressUtils.checkIpv6Host(instance.getHost());
     }
 }
