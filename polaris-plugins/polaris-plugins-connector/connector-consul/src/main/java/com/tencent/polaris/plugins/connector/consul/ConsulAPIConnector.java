@@ -314,6 +314,8 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 resp.setExists(false);
                 LOG.info("Registered service to Consul: " + service);
                 ieRegistered = true;
+                // heartbeat when registration is successful.
+                heartbeat(req);
                 return resp;
             } catch (ConsulException e) {
                 throw new RetriableException(ErrorCode.NETWORK_ERROR,
