@@ -307,7 +307,6 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central-portal</publishingServerId>
-                    <autoPublish>true</autoPublish>
                     <excludeArtifacts>
                         <excludeArtifact>polaris-examples</excludeArtifact>
                         <excludeArtifact>circuitbreaker-example</excludeArtifact>
