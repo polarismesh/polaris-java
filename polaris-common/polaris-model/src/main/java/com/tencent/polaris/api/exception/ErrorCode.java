@@ -131,6 +131,11 @@ public enum ErrorCode {
     CLIENT_CIRCUIT_BREAKING(1020),
 
     /**
+     * client resource has been fault injected
+     */
+    CLIENT_FAULT_INJECTED(1021),
+
+    /**
      * 内部错误：连续错误
      */
     CONNECT_ERROR(2001),
