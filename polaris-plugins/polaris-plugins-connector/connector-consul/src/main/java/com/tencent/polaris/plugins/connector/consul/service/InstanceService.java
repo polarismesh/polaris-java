@@ -124,7 +124,6 @@ public class InstanceService extends ConsulService {
                 if (CollectionUtils.isNotEmpty(value)) {
                     for (HealthService healthService : value) {
                         ServiceProto.Instance.Builder instanceBuilder = ServiceProto.Instance.newBuilder()
-                                .setNamespace(StringValue.of(namespace))
                                 .setService(StringValue.of(serviceId))
                                 .setHost(StringValue.of(findHost(healthService)))
                                 .setPort(UInt32Value.of(healthService.getService().getPort()))
@@ -144,6 +143,13 @@ public class InstanceService extends ConsulService {
                         Map<String, String> metadata = getMetadata(healthService);
                         if (CollectionUtils.isNotEmpty(metadata)) {
                             instanceBuilder.putAllMetadata(metadata);
+                        }
+                        // set namespace
+                        String metadataNamespace = metadata.get(TsfMetadataConstants.TSF_NAMESPACE_ID);
+                        if (StringUtils.isNotBlank(metadataNamespace)) {
+                            instanceBuilder.setNamespace(StringValue.of(metadataNamespace));
+                        } else {
+                            instanceBuilder.setNamespace(StringValue.of(namespace));
                         }
                         // set createTime
                         Long createTime = null;
