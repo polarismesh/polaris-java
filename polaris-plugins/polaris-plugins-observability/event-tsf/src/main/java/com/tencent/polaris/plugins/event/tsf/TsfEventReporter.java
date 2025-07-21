@@ -382,14 +382,20 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
             try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
 
                 HttpPost httpPost = new HttpPost(reportEventUri);
-                postBody = new StringEntity(gson.toJson(eventData));
+                String body = gson.toJson(eventData);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Report report Event To TSF event-center. body is : {}", body);
+                }
+                postBody = new StringEntity(body);
                 httpPost.setEntity(postBody);
                 httpPost.setHeader("Content-Type", "application/json");
 
                 HttpResponse httpResponse = httpClient.execute(httpPost);
                 String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
                 EventResponse response = gson.fromJson(resultString, EventResponse.class);
-
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Report report Event To TSF event-center. Response is : {}", resultString);
+                }
                 if (StringUtils.isNotBlank(response.getErrorInfo())) {
                     throw new RuntimeException("Report report event failed. Response = [" + resultString + "].");
                 }
