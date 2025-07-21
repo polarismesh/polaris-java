@@ -30,9 +30,9 @@ import java.util.Objects;
 public class TsfEventDataUtils {
 
     public static String convertEventName(BaseEvent flowEvent) {
-        if (Objects.equals(flowEvent.getEventType(), ServiceEventKey.EventType.CIRCUIT_BREAKING)) {
+        if (Objects.equals(flowEvent.getEventType(), EventConstants.EventType.CIRCUIT_BREAKING)) {
             return TsfEventDataConstants.CIRCUIT_BREAKER_EVENT_NAME;
-        } else if (Objects.equals(flowEvent.getEventType(), ServiceEventKey.EventType.RATE_LIMITING)) {
+        } else if (Objects.equals(flowEvent.getEventType(), EventConstants.EventType.RATE_LIMITING)) {
             return TsfEventDataConstants.RATE_LIMIT_EVENT_NAME;
         }
         return "";

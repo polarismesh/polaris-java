@@ -51,6 +51,8 @@ public class RouterUtils {
                             String serviceName = tagValue;
                             if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL) || routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_IN)) {
                                 serviceName = "!" + serviceName;
+                            } else if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.REGEX)) {
+                                serviceName = "*" + serviceName;
                             }
                             sourceBuilder.setService(StringValue.of(serviceName));
                             sourceBuilders.add(sourceBuilder);
@@ -65,6 +67,8 @@ public class RouterUtils {
                             sourceBuilder.setNamespace(StringValue.of("*"));
                             String serviceName = tagValue;
                             if (split.length == 2) {
+                                // namespace/service format
+                                sourceBuilder.setNamespace(StringValue.of(split[0]));
                                 serviceName = split[1];
                             }
                             if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL) || routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_IN)) {
