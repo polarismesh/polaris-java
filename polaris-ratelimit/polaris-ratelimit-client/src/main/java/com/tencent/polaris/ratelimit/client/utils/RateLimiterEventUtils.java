@@ -75,11 +75,11 @@ public class RateLimiterEventUtils {
             flowEvent.getAdditionalParams().put(RULE_ID_KEY, rule.getName().getValue());
         }
 
-        flowEvent.getAdditionalParams().put(RULE_DETAIL_KEY, "{}");
-        // 老的SDK并没有实现
-        // if (rule.getMetadataMap().containsKey("original")) {
-        // flowEvent.getAdditionalParams().put(RULE_DETAIL_KEY, rule.getMetadataMap().get("original"));
-        // }
+         if (rule.getMetadataMap().containsKey("original")) {
+            flowEvent.getAdditionalParams().put(RULE_DETAIL_KEY, rule.getMetadataMap().get("original"));
+         } else {
+             flowEvent.getAdditionalParams().put(RULE_DETAIL_KEY, "{}");
+         }
 
         BaseFlow.reportFlowEvent(extensions, flowEvent);
     }
