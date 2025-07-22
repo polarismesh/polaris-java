@@ -17,14 +17,21 @@
 
 package com.tencent.polaris.client.remote;
 
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.impl.PluginManager;
+import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.plugins.loadbalancer.random.WeightedRandomBalance;
+import com.tencent.polaris.plugins.loadbalancer.roundrobin.WeightedRoundRobinBalance;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -33,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.internal.matchers.Any;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
@@ -57,6 +65,9 @@ public class ServiceAddressRepositoryTest {
     private Extensions extensions;
 
     @Mock
+    private PluginManager pluginManager;
+
+    @Mock
     private static Instance mockInstance;
 
     private final ServiceKey remoteCluster = new ServiceKey("test-namespace", "test-service");
@@ -71,6 +82,14 @@ public class ServiceAddressRepositoryTest {
     public void setUp() {
         when(mockInstance.getHost()).thenReturn("1.2.3.4");
         when(mockInstance.getPort()).thenReturn(8080);
+        // Use WeightedRandomBalance as the LoadBalancer
+        LoadBalancer weightedRandomBalance = new WeightedRoundRobinBalance();
+        when(extensions.getPlugins()).thenReturn(pluginManager);
+        when(pluginManager.getPlugin(any(), any())).thenReturn(weightedRandomBalance);
+        mockedBaseFlow.when(() -> BaseFlow.processLoadBalance(
+                        any(), any(), any(), any()))
+                .thenCallRealMethod();
+
     }
 
     @AfterClass
@@ -97,7 +116,7 @@ public class ServiceAddressRepositoryTest {
     public void testConstructorWithCustomParams() {
         List<String> addresses = Arrays.asList("host1:8080", "host2:9090");
         List<String> routers = Arrays.asList("custom-router1", "custom-router2");
-        String lbPolicy = "custom-lb";
+        String lbPolicy = LoadBalanceConfig.LOAD_BALANCE_WEIGHTED_ROUND_ROBIN;
         String protocol = "grpc";
 
         ServiceAddressRepository repository = new ServiceAddressRepository(
@@ -107,7 +126,7 @@ public class ServiceAddressRepositoryTest {
         assertEquals(2, repository.getNodes().size());
         assertEquals("custom-router1", repository.getRouters().get(0));
         assertEquals("custom-router2", repository.getRouters().get(1));
-        assertEquals("custom-lb", repository.getLbPolicy());
+        assertEquals(LoadBalanceConfig.LOAD_BALANCE_WEIGHTED_ROUND_ROBIN, repository.getLbPolicy());
         assertEquals("grpc", repository.getProtocol());
     }
 
@@ -185,6 +204,7 @@ public class ServiceAddressRepositoryTest {
 
     @Test
     public void testGetServiceAddress() throws PolarisException {
+
         List<String> addresses = Arrays.asList("host1:8080", "host2:9090");
         ServiceAddressRepository repository = new ServiceAddressRepository(
                 addresses, clientId, extensions, remoteCluster);
