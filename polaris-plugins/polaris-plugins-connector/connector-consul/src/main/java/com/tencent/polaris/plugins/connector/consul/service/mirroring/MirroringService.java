@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.connector.consul.service.router;
+package com.tencent.polaris.plugins.connector.consul.service.mirroring;
 
 import com.ecwid.consul.SingleUrlParameters;
 import com.ecwid.consul.UrlParameters;
@@ -44,7 +44,8 @@ import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.ConsulContext;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
-import com.tencent.polaris.plugins.connector.consul.service.router.entity.MirrorRule;
+import com.tencent.polaris.plugins.connector.consul.service.mirroring.entity.MirrorRule;
+import com.tencent.polaris.plugins.connector.consul.service.router.RouterUtils;
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteRule;
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteRuleGroup;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;

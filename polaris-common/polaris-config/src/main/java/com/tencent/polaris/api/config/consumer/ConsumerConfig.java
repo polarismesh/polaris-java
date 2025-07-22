@@ -93,4 +93,11 @@ public interface ConsumerConfig extends Verifier {
     Map<String, ? extends DiscoveryConfig> getDiscoveryConfigMap();
 
     WeightAdjustConfig getWeightAdjust();
+
+    /**
+     * consumer.fault前缀开头的所有配置
+     *
+     * @return
+     */
+    FaultConfig getFault();
 }

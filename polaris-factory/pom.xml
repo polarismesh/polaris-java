@@ -51,6 +51,11 @@
             <artifactId>polaris-auth-factory</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-fault-factory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!--测试依赖插件-->
         <dependency>

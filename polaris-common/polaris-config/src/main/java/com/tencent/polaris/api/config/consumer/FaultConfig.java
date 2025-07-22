@@ -15,35 +15,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.utils;
+package com.tencent.polaris.api.config.consumer;
 
-import com.tencent.polaris.logging.LoggerFactory;
-import org.slf4j.Logger;
+import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
- * Utils for class.
+ * 故障注入配置
  *
  * @author Haotian Zhang
  */
-public class ClassUtils {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ClassUtils.class);
+public interface FaultConfig extends Verifier {
 
     /**
-     * Check if class is present.
+     * 是否启用故障注入
+     * consumer.fault.enable
      *
-     * @param className class name
-     * @return true if present, false otherwise
+     * @return 启用鉴权
      */
-    public static boolean isClassPresent(String className) {
-        try {
-            Class.forName(className);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        } catch (Throwable throwable) {
-            LOG.warn("Failed to check class {} present", className, throwable);
-            return false;
-        }
-    }
+    boolean isEnable();
 }
