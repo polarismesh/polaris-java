@@ -17,15 +17,17 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
 import com.tencent.polaris.api.pojo.*;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.FlowControlParam;
+import com.tencent.polaris.client.remote.ServiceAddressRepository;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
@@ -104,8 +106,7 @@ public class RateLimitWindow {
     private final ServiceKey remoteCluster;
 
     //限流的服务端地址列表
-    private final ServiceInstances remoteAddresses;
-
+    private final ServiceAddressRepository serviceAddressRepository;
     //限流规则
     private final Rule rule;
 
@@ -114,6 +115,7 @@ public class RateLimitWindow {
 
     // 是否是TSF限流模式
     private boolean isTsfCluster = false;
+
 
     //限流配置
     private final RateLimitConfig rateLimitConfig;
@@ -141,32 +143,21 @@ public class RateLimitWindow {
         this.expireDurationMs = getExpireDurationMs(rule);
         this.syncParam = quotaRequest.getFlowControlParam();
         remoteCluster = getLimiterClusterService(rule.getCluster(), rateLimitConfig);
-        remoteAddresses = buildDefaultInstances(rateLimitConfig.getLimiterAddresses());
+        serviceAddressRepository = buildServiceAddressRepository(rateLimitConfig.getLimiterAddresses(),
+                uniqueKey,  windowSet.getExtensions(), remoteCluster, null, LoadBalanceConfig.LOAD_BALANCE_RING_HASH, "grpc");
         allocatingBucket = getQuotaBucket(initCriteria, windowSet.getRateLimitExtension());
         lastAccessTimeMs.set(System.currentTimeMillis());
         this.rateLimitConfig = rateLimitConfig;
         buildRemoteConfigMode();
     }
 
-    private ServiceInstances buildDefaultInstances(List<String> addresses) {
-        if (CollectionUtils.isEmpty(addresses)) {
-            return null;
-        }
-        List<Instance> instances = new ArrayList<>();
-        for (String address : addresses) {
-            DefaultInstance defaultInstance = new DefaultInstance();
-            defaultInstance.setId(address);
-            String[] tokens = address.split(":");
-            defaultInstance.setHost(tokens[0]);
-            defaultInstance.setPort(Integer.parseInt(tokens[1]));
-            defaultInstance.setHealthy(true);
-            defaultInstance.setWeight(100);
-            instances.add(defaultInstance);
-        }
-        return new DefaultServiceInstances(new ServiceKey("", ""), instances);
-
-
+    private ServiceAddressRepository buildServiceAddressRepository(List<String> addresses, String hash, Extensions extensions,
+            ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol) {
+        return  new ServiceAddressRepository(addresses, hash, extensions, remoteCluster, routers, lbPolicy, protocol);
     }
+
+
+
 
     private ServiceKey getLimiterClusterService(RateLimitCluster cluster, RateLimitConfig rateLimitConfig) {
         if (null != cluster && StringUtils.isNotBlank(cluster.getNamespace().getValue()) && StringUtils
@@ -187,7 +178,7 @@ public class RateLimitWindow {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
             return;
         }
-        if (null == remoteCluster && null == remoteAddresses) {
+        if (null == remoteCluster && 0 == serviceAddressRepository.size()) {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
             LOG.warn("remote limiter service or addresses not configured, degrade to local mode");
             return;
@@ -204,6 +195,10 @@ public class RateLimitWindow {
 
     public String getUniqueKey() {
         return uniqueKey;
+    }
+
+    public ServiceAddressRepository getServiceAddressRepository(){
+        return serviceAddressRepository;
     }
 
     private static QuotaBucket getQuotaBucket(InitCriteria criteria, RateLimitExtension extension) {
@@ -347,10 +342,6 @@ public class RateLimitWindow {
 
     public ServiceKey getRemoteCluster() {
         return remoteCluster;
-    }
-
-    public ServiceInstances getRemoteAddresses() {
-        return remoteAddresses;
     }
 
     public ServiceKey getSvcKey() {
