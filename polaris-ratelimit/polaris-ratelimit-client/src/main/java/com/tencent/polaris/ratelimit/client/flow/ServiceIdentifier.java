@@ -31,6 +31,18 @@ public class ServiceIdentifier {
         this.labels = labels;
     }
 
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    public String getLabels() {
+        return labels;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:all")
     public boolean equals(Object o) {

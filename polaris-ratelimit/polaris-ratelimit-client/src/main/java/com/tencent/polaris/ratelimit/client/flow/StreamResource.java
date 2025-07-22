@@ -20,6 +20,7 @@ package com.tencent.polaris.ratelimit.client.flow;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.flow.RateLimitWindow.WindowStatus;
 import com.tencent.polaris.ratelimit.client.pb.RateLimitGRPCV2Grpc;
@@ -55,7 +56,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     /**
      * 节点的标识
      */
-    private final HostIdentifier hostIdentifier;
+    private final Node hostNode;
 
     /**
      * 连接
@@ -105,9 +106,9 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     private final AtomicLong syncInterval = new AtomicLong(RateLimitConstants.TIME_ADJUST_INTERVAL_MS);
 
-    public StreamResource(HostIdentifier identifier) {
-        channel = createConnection(identifier);
-        hostIdentifier = identifier;
+    public StreamResource(Node node) {
+        channel = createConnection(node);
+        hostNode = node;
         RateLimitGRPCV2Stub rateLimitGRPCV2Stub = RateLimitGRPCV2Grpc.newStub(channel);
         streamClient = rateLimitGRPCV2Stub.service(this);
         client = RateLimitGRPCV2Grpc.newBlockingStub(channel);
@@ -118,14 +119,14 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
      *
      * @return Connection对象
      */
-    private ManagedChannel createConnection(HostIdentifier identifier) {
-        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(identifier.getHost(), identifier.getPort())
+    private ManagedChannel createConnection(Node node) {
+        ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(node.getHost(), node.getPort())
                 .usePlaintext();
         return builder.build();
     }
 
-    public HostIdentifier getHostIdentifier() {
-        return hostIdentifier;
+    public Node getHostNode() {
+        return hostNode;
     }
 
     /**
@@ -136,7 +137,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     public void closeStream(boolean closeSend) {
         if (endStream.compareAndSet(false, true)) {
             if (closeSend && null != streamClient) {
-                LOG.info("[ServerConnector]connection {} start to closeSend", hostIdentifier);
+                LOG.info("[ServerConnector]connection {} start to closeSend", hostNode);
                 streamClient.onCompleted();
             }
             if (null != channel) {
@@ -158,21 +159,21 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     @Override
     public void onError(Throwable throwable) {
-        LOG.error("received error from server {}", hostIdentifier, throwable);
+        LOG.error("received error from server {}", hostNode, throwable);
         lastConnectFailTimeMilli.set(System.currentTimeMillis());
         closeStream(false);
     }
 
     @Override
     public void onCompleted() {
-        LOG.error("received EOF from server {}", hostIdentifier);
+        LOG.error("received EOF from server {}", hostNode);
         closeStream(true);
     }
 
     public InitializeRecord getInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
         InitializeRecord record = initRecord.get(serviceIdentifier);
         if (record == null) {
-            LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
+            LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostNode);
             initRecord.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
         } else if (record.getRateLimitWindow() != rateLimitWindow) {  // 存在旧窗口映射关系，说明已经淘汰
             initRecord.put(serviceIdentifier, new InitializeRecord(rateLimitWindow));
@@ -183,7 +184,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     public void deleteInitRecord(ServiceIdentifier serviceIdentifier) {
-        LOG.info("[RateLimit] delete init record for {}, stream is {}", serviceIdentifier, this.hostIdentifier);
+        LOG.info("[RateLimit] delete init record for {}, stream is {}", serviceIdentifier, this.hostNode);
         initRecord.remove(serviceIdentifier);
     }
 

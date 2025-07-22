@@ -21,9 +21,15 @@ import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
+import com.tencent.polaris.api.pojo.DefaultInstance;
+import com.tencent.polaris.api.pojo.DefaultServiceInstances;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -49,6 +55,9 @@ public class ServiceAddressRepository {
 
     private int curIndex;
 
+    private ServiceInstances remoteAddresses;
+
+    // hash value
     private final String clientId;
 
     private final Extensions extensions;
@@ -61,6 +70,8 @@ public class ServiceAddressRepository {
 
     private final String protocol;
 
+
+
     public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
                                     ServiceKey remoteCluster) {
         this(addresses, clientId, extensions, remoteCluster, null, null, null);
@@ -69,7 +80,7 @@ public class ServiceAddressRepository {
     }
 
     public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
-                                    ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol) {
+                                    ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol)  {
         // to ip addresses.
         this.nodes = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(addresses)) {
@@ -90,6 +101,7 @@ public class ServiceAddressRepository {
                 }
             }
         }
+        this.remoteAddresses = buildDefaultInstances();
         this.curIndex = 0;
 
         // from discovery.
@@ -121,12 +133,13 @@ public class ServiceAddressRepository {
 
     public Node getServiceAddressNode() throws PolarisException {
         if (CollectionUtils.isNotEmpty(nodes)) {
-            Node node = nodes.get(Math.abs(curIndex % nodes.size()));
-            curIndex = (curIndex + 1) % Integer.MAX_VALUE;
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("success to get instance, instance is {}:{}", node.getHost(), node.getPort());
-            }
-            return node;
+            LoadBalancer loadBalancer = (LoadBalancer) extensions.getPlugins()
+                    .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), lbPolicy);
+            Criteria criteria = new Criteria();
+            criteria.setHashKey(this.clientId);
+            Instance instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses,
+                    extensions.getWeightAdjusters());
+            return new Node(IPAddressUtils.getIpCompatible(instance.getHost()), instance.getPort());
         }
         Instance instance = getDiscoverInstance();
         String host = IPAddressUtils.getIpCompatible(instance.getHost());
@@ -134,6 +147,31 @@ public class ServiceAddressRepository {
             LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, host, instance.getPort());
         }
         return new Node(IPAddressUtils.getIpCompatible(host), instance.getPort());
+    }
+
+    private ServiceInstances buildDefaultInstances() {
+        if (CollectionUtils.isEmpty(nodes)) {
+            return null;
+        }
+        List<Instance> instances = new ArrayList<>();
+        for (Node node : nodes) {
+            DefaultInstance defaultInstance = new DefaultInstance();
+            defaultInstance.setId(node.getHostPort());
+            defaultInstance.setHost(node.getHost());
+            defaultInstance.setPort(node.getPort());
+            defaultInstance.setHealthy(true);
+            defaultInstance.setWeight(100);
+            instances.add(defaultInstance);
+        }
+        return new DefaultServiceInstances(new ServiceKey("", ""), instances);
+    }
+
+    public ServiceInstances getRemoteAddresses() {
+        return remoteAddresses;
+    }
+
+    public int size(){
+        return nodes.size();
     }
 
     private Instance getDiscoverInstance() throws PolarisException {

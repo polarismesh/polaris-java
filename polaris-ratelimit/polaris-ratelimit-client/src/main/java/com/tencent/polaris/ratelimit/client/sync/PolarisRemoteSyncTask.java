@@ -113,12 +113,12 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
     private void doRemoteInit() {
         StreamCounterSet streamCounterSet = asyncRateLimitConnector
                 .getStreamCounterSet(window.getWindowSet().getRateLimitExtension().getExtensions(),
-                        window.getRemoteCluster(), window.getRemoteAddresses(), window.getUniqueKey(),
+                        window.getRemoteCluster(), window.getServiceAddressRepository(), window.getUniqueKey(),
                         serviceIdentifier);
         //拿不到限流集群的实例的时候
         if (streamCounterSet == null) {
             LOG.error("[doRemoteInit] failed, stream counter is null. remote cluster:{}, remote addresses: {}",
-                    window.getRemoteCluster(), window.getRemoteAddresses());
+                    window.getRemoteCluster(), window.getServiceAddressRepository().getRemoteAddresses());
             return;
         }
         StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
@@ -131,7 +131,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
             return;
         }
         LOG.info("[RateLimit] start to init {}, remote server {}", serviceIdentifier,
-                streamResource.getHostIdentifier());
+                streamResource.getHostNode());
         initRecord.setInitStartTimeMilli(System.currentTimeMillis());
         //执行同步操作
         Builder initRequest = RateLimitInitRequest.newBuilder();
@@ -171,7 +171,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
     private void doRemoteAcquire() {
         StreamCounterSet streamCounterSet = asyncRateLimitConnector
                 .getStreamCounterSet(window.getWindowSet().getRateLimitExtension().getExtensions(),
-                        window.getRemoteCluster(), window.getRemoteAddresses(), window.getUniqueKey(),
+                        window.getRemoteCluster(), window.getServiceAddressRepository(), window.getUniqueKey(),
                         serviceIdentifier);
         if (streamCounterSet == null) {
             LOG.error("[doRemoteAcquire] failed, stream counter is null. remote cluster:{},",
