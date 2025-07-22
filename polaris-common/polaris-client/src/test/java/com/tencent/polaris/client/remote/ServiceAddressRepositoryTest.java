@@ -28,10 +28,7 @@ import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.pojo.Node;
-import com.tencent.polaris.plugins.loadbalancer.random.WeightedRandomBalance;
 import com.tencent.polaris.plugins.loadbalancer.roundrobin.WeightedRoundRobinBalance;
-import java.util.ArrayList;
-import java.util.Collection;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -40,7 +37,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.internal.matchers.Any;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Arrays;
