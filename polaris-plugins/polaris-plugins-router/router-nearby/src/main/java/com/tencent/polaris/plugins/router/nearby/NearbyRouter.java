@@ -222,6 +222,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                     }
                     break;
                 case CAMPUS:
+                    // TODO: support empty string
                     if (clientCampus.equals("") || clientCampus.equals(getInstanceCampus(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
@@ -230,6 +231,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
                     }
                     break;
                 case REGION:
+                    // TODO: support empty string
                     if (clientRegion.equals("") || clientRegion.equals(getInstanceRegion(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
