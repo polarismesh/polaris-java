@@ -17,13 +17,21 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.plugin;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.impl.PluginManager;
+import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.DefaultCircuitBreakResult;
 import com.tencent.polaris.api.plugin.stat.StatInfo;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.ServiceCallResult;
+import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.remote.ServiceAddressRepository;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.plugins.loadbalancer.roundrobin.WeightedRoundRobinBalance;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategy;
 import com.tencent.polaris.plugins.stat.common.model.MetricValueAggregationStrategyCollections;
 import com.tencent.polaris.plugins.stat.common.model.SystemMetricModel;
@@ -36,8 +44,11 @@ import io.prometheus.client.Collector.MetricFamilySamples;
 import io.prometheus.client.CollectorRegistry;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.slf4j.Logger;
 
@@ -56,9 +67,13 @@ public class PrometheusReporterTest {
     private final Random random = new Random();
     private PrometheusReporter handler;
     private long pushInterval;
-
+    @Mock
+    private Extensions extensions;
+    @Mock
+    private PluginManager pluginManager;
     @Before
     public void setUp() {
+
         pushInterval = 2 * 1000;
         PrometheusHandlerConfig config = new PrometheusHandlerConfig();
         config.setType("push");
@@ -70,10 +85,13 @@ public class PrometheusReporterTest {
         handler.setSdkIP("127.0.0.1");
         handler.setConfig(config);
         handler.setServiceAddressRepository(new ServiceAddressRepository(Collections.singletonList(PUSH_DEFAULT_ADDRESS),
-                null, null, new ServiceKey("Polaris", "polaris.pushgateway")));
+                null, extensions, new ServiceKey("Polaris", "polaris.pushgateway")));
         handler.getPushGatewayMap().put(PUSH_DEFAULT_ADDRESS, pgw);
         handler.setExecutorService(Executors.newScheduledThreadPool(4));
         handler.initHandle();
+        LoadBalancer weightedRandomBalance = new WeightedRoundRobinBalance();
+        when(extensions.getPlugins()).thenReturn(pluginManager);
+        when(extensions.getPlugins().getPlugin(any(), any())).thenReturn(weightedRandomBalance);
     }
 
     @Test
