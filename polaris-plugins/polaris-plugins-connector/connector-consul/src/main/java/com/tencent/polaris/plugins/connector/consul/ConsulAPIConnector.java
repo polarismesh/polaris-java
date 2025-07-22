@@ -40,6 +40,7 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.server.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.utils.ClassUtils;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.IPAddressUtils;
 import com.tencent.polaris.api.utils.StringUtils;
@@ -205,6 +206,10 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         }
         if (StringUtils.isNotBlank(connectorConfig.getToken())) {
             consulContext.setAclToken(connectorConfig.getToken());
+        }
+        // in gateway mode, namespace type is empty string
+        if (!ClassUtils.isClassPresent("org.springframework.cloud.gateway.filter.GlobalFilter")) {
+            consulContext.setNamespaceType("DEF_AND_GLOBAL");
         }
         if (metadata.containsKey(TAGS_KEY) && StringUtils.isNotBlank(metadata.get(TAGS_KEY))) {
             try {

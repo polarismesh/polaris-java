@@ -56,6 +56,8 @@ public class ConsulContext {
 
     private long consulErrorSleep;
 
+    private String namespaceType;
+
     /**
      * The number of seconds to wait (or block) for watch query, defaults to 55.
      * Needs to be less than default ConsulClient (defaults to 60). To increase
@@ -78,6 +80,7 @@ public class ConsulContext {
         queryPassing = true;
         consulErrorSleep = 60000L;
         waitTime = 55;
+        namespaceType = "";
     }
 
     public ServerConnectorConfig getConnectorConfig() {
@@ -190,5 +193,13 @@ public class ConsulContext {
 
     public void setWaitTime(int waitTime) {
         this.waitTime = waitTime;
+    }
+
+    public String getNamespaceType() {
+        return namespaceType;
+    }
+
+    public void setNamespaceType(String namespaceType) {
+        this.namespaceType = namespaceType;
     }
 }

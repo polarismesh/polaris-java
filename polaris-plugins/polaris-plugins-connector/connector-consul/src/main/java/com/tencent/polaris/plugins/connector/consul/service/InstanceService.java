@@ -86,7 +86,7 @@ public class InstanceService extends ConsulService {
         UrlParameters tokenParam = StringUtils.isNotBlank(token) ? new SingleUrlParameters("token", token) : null;
         UrlParameters tagParams = StringUtils.isNotBlank(tag) ? new SingleUrlParameters("tag", tag) : null;
         UrlParameters passingParams = onlyPassing ? new SingleUrlParameters("passing") : null;
-        UrlParameters nsTypeParam = new SingleUrlParameters("nsType", "DEF_AND_GLOBAL");
+        UrlParameters nsTypeParam = StringUtils.isNotBlank(consulContext.getNamespaceType()) ? new SingleUrlParameters("nsType", consulContext.getNamespaceType()) : null;;
         UrlParameters namespaceParameter = StringUtils.isNotBlank(namespace) ? new SingleUrlParameters("nid", namespace) : null;;
         Long currentIndex = getServersConsulIndex(serviceId);
         int code = ServerCodes.DATA_NO_CHANGE;
