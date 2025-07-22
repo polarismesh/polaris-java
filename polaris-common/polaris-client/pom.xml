@@ -44,5 +44,11 @@
             <version>${javax.annotation.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>loadbalancer-roundrobin</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
