@@ -214,6 +214,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         for (Instance instance : svcInstances.getInstances()) {
             switch (targetLevel) {
                 case ZONE:
+                    // support tsf_zone as empty string
                     if (clientZone.equals(getInstanceZone(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
