@@ -214,7 +214,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
         for (Instance instance : svcInstances.getInstances()) {
             switch (targetLevel) {
                 case ZONE:
-                    if (clientZone.equals("") || clientZone.equals(getInstanceZone(instance))) {
+                    if (clientZone.equals(getInstanceZone(instance))) {
                         checkResult.instances.add(instance);
                         if (isHealthyInstance(instance)) {
                             checkResult.healthyInstanceCount++;
@@ -443,7 +443,7 @@ public class NearbyRouter extends AbstractServiceRouter implements PluginConfigP
 
     private String getInstanceZone(Instance instance) {
         String zone = instance.getZone();
-        if (StringUtils.isNotBlank(zone)) {
+        if (zone != null) {
             return zone;
         }
         return getMetadata(instance, ROUTER_METADATA_KEY_ZONE);
