@@ -312,6 +312,9 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
 
     private void doPush() {
         String address = serviceAddressRepository.getServiceAddress();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[PrometheusReporter] send push request to :" + address);
+        }
         try {
             CommonHandler.putDataFromContainerInOrder(sampleMapping, container.getInsCollector(),
                     container.getInsCollector().getCurrentRevision(),

@@ -63,7 +63,7 @@ public class PrometheusReporterTest {
         PrometheusHandlerConfig config = new PrometheusHandlerConfig();
         config.setType("push");
         config.setPushInterval(pushInterval);
-        config.setAddress(PUSH_DEFAULT_ADDRESS);
+        config.setAddress(Collections.singletonList(PUSH_DEFAULT_ADDRESS));
         MockPushGateway pgw = new MockPushGateway(PUSH_DEFAULT_ADDRESS);
         handler = new PrometheusReporter();
         handler.setEnable(true);

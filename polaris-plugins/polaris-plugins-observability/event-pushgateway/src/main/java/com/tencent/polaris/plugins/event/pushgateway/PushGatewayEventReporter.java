@@ -170,6 +170,9 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
     }
 
     private URI getEventUriByNode(Node node) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[PushGatewayEventReporter] choose node: {}", node.getHostPort());
+        }
         if (node != null) {
             // First try to get URI from cache.
             URI cachedUri = eventUriMap.get(node);
