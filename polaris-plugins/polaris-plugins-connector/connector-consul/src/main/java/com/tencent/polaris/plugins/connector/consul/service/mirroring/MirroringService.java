@@ -194,6 +194,9 @@ public class MirroringService extends ConsulService {
         for (RouteRuleGroup routeRuleGroup : routeRuleGroupList) {
             for (RouteRule routeRule : routeRuleGroup.getRuleList()) {
                 MirrorRule mirrorRule = routeRule.getMirrorRule();
+                if (mirrorRule == null) {
+                    continue;
+                }
                 TrafficMirroringProto.TrafficMirroring.Builder trafficMirroringBuilder = TrafficMirroringProto.TrafficMirroring.newBuilder();
 
                 // parse enabled

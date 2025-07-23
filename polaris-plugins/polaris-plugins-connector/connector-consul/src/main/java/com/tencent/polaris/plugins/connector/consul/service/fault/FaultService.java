@@ -191,6 +191,9 @@ public class FaultService extends ConsulService {
         for (RouteRuleGroup routeRuleGroup : routeRuleGroupList) {
             for (RouteRule routeRule : routeRuleGroup.getRuleList()) {
                 FaultRule faultRule = routeRule.getFaultRule();
+                if (faultRule == null) {
+                    continue;
+                }
                 FaultInjectionProto.FaultInjection.Builder faultInjectionBuilder = FaultInjectionProto.FaultInjection.newBuilder();
                 // parse sources
                 List<RoutingProto.Source> sources = RouterUtils.parseTagListToSourceList(routeRule.getTagList());

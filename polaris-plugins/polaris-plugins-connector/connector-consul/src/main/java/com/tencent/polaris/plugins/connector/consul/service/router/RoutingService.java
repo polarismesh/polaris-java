@@ -197,6 +197,9 @@ public class RoutingService extends ConsulService {
         List<RoutingProto.Route> routes = Lists.newArrayList();
         for (RouteRuleGroup routeRuleGroup : routeRuleGroupList) {
             for (RouteRule routeRule : routeRuleGroup.getRuleList()) {
+                if (CollectionUtils.isEmpty(routeRule.getDestList())) {
+                    continue;
+                }
                 RoutingProto.Route.Builder routeBuilder = RoutingProto.Route.newBuilder();
                 routeBuilder.putExtendInfo(ROUTER_FAULT_TOLERANCE_ENABLE, String.valueOf(routeRuleGroup.getFallbackStatus()));
                 // parse sources
