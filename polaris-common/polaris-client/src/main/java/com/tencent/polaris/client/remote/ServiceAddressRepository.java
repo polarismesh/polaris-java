@@ -20,6 +20,7 @@ package com.tencent.polaris.client.remote;
 import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.verify.DefaultValues;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -135,6 +136,13 @@ public class ServiceAddressRepository {
         if (CollectionUtils.isNotEmpty(nodes)) {
             LoadBalancer loadBalancer = (LoadBalancer) extensions.getPlugins()
                     .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), lbPolicy);
+            if (loadBalancer == null) {
+                // 降级为轮训
+                if (curIndex >= nodes.size()) {
+                    curIndex = 0;
+                }
+                return nodes.get(curIndex++);
+            }
             Criteria criteria = new Criteria();
             criteria.setHashKey(this.clientId);
             Instance instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses,
