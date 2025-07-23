@@ -72,16 +72,15 @@ public class ServiceAddressRepository {
     private final String protocol;
 
 
-
     public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
-                                    ServiceKey remoteCluster) {
+            ServiceKey remoteCluster) {
         this(addresses, clientId, extensions, remoteCluster, null, null, null);
         this.routers.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
         this.routers.add(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY);
     }
 
     public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
-                                    ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol)  {
+            ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol) {
         // to ip addresses.
         this.nodes = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(addresses)) {
@@ -138,21 +137,30 @@ public class ServiceAddressRepository {
                     .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), lbPolicy);
             if (loadBalancer == null) {
                 // 降级为轮训
-                if (curIndex >= nodes.size()) {
-                    curIndex = 0;
+                Node node = nodes.get(Math.abs(curIndex % nodes.size()));
+                curIndex = (curIndex + 1) % Integer.MAX_VALUE;
+                if (LOG.isDebugEnabled()) {
+                    LOG.warn("Can't find load balancer {}, use round robin instead", lbPolicy);
+                    LOG.debug("success to get instance for service {}, instance is {}", remoteCluster,
+                            node.getHostPort());
                 }
-                return nodes.get(curIndex++);
+                return node;
             }
             Criteria criteria = new Criteria();
             criteria.setHashKey(this.clientId);
             Instance instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses,
                     extensions.getWeightAdjusters());
-            return new Node(IPAddressUtils.getIpCompatible(instance.getHost()), instance.getPort());
+            Node node = new Node(IPAddressUtils.getIpCompatible(instance.getHost()), instance.getPort());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("success to get instance for service {}, instance is {}", remoteCluster, node.getHostPort());
+            }
+            return node;
         }
         Instance instance = getDiscoverInstance();
         String host = IPAddressUtils.getIpCompatible(instance.getHost());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, host, instance.getPort());
+            LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, host,
+                    instance.getPort());
         }
         return new Node(IPAddressUtils.getIpCompatible(host), instance.getPort());
     }
@@ -178,13 +186,15 @@ public class ServiceAddressRepository {
         return remoteAddresses;
     }
 
-    public int size(){
+    public int size() {
         return nodes.size();
     }
 
     private Instance getDiscoverInstance() throws PolarisException {
-        Instance instance = BaseFlow.commonGetOneInstance(extensions, remoteCluster, routers, lbPolicy, protocol, clientId);
-        LOG.info("success to get instance for service {}, instance is {}:{}", remoteCluster, instance.getHost(), instance.getPort());
+        Instance instance = BaseFlow.commonGetOneInstance(extensions, remoteCluster, routers, lbPolicy, protocol,
+                clientId);
+        LOG.info("success to get instance for service {}, instance is {}:{}", remoteCluster, instance.getHost(),
+                instance.getPort());
         return instance;
     }
 
