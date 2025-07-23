@@ -17,7 +17,7 @@
 
 package com.tencent.polaris.fault.api.rpc;
 
-import com.tencent.polaris.api.rpc.RequestBaseEntity;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 
 /**
@@ -25,26 +25,26 @@ import com.tencent.polaris.metadata.core.manager.MetadataContext;
  *
  * @author Haotian Zhang
  */
-public class FaultRequest extends RequestBaseEntity {
+public class FaultRequest {
 
-    private final String namespace;
+    private final ServiceKey sourceService;
 
-    private final String service;
+    private final ServiceKey targetService;
 
     private final MetadataContext metadataContext;
 
-    public FaultRequest(String namespace, String service, MetadataContext metadataContext) {
-        this.namespace = namespace;
-        this.service = service;
+    public FaultRequest(String sourceNamespace, String sourceService, String targetNamespace, String targetService, MetadataContext metadataContext) {
+        this.sourceService = new ServiceKey(sourceNamespace, sourceService);
+        this.targetService = new ServiceKey(targetNamespace, targetService);
         this.metadataContext = metadataContext;
     }
 
-    public String getNamespace() {
-        return namespace;
+    public ServiceKey getSourceService() {
+        return sourceService;
     }
 
-    public String getService() {
-        return service;
+    public ServiceKey getTargetService() {
+        return targetService;
     }
 
     public MetadataContext getMetadataContext() {
@@ -54,8 +54,8 @@ public class FaultRequest extends RequestBaseEntity {
     @Override
     public String toString() {
         return "FaultRequest{" +
-                "namespace='" + namespace + '\'' +
-                ", service='" + service + '\'' +
+                "sourceService=" + sourceService +
+                ", targetService=" + targetService +
                 ", metadataContext=" + metadataContext +
                 '}';
     }

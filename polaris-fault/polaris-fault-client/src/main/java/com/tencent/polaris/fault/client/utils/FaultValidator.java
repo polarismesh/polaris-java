@@ -34,6 +34,7 @@ public class FaultValidator {
         if (null == faultRequest) {
             throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT, "FaultRequest can not be null");
         }
-        CommonValidator.validateNamespaceService(faultRequest.getNamespace(), faultRequest.getService());
+        CommonValidator.validateService(faultRequest.getSourceService());
+        CommonValidator.validateService(faultRequest.getTargetService());
     }
 }

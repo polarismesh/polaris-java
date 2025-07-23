@@ -81,8 +81,7 @@ public class DefaultFaultFlow implements FaultFlow {
         }
 
         FaultResponse faultResponse = new FaultResponse(false);
-        ServiceKey serviceKey = new ServiceKey(faultRequest.getNamespace(), faultRequest.getService());
-        List<FaultInjectionProto.FaultInjection> faultInjectionRules = getFaultInjectionRules(serviceKey);
+        List<FaultInjectionProto.FaultInjection> faultInjectionRules = getFaultInjectionRules(faultRequest.getTargetService());
         if (CollectionUtils.isNotEmpty(faultInjectionRules)) {
             for (FaultInjectionProto.FaultInjection faultInjection : faultInjectionRules) {
                 if (faultInjection != null && faultInjection.getEnabled().getValue()) {
@@ -90,7 +89,7 @@ public class DefaultFaultFlow implements FaultFlow {
 
                     // 匹配source规则
                     boolean sourceMatched = matchSource(faultInjection.getSourcesList(),
-                            serviceKey, faultRequest.getMetadataContext().getMetadataContainerGroup(false));
+                            faultRequest.getSourceService(), faultRequest.getMetadataContext().getMetadataContainerGroup(false));
                     if (!sourceMatched) {
                         LOG.debug("Source not matched, skipping fault injection. FaultInjectionProto.FaultInjection:{}", faultInjection);
                         continue;
