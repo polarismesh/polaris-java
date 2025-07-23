@@ -49,7 +49,7 @@ import java.util.*;
 import static com.tencent.polaris.api.plugin.cache.CacheConstants.API_ID;
 
 /**
- * 默认的鉴权Flow实现
+ * 默认的故障注入Flow实现
  *
  * @author Haotian Zhang
  */

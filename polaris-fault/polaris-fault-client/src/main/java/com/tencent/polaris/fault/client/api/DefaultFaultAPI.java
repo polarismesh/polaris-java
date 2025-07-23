@@ -27,7 +27,7 @@ import com.tencent.polaris.fault.api.rpc.FaultResponse;
 import com.tencent.polaris.fault.client.utils.FaultValidator;
 
 /**
- * 默认的鉴权API实现
+ * 默认的故障注入API实现
  *
  * @author Haotian Zhang
  */
