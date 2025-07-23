@@ -152,7 +152,7 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
                         eventQueue = new LinkedBlockingQueue<>(config.getEventQueueSize());
 
-                        serviceAddressRepository = new ServiceAddressRepository(Collections.singletonList(this.config.getAddress()),
+                        serviceAddressRepository = new ServiceAddressRepository(this.config.getAddress(),
                                 ctx.getValueContext().getClientId(), ctx, new ServiceKey(config.getNamespace(), config.getService()));
 
                         eventExecutors.scheduleWithFixedDelay(new PushGatewayEventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
