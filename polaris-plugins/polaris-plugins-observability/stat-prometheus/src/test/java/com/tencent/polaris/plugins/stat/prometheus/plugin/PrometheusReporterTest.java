@@ -209,7 +209,7 @@ public class PrometheusReporterTest {
     @Test
     public void testServiceCallSumAndMaxAndMinStrategy() throws InterruptedException {
         List<Integer> delayList = Collections.synchronizedList(new ArrayList<>());
-        int count = 20;
+        int count = 1000;
         batchDone(() -> {
             int delay = random.nextInt(1000) + 100;
             delayList.add(delay);
