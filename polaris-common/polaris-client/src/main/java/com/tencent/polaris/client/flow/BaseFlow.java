@@ -179,6 +179,10 @@ public class BaseFlow {
                 RouteResult filteredInstances = router.getFilteredInstances(routeInfo, serviceInstances);
                 RouteResult.NextRouterInfo nextRouterInfo = filteredInstances.getNextRouterInfo();
                 if (nextRouterInfo.getState() == RouteResult.State.Next) {
+                    if (!serviceInstances.getInstances().isEmpty() && filteredInstances.getInstances().isEmpty()) {
+                        LOG.warn("router: {} filtered instances is empty, original instances size:{}, service key:{}",
+                                router.getName(), serviceInstances.getInstances().size(), serviceInstances.getServiceKey());
+                    }
                     serviceInstances.setInstances(filteredInstances.getInstances());
                     LOG.debug("router: {} get filtered instance result size : {} serviceInstances: {}", router.getName(),
                             serviceInstances.getInstances().size(), serviceInstances.getObjectId());
