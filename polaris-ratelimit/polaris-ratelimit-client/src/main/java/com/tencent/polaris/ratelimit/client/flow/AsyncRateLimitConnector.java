@@ -71,8 +71,9 @@ public class AsyncRateLimitConnector {
             LOG.error("[getStreamCounterSet] ratelimit cluster service not found.");
             return null;
         }
-
-        LOG.debug("[getStreamCounterSet] serviceLabel: {}  \n get node: {}", serviceIdentifier.getLabels(), node);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[getStreamCounterSet] serviceLabel: {} , get node: {}", serviceIdentifier.getLabels(), node);
+        }
         StreamCounterSet streamCounterSet = uniqueKeyToStream.get(uniqueKey);
         if (null != streamCounterSet && streamCounterSet.getNode().equals(node)) {
             return streamCounterSet;
