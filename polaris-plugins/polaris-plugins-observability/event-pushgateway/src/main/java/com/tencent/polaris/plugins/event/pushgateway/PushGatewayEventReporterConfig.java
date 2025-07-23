@@ -19,8 +19,10 @@ package com.tencent.polaris.plugins.event.pushgateway;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.util.ConfigUtils;
+import java.util.List;
 
 /**
  * Polaris push gateway event reporter config.
@@ -32,8 +34,9 @@ public class PushGatewayEventReporterConfig implements Verifier {
     @JsonProperty
     private Boolean enable;
 
+
     @JsonProperty
-    private String address;
+    private List<String> address;
 
     @JsonProperty
     private Integer eventQueueSize;
@@ -53,7 +56,6 @@ public class PushGatewayEventReporterConfig implements Verifier {
         if (!enable) {
             return;
         }
-        ConfigUtils.validateString(address, "global.eventReporter.plugin.pushgateway.address");
         ConfigUtils.validatePositive(eventQueueSize, "global.eventReporter.plugin.pushgateway.eventQueueSize");
         ConfigUtils.validatePositive(maxBatchSize, "global.eventReporter.plugin.pushgateway.maxBatchSize");
         ConfigUtils.validateString(namespace, "global.eventReporter.plugin.pushgateway.namespace");
@@ -67,7 +69,7 @@ public class PushGatewayEventReporterConfig implements Verifier {
             if (null == enable) {
                 setEnable(pushGatewayEventReporterConfig.isEnable());
             }
-            if (StringUtils.isBlank(address)) {
+            if (CollectionUtils.isEmpty(address)) {
                 setAddress(pushGatewayEventReporterConfig.getAddress());
             }
             if (null == eventQueueSize) {
@@ -96,11 +98,11 @@ public class PushGatewayEventReporterConfig implements Verifier {
         this.enable = enable;
     }
 
-    public String getAddress() {
+    public List<String> getAddress() {
         return address;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(List<String> address) {
         this.address = address;
     }
 
