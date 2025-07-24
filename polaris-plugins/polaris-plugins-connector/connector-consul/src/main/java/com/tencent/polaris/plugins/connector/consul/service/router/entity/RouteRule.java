@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.plugins.connector.consul.service.router.entity;
 
+import com.tencent.polaris.plugins.connector.consul.service.fault.entity.FaultRule;
+import com.tencent.polaris.plugins.connector.consul.service.mirroring.entity.MirrorRule;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -63,6 +66,11 @@ public class RouteRule implements Serializable {
      */
     private MirrorRule mirrorRule;
 
+    /**
+     * 路由规则项包含的故障注入规则
+     */
+    private FaultRule faultRule;
+
     public String getRouteRuleId() {
         return routeRuleId;
     }
@@ -103,6 +111,14 @@ public class RouteRule implements Serializable {
         this.mirrorRule = mirrorRule;
     }
 
+    public FaultRule getFaultRule() {
+        return faultRule;
+    }
+
+    public void setFaultRule(FaultRule faultRule) {
+        this.faultRule = faultRule;
+    }
+
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer("RouteRule{");
@@ -111,6 +127,7 @@ public class RouteRule implements Serializable {
         sb.append(", tagList=").append(tagList);
         sb.append(", destList=").append(destList);
         sb.append(", mirrorRule=").append(mirrorRule);
+        sb.append(", faultRule=").append(faultRule);
         sb.append('}');
         return sb.toString();
     }

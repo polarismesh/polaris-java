@@ -53,10 +53,11 @@ import com.tencent.polaris.plugins.connector.consul.service.InstanceService;
 import com.tencent.polaris.plugins.connector.consul.service.ServiceService;
 import com.tencent.polaris.plugins.connector.consul.service.authority.AuthorityService;
 import com.tencent.polaris.plugins.connector.consul.service.circuitbreaker.CircuitBreakingService;
+import com.tencent.polaris.plugins.connector.consul.service.fault.FaultService;
 import com.tencent.polaris.plugins.connector.consul.service.lane.LaneService;
 import com.tencent.polaris.plugins.connector.consul.service.lossless.LosslessService;
+import com.tencent.polaris.plugins.connector.consul.service.mirroring.MirroringService;
 import com.tencent.polaris.plugins.connector.consul.service.ratelimiting.RateLimitingService;
-import com.tencent.polaris.plugins.connector.consul.service.router.MirroringService;
 import com.tencent.polaris.plugins.connector.consul.service.router.NearByRouteRuleService;
 import com.tencent.polaris.plugins.connector.consul.service.router.RoutingService;
 import org.slf4j.Logger;
@@ -257,6 +258,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         consulServiceMap.put(ServiceEventKey.EventType.LANE_RULE, new LaneService(consulClient, consulRawClient, consulContext, "consul-lane", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.BLOCK_ALLOW_RULE, new AuthorityService(consulClient, consulRawClient, consulContext, "consul-auth", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.TRAFFIC_MIRRORING, new MirroringService(consulClient, consulRawClient, consulContext, "consul-mirror", mapper));
+        consulServiceMap.put(ServiceEventKey.EventType.FAULT_INJECTION, new FaultService(consulClient, consulRawClient, consulContext, "consul-fault", mapper));
         initialized = true;
     }
 
