@@ -89,16 +89,14 @@ public class InstanceService extends ConsulService {
         UrlParameters nsTypeParam = StringUtils.isNotBlank(consulContext.getNamespaceType()) ? new SingleUrlParameters("nsType", consulContext.getNamespaceType()) : null;;
         UrlParameters namespaceParameter = StringUtils.isNotBlank(namespace) ? new SingleUrlParameters("nid", namespace) : null;;
         Long currentIndex = getServersConsulIndex(serviceId);
-        int code = ServerCodes.DATA_NO_CHANGE;
+        // in tsf consul, changes in instance status may not alter the index, requiring updates each time.
+        int code = ServerCodes.EXECUTE_SUCCESS;
         QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), currentIndex);
         try {
             LOG.debug("Begin get service instances of :{}/{} sync", namespace, serviceId);
             HttpResponse rawResponse = consulRawClient.makeGetRequest("/v1/health/service/" + serviceId, tagParams,
                     passingParams, tokenParam, nsTypeParam, namespaceParameter, queryParams);
             if (rawResponse != null) {
-                if (!currentIndex.equals(rawResponse.getConsulIndex())) {
-                    code = ServerCodes.EXECUTE_SUCCESS;
-                }
                 LOG.debug("raw response: " + rawResponse.getContent() + " ; onlyPassing: " + onlyPassing);
                 List<HealthService> value;
                 if (rawResponse.getStatusCode() == 200) {
