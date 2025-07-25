@@ -20,6 +20,7 @@ package com.tencent.polaris.client.pojo;
 import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.pojo.DetectResult;
 import com.tencent.polaris.api.pojo.InstanceLocalValue;
+import com.tencent.polaris.api.pojo.InstanceStatistic;
 import com.tencent.polaris.api.pojo.StatusDimension;
 import java.util.Collection;
 import java.util.Map;
@@ -41,6 +42,12 @@ public class DefaultInstanceLocalValue implements InstanceLocalValue {
     private final AtomicReference<DetectResult> detectResult = new AtomicReference<>();
 
     private final Map<Integer, Object> pluginValues = new ConcurrentHashMap<>();
+
+    private final AtomicReference<InstanceStatistic> instanceStatistic = new AtomicReference<>();
+
+    public  DefaultInstanceLocalValue() {
+        instanceStatistic.set(new InstanceStatistic());
+    }
 
     @Override
     public Collection<StatusDimension> getStatusDimensions() {
@@ -75,10 +82,20 @@ public class DefaultInstanceLocalValue implements InstanceLocalValue {
         value.set(status);
     }
 
+    @Override
     public void setDetectResult(DetectResult detectResult) {
         this.detectResult.set(detectResult);
     }
 
+    @Override
+    public InstanceStatistic getInstanceStatistic() {
+        return this.instanceStatistic.get();
+    }
+
+    @Override
+    public void setInstanceStatistic(InstanceStatistic instanceStatistic) {
+        this.instanceStatistic.set(instanceStatistic);
+    }
     @Override
     public Object getPluginValue(int pluginId, Function<Integer, Object> create) {
         if (null == create) {

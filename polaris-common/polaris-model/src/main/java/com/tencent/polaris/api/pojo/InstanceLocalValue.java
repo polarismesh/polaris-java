@@ -66,6 +66,19 @@ public interface InstanceLocalValue {
     void setDetectResult(DetectResult detectResult);
 
     /**
+     * 获取实例统计信息
+     *
+     * @return InstanceStatistic
+     */
+    InstanceStatistic getInstanceStatistic();
+
+    /**
+     * 设置实例统计信息
+     *
+     * @param instanceStatistic
+     */
+    void setInstanceStatistic(InstanceStatistic instanceStatistic);
+    /**
      * 获取插件数据
      *
      * @param pluginId 插件ID

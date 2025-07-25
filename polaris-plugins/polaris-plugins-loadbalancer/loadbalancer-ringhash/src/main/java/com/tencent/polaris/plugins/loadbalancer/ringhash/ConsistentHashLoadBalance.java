@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.loadbalancer.ringhash;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.control.Destroyable;
+import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.IdAwarePlugin;
 import com.tencent.polaris.api.plugin.PluginType;
@@ -55,8 +56,13 @@ public class ConsistentHashLoadBalance extends Destroyable implements LoadBalanc
 
     @Override
     public Instance chooseInstance(Criteria criteria, ServiceInstances instances) throws PolarisException {
-        if (instances == null || CollectionUtils.isEmpty(instances.getInstances())) {
-            return null;
+        if (instances == null) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "instances is null");
+        }
+        if (CollectionUtils.isEmpty(instances.getInstances())) {
+            throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
+                    "no instance found, serviceKey: " + instances.getServiceKey());
         }
         TreeMap<Integer, Instance> ring = flowCache.loadPluginCacheObject(getId(), instances,
                 obj -> buildConsistentHashRing((ServiceInstances) obj));
