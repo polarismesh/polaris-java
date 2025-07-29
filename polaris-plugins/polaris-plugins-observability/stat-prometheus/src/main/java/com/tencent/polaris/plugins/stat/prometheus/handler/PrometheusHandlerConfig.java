@@ -20,10 +20,12 @@ package com.tencent.polaris.plugins.stat.prometheus.handler;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.tencent.polaris.api.config.verify.Verifier;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -38,8 +40,7 @@ public class PrometheusHandlerConfig implements Verifier {
     private String type;
 
     @JsonProperty
-    private String address;
-
+    private List<String> address;
     @JsonProperty
     private String namespace;
 
@@ -82,7 +83,7 @@ public class PrometheusHandlerConfig implements Verifier {
             if (StringUtils.isBlank(path)) {
                 setPath(config.getPath());
             }
-            if (StringUtils.isBlank(address)) {
+            if (CollectionUtils.isEmpty(address)) {
                 setAddress(config.getAddress());
             }
             if (null == pushInterval) {
@@ -116,11 +117,11 @@ public class PrometheusHandlerConfig implements Verifier {
         this.path = path;
     }
 
-    public String getAddress() {
+    public List<String> getAddress() {
         return address;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(List<String> address) {
         this.address = address;
     }
 
