@@ -142,6 +142,10 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
             if (null != channel) {
                 channel.shutdown();
             }
+            // 重置窗口最后初始化时间，清初始化窗口记录、上报索引记录
+            initRecord.forEach((serviceIdentifier, record) -> record.getRateLimitWindow().setLastInitTimeMs(0));
+            initRecord.clear();
+            counters.clear();
         }
     }
 
@@ -152,7 +156,9 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         if (RateLimitCmd.INIT.equals(rateLimitResponse.getCmd())) {
             handleRateLimitInitResponse(rateLimitResponse.getRateLimitInitResponse());
         } else if (RateLimitCmd.ACQUIRE.equals(rateLimitResponse.getCmd())) {
-            handleRateLimitReportResponse(rateLimitResponse.getRateLimitReportResponse());
+            if (!handleRateLimitReportResponse(rateLimitResponse.getRateLimitReportResponse())) {
+                closeStream(true);
+            }
         }
     }
 
@@ -221,6 +227,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         long remoteQuotaTimeMilli = rateLimitInitResponse.getTimestamp();
         long localQuotaTimeMilli = getLocalTimeMilli(remoteQuotaTimeMilli);
         RateLimitWindow rateLimitWindow = initializeRecord.getRateLimitWindow();
+        rateLimitWindow.setLastInitTimeMs(0); // 重置上次初始化时间，从而在metric变更或上报失败时可再次立刻再初始化
         countersList.forEach(counter -> {
             initializeRecord.getDurationRecord().putIfAbsent(counter.getDuration(), counter.getCounterKey());
             counters.putIfAbsent(counter.getCounterKey(),
@@ -238,16 +245,16 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
      *
      * @param rateLimitReportResponse report的回包
      */
-    void handleRateLimitReportResponse(RateLimitReportResponse rateLimitReportResponse) {
+    boolean handleRateLimitReportResponse(RateLimitReportResponse rateLimitReportResponse) {
         LOG.debug("[handleRateLimitReportRequest] response:{}", rateLimitReportResponse);
         if (rateLimitReportResponse.getCode() != ServerCodes.EXECUTE_SUCCESS) {
             LOG.error("[handleRateLimitReportRequest] failed. code is {}", rateLimitReportResponse.getCode());
-            return;
+            return false;
         }
         List<QuotaLeft> quotaLeftsList = rateLimitReportResponse.getQuotaLeftsList();
         if (CollectionUtils.isEmpty(quotaLeftsList)) {
             LOG.error("[handleRateLimitReportRequest] quotaLefts is empty.");
-            return;
+            return true;
         }
         long remoteQuotaTimeMilli = rateLimitReportResponse.getTimestamp();
         long localQuotaTimeMilli = getLocalTimeMilli(remoteQuotaTimeMilli);
@@ -257,6 +264,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
                     localQuotaTimeMilli, callback.getDuration() * 1000);
             callback.getRateLimitWindow().getAllocatingBucket().onRemoteUpdate(remoteQuotaInfo);
         });
+        return true;
     }
 
     public int getClientKey() {

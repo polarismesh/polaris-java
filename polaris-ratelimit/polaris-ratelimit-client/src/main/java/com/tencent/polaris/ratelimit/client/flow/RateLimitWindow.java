@@ -93,6 +93,8 @@ public class RateLimitWindow {
 
     private final AtomicLong lastAccessTimeMs = new AtomicLong();
 
+    private final AtomicLong lastInitTimeMs = new AtomicLong();
+
     // 执行正式分配的令牌桶
     private final QuotaBucket allocatingBucket;
 
@@ -312,6 +314,14 @@ public class RateLimitWindow {
             LOG.info("[RateLimit]window has expired, expireDurationMs {}, uniqueKey {}", expireDurationMs, uniqueKey);
         }
         return expired;
+    }
+
+    public long getLastInitTimeMs() {
+        return lastInitTimeMs.get();
+    }
+
+    public void setLastInitTimeMs(long lastInitTimeMs) {
+        this.lastInitTimeMs.set(lastInitTimeMs);
     }
 
     /**
