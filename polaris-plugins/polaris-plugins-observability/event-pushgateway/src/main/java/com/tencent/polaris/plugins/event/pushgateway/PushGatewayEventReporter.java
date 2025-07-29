@@ -244,14 +244,15 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
                 if (200 != httpResponse.getStatusLine().getStatusCode()) {
                     String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
                     throw new RuntimeException("Report push gateway event to " + uri.getHost() + ":" + uri.getPort()
-                            + "failed. Response = [" + resultString + "].");
+                            + " failed. Response = [" + resultString + "].");
                 } else {
                     if (LOG.isDebugEnabled()) {
                         String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
                         LOG.info("Report push gateway event to {}:{} success. Response is : {}", uri.getHost(),
                                 uri.getPort(), resultString);
                     } else {
-                        LOG.info("Report push gateway event success.");
+                        LOG.info("Report push gateway event to {}:{} success.", uri.getHost(),
+                                uri.getPort());
                     }
                 }
             } catch (Exception e) {
