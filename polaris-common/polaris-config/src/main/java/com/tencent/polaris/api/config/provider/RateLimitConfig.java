@@ -81,7 +81,7 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
      */
     long getMaxQueuingTime();
 
-    long getStartupDelayMilli();
+    long getRemoteTaskIntervalMilli();
 
     long getRangeDelayMilli();
     /**

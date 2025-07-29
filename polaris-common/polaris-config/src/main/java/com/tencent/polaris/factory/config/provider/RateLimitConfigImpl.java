@@ -56,7 +56,7 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     private Boolean reportMetrics;
 
     @JsonProperty
-    private Long startupDelayMilli;
+    private Long remoteTaskIntervalMilli;
 
     @JsonProperty
     private Long rangeDelayMilli;
@@ -150,12 +150,12 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
-    public long getStartupDelayMilli() {
-        return startupDelayMilli;
+    public long getRemoteTaskIntervalMilli() {
+        return remoteTaskIntervalMilli;
     }
 
-    public void setStartupDelayMilli(long startupDelayMilli) {
-        this.startupDelayMilli = startupDelayMilli;
+    public void setRemoteTaskIntervalMilli(long remoteTaskIntervalMilli) {
+        this.remoteTaskIntervalMilli = remoteTaskIntervalMilli;
     }
 
     @Override
@@ -215,8 +215,8 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             if (null == reportMetrics) {
                 setReportMetrics(rateLimitConfig.isReportMetrics());
             }
-            if (null == startupDelayMilli) {
-                setStartupDelayMilli(rateLimitConfig.getStartupDelayMilli());
+            if (null == remoteTaskIntervalMilli) {
+                setRemoteTaskIntervalMilli(rateLimitConfig.getRemoteTaskIntervalMilli());
             }
             if (null == rangeDelayMilli) {
                 setRangeDelayMilli(rateLimitConfig.getRangeDelayMilli());
@@ -237,7 +237,7 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
                 ", remoteSyncTimeoutMilli=" + remoteSyncTimeoutMilli +
                 ", maxQueuingTime=" + maxQueuingTime +
                 ", reportMetrics=" + reportMetrics +
-                ", startupDelayMilli=" + startupDelayMilli +
+                ", remoteTaskIntervalMilli=" + remoteTaskIntervalMilli +
                 ", rangeDelayMilli=" + rangeDelayMilli +
                 ", metadata=" + metadata +
                 '}';

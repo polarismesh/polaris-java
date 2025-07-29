@@ -369,7 +369,7 @@ provider:
     # 与远程限流服务端同步的最大超时时间
     remoteSyncTimeoutMilli: 200
     # 与远程限流服务端同步任务的执行周期基准值
-    startupDelayMilli: 30
+    remoteTaskIntervalMilli: 30
     # 与远程限流服务端同步的执行周期附加值随机范围
     rangeDelayMilli: 10
     # 限流服务的命名空间
