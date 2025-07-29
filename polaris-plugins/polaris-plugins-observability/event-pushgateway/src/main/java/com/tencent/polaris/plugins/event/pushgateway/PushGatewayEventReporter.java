@@ -153,9 +153,11 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
                         eventQueue = new LinkedBlockingQueue<>(config.getEventQueueSize());
 
                         serviceAddressRepository = new ServiceAddressRepository(this.config.getAddress(),
-                                ctx.getValueContext().getClientId(), ctx, new ServiceKey(config.getNamespace(), config.getService()));
+                                ctx.getValueContext().getClientId(), ctx,
+                                new ServiceKey(config.getNamespace(), config.getService()));
 
-                        eventExecutors.scheduleWithFixedDelay(new PushGatewayEventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
+                        eventExecutors.scheduleWithFixedDelay(new PushGatewayEventTask(), 1000, 1000,
+                                TimeUnit.MILLISECONDS);
                         LOG.info("PushGateway event reporter starts reporting task.");
                     } catch (Throwable e) {
                         LOG.error("Init PushGateway event reporter fail.", e);
@@ -224,9 +226,11 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
         private void postPushGatewayEvent(PushGatewayEventRequest request) {
             StringEntity postBody = null;
-            RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
+            RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000)
+                    .setSocketTimeout(10000).build();
             try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                HttpPost httpPost = new HttpPost(getEventUri());
+                URI uri = getEventUri();
+                HttpPost httpPost = new HttpPost(uri);
                 postBody = new StringEntity(mapper.writeValueAsString(request), StandardCharsets.UTF_8);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("postPushGatewayEvent body:{}", postBody);
@@ -239,11 +243,13 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
                 if (200 != httpResponse.getStatusLine().getStatusCode()) {
                     String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
-                    throw new RuntimeException("Report push gateway event failed. Response = [" + resultString + "].");
+                    throw new RuntimeException("Report push gateway event to " + uri.getHost() + ":" + uri.getPort()
+                            + "failed. Response = [" + resultString + "].");
                 } else {
                     if (LOG.isDebugEnabled()) {
                         String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
-                        LOG.info("Report push gateway event success. Response is : {}", resultString);
+                        LOG.info("Report push gateway event to {}:{} success. Response is : {}", uri.getHost(),
+                                uri.getPort(), resultString);
                     } else {
                         LOG.info("Report push gateway event success.");
                     }
