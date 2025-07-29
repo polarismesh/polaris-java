@@ -57,11 +57,6 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
      */
     private final ServiceIdentifier serviceIdentifier;
 
-    /**
-     * 最近一次初始化时间
-     */
-    private long latestInitTime = 0;
-
     public PolarisRemoteSyncTask(RateLimitWindow window) {
         this.window = window;
         this.asyncRateLimitConnector = window.getWindowSet().getAsyncRateLimitConnector();
@@ -83,12 +78,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
                 case DELETED:
                     break;
                 case INITIALIZING:
-                    if (latestInitTime != 0 && System.currentTimeMillis() - latestInitTime < INIT_WAIT_RESPONSE_TIME) {
-                        LOG.debug("currentTime - latestInitTime = {}", System.currentTimeMillis() - latestInitTime);
-                        break;
-                    }
-                    latestInitTime = System.currentTimeMillis();
-                    doRemoteInit();
+                    doRemoteInit(false);
                     break;
                 default:
                     doRemoteAcquire();
@@ -110,7 +100,19 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
     /**
      * 发送初始化请求
      */
-    private void doRemoteInit() {
+    private void doRemoteInit(boolean redoInit) {
+        // 检查是否在初始化过程中
+        long currentTimeMs = System.currentTimeMillis();
+        long lastInitTime = this.window.getLastInitTimeMs();
+        if (lastInitTime != 0 && currentTimeMs - lastInitTime < INIT_WAIT_RESPONSE_TIME) {
+            LOG.debug("currentTime - latestInitTime = {}", currentTimeMs - lastInitTime);
+            return;
+        }
+        this.window.setLastInitTimeMs(currentTimeMs);
+        if (redoInit) {
+            LOG.warn("[doRemoteAcquire] has not init. redo init: window {}, {}", window, window.getUniqueKey());
+        }
+
         StreamCounterSet streamCounterSet = asyncRateLimitConnector
                 .getStreamCounterSet(window.getWindowSet().getRateLimitExtension().getExtensions(),
                         window.getRemoteCluster(), window.getRemoteAddresses(), window.getUniqueKey(),
@@ -181,8 +183,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
         StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
 
         if (!streamResource.hasInit(serviceIdentifier)) {
-            LOG.warn("[doRemoteAcquire] has not inited. serviceKey:{}", window.getSvcKey());
-            doRemoteInit();
+            doRemoteInit(true);
             return;
         }
         //调整时间
@@ -206,7 +207,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
             if (null == counterKey) {
                 LOG.warn("[doRemoteAcquire] counterKey for {}, duration {} not found", window.getUniqueKey(),
                         entry.getKey());
-                doRemoteInit();
+                doRemoteInit(true);
                 return;
             }
             quotaSum.setCounterKey(counterKey);
