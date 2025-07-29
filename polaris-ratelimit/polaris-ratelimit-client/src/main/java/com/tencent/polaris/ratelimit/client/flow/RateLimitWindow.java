@@ -39,6 +39,7 @@ import com.tencent.polaris.ratelimit.client.utils.RateLimiterEventUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimitCluster;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+import java.util.Random;
 import org.slf4j.Logger;
 
 import java.util.List;
@@ -256,7 +257,9 @@ public class RateLimitWindow {
                     && StringUtils.equalsIgnoreCase("tsf", rule.getMetadataMap().get("limiter"))) {
                 windowSet.getRateLimitExtension().submitSyncTask(new TsfRemoteSyncTask(this), 0L, 1000L);
             } else {
-                windowSet.getRateLimitExtension().submitSyncTask(new PolarisRemoteSyncTask(this));
+                Random random = new Random();
+                long delay = rateLimitConfig.getStartupDelayMilli() + random.nextLong(rateLimitConfig.getRangeDelayMilli());
+                windowSet.getRateLimitExtension().submitSyncTask(new PolarisRemoteSyncTask(this), 0L, delay);
             }
         }
     }

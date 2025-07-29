@@ -55,6 +55,12 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     @JsonProperty
     private Boolean reportMetrics;
 
+    @JsonProperty
+    private Long startupDelayMilli;
+
+    @JsonProperty
+    private Long rangeDelayMilli;
+
     private final Map<String, String> metadata = new HashMap<>();
 
     public boolean isEnable() {
@@ -144,6 +150,24 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
+    public long getStartupDelayMilli() {
+        return startupDelayMilli;
+    }
+
+    public void setStartupDelayMilli(long startupDelayMilli) {
+        this.startupDelayMilli = startupDelayMilli;
+    }
+
+    @Override
+    public long getRangeDelayMilli() {
+        return rangeDelayMilli;
+    }
+
+    public void setRangeDelayMilli(long rangeDelayMilli) {
+        this.rangeDelayMilli = rangeDelayMilli;
+    }
+
+    @Override
     public boolean isReportMetrics() {
         if (null == reportMetrics) {
             return false;
@@ -191,6 +215,12 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             if (null == reportMetrics) {
                 setReportMetrics(rateLimitConfig.isReportMetrics());
             }
+            if (null == startupDelayMilli) {
+                setStartupDelayMilli(rateLimitConfig.getStartupDelayMilli());
+            }
+            if (null == rangeDelayMilli) {
+                setRangeDelayMilli(rateLimitConfig.getRangeDelayMilli());
+            }
             setDefaultPluginConfig(rateLimitConfig);
         }
     }
@@ -207,6 +237,8 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
                 ", remoteSyncTimeoutMilli=" + remoteSyncTimeoutMilli +
                 ", maxQueuingTime=" + maxQueuingTime +
                 ", reportMetrics=" + reportMetrics +
+                ", startupDelayMilli=" + startupDelayMilli +
+                ", rangeDelayMilli=" + rangeDelayMilli +
                 ", metadata=" + metadata +
                 '}';
     }

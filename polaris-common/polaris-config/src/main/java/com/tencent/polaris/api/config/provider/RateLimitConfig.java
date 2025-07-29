@@ -81,6 +81,9 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
      */
     long getMaxQueuingTime();
 
+    long getStartupDelayMilli();
+
+    long getRangeDelayMilli();
     /**
      * 是否上报限流监控视图, 该开关默认关闭，如果需要使用限流的老监控视图，则需要开启此监控数据上报开关
      *
