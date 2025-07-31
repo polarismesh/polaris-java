@@ -112,10 +112,6 @@ public class RateLimitExtension extends Destroyable {
      *
      * @param task 任务
      */
-    public void submitSyncTask(RemoteSyncTask task) {
-        submitSyncTask(task, 0L, getTaskDelayInterval());
-    }
-
     public void submitSyncTask(RemoteSyncTask task, long initialDelay, long delay) {
         ScheduledFuture<?> scheduledFuture = syncExecutor
                 .scheduleWithFixedDelay(task, 0, delay, TimeUnit.MILLISECONDS);
@@ -132,12 +128,6 @@ public class RateLimitExtension extends Destroyable {
     public void submitExpireJob(Runnable task) {
         windowExpireExecutor
                 .scheduleWithFixedDelay(task, EXPIRE_INTERVAL_SECOND, EXPIRE_INTERVAL_SECOND, TimeUnit.SECONDS);
-    }
-
-
-    private static long getTaskDelayInterval() {
-        Random random = new Random();
-        return RateLimitConstants.STARTUP_DELAY_MS + random.nextInt(RateLimitConstants.RANGE_DELAY_MS);
     }
 
     public void stopSyncTask(String uniqueKey) {

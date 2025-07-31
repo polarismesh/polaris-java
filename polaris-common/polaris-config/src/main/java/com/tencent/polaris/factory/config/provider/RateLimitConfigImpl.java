@@ -55,6 +55,12 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     @JsonProperty
     private Boolean reportMetrics;
 
+    @JsonProperty
+    private Long remoteTaskIntervalMilli;
+
+    @JsonProperty
+    private Integer rangeDelayMilli;
+
     private final Map<String, String> metadata = new HashMap<>();
 
     public boolean isEnable() {
@@ -144,6 +150,24 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
+    public long getRemoteTaskIntervalMilli() {
+        return remoteTaskIntervalMilli;
+    }
+
+    public void setRemoteTaskIntervalMilli(long remoteTaskIntervalMilli) {
+        this.remoteTaskIntervalMilli = remoteTaskIntervalMilli;
+    }
+
+    @Override
+    public int getRangeDelayMilli() {
+        return rangeDelayMilli;
+    }
+
+    public void setRangeDelayMilli(int rangeDelayMilli) {
+        this.rangeDelayMilli = rangeDelayMilli;
+    }
+
+    @Override
     public boolean isReportMetrics() {
         if (null == reportMetrics) {
             return false;
@@ -191,6 +215,12 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             if (null == reportMetrics) {
                 setReportMetrics(rateLimitConfig.isReportMetrics());
             }
+            if (null == remoteTaskIntervalMilli) {
+                setRemoteTaskIntervalMilli(rateLimitConfig.getRemoteTaskIntervalMilli());
+            }
+            if (null == rangeDelayMilli) {
+                setRangeDelayMilli(rateLimitConfig.getRangeDelayMilli());
+            }
             setDefaultPluginConfig(rateLimitConfig);
         }
     }
@@ -207,6 +237,8 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
                 ", remoteSyncTimeoutMilli=" + remoteSyncTimeoutMilli +
                 ", maxQueuingTime=" + maxQueuingTime +
                 ", reportMetrics=" + reportMetrics +
+                ", remoteTaskIntervalMilli=" + remoteTaskIntervalMilli +
+                ", rangeDelayMilli=" + rangeDelayMilli +
                 ", metadata=" + metadata +
                 '}';
     }
