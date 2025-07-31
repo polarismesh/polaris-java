@@ -151,14 +151,14 @@ public class ServiceAddressRepository {
                     extensions.getWeightAdjusters());
             Node node = new Node(IPAddressUtils.getIpCompatible(instance.getHost()), instance.getPort());
             if (LOG.isDebugEnabled()) {
-                LOG.debug("success to get instance for service {}, instance is {}", remoteCluster, node.getHostPort());
+                LOG.debug("success to get instance for service {} from local address repository, instance is {}", remoteCluster, node.getHostPort());
             }
             return node;
         }
         Instance instance = getDiscoverInstance();
         String host = IPAddressUtils.getIpCompatible(instance.getHost());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, host,
+            LOG.debug("success to get instance for service {} from discovery, instance is {}:{}", remoteCluster, host,
                     instance.getPort());
         }
         return new Node(IPAddressUtils.getIpCompatible(host), instance.getPort());
