@@ -59,7 +59,7 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     private Long remoteTaskIntervalMilli;
 
     @JsonProperty
-    private Long rangeDelayMilli;
+    private Integer rangeDelayMilli;
 
     private final Map<String, String> metadata = new HashMap<>();
 
@@ -159,11 +159,11 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
-    public long getRangeDelayMilli() {
+    public int getRangeDelayMilli() {
         return rangeDelayMilli;
     }
 
-    public void setRangeDelayMilli(long rangeDelayMilli) {
+    public void setRangeDelayMilli(int rangeDelayMilli) {
         this.rangeDelayMilli = rangeDelayMilli;
     }
 

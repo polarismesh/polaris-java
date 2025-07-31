@@ -258,7 +258,7 @@ public class RateLimitWindow {
                 windowSet.getRateLimitExtension().submitSyncTask(new TsfRemoteSyncTask(this), 0L, 1000L);
             } else {
                 Random random = new Random();
-                long delay = rateLimitConfig.getRemoteTaskIntervalMilli() + random.nextLong(rateLimitConfig.getRangeDelayMilli());
+                long delay = rateLimitConfig.getRemoteTaskIntervalMilli() + random.nextInt(rateLimitConfig.getRangeDelayMilli());
                 windowSet.getRateLimitExtension().submitSyncTask(new PolarisRemoteSyncTask(this), 0L, delay);
             }
         }
