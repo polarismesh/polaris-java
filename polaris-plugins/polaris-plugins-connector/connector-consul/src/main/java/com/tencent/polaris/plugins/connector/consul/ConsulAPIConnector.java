@@ -21,6 +21,7 @@ import com.ecwid.consul.ConsulException;
 import com.ecwid.consul.SingleUrlParameters;
 import com.ecwid.consul.UrlParameters;
 import com.ecwid.consul.transport.HttpResponse;
+import com.ecwid.consul.transport.TtlHttpTransport;
 import com.ecwid.consul.v1.ConsulClient;
 import com.ecwid.consul.v1.ConsulRawClient;
 import com.ecwid.consul.v1.OperationException;
@@ -97,6 +98,10 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     private ConsulClient consulClient;
 
     private ConsulRawClient consulRawClient;
+
+    private ConsulClient ttlConsulClient;
+
+    private ConsulRawClient ttlConsulRawClient;
 
     private ConsulContext consulContext;
 
@@ -185,6 +190,8 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         LOG.debug("Consul Server : [{}]", address);
         consulRawClient = new ConsulRawClient(agentHost, agentPort);
         consulClient = new ConsulClient(consulRawClient);
+        ttlConsulRawClient = new ConsulRawClient(agentHost, agentPort, new TtlHttpTransport().getHttpClient());
+        ttlConsulClient = new ConsulClient(ttlConsulRawClient);
 
         // Init context.
         consulContext = new ConsulContext();
@@ -412,7 +419,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         if (ieRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
-                this.consulClient.agentCheckPass(consulContext.getCheckId(), null, consulContext.getAclToken());
+                this.ttlConsulClient.agentCheckPass(consulContext.getCheckId(), null, consulContext.getAclToken());
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Heartbeat service to Consul: " + consulContext.getCheckId());
                 }
