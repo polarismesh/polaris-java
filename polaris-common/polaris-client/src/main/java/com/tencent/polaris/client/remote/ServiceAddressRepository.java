@@ -20,7 +20,6 @@ package com.tencent.polaris.client.remote;
 import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.verify.DefaultValues;
-import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -186,7 +185,7 @@ public class ServiceAddressRepository {
         return remoteAddresses;
     }
 
-    public int size() {
+    public int nodeListSize() {
         return nodes.size();
     }
 

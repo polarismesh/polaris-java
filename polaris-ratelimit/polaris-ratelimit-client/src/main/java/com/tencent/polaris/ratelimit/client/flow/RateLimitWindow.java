@@ -41,7 +41,6 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Ra
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -178,7 +177,7 @@ public class RateLimitWindow {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
             return;
         }
-        if (null == remoteCluster && 0 == serviceAddressRepository.size()) {
+        if (null == remoteCluster && 0 == serviceAddressRepository.nodeListSize()) {
             this.configMode = RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE;
             LOG.warn("remote limiter service or addresses not configured, degrade to local mode");
             return;
