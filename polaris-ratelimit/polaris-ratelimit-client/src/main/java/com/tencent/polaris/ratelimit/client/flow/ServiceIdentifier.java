@@ -31,6 +31,11 @@ public class ServiceIdentifier {
         this.labels = labels;
     }
 
+
+    public String getLabels() {
+        return labels;
+    }
+
     @Override
     @SuppressWarnings("checkstyle:all")
     public boolean equals(Object o) {

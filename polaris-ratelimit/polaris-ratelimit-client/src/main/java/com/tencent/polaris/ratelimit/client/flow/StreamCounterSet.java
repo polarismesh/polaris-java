@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -41,20 +42,19 @@ public class StreamCounterSet {
     /**
      * 节点唯一标识
      */
-    private final HostIdentifier identifier;
+    private final Node node;
 
     /**
      * 当前的资源
      */
     private final AtomicReference<StreamResource> currentStreamResource = new AtomicReference<>();
 
-
-    public StreamCounterSet(HostIdentifier identifier) {
-        this.identifier = identifier;
+    public StreamCounterSet(Node node) {
+        this.node = node;
     }
 
-    public HostIdentifier getIdentifier() {
-        return identifier;
+    public Node getNode() {
+        return node;
     }
 
     /**
@@ -71,8 +71,8 @@ public class StreamCounterSet {
         synchronized (resourceLock) {
             streamResource = currentStreamResource.get();
             if (null == streamResource || streamResource.isEndStream()) {
-                LOG.info("[RateLimit] stream resource for {} not exists or destroyed, start to create", identifier);
-                streamResource = new StreamResource(identifier);
+                LOG.info("[RateLimit] stream resource for {} not exists or destroyed, start to create", node);
+                streamResource = new StreamResource(node);
                 currentStreamResource.set(streamResource);
             }
             return streamResource;

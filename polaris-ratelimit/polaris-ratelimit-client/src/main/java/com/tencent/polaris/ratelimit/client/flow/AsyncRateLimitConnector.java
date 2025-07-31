@@ -17,17 +17,11 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
-import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
-import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
-import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.rpc.Criteria;
-import com.tencent.polaris.api.utils.IPAddressUtils;
-import com.tencent.polaris.client.flow.BaseFlow;
+import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.client.remote.ServiceAddressRepository;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -48,15 +42,13 @@ public class AsyncRateLimitConnector {
     /**
      * 节点到客户端连接
      */
-    private final Map<HostIdentifier, StreamCounterSet> hostToStream = new HashMap<>();
-
+    private final Map<Node, StreamCounterSet> nodeToStream = new HashMap<>();
     /**
      * uniqueKey到客户端连接
      */
     private final Map<String, StreamCounterSet> uniqueKeyToStream = new HashMap<>();
 
     private final List<String> coreRouters = new ArrayList<>();
-
 
     public AsyncRateLimitConnector() {
         coreRouters.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
@@ -65,25 +57,29 @@ public class AsyncRateLimitConnector {
     /**
      * 获取连接流对象
      *
-     * @param extensions        插件容器
-     * @param remoteCluster     远程限流集群名
-     * @param uniqueKey         唯一主键
+     * @param extensions 插件容器
+     * @param remoteCluster 远程限流集群名
+     * @param uniqueKey 唯一主键
      * @param serviceIdentifier 服务标识
      * @return 连接流对象
      */
     public StreamCounterSet getStreamCounterSet(Extensions extensions, ServiceKey remoteCluster,
-                                                ServiceInstances remoteAddresses, String uniqueKey, ServiceIdentifier serviceIdentifier) {
-        HostIdentifier hostIdentifier = getServiceInstance(extensions, remoteCluster, remoteAddresses, uniqueKey);
-        if (hostIdentifier == null) {
+            ServiceAddressRepository serviceAddressRepository, String uniqueKey, ServiceIdentifier serviceIdentifier) {
+        // serviceAddressRepository设置了一致性hash lb，保证被调正常的情况下，拿到的都是同一个节点
+        Node node = serviceAddressRepository.getServiceAddressNode();
+        if (node == null) {
             LOG.error("[getStreamCounterSet] ratelimit cluster service not found.");
             return null;
         }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[getStreamCounterSet] serviceLabel: {} , get node: {}", serviceIdentifier.getLabels(), node);
+        }
         StreamCounterSet streamCounterSet = uniqueKeyToStream.get(uniqueKey);
-        if (null != streamCounterSet && streamCounterSet.getIdentifier().equals(hostIdentifier)) {
+        if (null != streamCounterSet && streamCounterSet.getNode().equals(node)) {
             return streamCounterSet;
         }
         synchronized (counterSetLock) {
-            if (null != streamCounterSet && streamCounterSet.getIdentifier().equals(hostIdentifier)) {
+            if (null != streamCounterSet && streamCounterSet.getNode().equals(node)) {
                 return streamCounterSet;
             }
             if (null != streamCounterSet) {
@@ -91,49 +87,17 @@ public class AsyncRateLimitConnector {
                 streamCounterSet.deleteInitRecord(serviceIdentifier);
                 //切换了节点，老的不再使用
                 if (streamCounterSet.decreaseReference()) {
-                    hostToStream.remove(hostIdentifier);
+                    nodeToStream.remove(node);
                 }
             }
-            streamCounterSet = hostToStream.get(hostIdentifier);
+            streamCounterSet = nodeToStream.get(node);
             if (null == streamCounterSet) {
-                streamCounterSet = new StreamCounterSet(hostIdentifier);
+                streamCounterSet = new StreamCounterSet(node);
             }
             streamCounterSet.addReference();
-            hostToStream.put(hostIdentifier, streamCounterSet);
+            nodeToStream.put(node, streamCounterSet);
             uniqueKeyToStream.put(uniqueKey, streamCounterSet);
             return streamCounterSet;
         }
     }
-
-    /**
-     * 一致性hash保证被调正常的情况下，拿到的都是同一个节点
-     *
-     * @param remoteCluster 远程集群信息
-     * @return 节点标识
-     */
-    private HostIdentifier getServiceInstance(Extensions extensions, ServiceKey remoteCluster,
-                                              ServiceInstances remoteAddresses, String hashValue) {
-        Instance instance;
-        if (null != remoteCluster) {
-            instance = BaseFlow
-                    .commonGetOneInstance(extensions, remoteCluster, coreRouters,
-                            LoadBalanceConfig.LOAD_BALANCE_RING_HASH,
-                            "grpc", hashValue);
-        } else {
-            LoadBalancer loadBalancer = (LoadBalancer) extensions.getPlugins()
-                    .getPlugin(PluginTypes.LOAD_BALANCER.getBaseType(), LoadBalanceConfig.LOAD_BALANCE_RING_HASH);
-            Criteria criteria = new Criteria();
-            criteria.setHashKey(hashValue);
-            instance = BaseFlow.processLoadBalance(loadBalancer, criteria, remoteAddresses,
-                    extensions.getWeightAdjusters());
-        }
-        if (instance == null) {
-            LOG.error("can not found any instance by serviceKye:{}", remoteCluster);
-            return null;
-        }
-        String host = IPAddressUtils.getIpCompatible(instance.getHost());
-        int port = instance.getPort();
-        return new HostIdentifier(host, port);
-    }
-
 }
