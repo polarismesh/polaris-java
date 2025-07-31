@@ -41,7 +41,9 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.TimeUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
+import com.tencent.polaris.metadata.core.manager.CalleeMetadataContainerGroup;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ConsulConstant;
 import com.tencent.polaris.plugins.connector.consul.ConsulContext;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
@@ -86,14 +88,18 @@ public class InstanceService extends ConsulService {
         UrlParameters tokenParam = StringUtils.isNotBlank(token) ? new SingleUrlParameters("token", token) : null;
         UrlParameters tagParams = StringUtils.isNotBlank(tag) ? new SingleUrlParameters("tag", tag) : null;
         UrlParameters passingParams = onlyPassing ? new SingleUrlParameters("passing") : null;
-        UrlParameters nsTypeParam = StringUtils.isNotBlank(consulContext.getNamespaceType()) ? new SingleUrlParameters("nsType", consulContext.getNamespaceType()) : null;;
+        String nsType = CalleeMetadataContainerGroup.getStaticApplicationMetadataContainer().getRawMetadataStringValue(ConsulConstant.NAMESPACE_TYPE_KEY);
+        if (StringUtils.isBlank(nsType)) {
+            nsType = consulContext.getNamespaceType();
+        }
+        UrlParameters nsTypeParam = StringUtils.isNotBlank(nsType) ? new SingleUrlParameters(ConsulConstant.NAMESPACE_TYPE_KEY, nsType) : null;;
         UrlParameters namespaceParameter = StringUtils.isNotBlank(namespace) ? new SingleUrlParameters("nid", namespace) : null;;
         Long currentIndex = getServersConsulIndex(serviceId);
         // in tsf consul, changes in instance status may not alter the index, requiring updates each time.
         int code = ServerCodes.EXECUTE_SUCCESS;
         QueryParams queryParams = new QueryParams(consulContext.getWaitTime(), currentIndex);
         try {
-            LOG.debug("Begin get service instances of :{}/{} sync", namespace, serviceId);
+            LOG.debug("Begin get service instances of :{}/{} sync, nsType:{}", namespace, serviceId, nsType);
             HttpResponse rawResponse = consulRawClient.makeGetRequest("/v1/health/service/" + serviceId, tagParams,
                     passingParams, tokenParam, nsTypeParam, namespaceParameter, queryParams);
             if (rawResponse != null) {

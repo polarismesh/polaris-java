@@ -24,6 +24,12 @@ package com.tencent.polaris.plugins.connector.common.constant;
  */
 public interface ConsulConstant {
 
+    String NAMESPACE_TYPE_KEY = "nsType";
+
+    String NAMESPACE_TYPE_DEFAULT = "DEF";
+
+    String NAMESPACE_TYPE_DEFAULT_AND_GLOBAL = "DEF_AND_GLOBAL";
+
     interface MetadataMapKey {
 
         String NAMESPACE_KEY = "NAMESPACE_KEY";
