@@ -44,7 +44,7 @@ public class ShortestResponseTimeLoadBalanceConfig implements Verifier {
 
     @Override
     public void verify() {
-        ConfigUtils.validateInterval(slidePeriod, "slidePeriod");
+        ConfigUtils.validateIntervalWithMin(slidePeriod,5000, "slidePeriod");
     }
 
     @Override
