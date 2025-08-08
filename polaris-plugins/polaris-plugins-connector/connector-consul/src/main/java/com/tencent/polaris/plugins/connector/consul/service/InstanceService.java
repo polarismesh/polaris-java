@@ -169,6 +169,12 @@ public class InstanceService extends ConsulService {
                             locationBuilder.setRegion(StringValue.of(metadata.get(TsfMetadataConstants.TSF_REGION)));
                         }
                         instanceBuilder.setLocation(locationBuilder.build());
+                        // set protocol
+                        instanceBuilder.setProtocol(StringValue.of("http"));
+                        if (metadata.containsKey("secure")) {
+                            String protocol = StringUtils.equalsIgnoreCase("true", metadata.get("secure")) ? "https" : "http";
+                            instanceBuilder.setProtocol(StringValue.of(protocol));
+                        }
                         instanceList.add(instanceBuilder.build());
                     }
                 }

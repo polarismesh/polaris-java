@@ -148,6 +148,16 @@ global:
           region: ${REGION:}
           zone: ${ZONE:}
           campus: ${CAMPUS:}
+  # 证书管理相关配置
+  certificate:
+    # 是否启用证书管理
+    enable: false
+    # 证书有效时间。默认值：30天，最小值：30m
+    validityDuration: 720h
+    # 证书刷新时间。默认值：7天，最小值：1m
+    refreshBefore: 168h
+    # 证书检测周期。默认值：1小时，最小值：10s
+    watchInterval: 1h
 #描述: 主调端配置
 consumer:
   # Switch of discovery.

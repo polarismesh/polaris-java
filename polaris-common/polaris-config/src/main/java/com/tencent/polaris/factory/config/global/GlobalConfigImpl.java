@@ -67,6 +67,9 @@ public class GlobalConfigImpl implements GlobalConfig {
     @JsonProperty
     private LocationConfigImpl location;
 
+    @JsonProperty
+    private CertificateConfigImpl certificate;
+
     @Override
     public SystemConfigImpl getSystem() {
         return system;
@@ -134,6 +137,11 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
+    public CertificateConfigImpl getCertificate() {
+        return certificate;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(system, "system");
         ConfigUtils.validateNull(api, "api");
@@ -145,6 +153,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         ConfigUtils.validateNull(traceReporter, "traceReporter");
         ConfigUtils.validateNull(eventReporter, "eventReporter");
         ConfigUtils.validateNull(admin, "admin");
+        ConfigUtils.validateNull(certificate, "certificate");
 
         system.verify();
         api.verify();
@@ -163,6 +172,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         traceReporter.verify();
         eventReporter.verify();
         admin.verify();
+        certificate.verify();
     }
 
     @Override
@@ -191,6 +201,9 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (null == location) {
             location = new LocationConfigImpl();
         }
+        if (null == certificate) {
+            certificate = new CertificateConfigImpl();
+        }
         if (null != defaultObject) {
             GlobalConfig globalConfig = (GlobalConfig) defaultObject;
             system.setDefault(globalConfig.getSystem());
@@ -214,6 +227,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             eventReporter.setDefault(globalConfig.getEventReporter());
             admin.setDefault(globalConfig.getAdmin());
             location.setDefault(globalConfig.getLocation());
+            certificate.setDefault(globalConfig.getCertificate());
         }
     }
 
@@ -229,6 +243,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 ", eventReporter=" + eventReporter +
                 ", admin=" + admin +
                 ", location=" + location +
+                ", certificate=" + certificate +
                 '}';
     }
 }

@@ -31,5 +31,6 @@
         <module>polaris-plugins-configfilefilter</module>
         <module>polaris-plugins-lossless</module>
         <module>polaris-plugins-auth</module>
+        <module>polaris-plugins-certificate</module>
     </modules>
 </project>
