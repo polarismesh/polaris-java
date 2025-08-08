@@ -92,4 +92,11 @@ public interface GlobalConfig extends Verifier {
      * @return location
      */
     LocationConfig getLocation();
+
+    /**
+     * Configuration of prefix of "global.certificate"
+     *
+     * @return CertificateConfig
+     */
+    CertificateConfig getCertificate();
 }

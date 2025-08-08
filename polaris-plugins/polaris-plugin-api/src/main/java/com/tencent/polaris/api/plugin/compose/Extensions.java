@@ -33,6 +33,7 @@ import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.auth.Authenticator;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
+import com.tencent.polaris.api.plugin.certificate.CertificateManager;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -122,6 +123,9 @@ public class Extensions extends Destroyable {
 
     // 服务鉴权插件列表
     private List<Authenticator> authenticatorList;
+
+    // 证书管理插件
+    private CertificateManager certificateManager;
 
     public static List<ServiceRouter> loadServiceRouters(List<String> routerChain, Supplier plugins, boolean force) {
         List<ServiceRouter> routers = new ArrayList<>();
@@ -221,6 +225,9 @@ public class Extensions extends Destroyable {
 
         // 加载服务鉴权插件
         loadAuthenticatorList(config, plugins);
+
+        // 加载证书管理插件
+        loadCertificateManager(config, plugins);
 
         initLocation(config, valueContext);
 
@@ -376,6 +383,16 @@ public class Extensions extends Destroyable {
                     continue;
                 }
                 authenticatorList.add((Authenticator) authenticator);
+            }
+        }
+    }
+
+    private void loadCertificateManager(Configuration config, Supplier plugins) throws PolarisException {
+        if (config.getGlobal().getCertificate().isEnable()) {
+            String name = config.getGlobal().getCertificate().getPluginName();
+            Plugin plugin = plugins.getPlugin(PluginTypes.CERTIFICATE_MANAGER.getBaseType(), name);
+            if (plugin instanceof CertificateManager) {
+                certificateManager = (CertificateManager) plugin;
             }
         }
     }
@@ -546,6 +563,10 @@ public class Extensions extends Destroyable {
 
     public List<Authenticator> getAuthenticatorList() {
         return authenticatorList;
+    }
+
+    public CertificateManager getCertificateManager() {
+        return certificateManager;
     }
 
     @Override

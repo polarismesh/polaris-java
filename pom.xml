@@ -62,6 +62,7 @@
         <module>polaris-configuration</module>
         <module>polaris-auth</module>
         <module>polaris-fault</module>
+        <module>polaris-certificate</module>
     </modules>
     <modelVersion>4.0.0</modelVersion>
 

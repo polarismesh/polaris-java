@@ -20,6 +20,7 @@ package com.tencent.polaris.api.plugin.common;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.auth.Authenticator;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
+import com.tencent.polaris.api.plugin.certificate.CertificateManager;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
@@ -141,7 +142,12 @@ public enum PluginTypes {
     /**
      * 服务鉴权扩展点
      */
-    AUTHENTICATOR(new PluginType(Authenticator.class, 2));
+    AUTHENTICATOR(new PluginType(Authenticator.class, 2)),
+
+    /**
+     * 证书管理扩展点
+     */
+    CERTIFICATE_MANAGER(new PluginType(CertificateManager.class, 2));
 
     private PluginType baseType;
 

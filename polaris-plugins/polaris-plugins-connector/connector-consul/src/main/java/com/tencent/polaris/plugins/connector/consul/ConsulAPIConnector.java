@@ -300,6 +300,9 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 LOG.info("Registering service to Consul");
                 NewService service = buildRegisterInstanceRequest(req);
                 String json = getGson().toJson(service);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Registering service to Consul: {}", json);
+                }
                 HttpResponse rawResponse;
                 if (StringUtils.isNotBlank(consulContext.getAclToken())) {
                     String token = consulContext.getAclToken();
@@ -377,6 +380,8 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         if (req.getExtendedMetadata().containsKey(TAGS_KEY)) {
             tags.addAll(req.getExtendedMetadata().get(TAGS_KEY).values());
         }
+        //store the secure flag in the tags so that clients will be able to figure out whether to use http or https automatically
+        tags.add("secure=" + req.getProtocol().equalsIgnoreCase("https"));
         service.setTags(tags);
 
         if (null != req.getTtl()) {

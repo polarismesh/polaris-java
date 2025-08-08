@@ -25,11 +25,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15to18</artifactId>
-            <version>${bouncycastle.version}</version>
-        </dependency>
-        <dependency>
             <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-configuration-client</artifactId>
             <version>${project.version}</version>

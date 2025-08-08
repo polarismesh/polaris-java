@@ -172,6 +172,24 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-certificate-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-certificate-factory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>certificate-tsf</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-assembly-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
