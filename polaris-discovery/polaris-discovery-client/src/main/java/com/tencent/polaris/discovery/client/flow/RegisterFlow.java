@@ -63,7 +63,7 @@ public class RegisterFlow {
                 createRegisterV2Header());
         RegisterState registerState = RegisterStateManager.putRegisterState(sdkContext, request);
         if (registerState != null) {
-            registerState.setTaskFuture(asyncRegisterExecutor.scheduleWithFixedDelay(
+            registerState.setTaskFuture(asyncRegisterExecutor.scheduleAtFixedRate(
                     () -> {
                         try {
                             doRunHeartbeat(registerState, registerFunction, heartbeatFunction);
