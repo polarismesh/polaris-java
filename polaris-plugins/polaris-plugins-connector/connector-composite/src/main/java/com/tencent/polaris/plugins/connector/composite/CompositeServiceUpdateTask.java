@@ -42,6 +42,7 @@ import com.tencent.polaris.plugins.connector.common.constant.ServiceUpdateTaskCo
 import com.tencent.polaris.plugins.connector.composite.zero.InstanceListMeta;
 import com.tencent.polaris.plugins.connector.consul.ConsulServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.grpc.GrpcServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.nacos.NacosServiceUpdateTask;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Instance;
@@ -54,6 +55,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_GRPC;
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
 import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.ORDER_LIST;
 import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.SERVER_CONNECTOR_TYPE;
 
@@ -91,6 +93,13 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
             }
             if (SERVER_CONNECTOR_CONSUL.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                 subServiceUpdateTaskMap.put(SERVER_CONNECTOR_CONSUL, new ConsulServiceUpdateTask(serviceEventHandler, sc));
+                if (!ifMainConnectorTypeSet) {
+                    mainConnectorType = sc.getName();
+                    ifMainConnectorTypeSet = true;
+                }
+            }
+            if (SERVER_CONNECTOR_NACOS.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+                subServiceUpdateTaskMap.put(SERVER_CONNECTOR_NACOS, new NacosServiceUpdateTask(serviceEventHandler, sc));
                 if (!ifMainConnectorTypeSet) {
                     mainConnectorType = sc.getName();
                     ifMainConnectorTypeSet = true;
