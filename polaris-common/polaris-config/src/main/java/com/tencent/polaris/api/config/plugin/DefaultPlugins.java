@@ -99,4 +99,9 @@ public interface DefaultPlugins {
      * 黑白名单鉴权插件名
      */
     String BLOCK_ALLOW_LIST_AUTHENTICATOR_TYPE = "blockAllowList";
+
+    /**
+     * TSF证书管理插件名
+     */
+    String TSF_CERTIFICATE_MANAGER = "tsfCertificateManager";
 }
