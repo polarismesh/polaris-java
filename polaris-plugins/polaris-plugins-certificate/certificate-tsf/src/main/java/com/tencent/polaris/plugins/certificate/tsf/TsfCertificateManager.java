@@ -73,7 +73,7 @@ public class TsfCertificateManager extends Destroyable implements CertificateMan
             }
 
             TsfIstioCertificateProto.IstioCertificateResponse response =
-                    stub.withDeadline(Deadline.after(10, TimeUnit.SECONDS)).createCertificate(requestBuilder.build());
+                    stub.withDeadline(Deadline.after(300, TimeUnit.SECONDS)).createCertificate(requestBuilder.build());
             response.getCertChainList().forEach(cert -> {
                 if (log.isDebugEnabled()) {
                     log.debug("Certificate: {}", cert);
