@@ -85,6 +85,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
     public CompositeServiceUpdateTask(ServiceEventHandler handler, DestroyableServerConnector connector) {
         super(handler, connector);
         CompositeConnector compositeConnector = (CompositeConnector) connector;
+        EventType eventType = handler.getServiceEventKey().getEventType();
         for (DestroyableServerConnector sc : compositeConnector.getServerConnectors()) {
             if (SERVER_CONNECTOR_GRPC.equals(sc.getName()) && sc.isDiscoveryEnable()) {
                 subServiceUpdateTaskMap.put(SERVER_CONNECTOR_GRPC, new GrpcServiceUpdateTask(serviceEventHandler, sc));
@@ -98,7 +99,9 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     ifMainConnectorTypeSet = true;
                 }
             }
-            if (SERVER_CONNECTOR_NACOS.equals(sc.getName()) && sc.isDiscoveryEnable()) {
+            // nacos仅支持服务事件和实例事件
+            if (SERVER_CONNECTOR_NACOS.equals(sc.getName()) && sc.isDiscoveryEnable()
+                    && (eventType == EventType.INSTANCE || eventType == EventType.SERVICE)) {
                 subServiceUpdateTaskMap.put(SERVER_CONNECTOR_NACOS, new NacosServiceUpdateTask(serviceEventHandler, sc));
                 if (!ifMainConnectorTypeSet) {
                     mainConnectorType = sc.getName();

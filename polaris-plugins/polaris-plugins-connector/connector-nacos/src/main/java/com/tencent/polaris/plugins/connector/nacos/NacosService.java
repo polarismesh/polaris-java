@@ -21,7 +21,6 @@
 
 package com.tencent.polaris.plugins.connector.nacos;
 
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
 import static com.tencent.polaris.plugins.connector.common.constant.ConnectorConstant.SERVER_CONNECTOR_TYPE;
 
@@ -41,8 +40,6 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
-import com.tencent.polaris.api.pojo.ServiceInfo;
-import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
@@ -51,10 +48,8 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
-import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Service;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +62,7 @@ public class NacosService extends Destroyable {
 
     private static final Logger LOG = LoggerFactory.getLogger(NacosService.class);
 
-    private NamingService namingService;
+    private final NamingService namingService;
 
     private NacosContext nacosContext;
 
@@ -83,7 +78,22 @@ public class NacosService extends Destroyable {
     }
 
 
-    public void doInstanceSubscribe(ServiceUpdateTask serviceUpdateTask) {
+    public void sendInstanceRequest(ServiceUpdateTask serviceUpdateTask) {
+
+        refreshExecutor.submit(() -> {
+            try {
+                asyncGetInstances(serviceUpdateTask);
+            } catch (Exception e) {
+                LOG.error("Get nacos service instances of {} failed. ",
+                        serviceUpdateTask.getServiceEventKey().getService(), e);
+                throw new RuntimeException(e);
+            }
+        });
+
+    }
+
+    public void asyncGetInstances(ServiceUpdateTask serviceUpdateTask) {
+
         // 通过namingService订阅服务监听，当服务有变化时，回调serviceListener，将结果notify给polaris
         EventListener serviceListener = event -> {
             try {
@@ -154,7 +164,7 @@ public class NacosService extends Destroyable {
                         String.format("Get service instances of %s sync failed.",
                                 serviceUpdateTask.getServiceEventKey().getServiceKey()));
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
-                        SERVER_CONNECTOR_CONSUL);
+                        SERVER_CONNECTOR_NACOS);
                 serviceUpdateTask.notifyServerEvent(serverEvent);
                 serviceUpdateTask.retry();
             }
@@ -233,7 +243,7 @@ public class NacosService extends Destroyable {
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
 
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
-                    newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
+                    newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
             boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
 
             if (!svcDeleted) {

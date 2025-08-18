@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.nacos;
 
-import com.alibaba.nacos.api.naming.NamingService;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.plugin.server.ServiceEventHandler;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
@@ -63,7 +62,7 @@ public class NacosServiceUpdateTask extends ServiceUpdateTask {
             if (serviceUpdateTask.getServiceEventKey().getEventType() == EventType.SERVICE) {
                 nacosService.sendServiceRequest(serviceUpdateTask);
             } else if (serviceUpdateTask.getServiceEventKey().getEventType() == EventType.INSTANCE) {
-                nacosService.doInstanceSubscribe(serviceUpdateTask);
+                nacosService.sendInstanceRequest(serviceUpdateTask);
             }
         }
     }
