@@ -144,7 +144,7 @@ public class NacosService extends Destroyable {
                     newDiscoverResponseBuilder.addAllInstances(polarisInstanceList);
                     int code = ServerCodes.EXECUTE_SUCCESS;
                     newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-
+                    LOG.debug("[NacosConnector] Subscribe instances of {} success. ", serviceUpdateTask.getServiceEventKey().getService());
                     ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                             newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
                     boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
@@ -241,7 +241,7 @@ public class NacosService extends Destroyable {
 
             int code = ServerCodes.EXECUTE_SUCCESS;
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-
+            LOG.debug("[NacosConnector] get service of {} success. ", serviceUpdateTask.getServiceEventKey().getService());
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                     newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
             boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
