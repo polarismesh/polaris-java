@@ -49,6 +49,7 @@ import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.DestroyableServerConnector;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.plugins.connector.common.constant.ConsulConstant;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
 import com.tencent.polaris.plugins.connector.consul.service.InstanceService;
 import com.tencent.polaris.plugins.connector.consul.service.ServiceService;
@@ -218,7 +219,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         }
         // in gateway mode, namespace type is empty string
         if (!ClassUtils.isClassPresent("org.springframework.cloud.gateway.filter.GlobalFilter")) {
-            consulContext.setNamespaceType("DEF_AND_GLOBAL");
+            consulContext.setNamespaceType(ConsulConstant.NAMESPACE_TYPE_DEFAULT_AND_GLOBAL);
         }
         if (metadata.containsKey(TAGS_KEY) && StringUtils.isNotBlank(metadata.get(TAGS_KEY))) {
             try {
