@@ -54,6 +54,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -70,11 +71,14 @@ public class NacosService extends Destroyable {
 
     private static final int NACOS_SERVICE_PAGESIZE = 10;
 
+    private Map<String, EventListener> eventListeners;
+
     public NacosService(NamingService namingService, NacosContext nacosContext) {
         this.namingService = namingService;
         this.nacosContext = nacosContext;
         NamedThreadFactory threadFactory = new NamedThreadFactory("nacos-service");
         this.refreshExecutor = Executors.newFixedThreadPool(8, threadFactory);
+        this.eventListeners = new ConcurrentHashMap<>();
     }
 
 
@@ -144,7 +148,8 @@ public class NacosService extends Destroyable {
                     newDiscoverResponseBuilder.addAllInstances(polarisInstanceList);
                     int code = ServerCodes.EXECUTE_SUCCESS;
                     newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-                    LOG.debug("[NacosConnector] Subscribe instances of {} success. ", serviceUpdateTask.getServiceEventKey().getService());
+                    LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
+                            serviceUpdateTask.getServiceEventKey().getService());
                     ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                             newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
                     boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
@@ -173,6 +178,8 @@ public class NacosService extends Destroyable {
         try {
             namingService.subscribe(serviceUpdateTask.getServiceEventKey().getService(), nacosContext.getGroupName(),
                     serviceListener);
+            eventListeners.put(serviceUpdateTask.getServiceEventKey().getService(), serviceListener);
+
         } catch (NacosException e) {
             LOG.error("Get nacos service instances of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
                     e);
@@ -241,7 +248,8 @@ public class NacosService extends Destroyable {
 
             int code = ServerCodes.EXECUTE_SUCCESS;
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-            LOG.debug("[NacosConnector] get service of {} success. ", serviceUpdateTask.getServiceEventKey().getService());
+            LOG.debug("[NacosConnector] get service of {} success. ",
+                    serviceUpdateTask.getServiceEventKey().getService());
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                     newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
             boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
@@ -269,6 +277,13 @@ public class NacosService extends Destroyable {
 
     @Override
     protected void doDestroy() {
+        for (Map.Entry<String, EventListener> entry : eventListeners.entrySet()) {
+            try {
+                namingService.unsubscribe(entry.getKey(), nacosContext.getGroupName(), entry.getValue());
+            } catch (NacosException e) {
+                LOG.error("[NacosConnector] unsubscribe service {} in group {} failed. ", entry.getKey(), nacosContext.getGroupName());
+            }
+        }
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{refreshExecutor});
     }
 

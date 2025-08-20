@@ -264,12 +264,7 @@ public class NacosConnector extends DestroyableServerConnector {
 
             try {
                 Instance instance = buildRegisterNacosInstance(req);
-                // 优先设置成nacos的service name，如没有再设置成req的service name
-                String serviceName = req.getService();
-                if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
-                    serviceName = nacosContext.getServiceName();
-                }
-                namingService.registerInstance(serviceName,
+                namingService.registerInstance(instance.getServiceName(),
                         nacosContext.getGroupName(), instance);
                 response.setInstanceID(instance.getInstanceId());
             } catch (NacosException e) {
@@ -376,7 +371,12 @@ public class NacosConnector extends DestroyableServerConnector {
     @Override
     protected void doDestroy() {
         if (initialized.compareAndSet(true, false)) {
-            // shutdown naming service
+            // 先unsubscribe listener
+            if (CollectionUtils.isNotEmpty(nacosServices)) {
+                nacosServices.forEach((s, nacosService) -> {
+                    nacosService.destroy();
+                });
+            }
             if (CollectionUtils.isNotEmpty(namingServices)) {
                 namingServices.forEach((s, namingService) -> {
                     try {
@@ -385,11 +385,7 @@ public class NacosConnector extends DestroyableServerConnector {
                     }
                 });
             }
-            if (CollectionUtils.isNotEmpty(nacosServices)) {
-                nacosServices.forEach((s, nacosService) -> {
-                    nacosService.destroy();
-                });
-            }
+
         }
     }
 
