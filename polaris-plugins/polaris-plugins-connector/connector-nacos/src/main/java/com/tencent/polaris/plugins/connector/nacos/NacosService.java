@@ -46,6 +46,7 @@ import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
+import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.nio.charset.StandardCharsets;
@@ -112,8 +113,8 @@ public class NacosService extends Destroyable {
                                 .setHost(StringValue.of(nacosInstance.getIp()))
                                 .setPort(UInt32Value.of(nacosInstance.getPort()))
                                 .setHealthy(BoolValue.of(nacosInstance.isHealthy()))
-                                .setIsolate(BoolValue.of(false))
-                                .setWeight(UInt32Value.of((int) nacosInstance.getWeight()));
+                                .setIsolate(BoolValue.of(!nacosInstance.isEnabled()))
+                                .setWeight(UInt32Value.of(100 * (int) nacosInstance.getWeight()));
                         if (StringUtils.isNotBlank(nacosInstance.getInstanceId())) {
                             instanceBuilder.setId(StringValue.of(nacosInstance.getInstanceId()));
                         } else {
@@ -132,6 +133,31 @@ public class NacosService extends Destroyable {
                                     .putMetadata("nacos.group", nacosContext.getGroupName())
                                     .putMetadata("nacos.ephemeral", String.valueOf(nacosInstance.isEphemeral()));
                         }
+                        String protocol = metadata.getOrDefault("protocol", "");
+                        String version = metadata.getOrDefault("version", "");
+                        if (StringUtils.isNotEmpty(protocol)) {
+                            instanceBuilder.setProtocol(StringValue.of(protocol));
+                        }
+                        if (StringUtils.isNotEmpty(version)) {
+                            instanceBuilder.setVersion(StringValue.of(version));
+                        }
+
+                        String region = metadata.getOrDefault("region", "");
+                        String zone = metadata.getOrDefault("zone", "");
+                        String campus = metadata.getOrDefault("campus", "");
+                        instanceBuilder.putMetadata(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_NACOS);
+                        Location.Builder locationBuilder = Location.newBuilder();
+                        if (StringUtils.isNotEmpty(region)) {
+                            locationBuilder.setRegion(StringValue.of(region));
+                        }
+                        if (StringUtils.isNotEmpty(zone)) {
+                            locationBuilder.setZone(StringValue.of(zone));
+                        }
+                        if (StringUtils.isNotEmpty(campus)) {
+                            locationBuilder.setCampus(StringValue.of(campus));
+                        }
+
+                        instanceBuilder.setLocation(locationBuilder.build());
                         instanceBuilder.setNamespace(
                                 StringValue.of(serviceUpdateTask.getServiceEventKey().getNamespace()));
 
@@ -281,7 +307,8 @@ public class NacosService extends Destroyable {
             try {
                 namingService.unsubscribe(entry.getKey(), nacosContext.getGroupName(), entry.getValue());
             } catch (NacosException e) {
-                LOG.error("[NacosConnector] unsubscribe service {} in group {} failed. ", entry.getKey(), nacosContext.getGroupName());
+                LOG.error("[NacosConnector] unsubscribe service {} in group {} failed. ", entry.getKey(),
+                        nacosContext.getGroupName());
             }
         }
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{refreshExecutor});
