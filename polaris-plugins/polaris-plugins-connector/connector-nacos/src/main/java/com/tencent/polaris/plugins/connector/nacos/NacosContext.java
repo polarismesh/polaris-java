@@ -43,12 +43,16 @@ public class NacosContext {
 
     private Long nacosErrorSleep;
 
+    private double nacosWeight;
+
+
     public NacosContext(){
         groupName = DEFAULT_GROUP;
         clusterName = DEFAULT_CLUSTER_NAME;
         namespace = DEFAULT_NAMESPACE_ID;
         nacosErrorSleep = 1000L;
         ephemeral = false;
+        nacosWeight = 1;
     }
 
 
@@ -100,15 +104,24 @@ public class NacosContext {
         this.nacosErrorSleep = nacosErrorSleep;
     }
 
+    public double getNacosWeight() {
+        return nacosWeight;
+    }
+
+    public void setNacosWeight(double nacosWeight) {
+        this.nacosWeight = nacosWeight;
+    }
+
     @Override
     public String toString() {
         return "NacosContext{" +
-                ", groupName='" + groupName + '\'' +
+                "groupName='" + groupName + '\'' +
                 ", clusterName='" + clusterName + '\'' +
                 ", namespace='" + namespace + '\'' +
                 ", ephemeral=" + ephemeral +
                 ", serviceName='" + serviceName + '\'' +
                 ", nacosErrorSleep=" + nacosErrorSleep +
+                ", nacosWeight=" + nacosWeight +
                 '}';
     }
 }

@@ -114,6 +114,7 @@ public class NacosService extends Destroyable {
                                 .setPort(UInt32Value.of(nacosInstance.getPort()))
                                 .setHealthy(BoolValue.of(nacosInstance.isHealthy()))
                                 .setIsolate(BoolValue.of(!nacosInstance.isEnabled()))
+                                //nacos默认权重为1，polaris默认权重为100，因此需要乘100
                                 .setWeight(UInt32Value.of(100 * (int) nacosInstance.getWeight()));
                         if (StringUtils.isNotBlank(nacosInstance.getInstanceId())) {
                             instanceBuilder.setId(StringValue.of(nacosInstance.getInstanceId()));
@@ -128,11 +129,12 @@ public class NacosService extends Destroyable {
                         // set metadata
                         Map<String, String> metadata = nacosInstance.getMetadata();
                         if (CollectionUtils.isNotEmpty(metadata)) {
-                            instanceBuilder.putAllMetadata(metadata)
-                                    .putMetadata("nacos.cluster", nacosInstance.getClusterName())
-                                    .putMetadata("nacos.group", nacosContext.getGroupName())
-                                    .putMetadata("nacos.ephemeral", String.valueOf(nacosInstance.isEphemeral()));
+                            instanceBuilder.putAllMetadata(metadata);
                         }
+                        instanceBuilder.putMetadata("nacos.cluster", nacosInstance.getClusterName())
+                                .putMetadata("nacos.group", nacosContext.getGroupName())
+                                .putMetadata("nacos.ephemeral", String.valueOf(nacosInstance.isEphemeral()));
+
                         String protocol = metadata.getOrDefault("protocol", "");
                         String version = metadata.getOrDefault("version", "");
                         if (StringUtils.isNotEmpty(protocol)) {

@@ -158,6 +158,9 @@ public class NacosConnector extends DestroyableServerConnector {
         if (metadata.containsKey(NACOS_EPHEMERAL_KEY)) {
             nacosContext.setEphemeral(Boolean.parseBoolean(metadata.get(NACOS_EPHEMERAL_KEY)));
         }
+        if(metadata.containsKey(NACOS_WEIGHT_KEY)){
+            nacosContext.setNacosWeight(Double.parseDouble(metadata.get(NACOS_WEIGHT_KEY)));
+        }
         if (metadata.containsKey(PropertyKeyConst.NAMESPACE) && StringUtils.isNotEmpty(
                 metadata.get(PropertyKeyConst.NAMESPACE))) {
             nacosContext.setNamespace(metadata.get(PropertyKeyConst.NAMESPACE));
@@ -408,9 +411,7 @@ public class NacosConnector extends DestroyableServerConnector {
         instance.setPort(req.getPort());
         instance.setIp(req.getHost());
         instance.setHealthy(true);
-        if (Objects.nonNull(req.getWeight())) {
-            instance.setWeight(req.getWeight());
-        }
+        instance.setWeight(nacosContext.getNacosWeight());
         Map<String, String> metadata = new HashMap<>(Optional.ofNullable(req.getMetadata())
                 .orElse(Collections.emptyMap()));
 
@@ -454,21 +455,5 @@ public class NacosConnector extends DestroyableServerConnector {
         // clusterName 由nacosContext管理
         instance.setClusterName(nacosContext.getClusterName());
         return instance;
-    }
-
-    protected static String analyzeNacosService(String service) {
-        String[] detail = service.split("__");
-        if (detail.length == 1) {
-            return service;
-        }
-        return service.replaceFirst(detail[0] + "__", "");
-    }
-
-    protected static String analyzeNacosGroup(String service) {
-        String[] detail = service.split("__");
-        if (detail.length == 1 || Objects.equals(detail[0], "")) {
-            return DEFAULT_GROUP;
-        }
-        return detail[0];
     }
 }

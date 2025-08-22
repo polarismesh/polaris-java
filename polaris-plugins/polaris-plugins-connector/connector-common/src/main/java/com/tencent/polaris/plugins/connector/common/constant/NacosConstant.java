@@ -27,5 +27,7 @@ public interface NacosConstant {
         String NACOS_EPHEMERAL_KEY = "nacos.ephemeral";
 
         String NACOS_SERVICE_KEY = "nacos.service";
+
+        String NACOS_WEIGHT_KEY = "nacos.weight";
     }
 }
