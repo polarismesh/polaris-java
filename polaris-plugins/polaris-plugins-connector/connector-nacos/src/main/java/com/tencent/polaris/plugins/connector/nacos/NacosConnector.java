@@ -44,7 +44,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
 import static com.tencent.polaris.plugins.connector.common.constant.NacosConstant.MetadataMapKey.*;
 
@@ -69,7 +68,6 @@ public class NacosConnector extends DestroyableServerConnector {
      * If server connector initialized .
      */
     private final AtomicBoolean initialized = new AtomicBoolean();
-
 
     /**
      * Connector id .
@@ -97,12 +95,7 @@ public class NacosConnector extends DestroyableServerConnector {
     private NacosContext nacosContext;
 
     /**
-     * Nacos namespace & NamingService mappings .
-     */
-    private final Map<String, NamingService> namingServices = new ConcurrentHashMap<>();
-
-    /**
-     * Nacos namespace & NacosServiceMerger mappings .
+     * Nacos namespace & NacosService mappings .
      */
     private final Map<String, NacosService> nacosServices = new ConcurrentHashMap<>();
 
@@ -158,15 +151,14 @@ public class NacosConnector extends DestroyableServerConnector {
         if (metadata.containsKey(NACOS_EPHEMERAL_KEY)) {
             nacosContext.setEphemeral(Boolean.parseBoolean(metadata.get(NACOS_EPHEMERAL_KEY)));
         }
-        if(metadata.containsKey(NACOS_WEIGHT_KEY)){
+        if (metadata.containsKey(NACOS_WEIGHT_KEY)) {
             nacosContext.setNacosWeight(Double.parseDouble(metadata.get(NACOS_WEIGHT_KEY)));
         }
         if (metadata.containsKey(PropertyKeyConst.NAMESPACE) && StringUtils.isNotEmpty(
                 metadata.get(PropertyKeyConst.NAMESPACE))) {
             nacosContext.setNamespace(metadata.get(PropertyKeyConst.NAMESPACE));
         }
-        getOrCreateNamingService(nacosContext.getNamespace());
-
+        getOrCreateNacosService(nacosContext.getNamespace());
     }
 
     private Properties decodeNacosConfigProperties(ServerConnectorConfig config) {
@@ -188,49 +180,36 @@ public class NacosConnector extends DestroyableServerConnector {
         return properties;
     }
 
-    public NamingService getOrCreateNamingService(String namespace) {
-        // nacos中一个命名空间仅对应一个sdk实例
-        NamingService namingService = namingServices.get(namespace);
-        if (namingService != null) {
-            return namingService;
+
+    public NacosService getOrCreateNacosService(String namespace) {
+        NacosService nacosService = nacosServices.get(namespace);
+        if (nacosService != null) {
+            return nacosService;
         }
+        // nacos sdk封装的服务，用于给polaris-java调用
         synchronized (lock) {
+            NamingService namingService;
             Properties properties = new Properties(nacosProperties);
             // polaris 默认namespace 为default，nacos中映射为public
             if (StringUtils.isEmpty(nacosProperties.getProperty(PropertyKeyConst.NAMESPACE))
                     && !StringUtils.equals(namespace, "default")) {
                 properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
             }
-
             try {
                 namingService = NacosFactory.createNamingService(properties);
+                Thread.sleep(1000);
+                nacosService = new NacosService(namingService, nacosContext);
+                nacosServices.put(namespace, nacosService);
+                return nacosService;
             } catch (NacosException e) {
                 LOG.error("[Connector][Nacos] fail to create naming service to {}, namespace {}",
                         properties.get(PropertyKeyConst.SERVER_ADDR), namespace, e);
                 return null;
-            }
-            try {
-                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            namingServices.put(namespace, namingService);
-            return namingService;
         }
-    }
-
-    public NacosService getNacosService(String namespace) {
-        NacosService nacosService = nacosServices.get(namespace);
-        if (nacosService != null) {
-            return nacosService;
-        }
-        // nacos sdk封装的服务，用于给polaris-java调用
-        NamingService namingService = getOrCreateNamingService(namespace);
-        synchronized (lock) {
-            nacosService = new NacosService(namingService, nacosContext);
-            nacosServices.put(namespace, nacosService);
-        }
-        return nacosService;
+        throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Failed to initialize Nacos service for namespace: " + namespace);
     }
 
     public NacosContext getNacosContext() {
@@ -258,13 +237,11 @@ public class NacosConnector extends DestroyableServerConnector {
         CommonProviderResponse response = new CommonProviderResponse();
 
         if (isRegisterEnable()) {
-            NamingService namingService = getOrCreateNamingService(req.getNamespace());
-
+            NamingService namingService = getOrCreateNacosService(req.getNamespace()).getNamingService();
             if (namingService == null) {
                 LOG.error("[Nacos] fail to lookup namingService for service {}", req.getService());
                 return null;
             }
-
             try {
                 Instance instance = buildRegisterNacosInstance(req);
                 namingService.registerInstance(instance.getServiceName(),
@@ -284,8 +261,7 @@ public class NacosConnector extends DestroyableServerConnector {
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
 
         try {
-            NamingService service = getOrCreateNamingService(req.getNamespace());
-
+            NamingService service = getOrCreateNacosService(req.getNamespace()).getNamingService();
             if (service == null) {
                 LOG.error("[Nacos] fail to lookup namingService for service {}", req.getService());
                 return;
@@ -296,7 +272,6 @@ public class NacosConnector extends DestroyableServerConnector {
                 serviceName = nacosContext.getServiceName();
             }
             Instance instance = buildDeregisterNacosInstance(req, nacosContext.getGroupName());
-
             // deregister with nacos naming service
             service.deregisterInstance(serviceName, nacosContext.getGroupName(),
                     instance);
@@ -380,15 +355,6 @@ public class NacosConnector extends DestroyableServerConnector {
                     nacosService.destroy();
                 });
             }
-            if (CollectionUtils.isNotEmpty(namingServices)) {
-                namingServices.forEach((s, namingService) -> {
-                    try {
-                        namingService.shutDown();
-                    } catch (NacosException ignore) {
-                    }
-                });
-            }
-
         }
     }
 
@@ -414,7 +380,6 @@ public class NacosConnector extends DestroyableServerConnector {
         instance.setWeight(nacosContext.getNacosWeight());
         Map<String, String> metadata = new HashMap<>(Optional.ofNullable(req.getMetadata())
                 .orElse(Collections.emptyMap()));
-
         // 填充默认 protocol 以及 version 属性信息
         if (StringUtils.isNotEmpty(req.getProtocol())) {
             metadata.put("protocol", req.getProtocol());
@@ -438,12 +403,8 @@ public class NacosConnector extends DestroyableServerConnector {
         return instance;
     }
 
-    private Instance buildDeregisterNacosInstance(CommonProviderRequest req, String group) {
-        String serviceName = req.getService();
-        if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
-            serviceName = nacosContext.getServiceName();
-        }
-        String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), group,
+    private Instance buildDeregisterNacosInstance(CommonProviderRequest req, String serviceName) {
+        String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), nacosContext.getGroupName(),
                 serviceName, req.getHost(), req.getPort());
         Instance instance = new Instance();
         instance.setInstanceId(instanceId);

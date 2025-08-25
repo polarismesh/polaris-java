@@ -40,14 +40,6 @@ public class NacosServiceUpdateTask extends ServiceUpdateTask {
         execute(this);
     }
 
-    /**
-     * 事件驱动：
-     * 根据service update task来加载远端服务实例列表
-     * subscribe 一个新event listener
-     * event listener 收到远端服务实例列表变化的事件后触发回调
-     * 创建新事件
-     * 回调serviceEventHandler
-     */
     @Override
     public void execute(ServiceUpdateTask serviceUpdateTask) {
         if (serviceUpdateTask.getTaskType() == Type.FIRST) {
@@ -57,12 +49,12 @@ public class NacosServiceUpdateTask extends ServiceUpdateTask {
         }
         if (serverConnector instanceof NacosConnector) {
             NacosConnector nacosConnector = (NacosConnector) serverConnector;
-            NacosService nacosService = nacosConnector.getNacosService(
+            NacosService nacosService = nacosConnector.getOrCreateNacosService(
                     serviceUpdateTask.getServiceEventKey().getServiceKey().getNamespace());
             if (serviceUpdateTask.getServiceEventKey().getEventType() == EventType.SERVICE) {
-                nacosService.sendServiceRequest(serviceUpdateTask);
+                nacosService.asyncGetService(serviceUpdateTask);
             } else if (serviceUpdateTask.getServiceEventKey().getEventType() == EventType.INSTANCE) {
-                nacosService.sendInstanceRequest(serviceUpdateTask);
+                nacosService.asyncGetInstances(serviceUpdateTask);
             }
         }
     }

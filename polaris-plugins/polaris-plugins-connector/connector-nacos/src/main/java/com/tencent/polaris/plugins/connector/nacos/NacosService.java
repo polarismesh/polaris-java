@@ -15,10 +15,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-/**
- * 连接nacos 服务
- */
-
 package com.tencent.polaris.plugins.connector.nacos;
 
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_NACOS;
@@ -26,6 +22,7 @@ import static com.tencent.polaris.plugins.connector.common.constant.ConnectorCon
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -50,6 +47,7 @@ import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -74,6 +72,7 @@ public class NacosService extends Destroyable {
 
     private Map<String, EventListener> eventListeners;
 
+
     public NacosService(NamingService namingService, NacosContext nacosContext) {
         this.namingService = namingService;
         this.nacosContext = nacosContext;
@@ -82,161 +81,153 @@ public class NacosService extends Destroyable {
         this.eventListeners = new ConcurrentHashMap<>();
     }
 
+    public NamingService getNamingService() {
+        return namingService;
+    }
 
-    public void sendInstanceRequest(ServiceUpdateTask serviceUpdateTask) {
+    private static class NacosEventListener implements EventListener {
 
-        refreshExecutor.submit(() -> {
-            try {
-                asyncGetInstances(serviceUpdateTask);
-            } catch (Exception e) {
-                LOG.error("Get nacos service instances of {} failed. ",
-                        serviceUpdateTask.getServiceEventKey().getService(), e);
-                throw new RuntimeException(e);
+        private final ServiceUpdateTask serviceUpdateTask;
+        private final NacosContext nacosContext;
+
+        public NacosEventListener(ServiceUpdateTask serviceUpdateTask, NacosContext nacosContext) {
+            this.serviceUpdateTask = serviceUpdateTask;
+            this.nacosContext = nacosContext;
+        }
+
+        @Override
+        public void onEvent(Event event) {
+            if (event instanceof NamingEvent) {
+                String serviceId = serviceUpdateTask.getServiceEventKey().getService();
+                NamingEvent namingEvent = (NamingEvent) event;
+                List<Instance> nacosInstances = namingEvent.getInstances();
+                List<ServiceProto.Instance> polarisInstanceList = new ArrayList<>();
+                // transform nacos instance to polaris instance
+                for (Instance nacosInstance : nacosInstances) {
+                    ServiceProto.Instance.Builder instanceBuilder = ServiceProto.Instance.newBuilder()
+                            .setService(StringValue.of(nacosInstance.getServiceName()))
+                            .setHost(StringValue.of(nacosInstance.getIp()))
+                            .setPort(UInt32Value.of(nacosInstance.getPort()))
+                            .setHealthy(BoolValue.of(nacosInstance.isHealthy()))
+                            .setIsolate(BoolValue.of(!nacosInstance.isEnabled()))
+                            //nacos默认权重为(double)1，polaris默认权重为(int)100，因此需要乘100
+                            .setWeight(UInt32Value.of((int) (100 * nacosInstance.getWeight())));
+                    if (StringUtils.isNotBlank(nacosInstance.getInstanceId())) {
+                        instanceBuilder.setId(StringValue.of(nacosInstance.getInstanceId()));
+                    } else {
+                        String id =
+                                serviceId + "-" + nacosInstance.getIp().replace(".", "-") + "-"
+                                        + nacosInstance.getPort();
+                        instanceBuilder.setId(StringValue.of(id));
+                        LOG.info("Instance with name {} host {} port {} doesn't have id.", serviceId
+                                , nacosInstance.getIp(), nacosInstance.getPort());
+                    }
+                    // set metadata
+                    Map<String, String> metadata = nacosInstance.getMetadata();
+                    if (CollectionUtils.isNotEmpty(metadata)) {
+                        instanceBuilder.putAllMetadata(metadata);
+                    }
+                    instanceBuilder.putMetadata("nacos.cluster", nacosInstance.getClusterName())
+                            .putMetadata("nacos.group", nacosContext.getGroupName())
+                            .putMetadata("nacos.ephemeral", String.valueOf(nacosInstance.isEphemeral()));
+
+                    String protocol = metadata.getOrDefault("protocol", "");
+                    String version = metadata.getOrDefault("version", "");
+                    if (StringUtils.isNotEmpty(protocol)) {
+                        instanceBuilder.setProtocol(StringValue.of(protocol));
+                    }
+                    if (StringUtils.isNotEmpty(version)) {
+                        instanceBuilder.setVersion(StringValue.of(version));
+                    }
+
+                    String region = metadata.getOrDefault("region", "");
+                    String zone = metadata.getOrDefault("zone", "");
+                    String campus = metadata.getOrDefault("campus", "");
+                    instanceBuilder.putMetadata(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_NACOS);
+                    Location.Builder locationBuilder = Location.newBuilder();
+                    if (StringUtils.isNotEmpty(region)) {
+                        locationBuilder.setRegion(StringValue.of(region));
+                    }
+                    if (StringUtils.isNotEmpty(zone)) {
+                        locationBuilder.setZone(StringValue.of(zone));
+                    }
+                    if (StringUtils.isNotEmpty(campus)) {
+                        locationBuilder.setCampus(StringValue.of(campus));
+                    }
+
+                    instanceBuilder.setLocation(locationBuilder.build());
+                    instanceBuilder.setNamespace(
+                            StringValue.of(serviceUpdateTask.getServiceEventKey().getNamespace()));
+
+                    polarisInstanceList.add(instanceBuilder.build());
+                }
+                ServiceProto.Service.Builder newServiceBuilder = ServiceProto.Service.newBuilder();
+                newServiceBuilder.setNamespace(
+                        StringValue.of(serviceUpdateTask.getServiceEventKey().getNamespace()));
+                newServiceBuilder.setName(StringValue.of(serviceUpdateTask.getServiceEventKey().getService()));
+                newServiceBuilder.setRevision(StringValue.of(buildRevision(nacosInstances)));
+                ServiceProto.Service service = newServiceBuilder.build();
+                ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
+                newDiscoverResponseBuilder.setService(service);
+                newDiscoverResponseBuilder.addAllInstances(polarisInstanceList);
+                int code = ServerCodes.EXECUTE_SUCCESS;
+                newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
+                LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
+                        serviceUpdateTask.getServiceEventKey().getService());
+                // notify to polaris-java
+                ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
+                        newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
+                boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
+                if (!svcDeleted) {
+                    serviceUpdateTask.addUpdateTaskSet();
+                }
             }
-        });
-
+        }
     }
 
     public void asyncGetInstances(ServiceUpdateTask serviceUpdateTask) {
-
-        // 通过namingService订阅服务监听，当服务有变化时，回调serviceListener，将结果notify给polaris
-        EventListener serviceListener = event -> {
-            try {
-                if (event instanceof NamingEvent) {
-                    String serviceId = serviceUpdateTask.getServiceEventKey().getService();
-                    NamingEvent namingEvent = (NamingEvent) event;
-                    List<Instance> nacosInstances = namingEvent.getInstances();
-                    List<ServiceProto.Instance> polarisInstanceList = new ArrayList<>();
-                    for (Instance nacosInstance : nacosInstances) {
-                        ServiceProto.Instance.Builder instanceBuilder = ServiceProto.Instance.newBuilder()
-                                .setService(StringValue.of(nacosInstance.getServiceName()))
-                                .setHost(StringValue.of(nacosInstance.getIp()))
-                                .setPort(UInt32Value.of(nacosInstance.getPort()))
-                                .setHealthy(BoolValue.of(nacosInstance.isHealthy()))
-                                .setIsolate(BoolValue.of(!nacosInstance.isEnabled()))
-                                //nacos默认权重为1，polaris默认权重为100，因此需要乘100
-                                .setWeight(UInt32Value.of(100 * (int) nacosInstance.getWeight()));
-                        if (StringUtils.isNotBlank(nacosInstance.getInstanceId())) {
-                            instanceBuilder.setId(StringValue.of(nacosInstance.getInstanceId()));
-                        } else {
-                            String id =
-                                    serviceId + "-" + nacosInstance.getIp().replace(".", "-") + "-"
-                                            + nacosInstance.getPort();
-                            instanceBuilder.setId(StringValue.of(id));
-                            LOG.info("Instance with name {} host {} port {} doesn't have id.", serviceId
-                                    , nacosInstance.getIp(), nacosInstance.getPort());
-                        }
-                        // set metadata
-                        Map<String, String> metadata = nacosInstance.getMetadata();
-                        if (CollectionUtils.isNotEmpty(metadata)) {
-                            instanceBuilder.putAllMetadata(metadata);
-                        }
-                        instanceBuilder.putMetadata("nacos.cluster", nacosInstance.getClusterName())
-                                .putMetadata("nacos.group", nacosContext.getGroupName())
-                                .putMetadata("nacos.ephemeral", String.valueOf(nacosInstance.isEphemeral()));
-
-                        String protocol = metadata.getOrDefault("protocol", "");
-                        String version = metadata.getOrDefault("version", "");
-                        if (StringUtils.isNotEmpty(protocol)) {
-                            instanceBuilder.setProtocol(StringValue.of(protocol));
-                        }
-                        if (StringUtils.isNotEmpty(version)) {
-                            instanceBuilder.setVersion(StringValue.of(version));
-                        }
-
-                        String region = metadata.getOrDefault("region", "");
-                        String zone = metadata.getOrDefault("zone", "");
-                        String campus = metadata.getOrDefault("campus", "");
-                        instanceBuilder.putMetadata(SERVER_CONNECTOR_TYPE, SERVER_CONNECTOR_NACOS);
-                        Location.Builder locationBuilder = Location.newBuilder();
-                        if (StringUtils.isNotEmpty(region)) {
-                            locationBuilder.setRegion(StringValue.of(region));
-                        }
-                        if (StringUtils.isNotEmpty(zone)) {
-                            locationBuilder.setZone(StringValue.of(zone));
-                        }
-                        if (StringUtils.isNotEmpty(campus)) {
-                            locationBuilder.setCampus(StringValue.of(campus));
-                        }
-
-                        instanceBuilder.setLocation(locationBuilder.build());
-                        instanceBuilder.setNamespace(
-                                StringValue.of(serviceUpdateTask.getServiceEventKey().getNamespace()));
-
-                        polarisInstanceList.add(instanceBuilder.build());
-                    }
-                    ServiceProto.Service.Builder newServiceBuilder = ServiceProto.Service.newBuilder();
-                    newServiceBuilder.setNamespace(
-                            StringValue.of(serviceUpdateTask.getServiceEventKey().getNamespace()));
-                    newServiceBuilder.setName(StringValue.of(serviceUpdateTask.getServiceEventKey().getService()));
-                    newServiceBuilder.setRevision(StringValue.of(buildRevision(nacosInstances)));
-                    ServiceProto.Service service = newServiceBuilder.build();
-                    ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
-                    newDiscoverResponseBuilder.setService(service);
-                    newDiscoverResponseBuilder.addAllInstances(polarisInstanceList);
-                    int code = ServerCodes.EXECUTE_SUCCESS;
-                    newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-                    LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
-                            serviceUpdateTask.getServiceEventKey().getService());
-                    ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
-                            newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
-                    boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
-                    if (!svcDeleted) {
-                        serviceUpdateTask.addUpdateTaskSet();
-                    }
-                }
-            } catch (Throwable throwable) {
-                LOG.error("Get nacos service instances of {} failed. ",
-                        serviceUpdateTask.getServiceEventKey().getService(), throwable);
-                try {
-                    Thread.sleep(nacosContext.getNacosErrorSleep());
-                } catch (Exception e1) {
-                    LOG.error("error in sleep, msg: " + e1.getMessage());
-                }
-                PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
-                        String.format("Get service instances of %s sync failed.",
-                                serviceUpdateTask.getServiceEventKey().getServiceKey()));
-                ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
-                        SERVER_CONNECTOR_NACOS);
-                serviceUpdateTask.notifyServerEvent(serverEvent);
-                serviceUpdateTask.retry();
-            }
-        };
-
+        EventListener serviceListener = new NacosEventListener(serviceUpdateTask, nacosContext);
         try {
             namingService.subscribe(serviceUpdateTask.getServiceEventKey().getService(), nacosContext.getGroupName(),
                     serviceListener);
             eventListeners.put(serviceUpdateTask.getServiceEventKey().getService(), serviceListener);
+        } catch (NacosException nacosException) {
+            String errorMsg = String.format("subscribe nacos service instances of %s failed.",
+                    serviceUpdateTask.getServiceEventKey().getService());
 
-        } catch (NacosException e) {
-            LOG.error("Get nacos service instances of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
-                    e);
-            throw new RuntimeException(e);
+            LOG.error(errorMsg, nacosException);
+            try {
+                Thread.sleep(nacosContext.getNacosErrorSleep());
+            } catch (Exception e1) {
+                LOG.error("error in sleep, msg: " + e1.getMessage());
+            }
+            PolarisException error = new PolarisException(ErrorCode.SERVER_ERROR, errorMsg, nacosException);
+            ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
+                    SERVER_CONNECTOR_NACOS);
+            serviceUpdateTask.notifyServerEvent(serverEvent);
+            serviceUpdateTask.retry();
         }
     }
 
-    public void sendServiceRequest(ServiceUpdateTask serviceUpdateTask) {
+    public void asyncGetService(ServiceUpdateTask serviceUpdateTask) {
         refreshExecutor.submit(() -> {
             try {
                 syncGetService(serviceUpdateTask);
-            } catch (Exception e) {
-                LOG.error("Get nacos service instances of {} failed. ",
-                        serviceUpdateTask.getServiceEventKey().getService(), e);
-                throw new RuntimeException(e);
+            } catch (Throwable e) {
+                LOG.error("Get nacos service of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
+                        e);
             }
         });
     }
 
     private void syncGetService(ServiceUpdateTask serviceUpdateTask) {
-
         try {
 
             String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
             if (namingService == null) {
-                LOG.error("[Connector][Nacos] fail to lookup namingService for service {}", namespace);
+                LOG.error("fail to lookup nacos namingService for service {}", namespace);
                 return;
             }
-
             int pageIndex = 1;
             ListView<String> listView = namingService.getServicesOfServer(pageIndex, NACOS_SERVICE_PAGESIZE,
                     nacosContext.getGroupName());
@@ -254,7 +245,6 @@ public class NacosService extends Destroyable {
                 serviceNames.addAll(listView.getData());
             }
 
-            String revision = buildRevision(serviceNames);
             List<ServiceProto.Service> newServiceList = new ArrayList<>();
             serviceNames.forEach(name -> {
                 ServiceProto.Service service = ServiceProto.Service.newBuilder()
@@ -276,7 +266,7 @@ public class NacosService extends Destroyable {
 
             int code = ServerCodes.EXECUTE_SUCCESS;
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-            LOG.debug("[NacosConnector] get service of {} success. ",
+            LOG.debug("get nacos service of {} success. ",
                     serviceUpdateTask.getServiceEventKey().getService());
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                     newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
@@ -285,22 +275,34 @@ public class NacosService extends Destroyable {
             if (!svcDeleted) {
                 serviceUpdateTask.addUpdateTaskSet();
             }
-
-        } catch (NacosException e) {
-            throw ServerErrorResponseException.build(ErrorCode.SERVER_USER_ERROR.ordinal(),
-                    String.format("[Connector][Nacos] Get services of %s instances sync failed.",
+        } catch (Throwable throwable) {
+            LOG.error("Get nacos service of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
+                    throwable);
+            try {
+                Thread.sleep(nacosContext.getNacosErrorSleep());
+            } catch (Exception e1) {
+                LOG.error("error in sleep, msg: " + e1.getMessage());
+            }
+            PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
+                    String.format("Get service of %s sync failed.",
                             serviceUpdateTask.getServiceEventKey().getServiceKey()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
+                    SERVER_CONNECTOR_NACOS);
+            serviceUpdateTask.notifyServerEvent(serverEvent);
         }
     }
 
-    private String buildRevision(List<Instance> instances) throws Exception {
+    private static String buildRevision(List<Instance> instances) {
         StringBuilder revisionStr = new StringBuilder("NacosServiceInstances");
         for (Instance instance : instances) {
             revisionStr.append("|").append(instance.toString());
         }
-        return MD5Utils.md5Hex(revisionStr.toString().getBytes(StandardCharsets.UTF_8));
+        try {
+            return MD5Utils.md5Hex(revisionStr.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            LOG.error("build revision failed.", e);
+            return "";
+        }
     }
 
     @Override
@@ -314,13 +316,24 @@ public class NacosService extends Destroyable {
             }
         }
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{refreshExecutor});
+        try {
+            namingService.shutDown();
+        } catch (NacosException e) {
+            LOG.error("shutdown nacos namingService failed. ", e);
+        }
     }
 
-    private String buildRevision(Set<String> serviceSet) throws Exception {
+    private String buildRevision(Set<String> serviceSet) {
         StringBuilder revisionStr = new StringBuilder("NacosServiceInstances");
         for (String serviceName : serviceSet) {
             revisionStr.append("|").append(serviceName);
         }
-        return MD5Utils.md5Hex(revisionStr.toString().getBytes(StandardCharsets.UTF_8));
+        try {
+            return MD5Utils.md5Hex(revisionStr.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            LOG.error("build nacos revision failed", e);
+            return "";
+        }
     }
+
 }
