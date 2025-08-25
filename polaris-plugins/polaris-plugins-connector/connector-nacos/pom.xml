@@ -44,33 +44,4 @@
             <version>${httpclient.version}</version>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.shaded.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <artifactSet>
-                                <includes>
-                                    <include>com.alibaba:*</include>
-                                </includes>
-                            </artifactSet>
-                            <relocations>
-                                <relocation>
-                                    <pattern>com.alibaba</pattern>
-                                    <shadedPattern>shade.polaris.com.alibaba</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
