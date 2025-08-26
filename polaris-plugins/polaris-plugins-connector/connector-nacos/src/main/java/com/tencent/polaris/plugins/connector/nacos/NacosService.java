@@ -64,13 +64,13 @@ public class NacosService extends Destroyable {
 
     private final NamingService namingService;
 
-    private NacosContext nacosContext;
+    private final NacosContext nacosContext;
 
     protected final ExecutorService refreshExecutor;
 
     private static final int NACOS_SERVICE_PAGESIZE = 10;
 
-    private Map<String, EventListener> eventListeners;
+    private final Map<String, EventListener> eventListeners;
 
 
     public NacosService(NamingService namingService, NacosContext nacosContext) {
@@ -173,8 +173,6 @@ public class NacosService extends Destroyable {
                 newDiscoverResponseBuilder.addAllInstances(polarisInstanceList);
                 int code = ServerCodes.EXECUTE_SUCCESS;
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-                LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
-                        serviceUpdateTask.getServiceEventKey().getService());
                 // notify to polaris-java
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                         newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
@@ -192,6 +190,8 @@ public class NacosService extends Destroyable {
             namingService.subscribe(serviceUpdateTask.getServiceEventKey().getService(), nacosContext.getGroupName(),
                     serviceListener);
             eventListeners.put(serviceUpdateTask.getServiceEventKey().getService(), serviceListener);
+            LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
+                    serviceUpdateTask.getServiceEventKey().getService());
         } catch (NacosException nacosException) {
             String errorMsg = String.format("subscribe nacos service instances of %s failed.",
                     serviceUpdateTask.getServiceEventKey().getService());
@@ -223,7 +223,6 @@ public class NacosService extends Destroyable {
 
     private void syncGetService(ServiceUpdateTask serviceUpdateTask) {
         try {
-
             String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
             if (namingService == null) {
                 LOG.error("nacos client fail to lookup namingService for service {}", namespace);
