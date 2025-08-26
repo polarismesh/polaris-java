@@ -168,6 +168,11 @@
                                     </shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>com.alibaba</pattern>
+                                    <shadedPattern>shade.polaris.com.alibaba
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>io.perfmark</pattern>
                                     <shadedPattern>shade.polaris.io.perfmark</shadedPattern>
                                 </relocation>
