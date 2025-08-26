@@ -110,7 +110,8 @@ public class NacosService extends Destroyable {
                             .setPort(UInt32Value.of(nacosInstance.getPort()))
                             .setHealthy(BoolValue.of(nacosInstance.isHealthy()))
                             .setIsolate(BoolValue.of(!nacosInstance.isEnabled()))
-                            //nacos默认权重为(double)1，polaris默认权重为(int)100，因此需要乘100
+                            // The default weight in Nacos is (double)1, while in Polaris it is (int)100
+                            // need to multiply by 100
                             .setWeight(UInt32Value.of((int) (100 * nacosInstance.getWeight())));
                     if (StringUtils.isNotBlank(nacosInstance.getInstanceId())) {
                         instanceBuilder.setId(StringValue.of(nacosInstance.getInstanceId()));
@@ -165,7 +166,7 @@ public class NacosService extends Destroyable {
                 newServiceBuilder.setNamespace(
                         StringValue.of(serviceUpdateTask.getServiceEventKey().getNamespace()));
                 newServiceBuilder.setName(StringValue.of(serviceUpdateTask.getServiceEventKey().getService()));
-                newServiceBuilder.setRevision(StringValue.of(buildRevision(nacosInstances)));
+                newServiceBuilder.setRevision(StringValue.of(buildInstanceListRevision(nacosInstances)));
                 ServiceProto.Service service = newServiceBuilder.build();
                 ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
                 newDiscoverResponseBuilder.setService(service);
@@ -214,7 +215,7 @@ public class NacosService extends Destroyable {
             try {
                 syncGetService(serviceUpdateTask);
             } catch (Throwable e) {
-                LOG.error("Get nacos service of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
+                LOG.error("nacos client failed to get service {}. ", serviceUpdateTask.getServiceEventKey().getService(),
                         e);
             }
         });
@@ -225,7 +226,7 @@ public class NacosService extends Destroyable {
 
             String namespace = serviceUpdateTask.getServiceEventKey().getNamespace();
             if (namingService == null) {
-                LOG.error("fail to lookup nacos namingService for service {}", namespace);
+                LOG.error("nacos client fail to lookup namingService for service {}", namespace);
                 return;
             }
             int pageIndex = 1;
@@ -258,7 +259,7 @@ public class NacosService extends Destroyable {
             ServiceProto.Service.Builder newServiceBuilder = ServiceProto.Service.newBuilder();
             newServiceBuilder.setNamespace(StringValue.of(namespace));
             newServiceBuilder.setName(StringValue.of(serviceUpdateTask.getServiceEventKey().getService()));
-            newServiceBuilder.setRevision(StringValue.of(buildRevision(serviceNames)));
+            newServiceBuilder.setRevision(StringValue.of(buildServiceListRevision(serviceNames)));
             ServiceProto.Service newService = newServiceBuilder.build();
             ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
             newDiscoverResponseBuilder.setService(newService);
@@ -266,7 +267,7 @@ public class NacosService extends Destroyable {
 
             int code = ServerCodes.EXECUTE_SUCCESS;
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
-            LOG.debug("get nacos service of {} success. ",
+            LOG.debug("nacos client get service {} success. ",
                     serviceUpdateTask.getServiceEventKey().getService());
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
                     newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_NACOS);
@@ -276,15 +277,15 @@ public class NacosService extends Destroyable {
                 serviceUpdateTask.addUpdateTaskSet();
             }
         } catch (Throwable throwable) {
-            LOG.error("Get nacos service of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
+            LOG.error("nacos client get service of {} failed. ", serviceUpdateTask.getServiceEventKey().getService(),
                     throwable);
             try {
                 Thread.sleep(nacosContext.getNacosErrorSleep());
             } catch (Exception e1) {
-                LOG.error("error in sleep, msg: " + e1.getMessage());
+                LOG.error("nacos connector error in sleep, msg: " + e1.getMessage());
             }
             PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
-                    String.format("Get service of %s sync failed.",
+                    String.format("nacos client sync get service %s failed.",
                             serviceUpdateTask.getServiceEventKey().getServiceKey()));
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
                     SERVER_CONNECTOR_NACOS);
@@ -292,7 +293,7 @@ public class NacosService extends Destroyable {
         }
     }
 
-    private static String buildRevision(List<Instance> instances) {
+    private static String buildInstanceListRevision(List<Instance> instances) {
         StringBuilder revisionStr = new StringBuilder("NacosServiceInstances");
         for (Instance instance : instances) {
             revisionStr.append("|").append(instance.toString());
@@ -300,30 +301,11 @@ public class NacosService extends Destroyable {
         try {
             return MD5Utils.md5Hex(revisionStr.toString().getBytes(StandardCharsets.UTF_8));
         } catch (NoSuchAlgorithmException e) {
-            LOG.error("build revision failed.", e);
+            LOG.error("nacos client build revision failed.", e);
             return "";
         }
     }
-
-    @Override
-    protected void doDestroy() {
-        for (Map.Entry<String, EventListener> entry : eventListeners.entrySet()) {
-            try {
-                namingService.unsubscribe(entry.getKey(), nacosContext.getGroupName(), entry.getValue());
-            } catch (NacosException e) {
-                LOG.error("[NacosConnector] unsubscribe service {} in group {} failed. ", entry.getKey(),
-                        nacosContext.getGroupName());
-            }
-        }
-        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{refreshExecutor});
-        try {
-            namingService.shutDown();
-        } catch (NacosException e) {
-            LOG.error("shutdown nacos namingService failed. ", e);
-        }
-    }
-
-    private String buildRevision(Set<String> serviceSet) {
+    private static String buildServiceListRevision(Set<String> serviceSet) {
         StringBuilder revisionStr = new StringBuilder("NacosServiceInstances");
         for (String serviceName : serviceSet) {
             revisionStr.append("|").append(serviceName);
@@ -335,5 +317,24 @@ public class NacosService extends Destroyable {
             return "";
         }
     }
+    @Override
+    protected void doDestroy() {
+        for (Map.Entry<String, EventListener> entry : eventListeners.entrySet()) {
+            try {
+                namingService.unsubscribe(entry.getKey(), nacosContext.getGroupName(), entry.getValue());
+            } catch (NacosException e) {
+                LOG.error("nacos client  unsubscribe service {} in group {} failed. ", entry.getKey(),
+                        nacosContext.getGroupName());
+            }
+        }
+        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{refreshExecutor});
+        try {
+            namingService.shutDown();
+        } catch (NacosException e) {
+            LOG.error("nacos client shutdown namingService failed. ", e);
+        }
+    }
+
+
 
 }

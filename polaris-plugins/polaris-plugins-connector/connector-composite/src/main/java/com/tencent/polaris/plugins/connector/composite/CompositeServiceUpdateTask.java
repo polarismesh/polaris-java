@@ -99,7 +99,7 @@ public class CompositeServiceUpdateTask extends ServiceUpdateTask {
                     ifMainConnectorTypeSet = true;
                 }
             }
-            // nacos仅支持服务事件和实例事件
+            // nacos only support INSTANCE and SERVICE events.
             if (SERVER_CONNECTOR_NACOS.equals(sc.getName()) && sc.isDiscoveryEnable()
                     && (eventType == EventType.INSTANCE || eventType == EventType.SERVICE)) {
                 subServiceUpdateTaskMap.put(SERVER_CONNECTOR_NACOS, new NacosServiceUpdateTask(serviceEventHandler, sc));

@@ -43,9 +43,9 @@ public class NacosServiceUpdateTask extends ServiceUpdateTask {
     @Override
     public void execute(ServiceUpdateTask serviceUpdateTask) {
         if (serviceUpdateTask.getTaskType() == Type.FIRST) {
-            LOG.info("[ServerConnector]start to run first task {}", serviceUpdateTask);
+            LOG.info("[NacosServerConnector]start to run first task {}", serviceUpdateTask);
         } else {
-            LOG.debug("[ServerConnector]start to run task {}", serviceUpdateTask);
+            LOG.debug("[NacosServerConnector]start to run task {}", serviceUpdateTask);
         }
         if (serverConnector instanceof NacosConnector) {
             NacosConnector nacosConnector = (NacosConnector) serverConnector;

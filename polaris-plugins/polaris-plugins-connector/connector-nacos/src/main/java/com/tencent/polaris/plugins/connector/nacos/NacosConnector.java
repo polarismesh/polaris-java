@@ -202,9 +202,10 @@ public class NacosConnector extends DestroyableServerConnector {
                 nacosServices.put(namespace, nacosService);
                 return nacosService;
             } catch (Throwable e) {
-                LOG.error("[Connector][Nacos] fail to create naming service to {}, namespace {}",
+                LOG.error("nacos client failed to create naming service to {}, namespace {}",
                         properties.get(PropertyKeyConst.SERVER_ADDR), namespace, e);
-                throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Failed to initialize Nacos service for namespace: " + namespace, e);
+                throw new PolarisException(ErrorCode.INTERNAL_ERROR,
+                        "nacos client failed to initialize service for namespace: " + namespace, e);
             }
         }
     }
@@ -236,17 +237,22 @@ public class NacosConnector extends DestroyableServerConnector {
         if (isRegisterEnable()) {
             NamingService namingService = getOrCreateNacosService(req.getNamespace()).getNamingService();
             if (namingService == null) {
-                LOG.error("[Nacos] fail to lookup namingService for service {}", req.getService());
+                LOG.error("nacos client fail to lookup namingService for service {}", req.getService());
                 return null;
             }
             try {
-                Instance instance = buildRegisterNacosInstance(req);
-                namingService.registerInstance(instance.getServiceName(),
+                // nacos上注册和polaris不同的服务名时优先用nacosContext中的serviceName
+                String serviceName = req.getService();
+                if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
+                    serviceName = nacosContext.getServiceName();
+                }
+                Instance instance = buildRegisterNacosInstance(req, serviceName);
+                namingService.registerInstance(serviceName,
                         nacosContext.getGroupName(), instance);
                 response.setInstanceID(instance.getInstanceId());
             } catch (NacosException e) {
                 throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                        String.format("[Connector][Nacos] fail to register host %s:%d service %s", req.getHost(),
+                        String.format("nacos client fail to register host %s:%d service %s", req.getHost(),
                                 req.getPort(),
                                 req.getService()), e);
             }
@@ -260,7 +266,7 @@ public class NacosConnector extends DestroyableServerConnector {
         try {
             NamingService service = getOrCreateNacosService(req.getNamespace()).getNamingService();
             if (service == null) {
-                LOG.error("[Nacos] fail to lookup namingService for service {}", req.getService());
+                LOG.error("nacos client fail to lookup namingService for service {}", req.getService());
                 return;
             }
             // 优先设置成nacos的service name，如没有再设置成req的service name
@@ -272,11 +278,11 @@ public class NacosConnector extends DestroyableServerConnector {
             // deregister with nacos naming service
             service.deregisterInstance(serviceName, nacosContext.getGroupName(),
                     instance);
-            LOG.info("[connector][Nacos] deregister service {} success, groupName: {}, clusterName: {}, instance: {}",
+            LOG.info("nacos client deregister service {} success, groupName: {}, clusterName: {}, instance: {}",
                     serviceName, nacosContext.getGroupName(), nacosContext.getClusterName(), instance);
         } catch (NacosException e) {
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
-                    String.format("[Connector][Nacos] fail to deregister host %s:%d service %s", req.getHost(),
+                    String.format("nacos fail to deregister host %s:%d service %s", req.getHost(),
                             req.getPort(),
                             req.getService()), e);
         }
@@ -355,12 +361,8 @@ public class NacosConnector extends DestroyableServerConnector {
         }
     }
 
-    private Instance buildRegisterNacosInstance(CommonProviderRequest req) {
-        // nacos上注册和polaris不同的服务名时优先用nacosContext中的serviceName
-        String serviceName = req.getService();
-        if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
-            serviceName = nacosContext.getServiceName();
-        }
+    private Instance buildRegisterNacosInstance(CommonProviderRequest req, String serviceName) {
+
         String nameSpace = req.getNamespace();
 
         String instanceId = String.format(INSTANCE_NAME, nameSpace, nacosContext.getGroupName(),
