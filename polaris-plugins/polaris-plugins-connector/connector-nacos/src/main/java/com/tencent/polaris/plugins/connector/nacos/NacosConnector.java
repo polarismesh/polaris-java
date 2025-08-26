@@ -262,8 +262,6 @@ public class NacosConnector extends DestroyableServerConnector {
                 LOG.error("nacos client fail to lookup namingService for service {}", req.getService());
                 return;
             }
-            // 优先设置成nacos的service name，如没有再设置成req的service name
-
             Instance instance = buildDeregisterNacosInstance(req);
             // deregister with nacos naming service
             service.deregisterInstance(instance.getServiceName(), nacosContext.getGroupName(),
@@ -354,7 +352,6 @@ public class NacosConnector extends DestroyableServerConnector {
 
         String serviceName = getServiceName(req);
         String nameSpace = req.getNamespace();
-
         String instanceId = String.format(INSTANCE_NAME, nameSpace, nacosContext.getGroupName(),
                 serviceName, req.getHost(), req.getPort());
         Instance instance = new Instance();
