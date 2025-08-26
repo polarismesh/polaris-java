@@ -201,15 +201,12 @@ public class NacosConnector extends DestroyableServerConnector {
                 nacosService = new NacosService(namingService, nacosContext);
                 nacosServices.put(namespace, nacosService);
                 return nacosService;
-            } catch (NacosException e) {
+            } catch (Throwable e) {
                 LOG.error("[Connector][Nacos] fail to create naming service to {}, namespace {}",
                         properties.get(PropertyKeyConst.SERVER_ADDR), namespace, e);
-                return null;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Failed to initialize Nacos service for namespace: " + namespace, e);
             }
         }
-        throw new PolarisException(ErrorCode.INTERNAL_ERROR, "Failed to initialize Nacos service for namespace: " + namespace);
     }
 
     public NacosContext getNacosContext() {
