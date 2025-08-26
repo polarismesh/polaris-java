@@ -185,17 +185,18 @@ public class NacosService extends Destroyable {
     }
 
     public void asyncGetInstances(ServiceUpdateTask serviceUpdateTask) {
-        EventListener serviceListener = new NacosEventListener(serviceUpdateTask, nacosContext);
         try {
+            EventListener nacosEventListener = eventListeners.computeIfAbsent(
+                    serviceUpdateTask.getServiceEventKey().getService(),
+                    k -> new NacosEventListener(serviceUpdateTask, nacosContext)
+            );
             namingService.subscribe(serviceUpdateTask.getServiceEventKey().getService(), nacosContext.getGroupName(),
-                    serviceListener);
-            eventListeners.put(serviceUpdateTask.getServiceEventKey().getService(), serviceListener);
+                    nacosEventListener);
             LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
                     serviceUpdateTask.getServiceEventKey().getService());
         } catch (NacosException nacosException) {
             String errorMsg = String.format("subscribe nacos service instances of %s failed.",
                     serviceUpdateTask.getServiceEventKey().getService());
-
             LOG.error(errorMsg, nacosException);
             try {
                 Thread.sleep(nacosContext.getNacosErrorSleep());
@@ -215,7 +216,8 @@ public class NacosService extends Destroyable {
             try {
                 syncGetService(serviceUpdateTask);
             } catch (Throwable e) {
-                LOG.error("nacos client failed to get service {}. ", serviceUpdateTask.getServiceEventKey().getService(),
+                LOG.error("nacos client failed to get service {}. ",
+                        serviceUpdateTask.getServiceEventKey().getService(),
                         e);
             }
         });
@@ -289,6 +291,7 @@ public class NacosService extends Destroyable {
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
                     SERVER_CONNECTOR_NACOS);
             serviceUpdateTask.notifyServerEvent(serverEvent);
+            serviceUpdateTask.retry();
         }
     }
 
@@ -304,6 +307,7 @@ public class NacosService extends Destroyable {
             return "";
         }
     }
+
     private static String buildServiceListRevision(Set<String> serviceSet) {
         StringBuilder revisionStr = new StringBuilder("NacosServiceInstances");
         for (String serviceName : serviceSet) {
@@ -316,6 +320,7 @@ public class NacosService extends Destroyable {
             return "";
         }
     }
+
     @Override
     protected void doDestroy() {
         for (Map.Entry<String, EventListener> entry : eventListeners.entrySet()) {
@@ -333,7 +338,6 @@ public class NacosService extends Destroyable {
             LOG.error("nacos client shutdown namingService failed. ", e);
         }
     }
-
 
 
 }

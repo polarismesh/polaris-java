@@ -233,7 +233,6 @@ public class NacosConnector extends DestroyableServerConnector {
     public CommonProviderResponse registerInstance(CommonProviderRequest req,
             Map<String, String> customHeader) throws PolarisException {
         CommonProviderResponse response = new CommonProviderResponse();
-
         if (isRegisterEnable()) {
             NamingService namingService = getOrCreateNacosService(req.getNamespace()).getNamingService();
             if (namingService == null) {
@@ -241,13 +240,8 @@ public class NacosConnector extends DestroyableServerConnector {
                 return null;
             }
             try {
-                // nacos上注册和polaris不同的服务名时优先用nacosContext中的serviceName
-                String serviceName = req.getService();
-                if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
-                    serviceName = nacosContext.getServiceName();
-                }
-                Instance instance = buildRegisterNacosInstance(req, serviceName);
-                namingService.registerInstance(serviceName,
+                Instance instance = buildRegisterNacosInstance(req);
+                namingService.registerInstance(instance.getServiceName(),
                         nacosContext.getGroupName(), instance);
                 response.setInstanceID(instance.getInstanceId());
             } catch (NacosException e) {
@@ -259,7 +253,6 @@ public class NacosConnector extends DestroyableServerConnector {
         }
         return response;
     }
-
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
 
@@ -270,16 +263,13 @@ public class NacosConnector extends DestroyableServerConnector {
                 return;
             }
             // 优先设置成nacos的service name，如没有再设置成req的service name
-            String serviceName = req.getService();
-            if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
-                serviceName = nacosContext.getServiceName();
-            }
-            Instance instance = buildDeregisterNacosInstance(req, nacosContext.getGroupName());
+
+            Instance instance = buildDeregisterNacosInstance(req);
             // deregister with nacos naming service
-            service.deregisterInstance(serviceName, nacosContext.getGroupName(),
+            service.deregisterInstance(instance.getServiceName(), nacosContext.getGroupName(),
                     instance);
             LOG.info("nacos client deregister service {} success, groupName: {}, clusterName: {}, instance: {}",
-                    serviceName, nacosContext.getGroupName(), nacosContext.getClusterName(), instance);
+                    instance.getServiceName(), nacosContext.getGroupName(), nacosContext.getClusterName(), instance);
         } catch (NacosException e) {
             throw new RetriableException(ErrorCode.NETWORK_ERROR,
                     String.format("nacos fail to deregister host %s:%d service %s", req.getHost(),
@@ -287,7 +277,6 @@ public class NacosConnector extends DestroyableServerConnector {
                             req.getService()), e);
         }
     }
-
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
         // do nothing
@@ -361,8 +350,9 @@ public class NacosConnector extends DestroyableServerConnector {
         }
     }
 
-    private Instance buildRegisterNacosInstance(CommonProviderRequest req, String serviceName) {
+    private Instance buildRegisterNacosInstance(CommonProviderRequest req) {
 
+        String serviceName = getServiceName(req);
         String nameSpace = req.getNamespace();
 
         String instanceId = String.format(INSTANCE_NAME, nameSpace, nacosContext.getGroupName(),
@@ -402,10 +392,21 @@ public class NacosConnector extends DestroyableServerConnector {
         return instance;
     }
 
-    private Instance buildDeregisterNacosInstance(CommonProviderRequest req, String serviceName) {
+    private String getServiceName(CommonProviderRequest req) {
+        // nacos上注册和polaris不同的服务名时优先用nacosContext中的serviceName
+        String serviceName = req.getService();
+        if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
+            serviceName = nacosContext.getServiceName();
+        }
+        return serviceName;
+    }
+
+    private Instance buildDeregisterNacosInstance(CommonProviderRequest req) {
+        String serviceName = getServiceName(req);
         String instanceId = String.format(INSTANCE_NAME, req.getNamespace(), nacosContext.getGroupName(),
                 serviceName, req.getHost(), req.getPort());
         Instance instance = new Instance();
+        instance.setServiceName(serviceName);
         instance.setInstanceId(instanceId);
         instance.setEnabled(true);
         instance.setEphemeral(nacosContext.isEphemeral());
