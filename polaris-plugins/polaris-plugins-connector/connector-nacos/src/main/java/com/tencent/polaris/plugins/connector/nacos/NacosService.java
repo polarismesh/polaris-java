@@ -191,10 +191,11 @@ public class NacosService extends Destroyable {
                 nacosEventListener = new NacosEventListener(serviceUpdateTask, nacosContext);
                 namingService.subscribe(serviceUpdateTask.getServiceEventKey().getService(), nacosContext.getGroupName(),
                         nacosEventListener);
+                LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
+                        serviceUpdateTask.getServiceEventKey().getService());
             }
 
-            LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
-                    serviceUpdateTask.getServiceEventKey().getService());
+
         } catch (NacosException nacosException) {
             String errorMsg = String.format("subscribe nacos service instances of %s failed.",
                     serviceUpdateTask.getServiceEventKey().getService());
