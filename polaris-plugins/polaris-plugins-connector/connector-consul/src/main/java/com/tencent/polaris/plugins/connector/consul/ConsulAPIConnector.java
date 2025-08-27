@@ -90,7 +90,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
      */
     private boolean initialized = false;
 
-    private boolean ieRegistered = false;
+    private boolean isRegistered = false;
 
     private String id;
     private boolean isRegisterEnable = true;
@@ -295,7 +295,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
     @Override
     public CommonProviderResponse registerInstance(CommonProviderRequest req, Map<String, String> customHeader)
             throws PolarisException {
-        if (isRegisterEnable() && !ieRegistered) {
+        if (isRegisterEnable() && !isRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 LOG.info("Registering service to Consul");
@@ -331,7 +331,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 resp.setInstanceID(service.getId());
                 resp.setExists(false);
                 LOG.info("Registered service to Consul: " + service);
-                ieRegistered = true;
+                isRegistered = true;
                 // heartbeat when registration is successful.
                 heartbeat(req);
                 return resp;
@@ -405,13 +405,13 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public void deregisterInstance(CommonProviderRequest req) throws PolarisException {
-        if (ieRegistered) {
+        if (isRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 LOG.info("Unregistering service to Consul: " + consulContext.getInstanceId());
                 this.consulClient.agentServiceDeregister(consulContext.getInstanceId(), consulContext.getAclToken());
                 LOG.info("Unregistered service to Consul: " + consulContext.getInstanceId());
-                ieRegistered = false;
+                isRegistered = false;
             } catch (ConsulException e) {
                 throw new RetriableException(ErrorCode.NETWORK_ERROR,
                         String.format("fail to deregister host %s:%d service %s", req.getHost(), req.getPort(),
@@ -422,7 +422,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
 
     @Override
     public void heartbeat(CommonProviderRequest req) throws PolarisException {
-        if (ieRegistered) {
+        if (isRegistered) {
             ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
             try {
                 this.ttlConsulClient.agentCheckPass(consulContext.getCheckId(), null, consulContext.getAclToken());

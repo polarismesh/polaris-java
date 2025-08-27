@@ -15,12 +15,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.plugins.connector.nacos;
+package com.tencent.polaris.plugins.connector.common.constant;
 
-import org.junit.Assert;
-import org.junit.Test;
+public interface NacosConstant {
 
-public class NacosConnectorTests {
+    interface MetadataMapKey {
+        String NACOS_GROUP_KEY = "nacos.group";
 
+        String NACOS_CLUSTER_KEY = "nacos.cluster";
 
+        String NACOS_EPHEMERAL_KEY = "nacos.ephemeral";
+
+        String NACOS_SERVICE_KEY = "nacos.service";
+
+        String NACOS_WEIGHT_KEY = "nacos.weight";
+    }
 }
