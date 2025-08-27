@@ -504,20 +504,34 @@ public class GrpcConnector extends DestroyableServerConnector {
         ServiceKey serviceKey = new ServiceKey(req.getNamespace(), req.getService());
         long startTimestamp = 0L;
         try {
+            long t1 = System.currentTimeMillis();
             waitDiscoverReady();
+            long t2 = System.currentTimeMillis();
             connection = connectionManager
                     .getConnection(GrpcUtil.OP_KEY_INSTANCE_HEARTBEAT, ClusterType.HEALTH_CHECK_CLUSTER);
+            long t3 = System.currentTimeMillis();
             req.setTargetServer(connectionToTargetNode(connection));
+            long t4 = System.currentTimeMillis();
             PolarisGRPCGrpc.PolarisGRPCBlockingStub stub = PolarisGRPCGrpc.newBlockingStub(connection.getChannel());
+            long t5 = System.currentTimeMillis();
             stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextHeartbeatReqId());
+            long t6 = System.currentTimeMillis();
             stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
             startTimestamp = System.currentTimeMillis();
+            if (startTimestamp - t1 > 1000) {
+                LOG.warn("waitDiscoverReady cost {} ms, getConnection cost {} ms, connectionToTargetNode cost {} ms, newBlockingStub cost {} ms, attachRequestHeader cost {} ms, attachAccessToken cost {} ms",
+                        t2 - t1, t3 - t2, t4 - t3, t5 - t4, t6 - t5, startTimestamp - t6);
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("waitDiscoverReady cost {} ms, getConnection cost {} ms, connectionToTargetNode cost {} ms, newBlockingStub cost {} ms, attachRequestHeader cost {} ms, attachAccessToken cost {} ms",
+                        t2 - t1, t3 - t2, t4 - t3, t5 - t4, t6 - t5, startTimestamp - t6);
+            }
             LOG.debug("start heartbeat at {} ms.", startTimestamp);
             ResponseProto.Response heartbeatResponse = stub.withDeadlineAfter(req.getTimeoutMs(),
                     TimeUnit.MILLISECONDS).heartbeat(buildHeartbeatRequest(req));
             GrpcUtil.checkResponse(heartbeatResponse);
             LOG.debug("received heartbeat response {}", heartbeatResponse);
         } catch (Throwable t) {
+            LOG.warn("heartbeat fail, req: {}, msg: {}", req, t.getMessage());
             if (t instanceof PolarisException) {
                 //服务端异常不进行重试
                 throw t;
@@ -531,7 +545,12 @@ public class GrpcConnector extends DestroyableServerConnector {
                             req.getInstanceID(), req.getHost(), req.getPort(), serviceKey), t);
         } finally {
             long endTimestamp = System.currentTimeMillis();
-            LOG.debug("end heartbeat at {} ms. Diff {} ms", endTimestamp, endTimestamp - startTimestamp);
+            long cost = endTimestamp - startTimestamp;
+            if (cost > 1000) {
+                LOG.warn("end heartbeat at {} ms. Diff {} ms", endTimestamp, cost);
+            } else if (LOG.isDebugEnabled()) {
+                LOG.debug("end heartbeat at {} ms. Diff {} ms", endTimestamp, cost);
+            }
             if (null != connection) {
                 connection.release(GrpcUtil.OP_KEY_INSTANCE_HEARTBEAT);
             }

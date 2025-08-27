@@ -28,6 +28,8 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.slf4j.Logger;
 
 /**
@@ -74,7 +76,7 @@ public class Connection {
     /**
      * 申请锁
      */
-    private final Object lock = new Object();
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * 连接是否已经关闭
@@ -108,15 +110,31 @@ public class Connection {
      */
     public boolean acquire(String opKey) {
         if (lazyDestroy.get()) {
+            LOG.warn("connection {}: acquired for op {} need destroy, curRef is {}", connID, opKey, ref.get());
             return false;
         }
-        synchronized (lock) {
-            if (lazyDestroy.get()) {
+        boolean locked = false;
+        try {
+            // retry outside.
+            locked = lock.tryLock(1, TimeUnit.SECONDS);
+            if (locked) {
+                if (lazyDestroy.get()) {
+                    return false;
+                }
+                int curRef = ref.incrementAndGet();
+                LOG.debug("connection {}: acquired for op {}, curRef is {}", connID, opKey, curRef);
+                return true;
+            } else {
+                LOG.warn("connection {}: acquired for op {} timeout, curRef is {}", connID, opKey, ref.get());
                 return false;
             }
-            int curRef = ref.incrementAndGet();
-            LOG.debug("connection {}: acquired for op {}, curRef is {}", connID, opKey, curRef);
-            return true;
+        } catch (Exception e) {
+            LOG.warn("connection {}: acquired for op {} occur exception, curRef is {}, msg:{}", connID, opKey, ref.get(), e.getMessage());
+            return false;
+        } finally {
+            if (locked) {
+                lock.unlock();
+            }
         }
     }
 
@@ -124,37 +142,58 @@ public class Connection {
      * 关闭连接
      */
     public void closeConnection() {
-        synchronized (lock) {
-            if (ref.get() <= 0 && !closed) {
-                LOG.info("connection {}: closed", connID);
-                closed = true;
-                // Gracefully shutdown the gRPC managed-channel.
-                if (channel != null && !channel.isShutdown()) {
-                    try {
-                        channel.shutdown();
-                        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
-                            LOG.warn("Timed out gracefully shutting down connection: {}. ", connID);
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Unexpected exception while waiting for channel {} gracefully termination", connID, e);
-                    }
-                }
-
-                // Forcefully shutdown if still not terminated.
-                if (channel != null && !channel.isTerminated()) {
-                    try {
-                        channel.shutdownNow();
-                        if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
-                            LOG.warn("Timed out forcefully shutting down connection: {}. ", connID);
-                        }
-                        LOG.debug("Success to forcefully shutdown connection: {}. ", connID);
-                    } catch (Exception e) {
-                        LOG.error("Unexpected exception while waiting for channel {} forcefully termination", connID, e);
-                    }
+        while (true) {
+            boolean locked = false;
+            try {
+                locked = lock.tryLock(1, TimeUnit.SECONDS);
+                if (locked) {
+                    doCloseConnection();
+                    break;
                 } else {
-                    LOG.debug("Success to gracefully shutdown connection: {}. ", connID);
+                    LOG.warn("connection {}: get lock timeout, retry, curRef is {}", connID, ref.get());
+                }
+            } catch (Exception e) {
+                LOG.warn("connection {}: get lock occur exception, retry, curRef is {}, msg:{}", connID, ref.get(), e.getMessage());
+            } finally {
+                if (locked) {
+                    lock.unlock();
                 }
             }
+        }
+    }
+
+    private void doCloseConnection() {
+        if (ref.get() <= 0 && !closed) {
+            LOG.info("[doCloseConnection] connection {}: closed", connID);
+            closed = true;
+            // Gracefully shutdown the gRPC managed-channel.
+            if (channel != null && !channel.isShutdown()) {
+                try {
+                    channel.shutdown();
+                    if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+                        LOG.warn("Timed out gracefully shutting down connection: {}. ", connID);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Unexpected exception while waiting for channel {} gracefully termination", connID, e);
+                }
+            }
+
+            // Forcefully shutdown if still not terminated.
+            if (channel != null && !channel.isTerminated()) {
+                try {
+                    channel.shutdownNow();
+                    if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                        LOG.warn("Timed out forcefully shutting down connection: {}. ", connID);
+                    }
+                    LOG.debug("Success to forcefully shutdown connection: {}. ", connID);
+                } catch (Exception e) {
+                    LOG.error("Unexpected exception while waiting for channel {} forcefully termination", connID, e);
+                }
+            } else {
+                LOG.debug("Success to gracefully shutdown connection: {}. ", connID);
+            }
+        } else {
+            LOG.info("[doCloseConnection] connection {}: ref is {}, closed is {}, skip close", connID, ref.get(), closed);
         }
     }
 
