@@ -142,40 +142,58 @@ public class Connection {
      * 关闭连接
      */
     public void closeConnection() {
-        lock.lock();
-        try {
-            if (ref.get() <= 0 && !closed) {
-                LOG.info("connection {}: closed", connID);
-                closed = true;
-                // Gracefully shutdown the gRPC managed-channel.
-                if (channel != null && !channel.isShutdown()) {
-                    try {
-                        channel.shutdown();
-                        if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
-                            LOG.warn("Timed out gracefully shutting down connection: {}. ", connID);
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Unexpected exception while waiting for channel {} gracefully termination", connID, e);
-                    }
-                }
-
-                // Forcefully shutdown if still not terminated.
-                if (channel != null && !channel.isTerminated()) {
-                    try {
-                        channel.shutdownNow();
-                        if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
-                            LOG.warn("Timed out forcefully shutting down connection: {}. ", connID);
-                        }
-                        LOG.debug("Success to forcefully shutdown connection: {}. ", connID);
-                    } catch (Exception e) {
-                        LOG.error("Unexpected exception while waiting for channel {} forcefully termination", connID, e);
-                    }
+        while (true) {
+            boolean locked = false;
+            try {
+                locked = lock.tryLock(1, TimeUnit.SECONDS);
+                if (locked) {
+                    doCloseConnection();
+                    break;
                 } else {
-                    LOG.debug("Success to gracefully shutdown connection: {}. ", connID);
+                    LOG.warn("connection {}: get lock timeout, retry, curRef is {}", connID, ref.get());
+                }
+            } catch (Exception e) {
+                LOG.warn("connection {}: get lock occur exception, retry, curRef is {}, msg:{}", connID, ref.get(), e.getMessage());
+            } finally {
+                if (locked) {
+                    lock.unlock();
                 }
             }
-        } finally {
-            lock.unlock();
+        }
+    }
+
+    private void doCloseConnection() {
+        if (ref.get() <= 0 && !closed) {
+            LOG.info("[doCloseConnection] connection {}: closed", connID);
+            closed = true;
+            // Gracefully shutdown the gRPC managed-channel.
+            if (channel != null && !channel.isShutdown()) {
+                try {
+                    channel.shutdown();
+                    if (!channel.awaitTermination(1, TimeUnit.SECONDS)) {
+                        LOG.warn("Timed out gracefully shutting down connection: {}. ", connID);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Unexpected exception while waiting for channel {} gracefully termination", connID, e);
+                }
+            }
+
+            // Forcefully shutdown if still not terminated.
+            if (channel != null && !channel.isTerminated()) {
+                try {
+                    channel.shutdownNow();
+                    if (!channel.awaitTermination(100, TimeUnit.MILLISECONDS)) {
+                        LOG.warn("Timed out forcefully shutting down connection: {}. ", connID);
+                    }
+                    LOG.debug("Success to forcefully shutdown connection: {}. ", connID);
+                } catch (Exception e) {
+                    LOG.error("Unexpected exception while waiting for channel {} forcefully termination", connID, e);
+                }
+            } else {
+                LOG.debug("Success to gracefully shutdown connection: {}. ", connID);
+            }
+        } else {
+            LOG.info("[doCloseConnection] connection {}: ref is {}, closed is {}, skip close", connID, ref.get(), closed);
         }
     }
 
