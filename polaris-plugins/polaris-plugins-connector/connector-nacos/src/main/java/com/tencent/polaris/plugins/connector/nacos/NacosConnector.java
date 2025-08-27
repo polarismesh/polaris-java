@@ -189,7 +189,7 @@ public class NacosConnector extends DestroyableServerConnector {
         // nacos sdk封装的服务，用于给polaris-java调用
         synchronized (lock) {
             NamingService namingService;
-            Properties properties = new Properties(nacosProperties);
+            Properties properties = (Properties) nacosProperties.clone();
             // polaris 默认namespace 为default，nacos中映射为public
             if (StringUtils.isEmpty(nacosProperties.getProperty(PropertyKeyConst.NAMESPACE))
                     && !StringUtils.equals(namespace, "default")) {
