@@ -70,7 +70,7 @@
         <!-- Project revision -->
         <revision>2.1.0.0-SNAPSHOT</revision>
 
-        <specification.version>2.1.0.0-SNAPSHOT</specification.version>
+        <specification.version>1.6.0-SNAPSHOT</specification.version>
         <timestamp>${maven.build.timestamp}</timestamp>
         <skip.maven.deploy>false</skip.maven.deploy>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
