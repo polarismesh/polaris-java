@@ -1,6 +1,5 @@
-# 相当于脚本用途的一个声明
 name: Release
-# 触发脚本的事件  这里为发布release之后触发
+
 on:
   release:
     types: [published]
