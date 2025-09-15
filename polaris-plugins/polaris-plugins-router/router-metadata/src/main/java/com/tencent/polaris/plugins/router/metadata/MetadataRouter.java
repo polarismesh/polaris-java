@@ -184,6 +184,7 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
 
     private Map<String, String> getRouterMetadata(RouteInfo routeInfo) {
         Map<String, String> metadata = new HashMap<>(routeInfo.getRouterMetadata(ROUTER_TYPE_METADATA));
+
         if (routeInfo.getMetadataContainerGroup() != null && routeInfo.getMetadataContainerGroup().getCustomMetadataContainer() != null) {
             String metadataRouteKeys = routeInfo.getMetadataContainerGroup().getCustomMetadataContainer().getRawMetadataMapValue(ROUTER_TYPE_METADATA, KEY_METADATA_KEYS);
             if (StringUtils.isNotBlank(metadataRouteKeys)) {
