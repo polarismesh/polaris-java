@@ -18,7 +18,6 @@
 package com.tencent.polaris.discovery.test.suite;
 
 import com.tencent.polaris.discovery.test.core.ConsumerTest;
-import com.tencent.polaris.discovery.test.core.MetadataRouterTest;
 import com.tencent.polaris.discovery.test.core.ProviderTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -27,7 +26,6 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
         ConsumerTest.class,
         ProviderTest.class,
-        MetadataRouterTest.class,
 })
 public class DiscoveryAPITestingSuite {
 

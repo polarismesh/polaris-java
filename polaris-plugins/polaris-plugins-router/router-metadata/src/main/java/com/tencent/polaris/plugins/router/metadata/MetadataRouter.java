@@ -119,7 +119,7 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
             case others:
                 return new RouteResult(addNotContainKeyIns(instances, reqMetadata), RouteResult.State.Next);
             default:
-                // 默认不降级
+                // none或其他情况不降级
                 throw new PolarisException(ErrorCode.METADATA_MISMATCH,
                         String.format("can not find any instance by service %s", routeInfo.getDestService()));
         }
