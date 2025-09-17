@@ -66,9 +66,6 @@ public class SyncFlow {
     public InstancesResponse commonSyncGetInstances(CommonInstancesRequest request) throws PolarisException {
         syncGetServiceInstances(request);
         ServiceInstances dstInstances = request.getDstInstances();
-        if (request.isPreferIpv6()) {
-            dstInstances = DiscoveryUtils.generateIpv6ServiceInstances(dstInstances);
-        }
         if (CollectionUtils.isEmpty(dstInstances.getInstances())) {
             return new InstancesResponse(dstInstances, "", null);
         }
@@ -124,7 +121,7 @@ public class SyncFlow {
         ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, request, request);
         ServiceInstances serviceInstances = resourcesResponse.getServiceInstances(request.getDstInstanceEventKey());
         if (request.isPreferIpv6()) {
-
+            serviceInstances = DiscoveryUtils.generateIpv6ServiceInstances(serviceInstances);
         }
         request.setDstInstances(serviceInstances);
         if (null != request.getDstRuleEventKey()) {
