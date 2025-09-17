@@ -26,5 +26,29 @@
             <artifactId>router-mirroring</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-mock-discovery</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-test-common</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>router-metadata</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-discovery-factory</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
