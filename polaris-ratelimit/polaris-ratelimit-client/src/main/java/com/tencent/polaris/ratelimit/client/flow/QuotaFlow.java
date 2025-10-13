@@ -98,11 +98,10 @@ public class QuotaFlow extends Destroyable {
         if (CollectionUtils.isNotEmpty(metadata) && metadata.containsKey(TsfRateLimitConstants.RATE_LIMIT_MASTER_IP_KEY)) {
             String rateLimitMasterIp = metadata.get(TsfRateLimitConstants.RATE_LIMIT_MASTER_IP_KEY);
             String rateLimitMasterPort = metadata.get(TsfRateLimitConstants.RATE_LIMIT_MASTER_PORT_KEY);
-            String serviceName = metadata.get(TsfRateLimitConstants.SERVICE_NAME_KEY);
             String instanceId = metadata.get(TsfRateLimitConstants.INSTANCE_ID_KEY);
             String token = metadata.get(TsfRateLimitConstants.TOKEN_KEY);
-            if (!StringUtils.isAnyEmpty(rateLimitMasterIp, rateLimitMasterPort, serviceName, instanceId, token)) {
-                TsfRateLimitMasterUtils.setUri(rateLimitMasterIp, rateLimitMasterPort, serviceName, instanceId, token);
+            if (!StringUtils.isAnyEmpty(rateLimitMasterIp, rateLimitMasterPort, instanceId, token)) {
+                TsfRateLimitMasterUtils.setRateLimitConfig(rateLimitConfig);
                 lock = new ReentrantLock();
             }
         }

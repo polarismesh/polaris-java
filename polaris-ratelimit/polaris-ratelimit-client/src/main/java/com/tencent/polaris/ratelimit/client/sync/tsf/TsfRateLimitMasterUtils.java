@@ -19,8 +19,11 @@ package com.tencent.polaris.ratelimit.client.sync.tsf;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.client.util.EscapeNonAsciiWriter;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.constant.MetadataConstants;
+import com.tencent.polaris.metadata.core.manager.CalleeMetadataContainerGroup;
 import org.apache.commons.codec.Charsets;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -57,12 +60,51 @@ public class TsfRateLimitMasterUtils {
 
     private static final CloseableHttpClient httpClient;
 
+    private static RateLimitConfig rateLimitConfig;
+
     private static URI uri = null;
+
+    private static volatile boolean uriInit = false;
+
+    private static final Object lock = new Object();
 
     static {
         RequestConfig config = RequestConfig.custom().setConnectTimeout(500).setConnectionRequestTimeout(2000)
                 .setSocketTimeout(1000).build();
         httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build();
+    }
+
+    public static void setRateLimitConfig(RateLimitConfig rateLimitConfig) {
+        TsfRateLimitMasterUtils.rateLimitConfig = rateLimitConfig;
+    }
+
+    /**
+     * delay init uri, as service name may not be ready at bootstrap stage.
+     */
+    public static void initUri() {
+        if (!uriInit) {
+            synchronized (lock) {
+                if (!uriInit) {
+                    if (rateLimitConfig == null) {
+                        LOG.warn("rate limit config is null.");
+                        uriInit = true;
+                        return;
+                    }
+
+                    Map<String, String> metadata = rateLimitConfig.getMetadata();
+                    String rateLimitMasterIp = metadata.get(TsfRateLimitConstants.RATE_LIMIT_MASTER_IP_KEY);
+                    String rateLimitMasterPort = metadata.get(TsfRateLimitConstants.RATE_LIMIT_MASTER_PORT_KEY);
+                    String serviceName = CalleeMetadataContainerGroup.getStaticApplicationMetadataContainer().
+                            getRawMetadataStringValue(MetadataConstants.LOCAL_SERVICE);
+                    String instanceId = metadata.get(TsfRateLimitConstants.INSTANCE_ID_KEY);
+                    String token = metadata.get(TsfRateLimitConstants.TOKEN_KEY);
+
+                    setUri(rateLimitMasterIp, rateLimitMasterPort, serviceName, instanceId, token);
+                    LOG.info("Tsf ratelimit master uri init: {}", uri);
+                    uriInit = true;
+                }
+            }
+        }
     }
 
     public static void setUri(String rateLimitMasterIp, String rateLimitMasterPort, String serviceName, String instanceId, String token) {
@@ -81,6 +123,7 @@ public class TsfRateLimitMasterUtils {
     }
 
     public static Map<String, Integer> report(String ruleId, long pass, long block) {
+        initUri();
         if (uri == null) {
             LOG.warn("url is not set.");
         }

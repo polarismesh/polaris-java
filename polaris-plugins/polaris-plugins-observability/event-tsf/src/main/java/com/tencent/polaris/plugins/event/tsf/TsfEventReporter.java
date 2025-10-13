@@ -38,6 +38,8 @@ import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.constant.MetadataConstants;
+import com.tencent.polaris.metadata.core.manager.CalleeMetadataContainerGroup;
 import com.tencent.polaris.plugins.event.tsf.report.CloudEvent;
 import com.tencent.polaris.plugins.event.tsf.report.Event;
 import com.tencent.polaris.plugins.event.tsf.report.EventResponse;
@@ -83,6 +85,8 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
     private volatile boolean init = true;
 
+    private volatile boolean eventUriInit = false;
+
     private TsfEventReporterConfig tsfEventReporterConfig;
 
     private URI v1EventUri;
@@ -117,6 +121,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
     private boolean reportV1Event(FlowEvent flowEvent) {
         try {
+            initEventUri();
             if (v1EventUri == null) {
                 LOG.warn("build v1 event request url fail, can not sent event.");
                 return false;
@@ -134,11 +139,11 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
             List<TsfEventDataPair> dimensions = new ArrayList<>();
             dimensions.add(new TsfEventDataPair(APP_ID_KEY, tsfEventReporterConfig.getAppId()));
             dimensions.add(new TsfEventDataPair(NAMESPACE_ID_KEY, tsfEventReporterConfig.getTsfNamespaceId()));
-            dimensions.add(new TsfEventDataPair(SERVICE_NAME, tsfEventReporterConfig.getServiceName()));
+            dimensions.add(new TsfEventDataPair(SERVICE_NAME, getLocalServiceName()));
             eventData.setDimensions(dimensions);
 
             List<TsfEventDataPair> additionalMsg = new ArrayList<>();
-            additionalMsg.add(new TsfEventDataPair(UPSTREAM_SERVICE_KEY, tsfEventReporterConfig.getServiceName()));
+            additionalMsg.add(new TsfEventDataPair(UPSTREAM_SERVICE_KEY, getLocalServiceName()));
             additionalMsg.add(new TsfEventDataPair(UPSTREAM_NAMESPACE_ID_KEY, tsfEventReporterConfig.getTsfNamespaceId()));
             additionalMsg.add(new TsfEventDataPair(DOWNSTREAM_SERVICE_KEY, flowEvent.getService()));
             additionalMsg.add(new TsfEventDataPair(DOWNSTREAM_NAMESPACE_ID_KEY, flowEvent.getNamespace()));
@@ -193,7 +198,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
             cloudEvent.putDimension(APP_ID_KEY, tsfEventReporterConfig.getAppId());
             cloudEvent.putDimension(NAMESPACE_ID_KEY, tsfEventReporterConfig.getTsfNamespaceId());
-            cloudEvent.putDimension(SERVICE_NAME, tsfEventReporterConfig.getServiceName());
+            cloudEvent.putDimension(SERVICE_NAME, getLocalServiceName());
             cloudEvent.putDimension(APPLICATION_ID, tsfEventReporterConfig.getApplicationId());
 
             cloudEvent.putExtensionMsg(UPSTREAM_SERVICE_KEY, flowEvent.getSourceService());
@@ -208,7 +213,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
             String uniqueId = tsfEventReporterConfig.getInstanceId()
                     + "#" + tsfEventReporterConfig.getTsfNamespaceId()
-                    + "#" + tsfEventReporterConfig.getServiceName() + "#" + ruleId;
+                    + "#" + getLocalServiceName() + "#" + ruleId;
             cloudEvent.setId(uniqueId);
             cloudEvent.setObject(uniqueId);
 
@@ -269,18 +274,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
                 if (!init) {
                     init = true;
                     try {
-                        String v1Path = String.format("/v1/event/%s/%s",
-                                URLEncoder.encode(tsfEventReporterConfig.getServiceName(), "UTF-8"),
-                                URLEncoder.encode(tsfEventReporterConfig.getInstanceId(), "UTF-8"));
-                        v1EventUri = new URIBuilder()
-                                .setScheme("http")
-                                .setHost(IPAddressUtils.getIpCompatible(tsfEventReporterConfig.getEventMasterIp()))
-                                .setPort(tsfEventReporterConfig.getEventMasterPort())
-                                .setPath(v1Path)
-                                .setParameter("token", tsfEventReporterConfig.getToken())
-                                .build();
                         v1EventExecutors.scheduleWithFixedDelay(new TsfV1EventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
-                        LOG.info("Tsf v1 event reporter init with uri: {}", v1EventUri);
 
                         this.reportEventUri = new URIBuilder()
                                 .setScheme("http")
@@ -292,9 +286,41 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
                         reportEventExecutors.scheduleWithFixedDelay(new TsfReportEventTask(), 1000, 1000, TimeUnit.MILLISECONDS);
                         LOG.info("Tsf report event reporter init with uri: {}", reportEventUri);
                         LOG.info("Tsf event reporter starts reporting task.");
+                    } catch (URISyntaxException e) {
+                        LOG.error("Build event request url fail.", e);
+                    }
+                }
+            }
+        }
+    }
+
+    private String getLocalServiceName() {
+        return CalleeMetadataContainerGroup.getStaticApplicationMetadataContainer().getRawMetadataStringValue(MetadataConstants.LOCAL_SERVICE);
+    }
+
+    /**
+     * delay init event uri, as service name may not be ready at bootstrap stage.
+     */
+    private void initEventUri() {
+        if (!eventUriInit) {
+            synchronized (this) {
+                if (!eventUriInit) {
+                    try {
+                        String v1Path = String.format("/v1/event/%s/%s",
+                                URLEncoder.encode(getLocalServiceName(), "UTF-8"),
+                                URLEncoder.encode(tsfEventReporterConfig.getInstanceId(), "UTF-8"));
+                        v1EventUri = new URIBuilder()
+                                .setScheme("http")
+                                .setHost(IPAddressUtils.getIpCompatible(tsfEventReporterConfig.getEventMasterIp()))
+                                .setPort(tsfEventReporterConfig.getEventMasterPort())
+                                .setPath(v1Path)
+                                .setParameter("token", tsfEventReporterConfig.getToken())
+                                .build();
+                        LOG.info("Tsf v1 event reporter init with uri: {}", v1EventUri);
                     } catch (URISyntaxException | UnsupportedEncodingException e) {
                         LOG.error("Build event request url fail.", e);
                     }
+                    eventUriInit = true;
                 }
             }
         }
@@ -331,6 +357,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
             StringEntity postBody = null;
             RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
             try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+                initEventUri();
                 HttpPost httpPost = new HttpPost(v1EventUri);
                 postBody = new StringEntity(gson.toJson(genericEvent));
                 httpPost.setEntity(postBody);
