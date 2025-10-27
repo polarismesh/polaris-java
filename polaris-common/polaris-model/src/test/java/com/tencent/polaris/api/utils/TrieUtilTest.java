@@ -18,6 +18,7 @@
 package com.tencent.polaris.api.utils;
 
 import com.tencent.polaris.api.pojo.TrieNode;
+import java.util.function.Function;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,6 +42,10 @@ public class TrieUtilTest {
         assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echo/test-POST")).isTrue();
         assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echoo/test-GET")).isFalse();
         assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echo/-GET")).isFalse();
+        Function<Object, TrieNode<String>> func = path -> TrieUtil.buildSimpleApiTrieNode((String) path);
+        TrieNode<String> rootWithoutSlash = TrieUtil.buildSimpleApiTrieNode("com.tencent.polaris.DemoService");
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService")).isTrue();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService2")).isFalse();
     }
 
     @Test

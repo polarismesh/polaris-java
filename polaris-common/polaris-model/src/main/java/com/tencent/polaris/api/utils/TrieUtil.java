@@ -93,6 +93,15 @@ public class TrieUtil {
         String[] apiPaths = path.split("/");
 
         TrieNode<String> node = root;
+        // 一些场景下（例如dubbo的接口名是com.tencent.polaris.serviceName)，apiPath 不以"/"开头和分割，则直接构造node
+        if (apiPaths.length == 1) {
+            node = node.getOrCreateSubNode(apiPaths[0]);
+            if (node == null) {
+                return false;
+            } else {
+                return checkApiNodeInfo(node, method);
+            }
+        }
         for (int i = 1; i < apiPaths.length; i++) {
             if (node == null) {
                 return false;
