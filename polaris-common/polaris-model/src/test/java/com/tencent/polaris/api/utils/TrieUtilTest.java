@@ -42,10 +42,20 @@ public class TrieUtilTest {
         assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echo/test-POST")).isTrue();
         assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echoo/test-GET")).isFalse();
         assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echo/-GET")).isFalse();
-        Function<Object, TrieNode<String>> func = path -> TrieUtil.buildSimpleApiTrieNode((String) path);
-        TrieNode<String> rootWithoutSlash = TrieUtil.buildSimpleApiTrieNode("com.tencent.polaris.DemoService");
-        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService")).isTrue();
-        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService2")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutMethod, "/echo/##/aa")).isFalse();
+
+        TrieNode<String> rootWithoutSlash = TrieUtil.buildSimpleApiTrieNode("com.tencent.polaris.DemoService#aaa");
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService#aaa")).isTrue();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService#aab")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "com.tencent.polaris.DemoService1#aaa")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "/com.tencent.polaris.DemoService#aaa")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "#com.tencent.polaris.DemoService.aaa")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "#")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash, "/#")).isFalse();
+        TrieNode<String> rootWithoutSlash2 = TrieUtil.buildSimpleApiTrieNode("path#method");
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash2, "path#method")).isTrue();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash2, "/path#method")).isFalse();
+        assertThat(TrieUtil.checkSimpleApi(rootWithoutSlash2, "path##method")).isFalse();
     }
 
     @Test
