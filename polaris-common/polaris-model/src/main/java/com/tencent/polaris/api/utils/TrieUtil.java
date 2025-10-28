@@ -57,7 +57,7 @@ public class TrieUtil {
             // 临时简化处理，不处理 method，前面逻辑保留是为了取出正确的 path
             method = null;
             TrieNode<String> node = root;
-            // 一些场景下apiPath 不以"/"开头和分割（
+            // 一些场景下apiPath 不以"/"开头和分割
             // 此时方法标识符的格式规定为 '{类路径}#{方法名}' 例如com.tencent.polaris.ServiceName#sayHello
             if (path.contains("#")) {
                 node = node.getOrCreateSubNode(path);
