@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 public class MetadataContextHolder {
 
-    private static final ThreadLocal<MetadataContext> THREAD_LOCAL_CONTEXT = new InheritableThreadLocal<>();
+    private static final ThreadLocal<MetadataContext> THREAD_LOCAL_CONTEXT = new ThreadLocal<>();
 
     private static Supplier<MetadataContext> initializer;
 

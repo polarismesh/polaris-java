@@ -17,14 +17,39 @@
 
 package com.tencent.polaris.metadata.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public interface MetadataProvider {
+
+    Logger LOG = LoggerFactory.getLogger(MetadataProvider.class);
 
     /**
      * 根据键获取一级字符串型元数据原始值
      * @param key 元数据键
      * @return 字符串原始值
      */
-    String getRawMetadataStringValue(String key);
+    default String getRawMetadataStringValue(String key) {
+        try {
+            return doGetRawMetadataStringValue(key);
+        } catch (Throwable throwable) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("[{}] get raw metadata string value with key {} failed.", this.getClass(), key, throwable);
+            } else {
+                LOG.warn("[{}] get raw metadata string value with key {} failed. Caused by: {}",
+                        this.getClass(), key, throwable.getMessage());
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 根据键获取一级字符串型元数据原始值
+     *
+     * @param key 元数据键
+     * @return 字符串原始值
+     */
+    String doGetRawMetadataStringValue(String key);
 
     /**
      * 获取原始二级元数据值
@@ -32,6 +57,28 @@ public interface MetadataProvider {
      * @param mapKey 二级键
      * @return 值
      */
-    String getRawMetadataMapValue(String key, String mapKey);
+    default String getRawMetadataMapValue(String key, String mapKey) {
+        try {
+            return doGetRawMetadataMapValue(key, mapKey);
+        } catch (Throwable throwable) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("[{}] get raw metadata map value with key {} and mapKey {} failed.",
+                        this.getClass(), key, mapKey, throwable);
+            } else {
+                LOG.warn("[{}] get raw metadata map value with key {} and mapKey {} failed. Caused by: {}",
+                        this.getClass(), key, mapKey, throwable.getMessage());
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 获取原始二级元数据值
+     *
+     * @param key    一级键
+     * @param mapKey 二级键
+     * @return 值
+     */
+    String doGetRawMetadataMapValue(String key, String mapKey);
 
 }
