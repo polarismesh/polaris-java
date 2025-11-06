@@ -17,11 +17,11 @@
 
 package com.tencent.polaris.metadata.core.manager;
 
-import java.util.List;
-
 import com.tencent.polaris.metadata.core.CaseSensitiveMetadataProvider;
 import com.tencent.polaris.metadata.core.MetadataProvider;
 import com.tencent.polaris.metadata.core.Utils;
+
+import java.util.List;
 
 public class ComposeMetadataProvider implements CaseSensitiveMetadataProvider {
 
@@ -36,7 +36,7 @@ public class ComposeMetadataProvider implements CaseSensitiveMetadataProvider {
     }
 
     @Override
-    public String getRawMetadataStringValue(String key) {
+    public String doGetRawMetadataStringValue(String key) {
         // 先获取透传标签
         if (null != transitivePrefix && !transitivePrefix.isEmpty()) {
             String value = getRawStringValue(Utils.encapsulateMetadataKey(transitivePrefix, key));
@@ -49,7 +49,7 @@ public class ComposeMetadataProvider implements CaseSensitiveMetadataProvider {
     }
 
     @Override
-    public String getRawMetadataMapValue(String key, String mapKey) {
+    public String doGetRawMetadataMapValue(String key, String mapKey) {
         // 先获取透传标签
         if (null != transitivePrefix && !transitivePrefix.isEmpty()) {
             String value = getRawMapValue(key, Utils.encapsulateMetadataKey(transitivePrefix, mapKey));
@@ -83,7 +83,7 @@ public class ComposeMetadataProvider implements CaseSensitiveMetadataProvider {
 
 
     @Override
-    public String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+    public String doGetRawMetadataStringValue(String key, boolean keyCaseSensitive) {
         for (MetadataProvider metadataProvider : metadataProviders) {
             if (metadataProvider instanceof CaseSensitiveMetadataProvider) {
                 CaseSensitiveMetadataProvider caseSensitiveMetadataProvider = (CaseSensitiveMetadataProvider) metadataProvider;
@@ -102,7 +102,7 @@ public class ComposeMetadataProvider implements CaseSensitiveMetadataProvider {
     }
 
     @Override
-    public String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+    public String doGetRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
         for (MetadataProvider metadataProvider : metadataProviders) {
             if (metadataProvider instanceof CaseSensitiveMetadataProvider) {
                 CaseSensitiveMetadataProvider caseSensitiveMetadataProvider = (CaseSensitiveMetadataProvider) metadataProvider;

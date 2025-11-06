@@ -17,21 +17,10 @@
 
 package com.tencent.polaris.metadata.core.impl;
 
-import com.tencent.polaris.metadata.core.CaseSensitiveMetadataProvider;
-import com.tencent.polaris.metadata.core.MetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataMapValue;
-import com.tencent.polaris.metadata.core.MetadataProvider;
-import com.tencent.polaris.metadata.core.MetadataStringValue;
-import com.tencent.polaris.metadata.core.MetadataValue;
-import com.tencent.polaris.metadata.core.TransitiveType;
-import com.tencent.polaris.metadata.core.Utils;
+import com.tencent.polaris.metadata.core.*;
 import com.tencent.polaris.metadata.core.manager.ComposeMetadataProvider;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -211,17 +200,17 @@ public class MetadataContainerImpl implements MetadataContainer {
     private class ContainerBasedMetadataProvider implements CaseSensitiveMetadataProvider {
 
         @Override
-        public String getRawMetadataStringValue(String key) {
+        public String doGetRawMetadataStringValue(String key) {
             return getRawMetadataStringValue(key, Utils.DEFAULT_KEY_CASE_SENSITIVE);
         }
 
         @Override
-        public String getRawMetadataMapValue(String key, String mapKey) {
+        public String doGetRawMetadataMapValue(String key, String mapKey) {
             return getRawMetadataMapValue(key, mapKey, Utils.DEFAULT_KEY_CASE_SENSITIVE);
         }
 
         @Override
-        public String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+        public String doGetRawMetadataStringValue(String key, boolean keyCaseSensitive) {
             MetadataValue metadataValue = getMetadataValue(key, keyCaseSensitive);
             if (metadataValue instanceof MetadataStringValue) {
                 return ((MetadataStringValue) metadataValue).getStringValue();
@@ -230,7 +219,7 @@ public class MetadataContainerImpl implements MetadataContainer {
         }
 
         @Override
-        public String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+        public String doGetRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
             MetadataValue metadataValue = getMetadataValue(key, keyCaseSensitive);
             if (metadataValue instanceof MetadataMapValue) {
                 MetadataMapValue metadataMapValue = (MetadataMapValue) metadataValue;

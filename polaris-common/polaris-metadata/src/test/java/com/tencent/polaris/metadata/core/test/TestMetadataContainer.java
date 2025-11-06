@@ -17,13 +17,7 @@
 
 package com.tencent.polaris.metadata.core.test;
 
-import com.tencent.polaris.metadata.core.CaseSensitiveMetadataProvider;
-import com.tencent.polaris.metadata.core.MetadataContainer;
-import com.tencent.polaris.metadata.core.MetadataMapValue;
-import com.tencent.polaris.metadata.core.MetadataObjectValue;
-import com.tencent.polaris.metadata.core.MetadataProvider;
-import com.tencent.polaris.metadata.core.MetadataStringValue;
-import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.*;
 import com.tencent.polaris.metadata.core.impl.MessageMetadataContainerImpl;
 import org.junit.Assert;
 import org.junit.Test;
@@ -118,7 +112,7 @@ public class TestMetadataContainer {
         metadataContainer.putMetadataMapValue("key1", "mapkey", "222", TransitiveType.NONE);
         MetadataProvider metadataProvider1 = new MetadataProvider() {
             @Override
-            public String getRawMetadataStringValue(String key) {
+            public String doGetRawMetadataStringValue(String key) {
                 if (key.equalsIgnoreCase("KEY")) {
                     return "33";
                 }
@@ -126,7 +120,7 @@ public class TestMetadataContainer {
             }
 
             @Override
-            public String getRawMetadataMapValue(String key, String mapKey) {
+            public String doGetRawMetadataMapValue(String key, String mapKey) {
                 if (key.equalsIgnoreCase("KEY1") && mapKey.equalsIgnoreCase("MAPKEY")) {
                     return "333";
                 }
@@ -149,7 +143,7 @@ public class TestMetadataContainer {
         metadataContainer.putMetadataMapValue("key1", "mapkey", "222", TransitiveType.NONE);
         CaseSensitiveMetadataProvider metadataProvider1 = new CaseSensitiveMetadataProvider() {
             @Override
-            public String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+            public String doGetRawMetadataStringValue(String key, boolean keyCaseSensitive) {
                 if (key.equals("KEY")) {
                     return "44";
                 }
@@ -157,7 +151,7 @@ public class TestMetadataContainer {
             }
 
             @Override
-            public String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+            public String doGetRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
                 if (key.equals("KEY1") && mapKey.equals("MAPKey")) {
                     return "444";
                 }
@@ -165,7 +159,7 @@ public class TestMetadataContainer {
             }
 
             @Override
-            public String getRawMetadataStringValue(String key) {
+            public String doGetRawMetadataStringValue(String key) {
                 if (key.equalsIgnoreCase("KEY")) {
                     return "33";
                 }
@@ -173,7 +167,7 @@ public class TestMetadataContainer {
             }
 
             @Override
-            public String getRawMetadataMapValue(String key, String mapKey) {
+            public String doGetRawMetadataMapValue(String key, String mapKey) {
                 if (key.equalsIgnoreCase("KEY1") && mapKey.equalsIgnoreCase("MAPKEY")) {
                     return "333";
                 }

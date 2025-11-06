@@ -25,7 +25,29 @@ public interface CaseSensitiveMetadataProvider extends MetadataProvider {
      * @param keyCaseSensitive 是否区分大小写
      * @return 字符串原始值
      */
-    String getRawMetadataStringValue(String key, boolean keyCaseSensitive);
+    default String getRawMetadataStringValue(String key, boolean keyCaseSensitive) {
+        try {
+            return doGetRawMetadataStringValue(key, keyCaseSensitive);
+        } catch (Throwable throwable) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("[{}] get raw metadata string value with key {} and case sensitive {} failed.",
+                        this.getClass(), key, keyCaseSensitive, throwable);
+            } else {
+                LOG.warn("[{}] get raw metadata string value with key {} and case sensitive {} failed. Caused by: {}",
+                        this.getClass(), key, keyCaseSensitive, throwable.getMessage());
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 根据键获取一级字符串型元数据原始值
+     *
+     * @param key              元数据键
+     * @param keyCaseSensitive 是否区分大小写
+     * @return 字符串原始值
+     */
+    String doGetRawMetadataStringValue(String key, boolean keyCaseSensitive);
 
     /**
      * 获取原始二级元数据值
@@ -34,5 +56,28 @@ public interface CaseSensitiveMetadataProvider extends MetadataProvider {
      * @param keyCaseSensitive 是否区分大小写
      * @return 值
      */
-    String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive);
+    default String getRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive) {
+        try {
+            return doGetRawMetadataMapValue(key, mapKey, keyCaseSensitive);
+        } catch (Throwable throwable) {
+            if (LOG.isDebugEnabled()) {
+                LOG.warn("[{}] get raw metadata map value with key {} and map key {} and case sensitive {} failed.",
+                        this.getClass(), key, mapKey, keyCaseSensitive, throwable);
+            } else {
+                LOG.warn("[{}] get raw metadata map value with key {} and map key {} and case sensitive {} failed. Caused by: {}",
+                        this.getClass(), key, mapKey, keyCaseSensitive, throwable.getMessage());
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 获取原始二级元数据值
+     *
+     * @param key              一级键
+     * @param mapKey           二级键
+     * @param keyCaseSensitive 是否区分大小写
+     * @return 值
+     */
+    String doGetRawMetadataMapValue(String key, String mapKey, boolean keyCaseSensitive);
 }
