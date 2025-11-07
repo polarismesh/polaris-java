@@ -286,7 +286,7 @@ public class RateLimitingService extends ConsulService {
                             matchArgumentBuilder.setKey(MessageMetadataContainer.LABEL_KEY_CALLER_IP);
                         } else if (StringUtils.equals(cond.get("tagField"), TagConstant.SYSTEM_FIELD.DESTINATION_APPLICATION_VERSION)) {
                             matchArgumentBuilder.setType(RateLimitProto.MatchArgument.Type.CUSTOM);
-                            matchArgumentBuilder.setKey(TsfMetadataConstants.TSF_APPLICATION_ID);
+                            matchArgumentBuilder.setKey(TsfMetadataConstants.TSF_PROG_VERSION);
                         } else if (StringUtils.equals(cond.get("tagField"), TagConstant.SYSTEM_FIELD.DESTINATION_GROUP_ID)) {
                             matchArgumentBuilder.setType(RateLimitProto.MatchArgument.Type.CUSTOM);
                             matchArgumentBuilder.setKey(TsfMetadataConstants.TSF_GROUP_ID);
