@@ -45,6 +45,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.Location;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
+import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.DiscoverResponse.DiscoverResponseType;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -171,6 +172,7 @@ public class NacosService extends Destroyable {
                 ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
                 newDiscoverResponseBuilder.setService(service);
                 newDiscoverResponseBuilder.addAllInstances(polarisInstanceList);
+                newDiscoverResponseBuilder.setType(DiscoverResponseType.INSTANCE);
                 int code = ServerCodes.EXECUTE_SUCCESS;
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
                 // notify to polaris-java
@@ -267,7 +269,7 @@ public class NacosService extends Destroyable {
             ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
             newDiscoverResponseBuilder.setService(newService);
             newDiscoverResponseBuilder.addAllServices(newServiceList);
-
+            newDiscoverResponseBuilder.setType(DiscoverResponseType.SERVICES);
             int code = ServerCodes.EXECUTE_SUCCESS;
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
             LOG.debug("nacos client get service {} success. ",
