@@ -152,6 +152,7 @@ public class CircuitBreakingService extends ConsulService {
                 }
                 newDiscoverResponseBuilder.setCircuitBreaker(newCircuitBreakerBuilder);
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
+                newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.CIRCUIT_BREAKER);
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 if (newIndex != null) {

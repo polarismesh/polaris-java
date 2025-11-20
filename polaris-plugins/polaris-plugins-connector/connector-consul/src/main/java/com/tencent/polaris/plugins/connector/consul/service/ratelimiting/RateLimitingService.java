@@ -139,6 +139,7 @@ public class RateLimitingService extends ConsulService {
                 }
                 newDiscoverResponseBuilder.setRateLimit(newRateLimitBuilder);
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
+                newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.RATE_LIMIT);
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 if (newIndex != null) {
