@@ -24,6 +24,7 @@ import com.tencent.polaris.api.pojo.InstanceGauge;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.api.ServiceCallResultListener;
+import com.tencent.polaris.client.util.NamedThreadFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -59,7 +60,7 @@ public class ServiceCallResultCollector implements ServiceCallResultListener {
         LocalRegistry localRegistry = sdkContext.getExtensions().getLocalRegistry();
         instancesStatisticUpdater = new InstancesStatisticUpdater(localRegistry);
         if (outlierDetectionConfig.getWhen() != When.never) {
-            detectTaskExecutors = Executors.newSingleThreadScheduledExecutor();
+            detectTaskExecutors = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("instance-detect"));
             long checkPeriodMs = outlierDetectionConfig.getCheckPeriod();
             detectTask = new InstancesDetectTask(sdkContext.getExtensions(), outlierDetectionConfig.getWhen());
             calledServiceSet = detectTask.getServiceKeySet();
