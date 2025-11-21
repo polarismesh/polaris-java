@@ -135,6 +135,7 @@ public class NearByRouteRuleService extends ConsulService {
                     newDiscoverResponseBuilder.addAllNearbyRouteRules(routes);
                 }
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
+                newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.NEARBY_ROUTE_RULE);
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 // 重写index

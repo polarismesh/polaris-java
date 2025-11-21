@@ -168,6 +168,7 @@ public class LaneService extends ConsulService {
             }
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
             newDiscoverResponseBuilder.setService(newServiceBuilder);
+            newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.LANE);
             ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
             boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
             // 重写index

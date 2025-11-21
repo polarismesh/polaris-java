@@ -139,6 +139,7 @@ public class FaultService extends ConsulService {
                     newDiscoverResponseBuilder.addAllFaultInjection(faultInjectionList);
                 }
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
+                newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.FAULT_INJECTION);
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 if (newIndex != null) {

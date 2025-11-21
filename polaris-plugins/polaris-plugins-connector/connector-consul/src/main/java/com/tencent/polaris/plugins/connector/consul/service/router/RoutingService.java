@@ -146,6 +146,7 @@ public class RoutingService extends ConsulService {
                 }
                 newDiscoverResponseBuilder.setRouting(newRoutingBuilder);
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
+                newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.ROUTING);
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
                 boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
                 if (newIndex != null) {
