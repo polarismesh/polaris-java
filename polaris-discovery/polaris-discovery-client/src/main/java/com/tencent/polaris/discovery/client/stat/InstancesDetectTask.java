@@ -18,6 +18,7 @@
 package com.tencent.polaris.discovery.client.stat;
 
 import com.tencent.polaris.api.config.consumer.OutlierDetectionConfig.When;
+import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
@@ -28,6 +29,7 @@ import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -133,6 +135,10 @@ public class InstancesDetectTask implements Runnable {
     private DetectResult detectInstance(Instance instance) throws PolarisException {
         DetectResult result = null;
         for (HealthChecker detector : extensions.getHealthCheckers()) {
+            // only tcp detect.
+            if (!StringUtils.equals(detector.getName(), DefaultValues.DEFAULT_HEALTH_CHECKER_TCP)) {
+                continue;
+            }
             DetectResult pluginResult = detector.detectInstance(instance, null);
             if (pluginResult == null) {
                 continue;
