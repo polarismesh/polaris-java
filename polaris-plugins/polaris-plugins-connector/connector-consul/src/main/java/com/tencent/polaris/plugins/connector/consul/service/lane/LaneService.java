@@ -64,7 +64,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_APPLICATION_ID;
 import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_GROUP_ID;
+import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_NAMESPACE_ID;
 import static com.tencent.polaris.plugins.connector.consul.service.common.TagConditionUtil.parseMatchStringType;
 
 /**
@@ -215,6 +217,9 @@ public class LaneService extends ConsulService {
             for (LaneGroup laneGroup : laneInfo.getLaneGroupList()) {
                 if (laneGroup.isEntrance()) {
                     entranceList.add(laneGroup.getGroupId());
+                }
+                if (StringUtils.isNotEmpty(laneGroup.getNamespaceId()) && StringUtils.isNotEmpty(laneGroup.getApplicationId())) {
+                    laneGroupBuilder.putMetadata(laneGroup.getNamespaceId() + "," + laneGroup.getApplicationId(), TSF_NAMESPACE_ID + "," + TSF_APPLICATION_ID);
                 }
             }
         }
