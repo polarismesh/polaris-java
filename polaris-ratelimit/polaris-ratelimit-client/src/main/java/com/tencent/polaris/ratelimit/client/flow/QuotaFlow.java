@@ -277,6 +277,9 @@ public class QuotaFlow extends Destroyable {
 
     private static String getLabelValue(MatchArgument matchArgument,
                                         Map<String, String> stringStringMap) {
+        if (CollectionUtils.isEmpty(stringStringMap)) {
+            return null;
+        }
         switch (matchArgument.getType()) {
             case CUSTOM:
             case HEADER:
