@@ -158,6 +158,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
                         ConfigFileResponse configFileResponse = getKVValues(configFile, keyPrefix);
                         if (configFileResponse != null && configFileResponse.getCode() == CodeProto.Code.ExecuteSuccess.getNumber()) {
                             blockingQueue.offer(new RefreshEventData(keyPrefix, configFile, configFileResponse));
+                            LOGGER.info("Offer consul config '{}' to config file changed queue.", keyPrefix);
                         } else {
                             if (configFileResponse != null) {
                                 LOGGER.debug("Watch consul config '{}' with {}.", keyPrefix, configFileResponse.getMessage());
@@ -304,6 +305,7 @@ public class ConsulConfigFileConnector implements ConfigFileConnector {
         try {
             RefreshEventData refreshEventData = blockingQueue.poll(30, TimeUnit.SECONDS);
             if (refreshEventData != null) {
+                LOGGER.info("Poll consul config '{}' from config file changed queue.", refreshEventData.getKeyPrefix());
                 Optional<ConfigFile> optional = configFiles.stream()
                         .filter(configFile -> StringUtils.equals(refreshEventData.getKeyPrefix(), ConsulConfigFileUtils.toConsulKVKeyPrefix(configFile)))
                         .findFirst();
