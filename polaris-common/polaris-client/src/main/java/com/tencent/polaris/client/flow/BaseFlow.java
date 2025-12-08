@@ -96,6 +96,7 @@ public class BaseFlow {
         ServiceConfig serviceConfig = extensions.getConfiguration().getProvider().getService();
         RouteInfo routeInfo = new RouteInfo(
                 null, null, dstSvcInfo, null, "", serviceConfig);
+        routeInfo.putRouterMetadata("metadataRoute", metadata);
         ResourcesResponse resourcesResponse = BaseFlow
                 .syncGetResources(extensions, false, provider, flowControlParam);
         LOG.debug("[ConnectionManager]success to discover service {}", svcEventKey);
