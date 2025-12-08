@@ -20,8 +20,8 @@ package com.tencent.polaris.metadata.core.manager;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import com.alibaba.ttl.TransmittableThreadLocal;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.metadata.core.TransmittableThreadLocalUtils;
 import org.slf4j.Logger;
 
 public class MetadataContextHolder {
@@ -37,7 +37,7 @@ public class MetadataContextHolder {
 		try {
 			// the class name need to be excluded in maven shade plugin
 			Class.forName("com.alibaba.ttl.TransmittableThreadLocal");
-			tempThreadLocalContext = new TransmittableThreadLocal<>();
+			tempThreadLocalContext = TransmittableThreadLocalUtils.createMetadataContextThreadLocal();
 			LOG.info("Use TransmittableThreadLocal for thread local context");
 		} catch (Exception e) {
 			tempThreadLocalContext = new ThreadLocal<>();
