@@ -18,6 +18,7 @@
 package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
@@ -41,6 +42,7 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Ra
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -146,7 +148,7 @@ public class RateLimitWindow {
         this.syncParam = quotaRequest.getFlowControlParam();
         remoteCluster = getLimiterClusterService(rule.getCluster(), rateLimitConfig);
         serviceAddressRepository = buildServiceAddressRepository(rateLimitConfig.getLimiterAddresses(),
-                uniqueKey,  windowSet.getExtensions(), remoteCluster, null, LoadBalanceConfig.LOAD_BALANCE_RING_HASH, "grpc");
+                uniqueKey, windowSet.getExtensions(), remoteCluster);
         allocatingBucket = getQuotaBucket(initCriteria, windowSet.getRateLimitExtension());
         lastAccessTimeMs.set(System.currentTimeMillis());
         this.rateLimitConfig = rateLimitConfig;
@@ -154,8 +156,10 @@ public class RateLimitWindow {
     }
 
     private ServiceAddressRepository buildServiceAddressRepository(List<String> addresses, String hash, Extensions extensions,
-            ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol) {
-        return  new ServiceAddressRepository(addresses, hash, extensions, remoteCluster, routers, lbPolicy, protocol);
+                                                                   ServiceKey remoteCluster) {
+        List<String> routers = new ArrayList<>();
+        routers.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
+        return new ServiceAddressRepository(addresses, hash, extensions, remoteCluster, routers, LoadBalanceConfig.LOAD_BALANCE_RING_HASH, "grpc");
     }
 
 
