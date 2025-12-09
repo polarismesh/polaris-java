@@ -213,6 +213,7 @@ public class RateLimitingService extends ConsulService {
                 if (concurrentThreads != null) {
                     RateLimitProto.ConcurrencyAmount.Builder concurrencyAmountBuilder = RateLimitProto.ConcurrencyAmount.newBuilder();
                     concurrencyAmountBuilder.setMaxAmount(concurrentThreads);
+                    ruleBuilder.setResource(RateLimitProto.Rule.Resource.CONCURRENCY);
                     ruleBuilder.setConcurrencyAmount(concurrencyAmountBuilder);
                 }
 
