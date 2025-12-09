@@ -190,6 +190,7 @@ public class CircuitBreakerUtils {
                 String statusCodes = IntStream.range(500, 600)
                         .mapToObj(String::valueOf)
                         .collect(Collectors.joining(","));
+                statusCodes += ",-1";
                 codeMatchStringBuilder.setValue(StringValue.of(statusCodes));
                 errorConditionBuilder.setCondition(codeMatchStringBuilder);
                 failureBlockConfigBuilder.addErrorConditions(errorConditionBuilder);
