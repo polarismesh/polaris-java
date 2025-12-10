@@ -88,6 +88,7 @@ public class CircuitBreakerUtils {
                 case RET_CODE:
                     boolean codeMatched = RuleUtils
                             .matchStringValue(condition, String.valueOf(resourceStat.getRetCode()), regexFunction);
+                    // -1无需判断熔断条件，直接识别为异常错误码
                     if (codeMatched || resourceStat.getRetCode() == -1) {
                         return RetStatus.RetFail;
                     }
