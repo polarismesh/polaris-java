@@ -88,7 +88,7 @@ public class CircuitBreakerUtils {
                 case RET_CODE:
                     boolean codeMatched = RuleUtils
                             .matchStringValue(condition, String.valueOf(resourceStat.getRetCode()), regexFunction);
-                    if (codeMatched) {
+                    if (codeMatched || resourceStat.getRetCode() == -1) {
                         return RetStatus.RetFail;
                     }
                     break;
