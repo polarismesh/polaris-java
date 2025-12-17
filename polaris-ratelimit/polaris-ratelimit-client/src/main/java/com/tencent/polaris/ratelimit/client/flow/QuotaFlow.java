@@ -324,9 +324,9 @@ public class QuotaFlow extends Destroyable {
                 return metadataContext.getMetadataContainer(MetadataType.APPLICATION, true).getRawMetadataStringValue(matchArgument.getKey());
             case CUSTOM:
             default:
-                String value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, false).getRawMetadataStringValue(matchArgument.getKey());
+                String value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, true).getRawMetadataStringValue(matchArgument.getKey());
                 if (StringUtils.isBlank(value)) {
-                    value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, true).getRawMetadataStringValue(matchArgument.getKey());
+                    value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, false).getRawMetadataStringValue(matchArgument.getKey());
                 }
                 return value;
         }
