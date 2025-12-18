@@ -29,10 +29,10 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
-import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.ResourcesResponse;
@@ -187,7 +187,11 @@ public class BlockAllowListAuthenticator implements Authenticator {
                 return metadataContext.getMetadataContainer(MetadataType.APPLICATION, true).getRawMetadataStringValue(matchArgument.getKey());
             case CUSTOM:
             default:
-                return metadataContext.getMetadataContainer(MetadataType.CUSTOM, false).getRawMetadataStringValue(matchArgument.getKey());
+                String value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, true).getRawMetadataStringValue(matchArgument.getKey());
+                if (StringUtils.isBlank(value)) {
+                    value = metadataContext.getMetadataContainer(MetadataType.CUSTOM, false).getRawMetadataStringValue(matchArgument.getKey());
+                }
+                return value;
         }
     }
 
