@@ -19,10 +19,12 @@ package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
+
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import org.slf4j.Logger;
 
 public class WindowContainer {
 
@@ -71,4 +73,36 @@ public class WindowContainer {
         return mainWindow;
     }
 
+    /**
+     * 检查并淘汰窗口
+     *
+     * @return 是否淘汰
+     */
+    public boolean checkAndCleanExpiredWindows() {
+        if (null != mainWindow) {
+            if (mainWindow.isExpired()) {
+                LOG.info("[RateLimit] mainWindow have been cleaned up due to expiration, service {}", serviceKey);
+                mainWindow.unInit();
+            }
+            return mainWindow.isExpired();
+        }
+        int expiredLabels = 0;
+        Iterator<Map.Entry<String, RateLimitWindow>> iterator = windowByLabel.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, RateLimitWindow> entry = iterator.next();
+            String labelKey = entry.getKey();
+            RateLimitWindow window = entry.getValue();
+            if (window.isExpired()) {
+                expiredLabels++;
+                iterator.remove();  // 使用迭代器的 remove 方法删除当前元素
+                LOG.info("[WindowContainer] windowByLabel remove label key {} , window {}", labelKey, window);
+                window.unInit();
+            }
+        }
+        if (expiredLabels > 0) {
+            LOG.info("[RateLimit] {} labels have been cleaned up due to expiration, service {}", expiredLabels,
+                    serviceKey);
+        }
+        return windowByLabel.isEmpty();
+    }
 }
