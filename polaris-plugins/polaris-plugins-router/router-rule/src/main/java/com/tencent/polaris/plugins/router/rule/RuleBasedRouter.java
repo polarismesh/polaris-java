@@ -60,6 +60,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     private static final Logger LOG = LoggerFactory.getLogger(RuleBasedRouter.class);
     public static final String ROUTER_TYPE_RULE_BASED = "ruleRouter";
     public static final String ROUTER_ENABLED = "enabled";
+    private static final String KEY_RULE_BASED_FAILOVER_TYPE = "internal-rule-based-failover-type";
 
     private Map<String, String> globalVariablesConfig;
 
@@ -342,6 +343,19 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
 
                 //请求里的配置优先级高于配置文件
                 RuleBasedRouterFailoverType failoverType = routeInfo.getRuleBasedRouterFailoverType();
+                if (failoverType == null) {
+                    Map<String, String> svcMetadata = instances.getMetadata();
+                    if (MapUtils.isNotEmpty(svcMetadata)) {
+                        if (svcMetadata.containsKey(KEY_RULE_BASED_FAILOVER_TYPE)) {
+                            String value = svcMetadata.get(KEY_RULE_BASED_FAILOVER_TYPE);
+                            try {
+                                failoverType = RuleBasedRouterFailoverType.valueOf(value);
+                            } catch (IllegalArgumentException e) {
+                                LOG.warn("Invalid failover type value: {}, ignore", value);
+                            }
+                        }
+                    }
+                }
                 if (failoverType == null) {
                     failoverType = routerConfig.getFailoverType();
                 }
