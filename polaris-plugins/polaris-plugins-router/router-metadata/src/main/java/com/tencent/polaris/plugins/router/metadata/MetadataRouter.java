@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.router.metadata;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
@@ -99,19 +100,24 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
         if (!CollectionUtils.isEmpty(instanceList)) {
             return new RouteResult(instanceList, RouteResult.State.Next);
         }
-        FailOverType failOverType = config.getMetadataFailOverType();
-        Map<String, String> svcMetadata = instances.getMetadata();
-        if (MapUtils.isNotEmpty(svcMetadata)) {
-            if (svcMetadata.containsKey(KEY_METADATA_FAILOVER_TYPE)) {
-                String value = svcMetadata.get(KEY_METADATA_FAILOVER_TYPE);
-                if (valueToFailoverType.containsKey(value)) {
-                    failOverType = valueToFailoverType.get(value);
+        MetadataFailoverType metadataFailoverType = routeInfo.getMetadataFailoverType();
+        FailOverType failOverType = null;
+        if (null != metadataFailoverType) {
+            failOverType = inputToFailoverType.get(metadataFailoverType);
+        }
+        if (failOverType == null) {
+            Map<String, String> svcMetadata = instances.getMetadata();
+            if (MapUtils.isNotEmpty(svcMetadata)) {
+                if (svcMetadata.containsKey(KEY_METADATA_FAILOVER_TYPE)) {
+                    String value = svcMetadata.get(KEY_METADATA_FAILOVER_TYPE);
+                    if (valueToFailoverType.containsKey(value)) {
+                        failOverType = valueToFailoverType.get(value);
+                    }
                 }
             }
         }
-        MetadataFailoverType metadataFailoverType = routeInfo.getMetadataFailoverType();
-        if (null != metadataFailoverType) {
-            failOverType = inputToFailoverType.get(metadataFailoverType);
+        if (failOverType == null) {
+            failOverType = config.getMetadataFailOverType();
         }
         switch (failOverType) {
             case all:
@@ -162,6 +168,11 @@ public class MetadataRouter extends AbstractServiceRouter implements PluginConfi
     @Override
     public Class<? extends Verifier> getPluginConfigClazz() {
         return MetadataRouterConfig.class;
+    }
+
+    @JustForTest
+    void setConfig(MetadataRouterConfig config) {
+        this.config = config;
     }
 
     public MetadataRouterConfig getConfig() {
