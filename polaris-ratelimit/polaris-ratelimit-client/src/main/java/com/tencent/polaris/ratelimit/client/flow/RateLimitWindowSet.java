@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class RateLimitWindowSet {
@@ -130,6 +131,26 @@ public class RateLimitWindowSet {
             }
             LOG.info("[RateLimit]container {} for service {} has been stopped", rule, serviceKey);
             container.stopSyncTasks();
+        }
+    }
+
+    /**
+     * 过期清理单个rule下所有WindowContainer
+     */
+    public void cleanupContainers() {
+        AtomicInteger rulesExpired = new AtomicInteger(0);
+        windowByRule.entrySet().removeIf(entry -> {
+            boolean expired = entry.getValue().checkAndCleanExpiredWindows();
+            if (expired) {
+                rulesExpired.incrementAndGet();
+                LOG.info("[RateLimitWindowSet] rule {} for service {} has been expired, window container {}",
+                        entry.getKey(), serviceKey, entry.getValue());
+            }
+            return expired;
+        });
+        if (rulesExpired.get() > 0) {
+            LOG.info("[RateLimitWindowSet] {} rules have been cleaned up due to expiration, service {}",
+                    rulesExpired, serviceKey);
         }
     }
 

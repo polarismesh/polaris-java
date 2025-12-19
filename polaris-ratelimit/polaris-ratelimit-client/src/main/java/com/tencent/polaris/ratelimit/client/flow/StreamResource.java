@@ -122,6 +122,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     private ManagedChannel createConnection(Node node) {
         ManagedChannelBuilder<?> builder = ManagedChannelBuilder.forAddress(node.getHost(), node.getPort())
                 .usePlaintext();
+        LOG.info("[ServerConnector]connection {} start to connect", node);
         return builder.build();
     }
 
@@ -181,17 +182,35 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         if (record == null) {
             LOG.info("[RateLimit] add init record for {}, stream is {}", serviceIdentifier, this.hostNode);
             initRecord.putIfAbsent(serviceIdentifier, new InitializeRecord(rateLimitWindow));
+            LOG.info("[RateLimit] record is null, write init record for task window is {} {} {}", rateLimitWindow,
+                    rateLimitWindow.getUniqueKey(), rateLimitWindow.getStatus());
         } else if (record.getRateLimitWindow() != rateLimitWindow) {  // 存在旧窗口映射关系，说明已经淘汰
             initRecord.put(serviceIdentifier, new InitializeRecord(rateLimitWindow));
             RateLimitWindow oldWindow = record.getRateLimitWindow();
-            LOG.info("remove init record for window {} {}", oldWindow.getUniqueKey(), oldWindow.getStatus());
+            LOG.warn("[RateLimit] remove init record for window {} {} {}, task window is {} {} {}", oldWindow,
+                    oldWindow.getUniqueKey(), oldWindow.getStatus(), rateLimitWindow,
+                    rateLimitWindow.getUniqueKey(), rateLimitWindow.getStatus());
         }
         return initRecord.get(serviceIdentifier);
     }
 
-    public void deleteInitRecord(ServiceIdentifier serviceIdentifier) {
+    public InitializeRecord deleteInitRecord(ServiceIdentifier serviceIdentifier) {
         LOG.info("[RateLimit] delete init record for {}, stream is {}", serviceIdentifier, this.hostNode);
-        initRecord.remove(serviceIdentifier);
+        return initRecord.remove(serviceIdentifier);
+    }
+
+    // 淘汰时删除窗口初始化映射信息
+    public InitializeRecord deleteInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
+        InitializeRecord record = initRecord.get(serviceIdentifier);
+        if (record != null && record.getRateLimitWindow() == rateLimitWindow) {
+            record.getDurationRecord().forEach((duration, counterKey) -> counters.remove(counterKey));
+            initRecord.remove(serviceIdentifier);
+            LOG.info("[RateLimit] delete init record for {}, window {}", serviceIdentifier, rateLimitWindow.getUniqueKey());
+        } else if (record != null && record.getRateLimitWindow() != rateLimitWindow) {
+            String recordWindow = record.getRateLimitWindow() != null ? record.getRateLimitWindow().getUniqueKey() : null;
+            LOG.warn("[RateLimit] delete init record for {}, window {} failed with {}", serviceIdentifier, rateLimitWindow.getUniqueKey(), recordWindow);
+        }
+        return record;
     }
 
     /**
@@ -224,21 +243,35 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
             return;
         }
         //重新初始化后，之前的记录就不要了
+        RateLimitWindow rateLimitWindow = initializeRecord.getRateLimitWindow();
+        initializeRecord.getDurationRecord().forEach((duration, counterKey) -> counters.remove(counterKey));
         initializeRecord.getDurationRecord().clear();
         long remoteQuotaTimeMilli = rateLimitInitResponse.getTimestamp();
         long localQuotaTimeMilli = getLocalTimeMilli(remoteQuotaTimeMilli);
-        RateLimitWindow rateLimitWindow = initializeRecord.getRateLimitWindow();
+        long currentTimeMs = System.currentTimeMillis();
+        rateLimitWindow.setLastSyncTimeMs(currentTimeMs);
         rateLimitWindow.setLastInitTimeMs(0); // 重置上次初始化时间，从而在metric变更或上报失败时可再次立刻再初始化
         countersList.forEach(counter -> {
             initializeRecord.getDurationRecord().putIfAbsent(counter.getDuration(), counter.getCounterKey());
-            counters.putIfAbsent(counter.getCounterKey(),
-                    new DurationBaseCallback(counter.getDuration(), rateLimitWindow));
+            DurationBaseCallback callback = new DurationBaseCallback(counter.getDuration(), rateLimitWindow);
+            DurationBaseCallback pre = counters.putIfAbsent(counter.getCounterKey(), callback);
+            if (pre != null && pre.getRateLimitWindow() != rateLimitWindow) {
+                counters.put(counter.getCounterKey(), callback);
+                LOG.warn("[handleRateLimitInitResponse] remove counter for window {}, new window {} {}",
+                        pre.getRateLimitWindow().getUniqueKey(), rateLimitWindow.getUniqueKey(),
+                        counter.getCounterKey());
+            }
             RemoteQuotaInfo remoteQuotaInfo = new RemoteQuotaInfo(counter.getLeft(), counter.getClientCount(),
-                    localQuotaTimeMilli, counter.getDuration() * 1000);
+                    localQuotaTimeMilli, counter.getDuration() * 1000L);
             rateLimitWindow.getAllocatingBucket().onRemoteUpdate(remoteQuotaInfo);
         });
-        LOG.info("[RateLimit] window {} has turn to initialized", rateLimitWindow.getUniqueKey());
-        rateLimitWindow.setStatus(WindowStatus.INITIALIZED.ordinal());
+        if (rateLimitWindow.getStatus() == WindowStatus.INITIALIZING) {
+            LOG.info("[handleRateLimitInitResponse] window {} has turn to initialized", rateLimitWindow.getUniqueKey());
+            rateLimitWindow.setStatus(WindowStatus.INITIALIZED.ordinal());
+        } else {
+            LOG.warn("[handleRateLimitInitResponse] failed to set window to INITIALIZED. window {} {}, status {} ",
+                    rateLimitWindow, rateLimitWindow.getUniqueKey(), rateLimitWindow.getStatus());
+        }
     }
 
     /**
@@ -264,6 +297,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
             RemoteQuotaInfo remoteQuotaInfo = new RemoteQuotaInfo(quotaLeft.getLeft(), quotaLeft.getClientCount(),
                     localQuotaTimeMilli, callback.getDuration() * 1000);
             callback.getRateLimitWindow().getAllocatingBucket().onRemoteUpdate(remoteQuotaInfo);
+            callback.getRateLimitWindow().setLastSyncTimeMs(System.currentTimeMillis());
         });
         return true;
     }
@@ -339,8 +373,30 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         }
     }
 
-    public boolean hasInit(ServiceIdentifier serviceIdentifier) {
-        return initRecord.containsKey(serviceIdentifier);
+    public boolean hasInit(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
+        InitializeRecord record = initRecord.get(serviceIdentifier);
+        if (record == null || record.getDurationRecord().isEmpty()) {
+            return false;
+        }
+        if (record.getRateLimitWindow() != rateLimitWindow) {
+            record.getDurationRecord().forEach((duration, counterKey) -> counters.remove(counterKey));
+            initRecord.remove(serviceIdentifier); // 清理索引触发重新初始化
+            LOG.warn("[hasInit] init record {} is removed for switched. record window {} {}, param window {} {}",
+                    initRecord, record.getRateLimitWindow(), record.getRateLimitWindow().getUniqueKey(), rateLimitWindow,
+                    rateLimitWindow.getUniqueKey());
+            return false;
+        }
+        if (System.currentTimeMillis() - rateLimitWindow.getLastSyncTimeMs()
+                > RateLimitConstants.WINDOW_INDEX_EXPIRE_TIME) {
+            record.getDurationRecord().forEach((duration, counterKey) -> counters.remove(counterKey));
+            initRecord.remove(serviceIdentifier); // 清理索引触发重新初始化
+            LOG.warn("[hasInit] init record is removed for expired. last sync time {}. "
+                            + "record window {} {}, param window {} {}. ", rateLimitWindow.getLastSyncTimeMs(),
+                    record.getRateLimitWindow(), record.getRateLimitWindow().getUniqueKey(), rateLimitWindow,
+                    rateLimitWindow.getUniqueKey());
+            return false;
+        }
+        return true;
     }
 
     public Integer getCounterKey(ServiceIdentifier serviceIdentifier, Integer duration) {
