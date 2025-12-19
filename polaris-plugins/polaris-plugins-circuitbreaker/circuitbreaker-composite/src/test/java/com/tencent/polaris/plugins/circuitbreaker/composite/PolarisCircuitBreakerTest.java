@@ -261,8 +261,6 @@ public class PolarisCircuitBreakerTest {
         PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
         Configuration configuration = ConfigAPIFactory.defaultConfig();
         ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
-        configurationImpl.getConsumer().getLocalCache().setServiceExpireEnable(true);
-        configurationImpl.getConsumer().getLocalCache().setServiceExpireTime(1000);
         configurationImpl.getConsumer().getCircuitBreaker().setDefaultRuleEnable(false);
         InitContext initContext = new MockInitContext(configuration);
         polarisCircuitBreaker.init(initContext);
