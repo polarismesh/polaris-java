@@ -644,8 +644,11 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
                 if (diffTimeMs < InMemoryRegistry.this.serviceExpireTimeMs) {
                     continue;
                 }
+                ServiceEventKey svcEventKey = entry.getKey();
                 //执行淘汰
-                removeCache(entry.getKey());
+                removeCache(svcEventKey);
+                resourceEventListeners.forEach(listener ->
+                        listener.onResourceDeleted(svcEventKey, cacheObject.getValue()));
             }
         }
     }
