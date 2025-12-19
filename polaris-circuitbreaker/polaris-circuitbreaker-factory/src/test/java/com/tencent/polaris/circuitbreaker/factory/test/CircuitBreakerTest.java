@@ -47,7 +47,6 @@ import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -68,6 +67,8 @@ import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
 import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
 import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * CircuitBreakerTest.java
@@ -89,7 +90,7 @@ public class CircuitBreakerTest {
             namingServer = NamingServer.startNamingServer(-1);
             System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
         } catch (IOException e) {
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         ServiceKey serviceKey = new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER);
         InstanceParameter parameter = new InstanceParameter();
@@ -137,7 +138,7 @@ public class CircuitBreakerTest {
             req.setNamespace(NAMESPACE_TEST);
             req.setService(SERVICE_CIRCUIT_BREAKER);
             List<Instance> instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
+            assertThat(instances.size()).isEqualTo(MAX_COUNT);
             Instance instanceToLimit = instances.get(index);
             ServiceCallResult result = instanceToResult(instanceToLimit);
             result.setRetCode(-1);
@@ -171,7 +172,7 @@ public class CircuitBreakerTest {
                     throw e;
                 }
             }
-            Assert.assertThrows(CallAbortedException.class, () -> integerConsumer.accept(3));
+            assertThatThrownBy(() -> integerConsumer.accept(3)).isInstanceOf(CallAbortedException.class);
         }
     }
 
