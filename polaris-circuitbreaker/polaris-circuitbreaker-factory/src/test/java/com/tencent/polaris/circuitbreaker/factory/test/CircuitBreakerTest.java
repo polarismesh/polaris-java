@@ -17,8 +17,13 @@
 
 package com.tencent.polaris.circuitbreaker.factory.test;
 
+import com.google.common.cache.Cache;
 import com.google.protobuf.util.JsonFormat;
 import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
+import com.tencent.polaris.api.plugin.circuitbreaker.ResourceStat;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.Resource;
+import com.tencent.polaris.api.plugin.circuitbreaker.entity.ServiceResource;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.ServiceKey;
@@ -29,16 +34,19 @@ import com.tencent.polaris.assembly.factory.AssemblyAPIFactory;
 import com.tencent.polaris.circuitbreak.api.CircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.api.FunctionalDecorator;
 import com.tencent.polaris.circuitbreak.api.pojo.FunctionalDecoratorRequest;
+import com.tencent.polaris.circuitbreak.client.api.DefaultCircuitBreakAPI;
 import com.tencent.polaris.circuitbreak.client.exception.CallAbortedException;
 import com.tencent.polaris.circuitbreak.factory.CircuitBreakAPIFactory;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.logging.LoggerFactory;
+import com.tencent.polaris.plugins.circuitbreaker.composite.PolarisCircuitBreaker;
+import com.tencent.polaris.plugins.circuitbreaker.composite.ResourceCounters;
 import com.tencent.polaris.specification.api.v1.fault.tolerance.CircuitBreakerProto;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -49,12 +57,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
 import static com.tencent.polaris.test.common.Consts.SERVICE_CIRCUIT_BREAKER;
 import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * CircuitBreakerTest.java
@@ -76,7 +90,7 @@ public class CircuitBreakerTest {
             namingServer = NamingServer.startNamingServer(-1);
             System.setProperty(SERVER_ADDRESS_ENV, String.format("127.0.0.1:%d", namingServer.getPort()));
         } catch (IOException e) {
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         ServiceKey serviceKey = new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER);
         InstanceParameter parameter = new InstanceParameter();
@@ -124,7 +138,7 @@ public class CircuitBreakerTest {
             req.setNamespace(NAMESPACE_TEST);
             req.setService(SERVICE_CIRCUIT_BREAKER);
             List<Instance> instances = assemblyAPI.getReachableInstances(req);
-            Assert.assertEquals(MAX_COUNT, instances.size());
+            assertThat(instances.size()).isEqualTo(MAX_COUNT);
             Instance instanceToLimit = instances.get(index);
             ServiceCallResult result = instanceToResult(instanceToLimit);
             result.setRetCode(-1);
@@ -158,8 +172,38 @@ public class CircuitBreakerTest {
                     throw e;
                 }
             }
-            Assert.assertThrows(CallAbortedException.class, () -> integerConsumer.accept(3));
+            assertThatThrownBy(() -> integerConsumer.accept(3)).isInstanceOf(CallAbortedException.class);
         }
     }
 
+    @Test
+    public void testCircuitBreakerRuleExpiration() throws InterruptedException {
+        Configuration configuration = TestUtils.configWithEnvAddress();
+        ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
+        configurationImpl.getConsumer().getLocalCache().setServiceExpireEnable(true);
+        configurationImpl.getConsumer().getLocalCache().setServiceExpireTime(5000);
+        configurationImpl.getConsumer().getCircuitBreaker().setDefaultRuleEnable(false);
+        try (CircuitBreakAPI circuitBreakAPI = CircuitBreakAPIFactory.createCircuitBreakAPIByConfig(configurationImpl)) {
+            Utils.sleepUninterrupted(10000);
+            ServiceKey serviceKey = new ServiceKey(NAMESPACE_TEST, SERVICE_CIRCUIT_BREAKER);
+            Resource svcResource = new ServiceResource(serviceKey);
+            ResourceStat resourceStat = new ResourceStat(svcResource, 500, 1000);
+            circuitBreakAPI.report(resourceStat);
+
+            DefaultCircuitBreakAPI defaultCircuitBreakAPI = (DefaultCircuitBreakAPI) circuitBreakAPI;
+            CircuitBreaker circuitBreaker = defaultCircuitBreakAPI.getSDKContext().getExtensions().getResourceBreaker();
+            PolarisCircuitBreaker polarisCircuitBreaker = (PolarisCircuitBreaker) circuitBreaker;
+            Map<CircuitBreakerProto.Level, Cache<Resource, Optional<ResourceCounters>>> countersCache = polarisCircuitBreaker.getCountersCache();
+            Cache<Resource, Optional<ResourceCounters>> cacheValue = countersCache.get(CircuitBreakerProto.Level.SERVICE);
+            assertThat(cacheValue.getIfPresent(svcResource)).isNotNull();
+
+            // 熔断规则过期清理熔断器
+            TimeUnit.MILLISECONDS.sleep(10000);
+            assertThat(cacheValue.getIfPresent(svcResource)).isNull();
+
+            // 重新创建熔断器
+            polarisCircuitBreaker.report(resourceStat);
+            assertThat(cacheValue.getIfPresent(svcResource)).isNotNull();
+        }
+    }
 }

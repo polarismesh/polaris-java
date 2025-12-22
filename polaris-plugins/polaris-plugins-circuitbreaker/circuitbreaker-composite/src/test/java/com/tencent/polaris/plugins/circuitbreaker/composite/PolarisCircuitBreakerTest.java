@@ -44,11 +44,13 @@ import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.MatchStringType;
 import com.tencent.polaris.test.common.MockInitContext;
 import com.tencent.polaris.test.mock.discovery.MockServiceResourceProvider;
-import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class PolarisCircuitBreakerTest {
 
@@ -114,9 +116,9 @@ public class PolarisCircuitBreakerTest {
             }
         }
         CircuitBreakerStatus circuitBreakerStatus = polarisCircuitBreaker.checkResource(svcResource);
-        Assert.assertNotNull(circuitBreakerStatus);
+        assertThat(circuitBreakerStatus).isNotNull();
         Status status = circuitBreakerStatus.getStatus();
-        Assert.assertEquals(Status.OPEN, status);
+        assertThat(status).isEqualTo(Status.OPEN);
     }
 
     @Test
@@ -168,7 +170,7 @@ public class PolarisCircuitBreakerTest {
         }
         CircuitBreakerStatus circuitBreakerStatus = polarisCircuitBreaker.checkResource(svcResource);
         Status status = circuitBreakerStatus.getStatus();
-        Assert.assertEquals(Status.OPEN, status);
+        assertThat(status).isEqualTo(Status.OPEN);
     }
 
     @Test
@@ -238,10 +240,10 @@ public class PolarisCircuitBreakerTest {
         for (int i = 0; i < 1000; i++) {
             Resource methodResource = new MethodResource(serviceKey, String.format("/d/customers/base/%d", i));
             CircuitBreakerStatus circuitBreakerStatus = polarisCircuitBreaker.checkResource(methodResource);
-            Assert.assertEquals(Status.OPEN, circuitBreakerStatus.getStatus());
+            assertThat(circuitBreakerStatus.getStatus()).isEqualTo(Status.OPEN);
         }
-        Assert.assertEquals(1, polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size());
-        Assert.assertEquals(1000, polarisCircuitBreaker.getResourceMappingSize());
+        assertThat(polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size()).isEqualTo(1);
+        assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(1000);
 
         //check cleanup
         try {
@@ -250,6 +252,43 @@ public class PolarisCircuitBreakerTest {
             e.printStackTrace();
         }
         polarisCircuitBreaker.cleanupExpiredResources();
-        Assert.assertEquals(0, polarisCircuitBreaker.getResourceMappingSize());
+        assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(0);
+    }
+
+    @Test
+    public void testCircuitBreakerRuleExpiration() throws InterruptedException {
+        MockServiceResourceProvider mockServiceRuleProvider = new MockServiceResourceProvider();
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        Configuration configuration = ConfigAPIFactory.defaultConfig();
+        ConfigurationImpl configurationImpl = (ConfigurationImpl) configuration;
+        configurationImpl.getConsumer().getCircuitBreaker().setDefaultRuleEnable(false);
+        InitContext initContext = new MockInitContext(configuration);
+        polarisCircuitBreaker.init(initContext);
+        polarisCircuitBreaker.setServiceRuleProvider(mockServiceRuleProvider);
+        polarisCircuitBreaker.setCircuitBreakerRuleDictionary(new CircuitBreakerRuleDictionary(Pattern::compile, null));
+        polarisCircuitBreaker.setFaultDetectRuleDictionary(new FaultDetectRuleDictionary());
+        ServiceKey serviceKey = new ServiceKey("Test", "testMethodSvc");
+        ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey, EventType.CIRCUIT_BREAKING);
+        CircuitBreaker circuitBreaker = buildRules();
+        ServiceRuleByProto serviceRule = new ServiceRuleByProto(circuitBreaker, circuitBreaker.getRevision().getValue(),
+                false,
+                EventType.CIRCUIT_BREAKING);
+        mockServiceRuleProvider.putServiceRule(serviceEventKey, serviceRule);
+
+        // 创建熔断器
+        Resource svcResource = new ServiceResource(serviceKey);
+        ResourceStat resourceStat = new ResourceStat(svcResource, 500, 1000);
+        polarisCircuitBreaker.report(resourceStat);
+        Map<Level, Cache<Resource, Optional<ResourceCounters>>> countersCache = polarisCircuitBreaker.getCountersCache();
+        Cache<Resource, Optional<ResourceCounters>> cacheValue = countersCache.get(Level.SERVICE);
+        assertThat(cacheValue.getIfPresent(svcResource)).isNotNull();
+
+        // 熔断规则过期清理熔断器
+        polarisCircuitBreaker.onCircuitBreakerRuleChanged(serviceKey);
+        assertThat(cacheValue.getIfPresent(svcResource)).isNull();
+
+        // 重新创建熔断器
+        polarisCircuitBreaker.report(resourceStat);
+        assertThat(cacheValue.getIfPresent(svcResource)).isNotNull();
     }
 }
