@@ -15,7 +15,7 @@
     <description>Configuration Discovery Example JAR</description>
 
     <properties>
-        <log4j.version>2.17.2</log4j.version>
+        <log4j.version>2.25.3</log4j.version>
     </properties>
 
     <dependencies>
