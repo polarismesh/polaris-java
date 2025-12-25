@@ -22,12 +22,13 @@ import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.function.Supplier;
 
 public class TestMetadataContextHolder {
 
     @Test
-    public void testGetOrCreate() {
+    public void testGetOrCreate() throws NoSuchFieldException, IllegalAccessException {
         MetadataContext metadataContext = MetadataContextHolder.getOrCreate();
         Assert.assertEquals(MetadataContext.DEFAULT_TRANSITIVE_PREFIX, metadataContext.getTransitivePrefix());
         MetadataContextHolder.remove();
@@ -39,6 +40,14 @@ public class TestMetadataContextHolder {
         });
         metadataContext = MetadataContextHolder.getOrCreate();
         Assert.assertEquals("test-prefix", metadataContext.getTransitivePrefix());
+
+        Class<?> clazz = MetadataContextHolder.class;
+        Field threadLocalField = clazz.getDeclaredField("THREAD_LOCAL_CONTEXT");
+        threadLocalField.setAccessible(true);
+        Object threadLocal = threadLocalField.get(null);
+        // polaris-metadata 有 TransmittableThreadLocal 的 test 依赖，使用 com.alibaba.ttl.TransmittableThreadLocal
+        Assert.assertTrue("THREAD_LOCAL_CONTEXT should be instance of TransmittableThreadLocal",
+                threadLocal.getClass().getName().contains("TransmittableThreadLocal"));
 
     }
 }
