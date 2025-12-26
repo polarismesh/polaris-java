@@ -171,6 +171,9 @@
                                     <pattern>com.alibaba</pattern>
                                     <shadedPattern>shade.polaris.com.alibaba
                                     </shadedPattern>
+                                    <excludes>
+                                        <exclude>com.alibaba.ttl.TransmittableThreadLocal</exclude>
+                                    </excludes>
                                 </relocation>
                                 <relocation>
                                     <pattern>io.perfmark</pattern>
