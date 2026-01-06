@@ -18,7 +18,9 @@
 package com.tencent.polaris.api.pojo;
 
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +34,7 @@ import java.util.UUID;
  */
 public class ServiceInstancesWrap implements ServiceInstances {
 
-    private final String uuid = UUID.randomUUID().toString();
+    private String uuid;
 
     private final ServiceInstances serviceInstances;
 
@@ -152,6 +154,9 @@ public class ServiceInstancesWrap implements ServiceInstances {
     }
 
     public String getObjectId() {
+        if (StringUtils.isBlank(uuid)) {
+            uuid = UUID.randomUUID().toString();
+        }
         return uuid;
     }
 }

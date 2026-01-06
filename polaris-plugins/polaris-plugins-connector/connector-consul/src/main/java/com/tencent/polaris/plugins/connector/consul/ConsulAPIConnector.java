@@ -427,7 +427,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
             try {
                 this.ttlConsulClient.agentCheckPass(consulContext.getCheckId(), null, consulContext.getAclToken());
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Heartbeat service to Consul: " + consulContext.getCheckId());
+                    LOG.debug("Heartbeat service to Consul: {}", consulContext.getCheckId());
                 }
             } catch (ConsulException e) {
                 throw new RetriableException(ErrorCode.NETWORK_ERROR,
