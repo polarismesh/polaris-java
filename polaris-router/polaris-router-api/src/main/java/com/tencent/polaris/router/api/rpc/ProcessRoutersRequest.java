@@ -28,6 +28,7 @@ import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
 
 import java.util.*;
 import java.util.function.Function;
@@ -49,6 +50,8 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
     private Map<String, Set<RouteArgument>> routerArgument;
 
     private MetadataContainerGroup metadataContainerGroup;
+
+    private MetadataContext metadataContext;
 
     //元数据路由降级策略
     private MetadataFailoverType metadataFailoverType;
@@ -160,6 +163,14 @@ public class ProcessRoutersRequest extends RequestBaseEntity {
 
     public void setMetadataContainerGroup(MetadataContainerGroup metadataContainerGroup) {
         this.metadataContainerGroup = metadataContainerGroup;
+    }
+
+    public MetadataContext getMetadataContext() {
+        return metadataContext;
+    }
+
+    public void setMetadataContext(MetadataContext metadataContext) {
+        this.metadataContext = metadataContext;
     }
 
     public NamespaceRouterFailoverType getNamespaceRouterFailoverType() {
