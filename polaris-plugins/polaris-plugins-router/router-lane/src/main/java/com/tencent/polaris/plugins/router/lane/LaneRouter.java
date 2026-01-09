@@ -233,8 +233,8 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
     /**
      * 判断实例是否在基线泳道内
      * 有两种基线泳道匹配策略：
-     * 1. LANE_RULE_NOT_MATCH：实例没有匹配上已启用的泳道规则中的标签
-     * 2. LANE_TAG_NOT_EXIST：实例缺少泳道标签
+     * 1. EXCLUDE_ENABLED_LANE：已启用的泳道以外的实例都属于基线
+     * 2. EXCLUDE_ALL_TAGGED_INSTANCE：没有泳道标签的实例都属于基线
      */
     private boolean isInstanceInBaseLane(Instance instance, Map<String, Set<String>> laneLabelMap) {
         Map<String, String> metadata = instance.getMetadata();
@@ -243,10 +243,10 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
             return true;
         }
         switch (config.getBaseLaneMode()) {
-            case LANE_TAG_NOT_EXIST:
-                return !isInstanceContainLaneTag(instance, metadata, laneLabelMap);
-            case LANE_TAG_NOT_MATCH:
-                return !isInstanceMatchLaneTag(instance, metadata, laneLabelMap);
+            case ONLY_UNTAGGED_INSTANCE:
+                return !isInstanceTagged(instance, metadata, laneLabelMap);
+            case EXCLUDE_ENABLED_LANE_INSTANCE:
+                return !isInstanceInEnabledLane(instance, metadata, laneLabelMap);
             default:
                 // should not happen
                 return true;
@@ -256,7 +256,7 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
     /**
      * 判断实例是否有泳道标签
      */
-    private boolean isInstanceContainLaneTag(Instance instance, Map<String, String> metadata,
+    private boolean isInstanceTagged(Instance instance, Map<String, String> metadata,
             Map<String, Set<String>> laneLabelMap) {
         // 实例没有泳道标签的key
         for (String key : laneLabelMap.keySet()) {
@@ -271,7 +271,7 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
     /**
      * 判断实例是否匹配已启用泳道规则的标签
      */
-    private boolean isInstanceMatchLaneTag(Instance instance, Map<String, String> metadata,
+    private boolean isInstanceInEnabledLane(Instance instance, Map<String, String> metadata,
             Map<String, Set<String>> laneLabelMap) {
         for (Map.Entry<String, Set<String>> entry : laneLabelMap.entrySet()) {
             String instanceLabelValue = metadata.get(entry.getKey());

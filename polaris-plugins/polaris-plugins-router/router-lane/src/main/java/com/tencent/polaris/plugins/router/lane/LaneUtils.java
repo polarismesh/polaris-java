@@ -131,7 +131,6 @@ public class LaneUtils {
                 metadataContainer.setHeader(LaneRouter.TRAFFIC_STAIN_LABEL, buildStainLabel(rule),
                         TransitiveType.PASS_THROUGH);
                 isStained = true;
-
             }
         }
         LOG.debug("stain current traffic: {}, lane_rule: {}, lane_group: {}, caller: {}, is warmup stain: {}",
@@ -141,31 +140,27 @@ public class LaneUtils {
     }
 
     public static boolean isWarmupStain(LaneProto.LaneRule rule) {
-        // TODO: 这里需要考虑老版本服务端没用预热的情况
-        // LaneProto.TrafficGray trafficGray = rule.getTrafficGray();
-        // if (Objects.isNull(trafficGray)) {
-        //     return false;
-        // }
-        // return trafficGray.getMode()==LaneProto.TrafficGray.Mode.WARMUP;
-        return rule.getName().equals("warmup");
+
+        if (!rule.hasTrafficGray()) {
+            // 老版本服务端没有该字段
+            return false;
+        }
+         LaneProto.TrafficGray trafficGray = rule.getTrafficGray();
+         return trafficGray.getMode()==LaneProto.TrafficGray.Mode.WARMUP;
     }
 
     // 按比例染色
     public static boolean tryStainByPercentage(LaneProto.LaneRule rule) {
-        // TODO: 这里需要修改，需要考虑老版本服务端没用预热的情况
-        // 测试用的临时代码
-        String[] description = rule.getDescription().split(",");
-        Map<String, String> config = new HashMap<>();
-        for (String s : description) {
-            String[] kv = s.split(":");
-            if (kv.length != 2) {
-                continue;
-            }
-            config.put(kv[0], kv[1]);
+        if (!rule.hasTrafficGray()) {
+            // 没有灰度配置，默认100%染色
+            return true;
         }
-        //
-        //
-        int percentage = Integer.parseInt(config.getOrDefault("percentage", "100"));
+        LaneProto.TrafficGray trafficGray = rule.getTrafficGray();
+        if (!trafficGray.hasPercentage()) {
+            // 没有百分比配置，默认100%染色
+            return true;
+        }
+        int percentage = trafficGray.getPercentage().getPercent();
         if (percentage == 100) {
             return true;
         }
@@ -174,29 +169,26 @@ public class LaneUtils {
 
     // 预热泳道，判断是否需要染色
     public static boolean tryStainByWarmup(LaneProto.LaneRule rule) {
-        // TODO: proto更新后，需要修改这里，先写死创建时间；需要考虑老版本服务端没有这个字段的情况
         // 将创建时间转换为毫秒时间戳（只计算一次，可考虑缓存）
         String ruleEnabledTime = rule.getEtime(); // "2025-09-17 16:00:00"
 
         long enabledTimeMillis = LocalDateTime.parse(ruleEnabledTime,
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atZone(ZoneId.systemDefault()).toInstant()
                 .toEpochMilli();
-
-        // 使用 System.currentTimeMillis() 替代 LocalDateTime.now()，性能更好
         long uptimeMillis = System.currentTimeMillis() - enabledTimeMillis;
-        // TODO: 这里需要修改
-        String[] description = rule.getDescription().split(",");
-        Map<String, String> warmupConfig = new HashMap<>();
-        for (String s : description) {
-            String[] kv = s.split(":");
-            if (kv.length != 2) {
-                continue;
-            }
-            warmupConfig.put(kv[0], kv[1]);
-        }
-        // TODO: proto更新后，需要修改这里，先写死
-        int warmupIntervalSeconds = Integer.parseInt(warmupConfig.getOrDefault("interval", "3000"));
-        int curvature = Integer.parseInt(warmupConfig.getOrDefault("curvature", "2"));
+        // TODO: 删除注释
+//        String[] description = rule.getDescription().split(",");
+//        Map<String, String> warmupConfig = new HashMap<>();
+//        for (String s : description) {
+//            String[] kv = s.split(":");
+//            if (kv.length != 2) {
+//                continue;
+//            }
+//            warmupConfig.put(kv[0], kv[1]);
+//        }
+
+        int warmupIntervalSeconds = rule.getTrafficGray().getWarmup().getIntervalSecond();
+        int curvature = rule.getTrafficGray().getWarmup().getCurvature();
         long warmupIntervalMillis = warmupIntervalSeconds * 1000L;
 
         // 过了预热时间，预热完成，染色

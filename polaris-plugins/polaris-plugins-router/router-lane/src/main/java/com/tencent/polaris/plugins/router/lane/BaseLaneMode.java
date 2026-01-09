@@ -18,12 +18,12 @@
 package com.tencent.polaris.plugins.router.lane;
 
 /**
- * 基线泳道判断模式
+ * 基线泳道选择模式
  * @author Yuwei Fu
  */
 public enum BaseLaneMode {
-    // 实例没有lane标签
-    LANE_TAG_NOT_EXIST,
-    // 实例lane标签没匹配到已启用的泳道
-    LANE_TAG_NOT_MATCH
+    // 仅选择无泳道标签的实例（排除所有带泳道标签的实例）
+    ONLY_UNTAGGED_INSTANCE,
+    // 仅选择不属于任何已启用泳道的实例（排除属于已启用泳道的实例）
+    EXCLUDE_ENABLED_LANE_INSTANCE
 }

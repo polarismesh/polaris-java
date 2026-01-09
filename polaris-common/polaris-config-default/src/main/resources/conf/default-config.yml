@@ -249,7 +249,7 @@ consumer:
         enableReportLocalAddress: false
       laneRouter:
         #描述: 基线泳道模式
-        baseLaneMode: LANE_TAG_NOT_EXIST
+        baseLaneMode: ONLY_UNTAGGED_INSTANCE
   #描述:负载均衡相关配置
   loadbalancer:
     #描述: 负载均衡类型（已注册的负载均衡插件名）
