@@ -77,6 +77,9 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
     private final ScheduledExecutorService expiredCleanupExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("circuitbreaker-expired-cleanup-worker"));
 
+    private final ScheduledExecutorService ruleCheckExecutors = new ScheduledThreadPoolExecutor(1,
+            new NamedThreadFactory("circuitbreaker-rule-check-worker"));
+
     // map the wildcard resource to rule specific resource,
     // eg. /path/wildcard/123 => /path/wildcard/.+
     private final Map<Resource, ResourceWrap> resourceMapping = new ConcurrentHashMap<>();
@@ -102,6 +105,8 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
     private Function<String, Pattern> regexFunction;
 
     private Function<String, TrieNode<String>> trieNodeFunction;
+
+    private final Set<ServiceKey> serviceKeySet = ConcurrentHashMap.newKeySet();
 
     @Override
     public CircuitBreakerStatus checkResource(Resource resource) {
@@ -191,6 +196,11 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             }
             if (isNormalRequest) {
                 addInstanceForFaultDetect(resourceStat.getResource());
+            }
+            ServiceKey serviceKey = resource.getService();
+            // 只有不存在时才尝试写入，避免热点 Key 的 CAS 竞争和缓存失效
+            if (!serviceKeySet.contains(serviceKey)) {
+                serviceKeySet.add(serviceKey);
             }
         } catch (Throwable t) {
             LOG.warn("error occur when report stat with {}", resource);
@@ -371,12 +381,21 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         long expireIntervalMilli = extensions.getConfiguration().getConsumer().getCircuitBreaker()
                 .getCountersExpireInterval();
         long cleanupIntervalMilli = Math.max(expireIntervalMilli, CircuitBreakerUtils.MIN_CLEANUP_INTERVAL);
-        expiredCleanupExecutors.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                cleanupExpiredResources();
-            }
-        }, cleanupIntervalMilli, cleanupIntervalMilli, TimeUnit.MILLISECONDS);
+        if (circuitBreakerConfig.isEnable()) {
+            expiredCleanupExecutors.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    cleanupExpiredResources();
+                }
+            }, cleanupIntervalMilli, cleanupIntervalMilli, TimeUnit.MILLISECONDS);
+            ruleCheckExecutors.scheduleWithFixedDelay(() -> {
+                try {
+                    checkRules();
+                } catch (Throwable throwable) {
+                    LOG.warn("error occur when check rules", throwable);
+                }
+            }, 30000, 30000, TimeUnit.MILLISECONDS);
+        }
     }
 
     public void cleanupExpiredResources() {
@@ -405,6 +424,22 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
                 }
             });
             values.cleanUp();
+        }
+    }
+
+    /**
+     * 定时检查熔断规则，防止熔断规则任务创建失败时，默认实例级熔断规则阻碍后续熔断规则的更新。
+     */
+    public void checkRules() {
+        LOG.info("[CIRCUIT_BREAKER] check rules");
+        for (ServiceKey serviceKey : serviceKeySet) {
+            try {
+                ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey,
+                        ServiceEventKey.EventType.CIRCUIT_BREAKING);
+                ServiceRule cbSvcRule = getServiceRuleProvider().getServiceRule(serviceEventKey);
+            } catch (Throwable t) {
+                LOG.warn("fail to get circuitBreaker rule service key for {}", serviceKey, t);
+            }
         }
     }
 
@@ -445,6 +480,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         stateChangeExecutors.shutdown();
         healthCheckExecutors.shutdown();
         expiredCleanupExecutors.shutdown();
+        ruleCheckExecutors.shutdown();
     }
 
     Extensions getExtensions() {
@@ -495,6 +531,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     void onCircuitBreakerRuleChanged(ServiceKey serviceKey) {
         circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
+        serviceKeySet.remove(serviceKey);
         LOG.info("onCircuitBreakerRuleChanged: clear service {} from ResourceCounters", serviceKey);
         for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
             Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
@@ -518,6 +555,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     void onCircuitBreakerRuleAdded(ServiceKey serviceKey) {
         circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
+        serviceKeySet.remove(serviceKey);
         LOG.info("onCircuitBreakerRuleAdded: clear service {} from ResourceCounters", serviceKey);
         for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
             Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
