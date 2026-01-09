@@ -40,6 +40,7 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.Dis
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto.Response;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto.Instance;
+import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
@@ -63,6 +64,8 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     private final Map<ServiceKey, RateLimitProto.RateLimit> serviceRateLimits = new ConcurrentHashMap<>();
 
+    private final List<LaneProto.LaneGroup> serviceLaneGroups = new ArrayList<>();
+
     public void addService(ServiceKey serviceKey) {
         services.put(serviceKey, new ArrayList<>());
     }
@@ -81,6 +84,10 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     public void setFaultDetector(ServiceKey serviceKey, FaultDetectorProto.FaultDetector faultDetector) {
         serviceFaultDetectors.put(serviceKey, faultDetector);
+    }
+
+    public void setLaneGroup(LaneProto.LaneGroup laneGroup) {
+        serviceLaneGroups.add(laneGroup);
     }
 
     public static class InstanceParameter {
@@ -199,7 +206,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
     /**
      * 批量增加服务实例
      *
-     * @param svcKey    服务名
+     * @param svcKey 服务名
      * @param portStart 起始端口
      * @param instCount 实例数
      * @param parameter 实例参数
@@ -253,7 +260,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     @Override
     public void registerInstance(ServiceProto.Instance request,
-                                 StreamObserver<ResponseProto.Response> responseObserver) {
+            StreamObserver<ResponseProto.Response> responseObserver) {
         ServiceKey serviceKey = new ServiceKey(request.getNamespace().getValue(), request.getService().getValue());
         if (!services.containsKey(serviceKey)) {
             services.put(serviceKey, new ArrayList<ServiceProto.Instance>());
@@ -300,7 +307,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
 
     @Override
     public void deregisterInstance(ServiceProto.Instance request,
-                                   StreamObserver<ResponseProto.Response> responseObserver) {
+            StreamObserver<ResponseProto.Response> responseObserver) {
         ServiceKey serviceKey = new ServiceKey(request.getNamespace().getValue(), request.getService().getValue());
         if (!services.containsKey(serviceKey)) {
             responseObserver.onNext(
@@ -365,6 +372,7 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
         CircuitBreakerProto.CircuitBreaker circuitBreaker;
         RateLimitProto.RateLimit rateLimit;
         RoutingProto.Routing routing;
+        List<LaneProto.LaneGroup> laneGroups;
         List<ServiceProto.Instance> instances;
 
         ServiceProto.Service service = req.getService();
@@ -443,6 +451,12 @@ public class NamingService extends PolarisGRPCGrpc.PolarisGRPCImplBase {
                 builder.setType(DiscoverResponseType.SERVICES);
                 break;
             case LANE:
+                if (!serviceLaneGroups.isEmpty()) {
+                    for (LaneProto.LaneGroup laneGroup : serviceLaneGroups) {
+                        builder.addLanes(laneGroup);
+                    }
+                    service = service.toBuilder().setRevision(StringValue.of(UUID.randomUUID().toString())).build();
+                }
                 builder.setType(DiscoverResponseType.LANE);
                 break;
             case LOSSLESS:
