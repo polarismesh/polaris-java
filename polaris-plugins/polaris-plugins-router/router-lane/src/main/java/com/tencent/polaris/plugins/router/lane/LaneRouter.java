@@ -101,7 +101,7 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
-        MetadataContext manager = MetadataContextHolder.getOrCreate();
+        MetadataContext manager = routeInfo.getMetadataContext() == null ? MetadataContextHolder.getOrCreate() : routeInfo.getMetadataContext();
         MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
         MessageMetadataContainer calleeMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
         ServiceKey caller = routeInfo.getSourceService() == null ? null : routeInfo.getSourceService().getServiceKey();
