@@ -162,7 +162,6 @@ public class LaneRuleContainer {
                         break;
                 }
             });
-            // TODO：TrafficMatchRule中的SourceMatch为空，然后TrafficMatchMode是AND 则【全部匹配】
             boolean isMatched = false;
             switch (matchRule.getMatchMode()) {
                 case OR:

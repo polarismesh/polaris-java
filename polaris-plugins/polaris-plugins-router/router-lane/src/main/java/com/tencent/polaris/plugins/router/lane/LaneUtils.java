@@ -176,17 +176,6 @@ public class LaneUtils {
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atZone(ZoneId.systemDefault()).toInstant()
                 .toEpochMilli();
         long uptimeMillis = System.currentTimeMillis() - enabledTimeMillis;
-        // TODO: 删除注释
-//        String[] description = rule.getDescription().split(",");
-//        Map<String, String> warmupConfig = new HashMap<>();
-//        for (String s : description) {
-//            String[] kv = s.split(":");
-//            if (kv.length != 2) {
-//                continue;
-//            }
-//            warmupConfig.put(kv[0], kv[1]);
-//        }
-
         int warmupIntervalSeconds = rule.getTrafficGray().getWarmup().getIntervalSecond();
         int curvature = rule.getTrafficGray().getWarmup().getCurvature();
         long warmupIntervalMillis = warmupIntervalSeconds * 1000L;
