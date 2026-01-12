@@ -106,7 +106,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     private Function<String, TrieNode<String>> trieNodeFunction;
 
-    private final Set<ServiceKey> serviceKeySet = ConcurrentHashMap.newKeySet();
+    private final Set<ServiceKey> reportedServiceKeySet = ConcurrentHashMap.newKeySet();
 
     @Override
     public CircuitBreakerStatus checkResource(Resource resource) {
@@ -199,8 +199,8 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             }
             ServiceKey serviceKey = resource.getService();
             // 只有不存在时才尝试写入，避免热点 Key 的 CAS 竞争和缓存失效
-            if (!serviceKeySet.contains(serviceKey)) {
-                serviceKeySet.add(serviceKey);
+            if (!reportedServiceKeySet.contains(serviceKey)) {
+                reportedServiceKeySet.add(serviceKey);
             }
         } catch (Throwable t) {
             LOG.warn("error occur when report stat with {}", resource);
@@ -432,7 +432,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
      */
     public void checkRules() {
         LOG.info("[CIRCUIT_BREAKER] check rules");
-        for (ServiceKey serviceKey : serviceKeySet) {
+        for (ServiceKey serviceKey : reportedServiceKeySet) {
             try {
                 ServiceEventKey serviceEventKey = new ServiceEventKey(serviceKey,
                         ServiceEventKey.EventType.CIRCUIT_BREAKING);
@@ -531,7 +531,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     void onCircuitBreakerRuleChanged(ServiceKey serviceKey) {
         circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
-        serviceKeySet.remove(serviceKey);
+        reportedServiceKeySet.remove(serviceKey);
         LOG.info("onCircuitBreakerRuleChanged: clear service {} from ResourceCounters", serviceKey);
         for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
             Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
@@ -555,7 +555,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
 
     void onCircuitBreakerRuleAdded(ServiceKey serviceKey) {
         circuitBreakerRuleDictionary.onServiceChanged(serviceKey);
-        serviceKeySet.remove(serviceKey);
+        reportedServiceKeySet.remove(serviceKey);
         LOG.info("onCircuitBreakerRuleAdded: clear service {} from ResourceCounters", serviceKey);
         for (Map.Entry<Level, Cache<Resource, Optional<ResourceCounters>>> entry : countersCache.entrySet()) {
             Cache<Resource, Optional<ResourceCounters>> cacheValue = entry.getValue();
