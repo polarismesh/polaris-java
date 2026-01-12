@@ -64,7 +64,7 @@ public class ConsulServerUtils {
             }
             return address;
         } catch (UnknownHostException e) {
-            LOG.debug("Not InetAddress: " + address + " , resolved as is.");
+            LOG.debug("Not InetAddress: {} , resolved as is.", address);
             return address;
         }
     }

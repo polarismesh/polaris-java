@@ -34,9 +34,8 @@ import com.tencent.polaris.circuitbreak.api.pojo.CheckResult;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * 全死全活路由
@@ -49,25 +48,22 @@ public class RecoverRouter extends AbstractServiceRouter implements PluginConfig
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances)
             throws PolarisException {
         //过滤不健康的节点，只有心跳而且没有被熔断的才是健康的
-        List<Instance> healthyInstance;
+        List<Instance> instancesList = instances.getInstances();
+        List<Instance> healthyInstance = new ArrayList<>(instancesList.size());
         if (isExcludeCircuitBreakInstances(routeInfo)) {
             //不包含被熔断的实例，需要过滤被熔断的实例
-            healthyInstance = instances.getInstances().stream().filter(
-                    new Predicate<Instance>() {
-                        @Override
-                        public boolean test(Instance instance) {
-                            if (!Utils.isHealthyInstance(instance)) {
-                                return false;
-                            }
-                            return checkCircuitBreakerPassing(routeInfo, instance);
-                        }
-                    }
-            )
-                    .collect(Collectors.toList());
+            for (Instance instance : instancesList) {
+                if (Utils.isHealthyInstance(instance) && checkCircuitBreakerPassing(routeInfo, instance)) {
+                    healthyInstance.add(instance);
+                }
+            }
         } else {
             //只过滤不健康的实例
-            healthyInstance = instances.getInstances().stream().filter(Utils::isHealthyInstance)
-                    .collect(Collectors.toList());
+            for (Instance instance : instancesList) {
+                if (Utils.isHealthyInstance(instance)) {
+                    healthyInstance.add(instance);
+                }
+            }
         }
 
         int healthyInstanceCount = healthyInstance.size();

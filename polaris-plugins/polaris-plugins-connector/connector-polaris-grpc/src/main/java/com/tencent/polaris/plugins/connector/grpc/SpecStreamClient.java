@@ -397,12 +397,12 @@ public class SpecStreamClient implements StreamObserver<ResponseProto.DiscoverRe
     }
 
     public void putPendingTask(ServiceUpdateTask serviceUpdateTask) {
-        LOG.debug("Put " + serviceUpdateTask.getServiceEventKey() + "to pending task map. reqId: " + reqId);
+        LOG.debug("Put {} to pending task map. reqId: {}", serviceUpdateTask.getServiceEventKey(), reqId);
         pendingTask.put(serviceUpdateTask.getServiceEventKey(), new SpecTask(serviceUpdateTask));
     }
 
     public ServiceUpdateTask removePendingTask(ServiceEventKey serviceEventKey) {
-        LOG.debug("Remove " + serviceEventKey + "from pending task map. reqId: " + reqId);
+        LOG.debug("Remove {} from pending task map. reqId: {}", serviceEventKey, reqId);
         SpecTask task = pendingTask.remove(serviceEventKey);
         if (Objects.isNull(task)) {
             return null;

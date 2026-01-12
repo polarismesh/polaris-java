@@ -105,6 +105,9 @@ public class DefaultRouterFlow implements RouterFlow {
         if (request.getMetadataContainerGroup() != null) {
             routeInfo.setMetadataContainerGroup(request.getMetadataContainerGroup());
         }
+        if (request.getMetadataContext() != null) {
+            routeInfo.setMetadataContext(request.getMetadataContext());
+        }
         if (request.getNamespaceRouterFailoverType() != null) {
             routeInfo.setNamespaceRouterFailoverType(request.getNamespaceRouterFailoverType());
         }

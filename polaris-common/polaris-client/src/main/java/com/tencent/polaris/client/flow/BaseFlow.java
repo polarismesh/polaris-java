@@ -184,8 +184,10 @@ public class BaseFlow {
                                 router.getName(), serviceInstances.getInstances().size(), serviceInstances.getServiceKey());
                     }
                     serviceInstances.setInstances(filteredInstances.getInstances());
-                    LOG.debug("router: {} get filtered instance result size : {} serviceInstances: {}", router.getName(),
-                            serviceInstances.getInstances().size(), serviceInstances.getObjectId());
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("router: {} get filtered instance result size : {} serviceInstances: {}", router.getName(),
+                                serviceInstances.getInstances().size(), serviceInstances.getObjectId());
+                    }
                     break;
                 }
                 //重试获取

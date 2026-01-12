@@ -103,7 +103,9 @@ public class InstanceService extends ConsulService {
             HttpResponse rawResponse = consulRawClient.makeGetRequest("/v1/health/service/" + serviceId, tagParams,
                     passingParams, tokenParam, nsTypeParam, namespaceParameter, queryParams);
             if (rawResponse != null) {
-                LOG.debug("raw response: " + rawResponse.getContent() + " ; onlyPassing: " + onlyPassing);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("raw response: {} ; onlyPassing: {}", rawResponse.getContent(), onlyPassing);
+                }
                 List<HealthService> value;
                 if (rawResponse.getStatusCode() == 200) {
                     value = getGson().fromJson(rawResponse.getContent(),

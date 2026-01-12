@@ -25,6 +25,7 @@ import com.tencent.polaris.api.rpc.NamespaceRouterFailoverType;
 import com.tencent.polaris.api.rpc.RuleBasedRouterFailoverType;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
+import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
 
 import java.util.*;
@@ -68,6 +69,8 @@ public class RouteInfo {
     private final Map<String, Map<String, String>> routerMetadata = new HashMap<>();
 
     private MetadataContainerGroup metadataContainerGroup;
+
+    private MetadataContext metadataContext;
 
     private Function<String, Optional<String>> externalParameterSupplier = s -> Optional.empty();
 
@@ -300,6 +303,14 @@ public class RouteInfo {
 
     public void setMetadataContainerGroup(MetadataContainerGroup metadataContainerGroup) {
         this.metadataContainerGroup = metadataContainerGroup;
+    }
+
+    public MetadataContext getMetadataContext() {
+        return metadataContext;
+    }
+
+    public void setMetadataContext(MetadataContext metadataContext) {
+        this.metadataContext = metadataContext;
     }
 
     public NamespaceRouterFailoverType getNamespaceRouterFailoverType() {

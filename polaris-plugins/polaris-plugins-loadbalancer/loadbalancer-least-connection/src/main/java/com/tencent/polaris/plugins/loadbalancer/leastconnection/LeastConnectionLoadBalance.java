@@ -27,12 +27,8 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
-import com.tencent.polaris.api.pojo.DefaultServiceEventKeysProvider;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
@@ -40,13 +36,9 @@ import com.tencent.polaris.client.flow.DefaultFlowControlParam;
 import com.tencent.polaris.client.flow.ResourcesResponse;
 import com.tencent.polaris.client.pojo.InstanceByProto;
 import com.tencent.polaris.logging.LoggerFactory;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
+
+import java.util.*;
 
 /**
  * Least Connections Load Balancer
@@ -89,9 +81,12 @@ public class LeastConnectionLoadBalance extends Destroyable implements LoadBalan
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND, "local instances is empty");
         }
         // intersection lookup
-        List<Instance> instanceList = localInstanceList.stream()
-                .filter(instance -> requestInstanceMap.containsKey(instance.getHost() + ":" + instance.getPort()))
-                .collect(Collectors.toList());
+        List<Instance> instanceList = new ArrayList<>(localInstanceList.size());
+        for (Instance instance : localInstanceList) {
+            if (requestInstanceMap.containsKey(instance.getHost() + ":" + instance.getPort())) {
+                instanceList.add(instance);
+            }
+        }
         if (instanceList.isEmpty()) {
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
                     "No instance found. serviceKey=" + serviceKey.toString());
