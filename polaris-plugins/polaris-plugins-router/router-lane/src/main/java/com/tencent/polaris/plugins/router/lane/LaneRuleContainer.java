@@ -17,12 +17,8 @@
 
 package com.tencent.polaris.plugins.router.lane;
 
-import static com.tencent.polaris.plugins.router.lane.LaneRouter.INTERNAL_INSTANCE_LANE_KEY;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +95,7 @@ public class LaneRuleContainer {
 
     /**
      * 获取规则启用时间的时间戳（毫秒）
+     *
      * @param rule 泳道规则
      * @return 启用时间的毫秒时间戳，如果未缓存则返回 null
      */
