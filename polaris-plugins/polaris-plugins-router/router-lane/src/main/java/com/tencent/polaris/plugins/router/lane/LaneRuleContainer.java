@@ -29,12 +29,10 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CompareUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.api.utils.TimeUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
-import java.util.Set;
 import org.slf4j.Logger;
 
 public class LaneRuleContainer {
@@ -46,9 +44,6 @@ public class LaneRuleContainer {
     private final List<LaneProto.LaneRule> rules = new LinkedList<>();
 
     private final Map<String, LaneProto.LaneRule> ruleMapping = new HashMap<>();
-
-    // 缓存规则启用时间的时间戳（毫秒），key 为 groupName/ruleName
-    private final Map<String, Long> ruleEtimeCache = new HashMap<>();
 
     public LaneRuleContainer(MetadataContext manager, ServiceKey caller, List<LaneProto.LaneGroup> list) {
         for (LaneProto.LaneGroup laneGroup : list) {
@@ -64,10 +59,6 @@ public class LaneRuleContainer {
                 String name = LaneUtils.buildStainLabel(laneRule);
                 ruleMapping.put(name, laneRule);
                 rules.add(laneRule);
-                // 预先解析并缓存 etime（启用时间）时间戳
-                if (StringUtils.isNotBlank(laneRule.getEtime())) {
-                    ruleEtimeCache.put(name, TimeUtils.getCreateTime(laneRule.getEtime()));
-                }
             }
         }
         rules.sort((o1, o2) -> {
@@ -91,17 +82,6 @@ public class LaneRuleContainer {
 
     public Map<String, LaneProto.LaneGroup> getGroups() {
         return groups;
-    }
-
-    /**
-     * 获取规则启用时间的时间戳（毫秒）
-     *
-     * @param rule 泳道规则
-     * @return 启用时间的毫秒时间戳，如果未缓存则返回 null
-     */
-    public Long getRuleEtimeMillis(LaneProto.LaneRule rule) {
-        String name = LaneUtils.buildStainLabel(rule);
-        return ruleEtimeCache.get(name);
     }
 
     public List<LaneProto.LaneGroup> getGroupListByCalleeNamespaceAndService(ServiceKey callee) {
