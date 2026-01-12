@@ -394,7 +394,7 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
                 } catch (Throwable throwable) {
                     LOG.warn("error occur when check rules", throwable);
                 }
-            }, 30000, 30000, TimeUnit.MILLISECONDS);
+            }, circuitBreakerConfig.getRuleCheckInterval(), circuitBreakerConfig.getRuleCheckInterval(), TimeUnit.MILLISECONDS);
         }
     }
 
