@@ -18,20 +18,9 @@
 package com.tencent.polaris.plugins.router.lane;
 
 import com.tencent.polaris.annonation.JustForTest;
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-
-import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
@@ -51,21 +40,29 @@ import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 
 public class LaneRouter extends AbstractServiceRouter implements PluginConfigProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LaneRouter.class);
     /**
      * 处于泳道内的实例标签
      */
     public static final String INTERNAL_INSTANCE_LANE_KEY = "lane";
-
     /**
      * 泳道染色标签
      */
     public static final String TRAFFIC_STAIN_LABEL = "service-lane";
-
+    private static final Logger LOG = LoggerFactory.getLogger(LaneRouter.class);
     private LaneRouterConfig config;
 
     @Override
@@ -101,7 +98,8 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
 
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
-        MetadataContext manager = routeInfo.getMetadataContext() == null ? MetadataContextHolder.getOrCreate() : routeInfo.getMetadataContext();
+        MetadataContext manager = routeInfo.getMetadataContext() == null ? MetadataContextHolder.getOrCreate()
+                : routeInfo.getMetadataContext();
         MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
         MessageMetadataContainer calleeMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
         ServiceKey caller = routeInfo.getSourceService() == null ? null : routeInfo.getSourceService().getServiceKey();
@@ -137,7 +135,8 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
             if (alreadyStain) {
                 calleeMsgContainer.setHeader(TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
             } else {
-                LOG.debug("current traffic not in lane, redirect to base, caller: {} callee: {}", caller, instances.getServiceKey());
+                LOG.debug("current traffic not in lane, redirect to base, caller: {} callee: {}", caller,
+                        instances.getServiceKey());
                 // 如果当前自己不是泳道入口，并且没有发现已经染色的标签，不能走泳道路由，
                 return new RouteResult(redirectToBase(laneGroupList, instances), RouteResult.State.Next);
             }
@@ -181,7 +180,7 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
             return redirectToBase(laneGroupList, instances);
         }
         List<Instance> result = new ArrayList<>();
-        for(Instance instance : instances.getInstances()){
+        for (Instance instance : instances.getInstances()) {
             Map<String, String> metadata = instance.getMetadata();
             if (CollectionUtils.isEmpty(metadata)) {
                 continue;

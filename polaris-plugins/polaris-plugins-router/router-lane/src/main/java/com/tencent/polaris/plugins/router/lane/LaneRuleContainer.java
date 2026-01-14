@@ -153,7 +153,9 @@ public class LaneRuleContainer {
                     }
                     break;
             }
-
+            if (booleans.isEmpty()) {
+                isMatched = true;
+            }
             if (!isMatched) {
                 continue;
             }

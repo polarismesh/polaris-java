@@ -17,19 +17,7 @@
 
 package com.tencent.polaris.plugins.router.lane;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
+import static com.tencent.polaris.plugins.router.lane.LaneRouter.TRAFFIC_STAIN_LABEL;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
@@ -58,9 +46,19 @@ import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import org.slf4j.Logger;
-
-import static com.tencent.polaris.plugins.router.lane.LaneRouter.TRAFFIC_STAIN_LABEL;
 
 public class LaneUtils {
 
@@ -87,8 +85,8 @@ public class LaneUtils {
         routerKeys.add(dstSvcEventKey);
         DefaultServiceEventKeysProvider svcKeysProvider = new DefaultServiceEventKeysProvider();
         svcKeysProvider.setSvcEventKeys(routerKeys);
-        ResourcesResponse resourcesResponse = BaseFlow
-                .syncGetResources(extensions, false, svcKeysProvider, engineFlowControlParam);
+        ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, svcKeysProvider,
+                engineFlowControlParam);
         ServiceRule outbound = resourcesResponse.getServiceRule(dstSvcEventKey);
         Object rule = outbound.getRule();
         if (Objects.nonNull(rule)) {
@@ -126,27 +124,24 @@ public class LaneUtils {
             }
             if (isWarmupStain && tryStainByWarmup(rule)) {
                 // 流量预热染色，设置染色标签，并且设置染色时间
-                MessageMetadataContainer metadataContainer = manager.getMetadataContainer(MetadataType.MESSAGE,
-                        false);
+                MessageMetadataContainer metadataContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
                 metadataContainer.setHeader(LaneRouter.TRAFFIC_STAIN_LABEL, buildStainLabel(rule),
                         TransitiveType.PASS_THROUGH);
                 isStained = true;
             }
         }
         LOG.debug("stain current traffic: {}, lane_rule: {}, lane_group: {}, caller: {}, is warmup stain: {}",
-                isTrafficEntry, rule.getName(),
-                rule.getGroupName(), caller, isWarmupStain);
+                isTrafficEntry, rule.getName(), rule.getGroupName(), caller, isWarmupStain);
         return isStained;
     }
 
     public static boolean isWarmupStain(LaneProto.LaneRule rule) {
-
         if (!rule.hasTrafficGray()) {
             // 老版本服务端没有该字段
             return false;
         }
-         LaneProto.TrafficGray trafficGray = rule.getTrafficGray();
-         return trafficGray.getMode()==LaneProto.TrafficGray.Mode.WARMUP;
+        LaneProto.TrafficGray trafficGray = rule.getTrafficGray();
+        return trafficGray.getMode() == LaneProto.TrafficGray.Mode.WARMUP;
     }
 
     // 按比例染色
@@ -171,7 +166,6 @@ public class LaneUtils {
     public static boolean tryStainByWarmup(LaneProto.LaneRule rule) {
         // 将创建时间转换为毫秒时间戳（只计算一次，可考虑缓存）
         String ruleEnabledTime = rule.getEtime(); // "2025-09-17 16:00:00"
-
         long enabledTimeMillis = LocalDateTime.parse(ruleEnabledTime,
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atZone(ZoneId.systemDefault()).toInstant()
                 .toEpochMilli();
@@ -192,7 +186,6 @@ public class LaneUtils {
         // 计算染色概率：probability = (uptime / warmupInterval) ^ curvature
         double progress = (double) uptimeMillis / warmupIntervalMillis;
         double probability = Math.pow(progress, curvature);
-
         // 使用 ThreadLocalRandom 替代 new Random()，避免每次创建对象，性能更好
         return ThreadLocalRandom.current().nextDouble() < probability;
     }
@@ -246,7 +239,6 @@ public class LaneUtils {
     public static String findTrafficValue(RouteInfo routeInfo, RoutingProto.SourceMatch sourceMatch,
             MetadataContext manager) {
         Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ServiceRouterConfig.DEFAULT_ROUTER_LANE);
-
         MessageMetadataContainer calleeMessageContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
         MetadataContainer calleeCustomContainer = manager.getMetadataContainer(MetadataType.CUSTOM, false);
         MessageMetadataContainer callerMessageContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
@@ -391,6 +383,17 @@ public class LaneUtils {
     }
 
     /**
+     * get upstream lane id.
+     *
+     * @return lane id of upstream service
+     */
+    public static String getCallerLaneId() {
+        MetadataContext manager = MetadataContextHolder.getOrCreate();
+        MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
+        return callerMsgContainer.getHeader(LaneRouter.TRAFFIC_STAIN_LABEL);
+    }
+
+    /**
      * Sets the lane ID for the caller.
      * <p>
      * This method is used in two primary scenarios:
@@ -408,17 +411,6 @@ public class LaneUtils {
         MetadataContext manager = MetadataContextHolder.getOrCreate();
         MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
         callerMsgContainer.setHeader(LaneRouter.TRAFFIC_STAIN_LABEL, laneId, TransitiveType.PASS_THROUGH);
-    }
-
-    /**
-     * get upstream lane id.
-     *
-     * @return lane id of upstream service
-     */
-    public static String getCallerLaneId() {
-        MetadataContext manager = MetadataContextHolder.getOrCreate();
-        MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
-        return callerMsgContainer.getHeader(LaneRouter.TRAFFIC_STAIN_LABEL);
     }
 
     public static void removeCallerLaneId() {
