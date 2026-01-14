@@ -17,13 +17,6 @@
 
 package com.tencent.polaris.plugins.router.lane;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.CompareUtils;
@@ -33,6 +26,12 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.slf4j.Logger;
 
 public class LaneRuleContainer {
@@ -153,6 +152,7 @@ public class LaneRuleContainer {
                     }
                     break;
             }
+            // 没有流量匹配规则时，默认全匹配
             if (booleans.isEmpty()) {
                 isMatched = true;
             }
@@ -204,7 +204,10 @@ public class LaneRuleContainer {
                     }
                     break;
             }
-
+            // 没有流量匹配规则时，默认全匹配
+            if (booleans.isEmpty()) {
+                isMatched = true;
+            }
             if (!isMatched) {
                 continue;
             }
