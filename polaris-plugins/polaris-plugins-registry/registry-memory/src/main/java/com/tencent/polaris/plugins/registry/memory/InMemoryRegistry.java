@@ -164,17 +164,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     private RegistryCacheValue getResource(ServiceEventKey svcEventKey, boolean includeCache, boolean internalRequest) {
         CacheObject cacheObject = resourceMap.get(svcEventKey);
-        if (null == cacheObject || Objects.equals("", cacheObject.getRevision())) {
-            if (includeCache) {
-                // 没有从 remote 正常获取到数据，从本地容灾文件进行数据获取
-                loadResourceFromLocal(svcEventKey);
-                cacheObject = resourceMap.get(svcEventKey);
-                if (Objects.isNull(cacheObject)) {
-                    return null;
-                }
-            }
-        }
-        if (Objects.isNull(cacheObject)) {
+        if (null == cacheObject) {
             return null;
         }
         RegistryCacheValue registryCacheValue = cacheObject.loadValue(!internalRequest);
@@ -199,7 +189,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public void loadServiceRule(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
-        loadRemoteValue(svcEventKey, notifier);
+        loadResources(svcEventKey, notifier);
     }
 
     @Override
@@ -214,6 +204,28 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public void loadServices(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
+        loadResources(svcEventKey, notifier);
+    }
+
+    /**
+     * 加载资源
+     *
+     * @param svcEventKey 服务资源名
+     * @param notifier    通知器
+     * @throws PolarisException 异常
+     */
+    private void loadResources(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
+        // 如果是第一次获取该数据，首先加载磁盘文件
+        if (!resourceMap.containsKey(svcEventKey) && persistEnable) {
+            CacheObject cacheObject = loadFileCache(svcEventKey);
+            // 磁盘文件可用，直接通知invoker, 同时注册远程任务
+            if (null != cacheObject && cacheObject.isRemoteUpdated()) {
+                notifier.complete(svcEventKey);
+                loadRemoteValue(svcEventKey, null);
+                return;
+            }
+        }
+        // 如果不是第一次，从远程加载
         loadRemoteValue(svcEventKey, notifier);
     }
 
@@ -235,6 +247,34 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         return flowCache;
     }
 
+    private CacheObject addOrGetCacheObject(ServiceEventKey svcEventKey, Message message) {
+        // 使用computeIfAbsent确保原子性操作，避免并发创建重复对象
+        return resourceMap.computeIfAbsent(svcEventKey, key -> {
+            // 获取对应的缓存处理器
+            CacheHandler handler = cacheHandlers.get(key.getEventType());
+            if (null == handler) {
+                LOG.error("[LocalRegistry] No cache handler found for event type: {}", key.getEventType());
+                throw new PolarisException(ErrorCode.INTERNAL_ERROR,
+                        String.format("[LocalRegistry] unRegistered resource type %s", svcEventKey.getEventType()));
+            }
+            // 根据是否有message创建不同类型的CacheObject
+            CacheObject newCacheObject;
+            if (message != null) {
+                // 从文件加载的情况，带有持久化消息
+                newCacheObject = new CacheObject(handler, key, this, message);
+                LOG.info("[InMemoryRegistry] registry {} created new cacheObject {} from file, key: {}",
+                        this, newCacheObject, key);
+            } else {
+                // 从远程加载的情况，不带消息
+                newCacheObject = new CacheObject(handler, key, this);
+                LOG.info("[InMemoryRegistry] registry {} created new cacheObject {} waiting for remote update, "
+                                + "key: {}",
+                        this, newCacheObject, key);
+            }
+            return newCacheObject;
+        });
+    }
+
     /**
      * 加载资源
      *
@@ -244,14 +284,8 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
      */
     private void loadRemoteValue(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
         checkDestroyed();
-        CacheHandler handler = cacheHandlers.get(svcEventKey.getEventType());
-        if (null == handler) {
-            throw new PolarisException(ErrorCode.INTERNAL_ERROR,
-                    String.format("[LocalRegistry] unRegistered resource type %s", svcEventKey.getEventType()));
-        }
-        CacheObject cacheObject = resourceMap.computeIfAbsent(svcEventKey,
-                serviceEventKey -> new CacheObject(handler, svcEventKey, InMemoryRegistry.this)
-        );
+        // 使用统一的方法来获取或创建CacheObject，确保并发安全
+        CacheObject cacheObject = addOrGetCacheObject(svcEventKey, null);
         //添加监听器
         cacheObject.addNotifier(notifier);
         //触发往serverConnector注册
@@ -303,7 +337,7 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
 
     @Override
     public void loadInstances(ServiceEventKey svcEventKey, EventCompleteNotifier notifier) throws PolarisException {
-        loadRemoteValue(svcEventKey, notifier);
+        loadResources(svcEventKey, notifier);
     }
 
     @SuppressWarnings("unchecked")
@@ -520,6 +554,18 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         if (!persistExecutor.isShutdown()) {
             persistExecutor.execute(new DeletePersistTask(svcEventKey));
         }
+    }
+
+    private CacheObject loadFileCache(ServiceEventKey svcEventKey) {
+        LOG.info("start to load local cache files, svc {}", svcEventKey);
+        Message message = messagePersistHandler.loadPersistedServices(svcEventKey, ResponseProto.DiscoverResponse::newBuilder);
+
+        if (null == message) {
+            LOG.warn("load local cache, response is null, service event:{}", svcEventKey);
+            return null;
+        }
+        // 使用统一的getOrAddCacheObject方法，传入message参数，确保并发安全
+        return addOrGetCacheObject(svcEventKey, message);
     }
 
     private void loadResourceFromLocal(ServiceEventKey svcEventKey) {
