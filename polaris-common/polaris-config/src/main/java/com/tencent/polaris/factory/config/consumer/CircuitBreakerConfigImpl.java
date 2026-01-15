@@ -77,6 +77,10 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     @JsonProperty
     private Integer defaultMinimumRequest;
 
+    @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long ruleCheckInterval;
+
     @Override
     public boolean isEnable() {
         if (null == enable) {
@@ -213,6 +217,15 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
     }
 
     @Override
+    public long getRuleCheckInterval() {
+        return ruleCheckInterval;
+    }
+
+    public void setRuleCheckInterval(Long ruleCheckInterval) {
+        this.ruleCheckInterval = ruleCheckInterval;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(enable, "circuitBreaker.enable");
         if (!enable) {
@@ -232,6 +245,7 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
         ConfigUtils.validatePositive(defaultErrorPercent, "circuitBreaker.defaultErrorPercent");
         ConfigUtils.validatePositive(defaultInterval, "circuitBreaker.defaultInterval");
         ConfigUtils.validatePositive(defaultMinimumRequest, "circuitBreaker.defaultMinimumRequest");
+        ConfigUtils.validateInterval(ruleCheckInterval, "circuitBreaker.ruleCheckInterval");
         verifyPluginConfig();
     }
 
@@ -278,6 +292,9 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
             if (null == defaultMinimumRequest) {
                 setDefaultMinimumRequest(circuitBreakerConfig.getDefaultMinimumRequest());
             }
+            if (null == ruleCheckInterval) {
+                setRuleCheckInterval(circuitBreakerConfig.getRuleCheckInterval());
+            }
             if (enable) {
                 setDefaultPluginConfig(circuitBreakerConfig);
             }
@@ -300,6 +317,7 @@ public class CircuitBreakerConfigImpl extends PluginConfigImpl implements Circui
                 ", defaultErrorPercent=" + defaultErrorPercent +
                 ", defaultInterval=" + defaultInterval +
                 ", defaultMinimumRequest=" + defaultMinimumRequest +
+                ", ruleCheckInterval=" + ruleCheckInterval +
                 '}';
     }
 }

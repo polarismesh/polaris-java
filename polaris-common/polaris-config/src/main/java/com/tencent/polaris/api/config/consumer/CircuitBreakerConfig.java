@@ -120,4 +120,10 @@ public interface CircuitBreakerConfig extends PluginConfig, Verifier {
      */
     int getDefaultMinimumRequest();
 
+    /**
+     * 熔断规则检查间隔
+     *
+     * @return 0 if 不获取
+     */
+    long getRuleCheckInterval();
 }

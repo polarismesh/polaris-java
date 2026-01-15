@@ -290,6 +290,8 @@ consumer:
     defaultInterval: 60000
     # 描述：错误率熔断器默认最小请求数
     defaultMinimumRequest: 10
+    #描述: 熔断规则检查间隔
+    ruleCheckInterval: 1m
     #描述: 熔断插件配置
     plugin:
       #描述:基于周期连续错误数熔断策略配置
