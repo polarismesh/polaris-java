@@ -17,7 +17,10 @@
 
 package com.tencent.polaris.plugins.router.lane;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
+import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
+import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
@@ -37,32 +40,45 @@ import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 
-import java.util.*;
-import java.util.stream.Collectors;
+public class LaneRouter extends AbstractServiceRouter implements PluginConfigProvider {
 
-public class LaneRouter extends AbstractServiceRouter {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LaneRouter.class);
     /**
      * 处于泳道内的实例标签
      */
     public static final String INTERNAL_INSTANCE_LANE_KEY = "lane";
-
     /**
      * 泳道染色标签
      */
     public static final String TRAFFIC_STAIN_LABEL = "service-lane";
+    private static final Logger LOG = LoggerFactory.getLogger(LaneRouter.class);
+    private LaneRouterConfig config;
 
     @Override
     public void init(InitContext ctx) throws PolarisException {
-
+        this.config = ctx.getConfig().getConsumer().getServiceRouter()
+                .getPluginConfig(getName(), LaneRouterConfig.class);
     }
 
     @Override
     public String getName() {
         return ServiceRouterConfig.DEFAULT_ROUTER_LANE;
+    }
+
+    @Override
+    public Class<? extends Verifier> getPluginConfigClazz() {
+        return LaneRouterConfig.class;
     }
 
 
@@ -71,9 +87,19 @@ public class LaneRouter extends AbstractServiceRouter {
         return Aspect.MIDDLE;
     }
 
+    public LaneRouterConfig getConfig() {
+        return config;
+    }
+
+    @JustForTest
+    public void setConfig(LaneRouterConfig config) {
+        this.config = config;
+    }
+
     @Override
     public RouteResult router(RouteInfo routeInfo, ServiceInstances instances) throws PolarisException {
-        MetadataContext manager = routeInfo.getMetadataContext() == null ? MetadataContextHolder.getOrCreate() : routeInfo.getMetadataContext();
+        MetadataContext manager = routeInfo.getMetadataContext() == null ? MetadataContextHolder.getOrCreate()
+                : routeInfo.getMetadataContext();
         MessageMetadataContainer callerMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, true);
         MessageMetadataContainer calleeMsgContainer = manager.getMetadataContainer(MetadataType.MESSAGE, false);
         ServiceKey caller = routeInfo.getSourceService() == null ? null : routeInfo.getSourceService().getServiceKey();
@@ -109,7 +135,8 @@ public class LaneRouter extends AbstractServiceRouter {
             if (alreadyStain) {
                 calleeMsgContainer.setHeader(TRAFFIC_STAIN_LABEL, stainLabel, TransitiveType.PASS_THROUGH);
             } else {
-                LOG.debug("current traffic not in lane, redirect to base, caller: {} callee: {}", caller, instances.getServiceKey());
+                LOG.debug("current traffic not in lane, redirect to base, caller: {} callee: {}", caller,
+                        instances.getServiceKey());
                 // 如果当前自己不是泳道入口，并且没有发现已经染色的标签，不能走泳道路由，
                 return new RouteResult(redirectToBase(laneGroupList, instances), RouteResult.State.Next);
             }
@@ -128,10 +155,11 @@ public class LaneRouter extends AbstractServiceRouter {
     }
 
     private List<Instance> tryRedirectToLane(LaneRuleContainer container, LaneProto.LaneRule rule,
-                                             List<LaneProto.LaneGroup> laneGroupList, ServiceInstances instances) {
+            List<LaneProto.LaneGroup> laneGroupList, ServiceInstances instances) {
         LaneProto.LaneGroup group = container.getGroups().get(rule.getGroupName());
         if (Objects.isNull(group)) {
-            LOG.debug("not found lane_group, redirect to base, lane_rule: {}, lane_group: {}, callee: {}", rule.getName(), rule.getGroupName(), instances.getServiceKey());
+            LOG.debug("not found lane_group, redirect to base, lane_rule: {}, lane_group: {}, callee: {}",
+                    rule.getName(), rule.getGroupName(), instances.getServiceKey());
             // 泳道组不存在，直接认为不需要过滤实例, 默认转发至基线实例
             return redirectToBase(laneGroupList, instances);
         }
@@ -147,56 +175,112 @@ public class LaneRouter extends AbstractServiceRouter {
 
         // 不在泳道内的服务，不需要进行实例过滤, 默认转发至基线实例
         if (!inLane) {
-            LOG.debug("current traffic not in lane, redirect to base, lane_rule: {}, lane_group: {}, callee: {}", rule.getName(), rule.getGroupName(), instances.getServiceKey());
+            LOG.debug("current traffic not in lane, redirect to base, lane_rule: {}, lane_group: {}, callee: {}",
+                    rule.getName(), rule.getGroupName(), instances.getServiceKey());
             return redirectToBase(laneGroupList, instances);
         }
-
-        return instances.getInstances().stream().filter(instance -> {
+        List<Instance> result = new ArrayList<>();
+        for (Instance instance : instances.getInstances()) {
             Map<String, String> metadata = instance.getMetadata();
             if (CollectionUtils.isEmpty(metadata)) {
-                return false;
+                continue;
             }
-            String labelKey = StringUtils.isNotBlank(rule.getLabelKey()) ? rule.getLabelKey() : INTERNAL_INSTANCE_LANE_KEY;
+            String labelKey =
+                    StringUtils.isNotBlank(rule.getLabelKey()) ? rule.getLabelKey() : INTERNAL_INSTANCE_LANE_KEY;
             String val = metadata.get(labelKey);
             String defaultLabelValue = rule.getDefaultLabelValue();
             Set<String> defaultLabelValues = new HashSet<>(Arrays.asList(defaultLabelValue.split(",")));
-            return defaultLabelValues.contains(val);
-        }).collect(Collectors.toList());
+            if (defaultLabelValues.contains(val)) {
+                result.add(instance);
+            }
+        }
+        return result;
     }
 
+    // 从下游实例中筛选出基线实例
     private List<Instance> redirectToBase(List<LaneProto.LaneGroup> laneGroupList, ServiceInstances instances) {
-        return instances.getInstances().stream().filter(instance -> {
-            Map<String, String> metadata = instance.getMetadata();
-            if (CollectionUtils.isEmpty(metadata)) {
+        Map<String, Set<String>> laneLabelMap = buildLaneLabelMap(laneGroupList);
+        List<Instance> result = new ArrayList<>();
+        for (Instance instance : instances.getInstances()) {
+            if (isInstanceInBaseLane(instance, laneLabelMap)) {
+                result.add(instance);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 构建泳道标签映射，获取callee相关的泳道组下所有已启用泳道的标签
+     */
+    private Map<String, Set<String>> buildLaneLabelMap(List<LaneProto.LaneGroup> laneGroupList) {
+        Map<String, Set<String>> laneLabelMap = new HashMap<>();
+        for (LaneProto.LaneGroup laneGroup : laneGroupList) {
+            for (LaneProto.LaneRule laneRule : laneGroup.getRulesList()) {
+                String labelKey = StringUtils.isNotBlank(laneRule.getLabelKey()) ? laneRule.getLabelKey()
+                        : INTERNAL_INSTANCE_LANE_KEY;
+                laneLabelMap.computeIfAbsent(labelKey, k -> new HashSet<>());
+                if (!laneRule.getEnable()) {
+                    continue;
+                }
+                String defaultLabelValue = laneRule.getDefaultLabelValue();
+                laneLabelMap.get(labelKey).addAll(Arrays.asList(defaultLabelValue.split(",")));
+            }
+        }
+        return laneLabelMap;
+    }
+
+    /**
+     * 判断实例是否在基线泳道内
+     * 有两种基线泳道匹配策略：
+     * 1. EXCLUDE_ENABLED_LANE：已启用的泳道以外的实例都属于基线
+     * 2. EXCLUDE_ALL_TAGGED_INSTANCE：没有泳道标签的实例都属于基线
+     */
+    private boolean isInstanceInBaseLane(Instance instance, Map<String, Set<String>> laneLabelMap) {
+        Map<String, String> metadata = instance.getMetadata();
+        // 实例元数据为空，默认在基线内
+        if (CollectionUtils.isEmpty(metadata)) {
+            return true;
+        }
+        switch (config.getBaseLaneMode()) {
+            case ONLY_UNTAGGED_INSTANCE:
+                return !isInstanceTagged(instance, metadata, laneLabelMap);
+            case EXCLUDE_ENABLED_LANE_INSTANCE:
+                return !isInstanceInEnabledLane(instance, metadata, laneLabelMap);
+            default:
+                // should not happen
+                return true;
+        }
+    }
+
+    /**
+     * 判断实例是否有泳道标签
+     */
+    private boolean isInstanceTagged(Instance instance, Map<String, String> metadata,
+            Map<String, Set<String>> laneLabelMap) {
+        // 实例没有泳道标签的key
+        for (String key : laneLabelMap.keySet()) {
+            if (metadata.containsKey(key)) {
+                LOG.debug("instance {} not in lane, filter out", instance.getId());
                 return true;
             }
-
-            boolean inBase = true;
-            for (LaneProto.LaneGroup laneGroup : laneGroupList) {
-                Map<String, Set<String>> laneKeyValueMap = new HashMap<>();
-                for (LaneProto.LaneRule laneRule : laneGroup.getRulesList()) {
-                    String labelKey = StringUtils.isNotBlank(laneRule.getLabelKey()) ? laneRule.getLabelKey() : INTERNAL_INSTANCE_LANE_KEY;
-                    if (!laneKeyValueMap.containsKey(labelKey)) {
-                        laneKeyValueMap.put(labelKey, new HashSet<>());
-                    }
-                    String defaultLabelValue = laneRule.getDefaultLabelValue();
-                    String[] split = defaultLabelValue.split(",");
-                    laneKeyValueMap.get(labelKey).addAll(Arrays.asList(split));
-                }
-                LOG.debug("lane_group: {}, rulesList:{}, laneKeyValueMap: {}", laneGroup.getName(), laneGroup.getRulesList(), laneKeyValueMap);
-                if (CollectionUtils.isNotEmpty(laneKeyValueMap)) {
-                    for (Map.Entry<String, String> entry : metadata.entrySet()) {
-                        if (laneKeyValueMap.containsKey(entry.getKey()) && laneKeyValueMap.get(entry.getKey()).contains(entry.getValue())) {
-                            inBase = false;
-                            break;
-                        }
-                    }
-                }
-                if (!inBase) {
-                    return false;
-                }
-            }
-            return true;
-        }).collect(Collectors.toList());
+        }
+        return false;
     }
+
+    /**
+     * 判断实例是否匹配已启用泳道规则的标签
+     */
+    private boolean isInstanceInEnabledLane(Instance instance, Map<String, String> metadata,
+            Map<String, Set<String>> laneLabelMap) {
+        for (Map.Entry<String, Set<String>> entry : laneLabelMap.entrySet()) {
+            String instanceLabelValue = metadata.get(entry.getKey());
+            if (instanceLabelValue != null && entry.getValue().contains(instanceLabelValue)) {
+                LOG.debug("instance {} in lane, filter out", instance.getId());
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
+
