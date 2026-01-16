@@ -281,7 +281,7 @@ public class MessagePersistHandler {
     }
 
     /**
-     * 遍历缓存目录并加载之前缓存的服务信息
+     * 加载本地缓存的服务信息
      *
      * @param eventKey        消息对象
      * @param builderSupplier
