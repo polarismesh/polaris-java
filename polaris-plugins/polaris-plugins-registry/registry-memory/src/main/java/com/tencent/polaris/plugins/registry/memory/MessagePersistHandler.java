@@ -281,7 +281,7 @@ public class MessagePersistHandler {
     }
 
     /**
-     * 遍历缓存目录并加载之前缓存的服务信息
+     * 加载本地缓存的服务信息
      *
      * @param eventKey        消息对象
      * @param builderSupplier
@@ -292,20 +292,13 @@ public class MessagePersistHandler {
             return null;
         }
         String fileName = serviceKeyToFileName(eventKey);
-        int retryTimes = 0;
-        Message readMessage = null;
         Message.Builder builder = builderSupplier.get();
-        while (retryTimes <= maxReadRetry) {
-            retryTimes++;
-            readMessage = loadMessage(Paths.get(persistDirPath, fileName).toFile(), builder);
-            if (null == readMessage) {
-                Utils.sleepUninterrupted(retryInterval);
-                continue;
-            }
-            return readMessage;
+        Message readMessage = loadMessage(Paths.get(persistDirPath, fileName).toFile(), builder);
+        if (null == readMessage) {
+            LOG.warn("fail to read services from {} ", fileName);
+            return null;
         }
-        LOG.debug("fail to read service from {} after retry {} times", fileName, retryTimes);
-        return null;
+        return readMessage;
     }
 
     private Message loadMessage(File persistFile, Message.Builder builder) {
