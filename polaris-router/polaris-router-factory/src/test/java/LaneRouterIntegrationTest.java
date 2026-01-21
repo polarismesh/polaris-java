@@ -44,26 +44,25 @@ import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
 import com.tencent.polaris.test.mock.discovery.NamingService.InstanceParameter;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * LaneRouter 集成测试
  * 使用 NamingServer Mock 服务器和 RouterAPI 进行完整的泳道路由测试
- * 
+ *
  * 场景说明：
  * - caller (主调服务) 作为泳道入口，负责根据请求头判断是否需要染色
  * - callee (被调服务) 作为下游服务，接收染色后的请求并路由到对应泳道实例
- * 
+ *
  * 泳道组配置：
  * - entries (入口服务): caller
  * - destinations (目标服务): callee
@@ -375,20 +374,20 @@ public class LaneRouterIntegrationTest {
     public void testTrafficGrayPercentageMode() throws InterruptedException {
         // 1. 先清理之前的泳道规则
         tearDown();
-        
+
         // 2. 重新启动 NamingServer 并设置百分比染色规则
         try {
             namingServer = NamingServer.startNamingServer(-1);
             System.setProperty(POLARIS_SERVER_ADDRESS_PROPERTY, String.format("127.0.0.1:%d", namingServer.getPort()));
-            
+
             Configuration configuration = TestUtils.configWithEnvAddress();
             sdkContext = SDKContext.initContextByConfig(configuration);
             routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
-            
+
             // 注册 callee 服务实例
             registerCalleeServiceInstances();
-            
+
             // 构建百分比染色的泳道规则（100% 染色到 gray 泳道）
             LaneProto.LaneRule percentageRule = buildPercentageLaneRule(
                     "percentage-rule",
@@ -397,7 +396,7 @@ public class LaneRouterIntegrationTest {
                     100,  // 100% 染色
                     1
             );
-            
+
             // 构建泳道组
             LaneProto.LaneGroup laneGroup = buildLaneGroup(
                     "percentage-group",
@@ -406,15 +405,15 @@ public class LaneRouterIntegrationTest {
                     CALLEE_SERVICE,
                     Collections.singletonList(percentageRule)
             );
-            
+
             namingServer.getNamingService().setLaneGroup(laneGroup);
-            
+
             // 等待服务发现数据同步
             Thread.sleep(3000);
-            
+
             // 获取 callee 服务的所有实例
             ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
-            
+
             // 执行多次路由，验证 100% 染色到 gray 泳道
             int grayCount = 0;
             int totalRoutes = 10;
@@ -423,7 +422,7 @@ public class LaneRouterIntegrationTest {
                 ProcessRoutersRequest request = buildRouterRequest(serviceInstances, null, null);
                 ProcessRoutersResponse response = routerAPI.processRouters(request);
                 List<Instance> routedInstances = response.getServiceInstances().getInstances();
-                
+
                 if (routedInstances.size() == 2) {
                     boolean allGray = routedInstances.stream()
                             .allMatch(inst -> GRAY_LANE.equals(inst.getMetadata().get("lane")));
@@ -432,10 +431,10 @@ public class LaneRouterIntegrationTest {
                     }
                 }
             }
-            
+
             // 100% 染色，应该全部路由到 gray 泳道
             Assert.assertEquals("100% 百分比染色应该全部路由到 gray 泳道", totalRoutes, grayCount);
-            
+
         } catch (IOException e) {
             Assert.fail("Failed to start NamingServer: " + e.getMessage());
         }
@@ -449,26 +448,26 @@ public class LaneRouterIntegrationTest {
     public void testTrafficGrayWarmupMode() throws InterruptedException {
         // 1. 先清理之前的泳道规则
         tearDown();
-        
+
         // 2. 重新启动 NamingServer 并设置预热染色规则
         try {
             namingServer = NamingServer.startNamingServer(-1);
             System.setProperty(POLARIS_SERVER_ADDRESS_PROPERTY, String.format("127.0.0.1:%d", namingServer.getPort()));
-            
+
             Configuration configuration = TestUtils.configWithEnvAddress();
             sdkContext = SDKContext.initContextByConfig(configuration);
             routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
-            
+
             // 注册 callee 服务实例
             registerCalleeServiceInstances();
-            
+
             // 构建预热染色的泳道规则
             // etime 设置为过去的时间，表示预热已完成
             String pastTime = java.time.LocalDateTime.now()
                     .minusHours(1)
                     .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            
+
             LaneProto.LaneRule warmupRule = buildWarmupLaneRule(
                     "warmup-rule",
                     "warmup-group",
@@ -478,7 +477,7 @@ public class LaneRouterIntegrationTest {
                     2,            // 曲率
                     1
             );
-            
+
             // 构建泳道组
             LaneProto.LaneGroup laneGroup = buildLaneGroup(
                     "warmup-group",
@@ -487,15 +486,15 @@ public class LaneRouterIntegrationTest {
                     CALLEE_SERVICE,
                     Collections.singletonList(warmupRule)
             );
-            
+
             namingServer.getNamingService().setLaneGroup(laneGroup);
-            
+
             // 等待服务发现数据同步
             Thread.sleep(3000);
-            
+
             // 获取 callee 服务的所有实例
             ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
-            
+
             // 执行多次路由，验证预热完成后 100% 染色到 gray 泳道
             int grayCount = 0;
             int totalRoutes = 10;
@@ -504,7 +503,7 @@ public class LaneRouterIntegrationTest {
                 ProcessRoutersRequest request = buildRouterRequest(serviceInstances, null, null);
                 ProcessRoutersResponse response = routerAPI.processRouters(request);
                 List<Instance> routedInstances = response.getServiceInstances().getInstances();
-                
+
                 if (routedInstances.size() == 2) {
                     boolean allGray = routedInstances.stream()
                             .allMatch(inst -> GRAY_LANE.equals(inst.getMetadata().get("lane")));
@@ -513,10 +512,10 @@ public class LaneRouterIntegrationTest {
                     }
                 }
             }
-            
+
             // 预热完成后，应该全部路由到 gray 泳道
             Assert.assertEquals("预热完成后应该全部路由到 gray 泳道", totalRoutes, grayCount);
-            
+
         } catch (IOException e) {
             Assert.fail("Failed to start NamingServer: " + e.getMessage());
         }
@@ -530,20 +529,20 @@ public class LaneRouterIntegrationTest {
     public void testTrafficGrayPartialPercentage() throws InterruptedException {
         // 1. 先清理之前的泳道规则
         tearDown();
-        
+
         // 2. 重新启动 NamingServer 并设置 50% 百分比染色规则
         try {
             namingServer = NamingServer.startNamingServer(-1);
             System.setProperty(POLARIS_SERVER_ADDRESS_PROPERTY, String.format("127.0.0.1:%d", namingServer.getPort()));
-            
+
             Configuration configuration = TestUtils.configWithEnvAddress();
             sdkContext = SDKContext.initContextByConfig(configuration);
             routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
             consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
-            
+
             // 注册 callee 服务实例
             registerCalleeServiceInstances();
-            
+
             // 构建百分比染色的泳道规则（50% 染色到 gray 泳道）
             LaneProto.LaneRule percentageRule = buildPercentageLaneRule(
                     "partial-percentage-rule",
@@ -552,7 +551,7 @@ public class LaneRouterIntegrationTest {
                     50,  // 50% 染色
                     1
             );
-            
+
             // 构建泳道组
             LaneProto.LaneGroup laneGroup = buildLaneGroup(
                     "partial-percentage-group",
@@ -561,26 +560,26 @@ public class LaneRouterIntegrationTest {
                     CALLEE_SERVICE,
                     Collections.singletonList(percentageRule)
             );
-            
+
             namingServer.getNamingService().setLaneGroup(laneGroup);
-            
+
             // 等待服务发现数据同步
             Thread.sleep(3000);
-            
+
             // 获取 callee 服务的所有实例
             ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
-            
+
             // 执行多次路由，统计染色比例
             int grayCount = 0;
             int baselineCount = 0;
             int totalRoutes = 100;
-            
+
             for (int i = 0; i < totalRoutes; i++) {
                 // 不设置 header，让 TrafficGray 的 percentage 来决定染色
                 ProcessRoutersRequest request = buildRouterRequest(serviceInstances, null, null);
                 ProcessRoutersResponse response = routerAPI.processRouters(request);
                 List<Instance> routedInstances = response.getServiceInstances().getInstances();
-                
+
                 if (routedInstances.size() == 2) {
                     String lane = routedInstances.get(0).getMetadata().get("lane");
                     if (GRAY_LANE.equals(lane)) {
@@ -590,18 +589,68 @@ public class LaneRouterIntegrationTest {
                     }
                 }
             }
-            
+
             // 50% 染色，gray 和 baseline 的比例应该大致接近
             // 由于是随机的，我们只验证两者都有一定数量
             System.out.println("TrafficGray 50% 染色结果: gray=" + grayCount + ", baseline=" + baselineCount);
             Assert.assertTrue("50% 染色应该有 gray 泳道的流量", grayCount > 0);
             Assert.assertTrue("50% 染色应该有 baseline 的流量", baselineCount > 0);
-            
+
         } catch (IOException e) {
             Assert.fail("Failed to start NamingServer: " + e.getMessage());
         }
     }
 
+    @Test
+    public void testEmptyLaneGroupBaseLaneSelection() throws InterruptedException {
+        tearDown();
+
+        // 2. 重新启动 NamingServer 并设置空泳道组
+        try {
+            namingServer = NamingServer.startNamingServer(-1);
+            System.setProperty(POLARIS_SERVER_ADDRESS_PROPERTY, String.format("127.0.0.1:%d", namingServer.getPort()));
+
+            Configuration configuration = TestUtils.configWithEnvAddress();
+            sdkContext = SDKContext.initContextByConfig(configuration);
+            routerAPI = RouterAPIFactory.createRouterAPIByContext(sdkContext);
+            consumerAPI = DiscoveryAPIFactory.createConsumerAPIByContext(sdkContext);
+
+            // 注册 callee 服务实例
+            registerCalleeServiceInstances();
+
+            // 构建泳道组
+            LaneProto.LaneGroup laneGroup = buildLaneGroup(
+                    "partial-percentage-group",
+                    NAMESPACE,
+                    CALLER_SERVICE,
+                    CALLEE_SERVICE,
+                    null
+            );
+
+            namingServer.getNamingService().setLaneGroup(laneGroup);
+
+            // 等待服务发现数据同步
+            Thread.sleep(3000);
+
+            // 获取 callee 服务的所有实例
+            ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+
+            // 执行一次路由，验证空泳道组时的默认行为
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, null, null);
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+
+            // 空泳道组应该返回所有实例
+            Assert.assertEquals("空泳道组应该返回所有实例", 2, routedInstances.size());
+            // 验证实例是基线
+            for (Instance instance : routedInstances) {
+                Assert.assertNull(instance.getMetadata().get("lane"));
+            }
+
+        } catch (IOException e) {
+            Assert.fail("Failed to start NamingServer: " + e.getMessage());
+        }
+    }
     // ==================== 辅助方法 ====================
 
     /**
@@ -618,16 +667,16 @@ public class LaneRouterIntegrationTest {
     /**
      * 构建路由请求
      * 模拟 caller（主调服务）调用 callee（被调服务）
-     * 
+     *
      * Header 需要设置在 MetadataContext 的 MessageMetadataContainer 中，
      * 而不是通过 addRouterMetadata 方法
      */
     private ProcessRoutersRequest buildRouterRequest(ServiceInstances serviceInstances,
-                                                      String headerKey,
-                                                      String headerValue) {
+            String headerKey,
+            String headerValue) {
         // 先清理之前的 MetadataContext，确保每次测试使用干净的上下文
         MetadataContextHolder.remove();
-        
+
         ProcessRoutersRequest request = new ProcessRoutersRequest();
         request.setNamespace(NAMESPACE);
         request.setService(CALLEE_SERVICE);  // 目标服务为 callee
@@ -646,7 +695,8 @@ public class LaneRouterIntegrationTest {
         if (headerKey != null && headerValue != null) {
             MetadataContext metadataContext = MetadataContextHolder.getOrCreate();
             // 设置到 caller（主调方）的 MessageMetadataContainer
-            MessageMetadataContainer callerMessageContainer = metadataContext.getMetadataContainer(MetadataType.MESSAGE, true);
+            MessageMetadataContainer callerMessageContainer = metadataContext.getMetadataContainer(MetadataType.MESSAGE,
+                    true);
             callerMessageContainer.setHeader(headerKey, headerValue, TransitiveType.PASS_THROUGH);
         }
 
@@ -657,11 +707,11 @@ public class LaneRouterIntegrationTest {
      * 构建带有请求头匹配的泳道规则
      */
     private LaneProto.LaneRule buildLaneRuleWithHeaderMatch(String ruleName,
-                                                            String groupName,
-                                                            String laneName,
-                                                            String headerKey,
-                                                            String headerValue,
-                                                            int priority) {
+            String groupName,
+            String laneName,
+            String headerKey,
+            String headerValue,
+            int priority) {
         // 构建匹配条件
         ModelProto.MatchString matchString = ModelProto.MatchString.newBuilder()
                 .setType(ModelProto.MatchString.MatchStringType.EXACT)
@@ -694,7 +744,7 @@ public class LaneRouterIntegrationTest {
 
     /**
      * 构建百分比染色的泳道规则
-     * 
+     *
      * @param ruleName 规则名称
      * @param groupName 泳道组名称
      * @param laneName 目标泳道名称
@@ -702,10 +752,10 @@ public class LaneRouterIntegrationTest {
      * @param priority 优先级
      */
     private LaneProto.LaneRule buildPercentageLaneRule(String ruleName,
-                                                        String groupName,
-                                                        String laneName,
-                                                        int percentage,
-                                                        int priority) {
+            String groupName,
+            String laneName,
+            int percentage,
+            int priority) {
         LaneProto.LaneRule.Builder builder = LaneProto.LaneRule.newBuilder();
         builder.setId(ruleName);
         builder.setName(ruleName);
@@ -716,7 +766,7 @@ public class LaneRouterIntegrationTest {
         builder.setPriority(priority);
         builder.setCtime("2024-01-01 00:00:00");
         builder.setEtime("2024-01-01 00:00:00");
-        
+
         // 设置空的流量匹配规则（匹配所有流量）
         builder.setTrafficMatchRule(LaneProto.TrafficMatchRule.newBuilder()
                 .setMatchMode(LaneProto.TrafficMatchRule.TrafficMatchMode.AND)
@@ -735,7 +785,7 @@ public class LaneRouterIntegrationTest {
 
     /**
      * 构建预热染色的泳道规则
-     * 
+     *
      * @param ruleName 规则名称
      * @param groupName 泳道组名称
      * @param laneName 目标泳道名称
@@ -745,12 +795,12 @@ public class LaneRouterIntegrationTest {
      * @param priority 优先级
      */
     private LaneProto.LaneRule buildWarmupLaneRule(String ruleName,
-                                                    String groupName,
-                                                    String laneName,
-                                                    String etime,
-                                                    int warmupIntervalSeconds,
-                                                    int curvature,
-                                                    int priority) {
+            String groupName,
+            String laneName,
+            String etime,
+            int warmupIntervalSeconds,
+            int curvature,
+            int priority) {
         LaneProto.LaneRule.Builder builder = LaneProto.LaneRule.newBuilder();
         builder.setId(ruleName);
         builder.setName(ruleName);
@@ -761,7 +811,7 @@ public class LaneRouterIntegrationTest {
         builder.setPriority(priority);
         builder.setCtime("2024-01-01 00:00:00");
         builder.setEtime(etime);
-        
+
         // 设置空的流量匹配规则（匹配所有流量）
         builder.setTrafficMatchRule(LaneProto.TrafficMatchRule.newBuilder()
                 .setMatchMode(LaneProto.TrafficMatchRule.TrafficMatchMode.AND)
@@ -781,7 +831,7 @@ public class LaneRouterIntegrationTest {
 
     /**
      * 构建泳道组
-     * 
+     *
      * @param groupName 泳道组名称
      * @param namespace 命名空间
      * @param entryService 入口服务名称（caller，负责染色）
@@ -789,10 +839,10 @@ public class LaneRouterIntegrationTest {
      * @param rules 泳道规则列表
      */
     private LaneProto.LaneGroup buildLaneGroup(String groupName,
-                                                String namespace,
-                                                String entryService,
-                                                String destService,
-                                                List<LaneProto.LaneRule> rules) {
+            String namespace,
+            String entryService,
+            String destService,
+            List<LaneProto.LaneRule> rules) {
         LaneProto.LaneGroup.Builder builder = LaneProto.LaneGroup.newBuilder();
         builder.setName(groupName);
 
