@@ -214,6 +214,7 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
      */
     private Map<String, Set<String>> buildLaneLabelMap(List<LaneProto.LaneGroup> laneGroupList) {
         Map<String, Set<String>> laneLabelMap = new HashMap<>();
+        laneLabelMap.put(INTERNAL_INSTANCE_LANE_KEY, new HashSet<>());
         for (LaneProto.LaneGroup laneGroup : laneGroupList) {
             for (LaneProto.LaneRule laneRule : laneGroup.getRulesList()) {
                 String labelKey = StringUtils.isNotBlank(laneRule.getLabelKey()) ? laneRule.getLabelKey()
@@ -260,7 +261,9 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
         // 实例没有泳道标签的key
         for (String key : laneLabelMap.keySet()) {
             if (metadata.containsKey(key)) {
-                LOG.debug("instance {} not in lane, filter out", instance.getId());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("instance {} not in lane, filter out", instance.getId());
+                }
                 return true;
             }
         }
@@ -275,7 +278,9 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
         for (Map.Entry<String, Set<String>> entry : laneLabelMap.entrySet()) {
             String instanceLabelValue = metadata.get(entry.getKey());
             if (instanceLabelValue != null && entry.getValue().contains(instanceLabelValue)) {
-                LOG.debug("instance {} in lane, filter out", instance.getId());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("instance {} in lane, filter out", instance.getId());
+                }
                 return true;
             }
         }
