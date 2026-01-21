@@ -152,7 +152,9 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
 
     @Override
     public void onNext(RateLimitResponse rateLimitResponse) {
-        LOG.debug("ratelimit response receive is {}", rateLimitResponse);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ratelimit response receive is {}", rateLimitResponse);
+        }
         lastRecvTime.set(System.currentTimeMillis());
         if (RateLimitCmd.INIT.equals(rateLimitResponse.getCmd())) {
             handleRateLimitInitResponse(rateLimitResponse.getRateLimitInitResponse());
@@ -200,7 +202,9 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
      * @param rateLimitInitResponse 初始化请求的返回结果
      */
     private void handleRateLimitInitResponse(RateLimitInitResponse rateLimitInitResponse) {
-        LOG.debug("[handleRateLimitInitResponse] response:{}", rateLimitInitResponse);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[handleRateLimitInitResponse] response:{}", rateLimitInitResponse);
+        }
 
         if (rateLimitInitResponse.getCode() != ServerCodes.EXECUTE_SUCCESS) {
             LOG.error("[handleRateLimitInitResponse] failed. code is {}", rateLimitInitResponse.getCode());
@@ -247,14 +251,16 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
      * @param rateLimitReportResponse report的回包
      */
     boolean handleRateLimitReportResponse(RateLimitReportResponse rateLimitReportResponse) {
-        LOG.debug("[handleRateLimitReportRequest] response:{}", rateLimitReportResponse);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[handleRateLimitReportResponse] response:{}", rateLimitReportResponse);
+        }
         if (rateLimitReportResponse.getCode() != ServerCodes.EXECUTE_SUCCESS) {
-            LOG.error("[handleRateLimitReportRequest] failed. code is {}", rateLimitReportResponse.getCode());
+            LOG.error("[handleRateLimitReportResponse] failed. code is {}", rateLimitReportResponse.getCode());
             return false;
         }
         List<QuotaLeft> quotaLeftsList = rateLimitReportResponse.getQuotaLeftsList();
         if (CollectionUtils.isEmpty(quotaLeftsList)) {
-            LOG.error("[handleRateLimitReportRequest] quotaLefts is empty.");
+            LOG.error("[handleRateLimitReportResponse] quotaLefts is empty.");
             return true;
         }
         long remoteQuotaTimeMilli = rateLimitReportResponse.getTimestamp();
@@ -328,7 +334,9 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     public boolean sendRateLimitRequest(RateLimitRequest rateLimitRequest) {
-        LOG.debug("ratelimit request to send is {}", rateLimitRequest);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("ratelimit request to send is {}", rateLimitRequest);
+        }
         try {
             streamClient.onNext(rateLimitRequest);
             return true;
