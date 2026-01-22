@@ -76,6 +76,10 @@ public class LaneService extends ConsulService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LaneService.class);
 
+    public static final LaneProto.LaneRule.LaneMatchMode TSF_LANE_MATCH_MODE = LaneProto.LaneRule.LaneMatchMode.STRICT;
+
+    public static final String TSF_LANE_GROUP_NAME = "tsf";
+
     private final Map<LaneService.LaneRuleKey, Long> laneInfoConsulIndexMap = new ConcurrentHashMap<>();
 
     private final Map<LaneService.LaneRuleKey, Long> laneRuleConsulIndexMap = new ConcurrentHashMap<>();
@@ -204,7 +208,7 @@ public class LaneService extends ConsulService {
         List<LaneProto.LaneGroup> laneGroupList = new ArrayList<>();
 
         LaneProto.LaneGroup.Builder laneGroupBuilder = LaneProto.LaneGroup.newBuilder();
-        laneGroupBuilder.setName("tsf");
+        laneGroupBuilder.setName(TSF_LANE_GROUP_NAME);
         // set destination group list
         RoutingProto.DestinationGroup.Builder destinationGroupBuilder = RoutingProto.DestinationGroup.newBuilder();
         destinationGroupBuilder.setNamespace("*");
@@ -244,9 +248,9 @@ public class LaneService extends ConsulService {
             LaneProto.LaneRule.Builder laneRuleBuilder = LaneProto.LaneRule.newBuilder();
             laneRuleBuilder.setId(laneRule.getLaneId());
             laneRuleBuilder.setName(laneRule.getLaneId());
-            laneRuleBuilder.setGroupName("tsf");
+            laneRuleBuilder.setGroupName(TSF_LANE_GROUP_NAME);
             laneRuleBuilder.setEnable(true);
-            laneRuleBuilder.setMatchMode(LaneProto.LaneRule.LaneMatchMode.PERMISSIVE);
+            laneRuleBuilder.setMatchMode(TSF_LANE_MATCH_MODE);
             laneRuleBuilder.setPriority(laneRule.getPriority());
             laneRuleBuilder.setLabelKey(TSF_GROUP_ID);
             // set TrafficMatchRule

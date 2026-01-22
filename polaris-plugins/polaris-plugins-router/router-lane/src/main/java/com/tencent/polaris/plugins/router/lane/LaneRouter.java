@@ -35,6 +35,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.metadata.core.MessageMetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.router.common.AbstractServiceRouter;
@@ -164,14 +165,7 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
             return redirectToBase(laneGroupList, instances);
         }
         // 判断目标服务是否属于泳道内服务
-        boolean inLane = false;
-        ServiceKey callee = instances.getServiceKey();
-        for (RoutingProto.DestinationGroup destination : group.getDestinationsList()) {
-            if (RuleUtils.matchService(callee, destination.getNamespace(), destination.getService())) {
-                inLane = true;
-                break;
-            }
-        }
+        boolean inLane = checkServiceInLane(instances.getServiceKey(), instances, group);
 
         // 不在泳道内的服务，不需要进行实例过滤, 默认转发至基线实例
         if (!inLane) {
@@ -195,6 +189,29 @@ public class LaneRouter extends AbstractServiceRouter implements PluginConfigPro
             }
         }
         return result;
+    }
+
+    private boolean checkServiceInLane(ServiceKey callee, ServiceInstances instances, LaneProto.LaneGroup group) {
+
+        if (StringUtils.equals(group.getName(), "tsf")) {
+            // tsf mode
+            for (Instance instance : instances.getInstances()) {
+                String namespaceId = instance.getMetadata().get(TsfMetadataConstants.TSF_NAMESPACE_ID);
+                String applicationId = instance.getMetadata().get(TsfMetadataConstants.TSF_APPLICATION_ID);
+                if (group.getMetadataMap() != null && group.getMetadataMap().containsKey(namespaceId + "," + applicationId)) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            // polaris mode
+            for (RoutingProto.DestinationGroup destination : group.getDestinationsList()) {
+                if (RuleUtils.matchService(callee, destination.getNamespace(), destination.getService())) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     // 从下游实例中筛选出基线实例
