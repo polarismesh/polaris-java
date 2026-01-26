@@ -56,13 +56,18 @@ public class TrieUtil {
             // 因为前端的改动（最初的 tagValue 只有 path，某次前端组件改动后变成了 path-method，非客户提的），有兼容性问题，
             // 临时简化处理，不处理 method，前面逻辑保留是为了取出正确的 path
             method = null;
-            String[] apiPaths = path.split("/");
-
-            // 跳过第一个为空的str
             TrieNode<String> node = root;
+            // 一些场景下apiPath 不以"/"开头和分割
+            // 此时方法标识符的格式规定为 '{类路径}#{方法名}' 例如com.tencent.polaris.ServiceName#sayHello
+            if (path.contains("#")) {
+                node = node.getOrCreateSubNode(path);
+                node.setNodeInfo(TrieNode.SIMPLE_VALID_INFO + "method:" + method);
+                continue;
+            }
+            String[] apiPaths = path.split("/");
+            // 跳过第一个为空的str
             for (int i = 1; i < apiPaths.length; i++) {
                 node = node.getOrCreateSubNode(apiPaths[i]);
-
                 // 叶子节点，需要 info
                 if (i == apiPaths.length - 1) {
                     node.setNodeInfo(TrieNode.SIMPLE_VALID_INFO + "method:" + method);
@@ -84,9 +89,21 @@ public class TrieUtil {
         } else {
             method = null;
         }
-        String[] apiPaths = path.split("/");
+
 
         TrieNode<String> node = root;
+        // 一些场景下apiPath 不以"/"开头和分割（
+        // 此时方法标识符的格式规定为 '{类路径}#{方法名}' 例如com.tencent.polaris.ServiceName#sayHello
+        if(apiPathInfo.contains("#")){
+            node = node.getOrCreateSubNode(apiPathInfo);
+            if (node == null) {
+                return false;
+            } else {
+                return checkApiNodeInfo(node, method);
+            }
+        }
+
+        String[] apiPaths = path.split("/");
         for (int i = 1; i < apiPaths.length; i++) {
             if (node == null) {
                 return false;
