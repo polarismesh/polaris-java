@@ -78,6 +78,11 @@ public final class TsfMetadataConstants {
      */
     public static final String TSF_ADDRESS_IPV6 = "TSF_ADDRESS_IPV6";
 
+    /**
+     * IPV6.
+     */
+    public static final String TSF_PREFER_IPV6 = "TSF_PREFER_IPV6";
+
     private TsfMetadataConstants() {
     }
 }
