@@ -83,6 +83,11 @@ public final class TsfMetadataConstants {
      */
     public static final String TSF_PREFER_IPV6 = "TSF_PREFER_IPV6";
 
+    /**
+     * tsf service tag operator.
+     */
+    public static final String TSF_SERVICE_TAG_OPERATOR = "TSF_SERVICE_TAG_OPERATOR";
+
     private TsfMetadataConstants() {
     }
 }

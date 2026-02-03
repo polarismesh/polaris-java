@@ -20,6 +20,8 @@ package com.tencent.polaris.plugins.connector.consul.service.router;
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
+import com.tencent.polaris.plugins.connector.consul.service.common.TagConditionUtil;
 import com.tencent.polaris.plugins.connector.consul.service.common.TagConstant;
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteTag;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
@@ -43,42 +45,37 @@ public class RouterUtils {
             List<RoutingProto.Source.Builder> metadataSourceBuilders = new ArrayList<>();
             for (RouteTag routeTag : tagList) {
                 if (StringUtils.equals(routeTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_SERVICE_NAME)) {
-                    String[] tagValues = routeTag.getTagValue().split(",");
-                    for (String tagValue : tagValues) {
-                        if (StringUtils.isNotEmpty(tagValue)) {
-                            RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
-                            sourceBuilder.setNamespace(StringValue.of("*"));
-                            String serviceName = tagValue;
-                            if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL) || routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_IN)) {
-                                serviceName = "!" + serviceName;
-                            } else if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.REGEX)) {
-                                serviceName = "*" + serviceName;
-                            }
-                            sourceBuilder.setService(StringValue.of(serviceName));
-                            sourceBuilders.add(sourceBuilder);
-                        }
+                    String tagValue = routeTag.getTagValue();
+                    if (StringUtils.isNotEmpty(tagValue)) {
+                        RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
+                        sourceBuilder.setNamespace(StringValue.of("*"));
+                        sourceBuilder.setService(StringValue.of(tagValue));
+
+                        ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
+                        matchStringBuilder.setType(TagConditionUtil.parseMatchStringType(routeTag.getTagOperator()));
+                        sourceBuilder.putMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR, matchStringBuilder.build());
+
+                        sourceBuilders.add(sourceBuilder);
                     }
                 } else if (StringUtils.equals(routeTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME)) {
-                    String[] tagValues = routeTag.getTagValue().split(",");
-                    for (String tagValue : tagValues) {
-                        if (StringUtils.isNotEmpty(tagValue)) {
-                            String[] split = tagValue.split("/");
-                            RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
-                            sourceBuilder.setNamespace(StringValue.of("*"));
-                            String serviceName = tagValue;
-                            if (split.length == 2) {
-                                // namespace/service format
-                                sourceBuilder.setNamespace(StringValue.of(split[0]));
-                                serviceName = split[1];
-                            }
-                            if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_EQUAL) || routeTag.getTagOperator().equals(TagConstant.OPERATOR.NOT_IN)) {
-                                serviceName = "!" + serviceName;
-                            } else if (routeTag.getTagOperator().equals(TagConstant.OPERATOR.REGEX)) {
-                                serviceName = "*" + serviceName;
-                            }
-                            sourceBuilder.setService(StringValue.of(serviceName));
-                            sourceBuilders.add(sourceBuilder);
+                    String tagValue = routeTag.getTagValue();
+                    if (StringUtils.isNotEmpty(tagValue)) {
+                        String[] split = tagValue.split("/");
+                        RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
+                        sourceBuilder.setNamespace(StringValue.of("*"));
+                        String serviceName = tagValue;
+                        if (split.length == 2) {
+                            // namespace/service format
+                            sourceBuilder.setNamespace(StringValue.of(split[0]));
+                            serviceName = split[1];
                         }
+                        sourceBuilder.setService(StringValue.of(serviceName));
+
+                        ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
+                        matchStringBuilder.setType(TagConditionUtil.parseMatchStringType(routeTag.getTagOperator()));
+                        sourceBuilder.putMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR, matchStringBuilder.build());
+
+                        sourceBuilders.add(sourceBuilder);
                     }
                 } else {
                     RoutingProto.Source.Builder metadataSourceBuilder = RoutingProto.Source.newBuilder();
