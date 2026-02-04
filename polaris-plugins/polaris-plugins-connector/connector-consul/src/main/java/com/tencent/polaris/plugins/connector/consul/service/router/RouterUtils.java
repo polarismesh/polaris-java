@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.connector.consul.service.router;
 
 import com.google.protobuf.StringValue;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.plugins.connector.consul.service.common.TagConditionUtil;
@@ -54,6 +55,8 @@ public class RouterUtils {
                         ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
                         matchStringBuilder.setType(TagConditionUtil.parseMatchStringType(routeTag.getTagOperator()));
                         sourceBuilder.putMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR, matchStringBuilder.build());
+                        // TSF 服务名匹配时无 metadata, 设置 *, 跳过 RuleUtils.matchMetadata
+                        sourceBuilder.putMetadata(RuleUtils.MATCH_ALL, ModelProto.MatchString.newBuilder().build());
 
                         sourceBuilders.add(sourceBuilder);
                     }
@@ -74,6 +77,8 @@ public class RouterUtils {
                         ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
                         matchStringBuilder.setType(TagConditionUtil.parseMatchStringType(routeTag.getTagOperator()));
                         sourceBuilder.putMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR, matchStringBuilder.build());
+                        // TSF 服务名匹配时无 metadata, 设置 *, 跳过 RuleUtils.matchMetadata
+                        sourceBuilder.putMetadata(RuleUtils.MATCH_ALL, ModelProto.MatchString.newBuilder().build());
 
                         sourceBuilders.add(sourceBuilder);
                     }
