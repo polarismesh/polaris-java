@@ -19,6 +19,9 @@ package com.tencent.polaris.api.plugin.route;
 
 public interface RouterConstants {
 
+    // match all sources
+    String MATCH_ALL_SOURCES = "match-all-sources";
+
     //set路由
     String SET_ENABLE_KEY = "internal-enable-set";
     String SET_NAME_KEY = "internal-set-name";

@@ -29,6 +29,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
+import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.plugin.route.RoutingUtils;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.pojo.Instance;
@@ -106,13 +107,17 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
     }
 
     // 匹配source规则
-    private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService,
+    private boolean matchSource(RoutingProto.Route route, Service sourceService,
                                 Map<String, String> trafficLabels,
                                 MetadataContainerGroup metadataContainerGroup,
                                 RuleMatchType ruleMatchType, Map<String, String> multiEnvRouterParamMap) {
+
+        List<RoutingProto.Source> sources = route.getSourcesList();
+
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
+        boolean matchAllSources = route.containsMetadata(RouterConstants.MATCH_ALL_SOURCES);
 
         // source匹配成功标志
         boolean matched = true;
@@ -128,8 +133,12 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             matched = RoutingUtils.matchSourceMetadata(source, sourceService, trafficLabels, metadataContainerGroup,
                     multiEnvRouterParamMap, globalVariablesConfig,
                     key -> flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
-            if (matched) {
-                break;
+            if (matchAllSources) {
+                if (!matched) {
+                    return false;
+                }
+            } else if (matched) {
+                return true;
             }
         }
 
@@ -162,7 +171,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             if (route == null) {
                 continue;
             } else {
-                matchStatus.fallback = Boolean.parseBoolean(route.getExtendInfoMap().get(ROUTER_FAULT_TOLERANCE_ENABLE));
+                matchStatus.fallback = Boolean.parseBoolean(route.getMetadataMap().get(ROUTER_FAULT_TOLERANCE_ENABLE));
             }
 
             if (LOG.isDebugEnabled()) {
@@ -172,7 +181,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             Map<String, String> trafficLabels = routeInfo.getRouterMetadata(ROUTER_TYPE_RULE_BASED);
             MetadataContainerGroup metadataContainerGroup = routeInfo.getMetadataContainerGroup();
             // 匹配source规则
-            boolean sourceMatched = matchSource(route.getSourcesList(), routeInfo.getSourceService(), trafficLabels,
+            boolean sourceMatched = matchSource(route, routeInfo.getSourceService(), trafficLabels,
                     metadataContainerGroup, ruleMatchType, multiEnvRouterParamMap);
             if (!sourceMatched) {
                 continue;

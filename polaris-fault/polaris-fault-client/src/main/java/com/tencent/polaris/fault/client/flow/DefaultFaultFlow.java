@@ -22,6 +22,7 @@ import com.tencent.polaris.api.config.global.FlowConfig;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.compose.Extensions;
+import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.plugin.route.RoutingUtils;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
@@ -88,7 +89,7 @@ public class DefaultFaultFlow implements FaultFlow {
                     LOG.debug("FaultInjectionProto.FaultInjection:{}", faultInjection);
 
                     // 匹配source规则
-                    boolean sourceMatched = matchSource(faultInjection.getSourcesList(),
+                    boolean sourceMatched = matchSource(faultInjection,
                             faultRequest.getSourceService(), faultRequest.getMetadataContext().getMetadataContainerGroup(false));
                     if (!sourceMatched) {
                         LOG.debug("Source not matched, skipping fault injection. FaultInjectionProto.FaultInjection:{}", faultInjection);
@@ -158,10 +159,13 @@ public class DefaultFaultFlow implements FaultFlow {
     /**
      * 匹配source规则
      */
-    private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService, MetadataContainerGroup metadataContainerGroup) {
+    private boolean matchSource(FaultInjectionProto.FaultInjection faultInjection, Service sourceService, MetadataContainerGroup metadataContainerGroup) {
+        List<RoutingProto.Source> sources = faultInjection.getSourcesList();
+
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
+        boolean matchAllSources = faultInjection.containsMetadata(RouterConstants.MATCH_ALL_SOURCES);
         // source匹配成功标志
         boolean matched = true;
         for (RoutingProto.Source source : sources) {
@@ -173,8 +177,12 @@ public class DefaultFaultFlow implements FaultFlow {
             // 匹配source metadata
             matched = RoutingUtils.matchSourceMetadata(source, sourceService, metadataContainerGroup,
                     key -> getFlowCache().loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
-            if (matched) {
-                break;
+            if (matchAllSources) {
+                if (!matched) {
+                    return false;
+                }
+            } else if (matched) {
+                return true;
             }
         }
         return matched;

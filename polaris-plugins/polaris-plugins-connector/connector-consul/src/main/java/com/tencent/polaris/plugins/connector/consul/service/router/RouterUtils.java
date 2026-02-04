@@ -42,8 +42,6 @@ public class RouterUtils {
     public static List<RoutingProto.Source> parseTagListToSourceList(List<RouteTag> tagList) {
         List<RoutingProto.Source> sources = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(tagList)) {
-            List<RoutingProto.Source.Builder> sourceBuilders = new ArrayList<>();
-            List<RoutingProto.Source.Builder> metadataSourceBuilders = new ArrayList<>();
             for (RouteTag routeTag : tagList) {
                 if (StringUtils.equals(routeTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_SERVICE_NAME)) {
                     String tagValue = routeTag.getTagValue();
@@ -55,10 +53,10 @@ public class RouterUtils {
                         ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
                         matchStringBuilder.setType(TagConditionUtil.parseMatchStringType(routeTag.getTagOperator()));
                         sourceBuilder.putMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR, matchStringBuilder.build());
-                        // TSF 服务名匹配时无 metadata, 设置 *, 跳过 RuleUtils.matchMetadata
+                        // TSF 服务名匹配时无其他 metadata, 设置 *, 跳过 RuleUtils.matchMetadata
                         sourceBuilder.putMetadata(RuleUtils.MATCH_ALL, ModelProto.MatchString.newBuilder().build());
 
-                        sourceBuilders.add(sourceBuilder);
+                        sources.add(sourceBuilder.build());
                     }
                 } else if (StringUtils.equals(routeTag.getTagField(), TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME)) {
                     String tagValue = routeTag.getTagValue();
@@ -77,39 +75,23 @@ public class RouterUtils {
                         ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
                         matchStringBuilder.setType(TagConditionUtil.parseMatchStringType(routeTag.getTagOperator()));
                         sourceBuilder.putMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR, matchStringBuilder.build());
-                        // TSF 服务名匹配时无 metadata, 设置 *, 跳过 RuleUtils.matchMetadata
+                        // TSF 服务名匹配时无其他 metadata, 设置 *, 跳过 RuleUtils.matchMetadata
                         sourceBuilder.putMetadata(RuleUtils.MATCH_ALL, ModelProto.MatchString.newBuilder().build());
 
-                        sourceBuilders.add(sourceBuilder);
+                        sources.add(sourceBuilder.build());
                     }
                 } else {
-                    RoutingProto.Source.Builder metadataSourceBuilder = RoutingProto.Source.newBuilder();
-                    metadataSourceBuilder.setNamespace(StringValue.of("*"));
-                    metadataSourceBuilder.setService(StringValue.of("*"));
+                    RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
+                    sourceBuilder.setNamespace(StringValue.of("*"));
+                    sourceBuilder.setService(StringValue.of("*"));
                     ModelProto.MatchString.Builder matchStringBuilder = ModelProto.MatchString.newBuilder();
                     matchStringBuilder.setType(parseMatchStringType(routeTag));
                     matchStringBuilder.setValue(StringValue.of(routeTag.getTagValue()));
                     matchStringBuilder.setValueType(ModelProto.MatchString.ValueType.TEXT);
                     String metadataKey = routeTag.getTagField();
-                    metadataSourceBuilder.putMetadata(parseMetadataKey(metadataKey), matchStringBuilder.build());
-                    metadataSourceBuilders.add(metadataSourceBuilder);
-                }
-            }
-            if (CollectionUtils.isNotEmpty(sourceBuilders)) {
-                for (RoutingProto.Source.Builder sourceBuilder : sourceBuilders) {
-                    for (RoutingProto.Source.Builder metadataSourceBuilder : metadataSourceBuilders) {
-                        sourceBuilder.putAllMetadata(metadataSourceBuilder.getMetadataMap());
-                    }
+                    sourceBuilder.putMetadata(parseMetadataKey(metadataKey), matchStringBuilder.build());
                     sources.add(sourceBuilder.build());
                 }
-            } else {
-                RoutingProto.Source.Builder sourceBuilder = RoutingProto.Source.newBuilder();
-                sourceBuilder.setNamespace(StringValue.of("*"));
-                sourceBuilder.setService(StringValue.of("*"));
-                for (RoutingProto.Source.Builder metadataSourceBuilder : metadataSourceBuilders) {
-                    sourceBuilder.putAllMetadata(metadataSourceBuilder.getMetadataMap());
-                }
-                sources.add(sourceBuilder.build());
             }
         }
         return sources;

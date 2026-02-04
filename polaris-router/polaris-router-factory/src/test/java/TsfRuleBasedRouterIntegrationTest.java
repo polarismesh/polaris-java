@@ -16,6 +16,8 @@
  */
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,7 @@ import com.google.protobuf.StringValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
+import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
@@ -31,6 +34,7 @@ import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.GetAllInstancesRequest;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.utils.RuleUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.api.BaseEngine;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.pojo.Node;
@@ -41,6 +45,9 @@ import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
+import com.tencent.polaris.plugins.connector.consul.service.common.TagConstant;
+import com.tencent.polaris.plugins.connector.consul.service.router.RouterUtils;
+import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteTag;
 import com.tencent.polaris.router.api.core.RouterAPI;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
@@ -57,7 +64,6 @@ import org.junit.Test;
 import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_APPLICATION_ID;
 import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_GROUP_ID;
 import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_NAMESPACE_ID;
-import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR;
 
 /**
  * RuleBasedRouter in TSF 集成测试
@@ -167,7 +173,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting1() throws InterruptedException {
         // 设置规则：NOT_IN + 多个服务名逗号分隔 + 不匹配（测试多个服务名，当前上游服务名在里面的情况）
-        setupSourceServiceNameRules(CALLER_SERVICE + ",mock-service", "*", ModelProto.MatchString.MatchStringType.NOT_IN);
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE + ",mock-service"), "*", TagConstant.OPERATOR.NOT_IN);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -193,7 +199,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting2() throws InterruptedException {
         // 设置规则：NOT_IN + 多个服务名 + 匹配（测试多个服务名，当前上游服务名不在里面的情况）
-        setupSourceServiceNameRules("mock-service,mock-service2", "*", ModelProto.MatchString.MatchStringType.NOT_IN);
+        setupSourceServiceNameRules(Arrays.asList("mock-service,mock-service2"), "*", TagConstant.OPERATOR.NOT_IN);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -222,7 +228,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting3() throws InterruptedException {
         // 设置规则：EXACT + SOURCE_SERVICE_NAME + 匹配（精确匹配CallerService）
-        setupSourceServiceNameRules(CALLER_SERVICE, "*", ModelProto.MatchString.MatchStringType.EXACT);
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE), "*", TagConstant.OPERATOR.EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -251,7 +257,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting4() throws InterruptedException {
         // 设置规则：REGEX + SOURCE_SERVICE_NAME + 匹配（正则表达式匹配CallerService）
-        setupSourceServiceNameRules("Caller.*", "*", ModelProto.MatchString.MatchStringType.REGEX);
+        setupSourceServiceNameRules(Arrays.asList("Caller.*"), "*", TagConstant.OPERATOR.REGEX);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -280,7 +286,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting5() throws InterruptedException {
         // 设置规则：REGEX + SOURCE_SERVICE_NAME + 不匹配（正则表达式不匹配CallerService）
-        setupSourceServiceNameRules("MockService.*", "*", ModelProto.MatchString.MatchStringType.REGEX);
+        setupSourceServiceNameRules(Arrays.asList("MockService.*"), "*", TagConstant.OPERATOR.REGEX);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -306,7 +312,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting6() throws InterruptedException {
         // 设置规则：IN + SOURCE_SERVICE_NAME + 匹配（在列表中匹配）
-        setupSourceServiceNameRules("CallerService,MockService", "*", ModelProto.MatchString.MatchStringType.IN);
+        setupSourceServiceNameRules(Arrays.asList("CallerService,MockService"), "*", TagConstant.OPERATOR.IN);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -335,7 +341,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting7() throws InterruptedException {
         // 设置规则：IN + SOURCE_SERVICE_NAME + 不匹配（不在列表中）
-        setupSourceServiceNameRules("MockService1,MockService2", "*", ModelProto.MatchString.MatchStringType.IN);
+        setupSourceServiceNameRules(Arrays.asList("MockService1,MockService2"), "*", TagConstant.OPERATOR.IN);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -361,7 +367,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting8() throws InterruptedException {
         // 设置规则：NOT_EQUALS + SOURCE_SERVICE_NAME + 匹配（不等于指定服务名）
-        setupSourceServiceNameRules("MockService", "*", ModelProto.MatchString.MatchStringType.NOT_EQUALS);
+        setupSourceServiceNameRules(Arrays.asList("MockService"), "*", TagConstant.OPERATOR.NOT_EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -390,7 +396,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting9() throws InterruptedException {
         // 设置规则：NOT_EQUALS + SOURCE_SERVICE_NAME + 不匹配（等于指定服务名）
-        setupSourceServiceNameRules(CALLER_SERVICE, "*", ModelProto.MatchString.MatchStringType.NOT_EQUALS);
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE), "*", TagConstant.OPERATOR.NOT_EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -416,7 +422,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting10() throws InterruptedException {
         // 设置规则：空服务名 + 边界情况测试, 空服务名与 * 一样，满足 RuleUtils.isMatchAllValue
-        setupSourceServiceNameRules("", "*", ModelProto.MatchString.MatchStringType.EXACT);
+        setupSourceServiceNameRules(Arrays.asList(""), "*", TagConstant.OPERATOR.EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -445,7 +451,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting11() throws InterruptedException {
         // 设置规则：通配符 * + 全匹配（测试边界情况）
-        setupSourceServiceNameRules("*", "*", ModelProto.MatchString.MatchStringType.EXACT);
+        setupSourceServiceNameRules(Arrays.asList("*"), "*", TagConstant.OPERATOR.EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -474,7 +480,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting12() throws InterruptedException {
         // 设置规则：EXACT + 不同命名空间 + 不匹配（测试命名空间隔离）
-        setupSourceServiceNameRules(CALLER_SERVICE, "different-namespace", ModelProto.MatchString.MatchStringType.EXACT);
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE), "different-namespace", TagConstant.OPERATOR.EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -500,7 +506,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting13() throws InterruptedException {
         // 设置规则：大小写敏感测试（EXACT匹配默认不区分大小写）
-        setupSourceServiceNameRules("callerservice", "*", ModelProto.MatchString.MatchStringType.EXACT);
+        setupSourceServiceNameRules(Arrays.asList("callerservice"), "*", TagConstant.OPERATOR.EQUAL);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -529,7 +535,7 @@ public class TsfRuleBasedRouterIntegrationTest {
     @Test
     public void testRouting14() throws InterruptedException {
         // 设置规则：复杂正则表达式匹配（测试正则表达式的边界情况）
-        setupSourceServiceNameRules("^Caller.*Service$", "*", ModelProto.MatchString.MatchStringType.REGEX);
+        setupSourceServiceNameRules(Arrays.asList("^Caller.*Service$"), "*", TagConstant.OPERATOR.REGEX);
 
         // 等待服务发现数据同步
         Thread.sleep(3000);
@@ -581,13 +587,77 @@ public class TsfRuleBasedRouterIntegrationTest {
         }
     }
 
-    private void setupSourceServiceNameRules(String sourceServiceName, String sourceNamespace, ModelProto.MatchString.MatchStringType matchType) {
-        RoutingProto.Source source = RoutingProto.Source.newBuilder()
-                .setService(StringValue.newBuilder().setValue(sourceServiceName))
-                .setNamespace(StringValue.newBuilder().setValue(sourceNamespace))
-                .putMetadata(TSF_SERVICE_TAG_OPERATOR, ModelProto.MatchString.newBuilder().setType(matchType).build())
-                .putMetadata(RuleUtils.MATCH_ALL, ModelProto.MatchString.newBuilder().build())
-                .build();
+    @Test
+    public void testRouting16() throws InterruptedException {
+        // 设置规则：多个规则，都是服务名 EQUAL，无法满足
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE, "mock-service"), "*", TagConstant.OPERATOR.EQUAL);
+
+        // 等待服务发现数据同步
+        Thread.sleep(3000);
+
+        // 获取 callee 服务的所有实例
+        ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+        Assert.assertNotNull(serviceInstances);
+        Assert.assertEquals(4, serviceInstances.getInstances().size());
+
+        for (int i = 0; i < 10; i++) {
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, null, null);
+
+            // 执行路由
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+            // 验证结果
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+            Assert.assertNotNull(routedInstances);
+            Assert.assertEquals(4, routedInstances.size());
+        }
+    }
+
+    @Test
+    public void testRouting17() throws InterruptedException {
+        // 设置规则：多个规则，服务名 NOT_EQUAL，满足
+        setupSourceServiceNameRules(Arrays.asList("mock-service", "mock-service2"), "*", TagConstant.OPERATOR.NOT_EQUAL);
+
+        // 等待服务发现数据同步
+        Thread.sleep(3000);
+
+        // 获取 callee 服务的所有实例
+        ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+        Assert.assertNotNull(serviceInstances);
+        Assert.assertEquals(4, serviceInstances.getInstances().size());
+
+        for (int i = 0; i < 10; i++) {
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, null, null);
+
+            // 执行路由
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+            // 验证结果
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+            Assert.assertNotNull(routedInstances);
+            Assert.assertEquals(2, routedInstances.size());
+
+            int[] ports = routedInstances.stream().mapToInt(Instance::getPort).sorted().toArray();
+            Assert.assertArrayEquals(new int[] {8080, 8081}, ports);
+        }
+    }
+
+
+
+    private void setupSourceServiceNameRules(List<String> sourceServiceNames, String sourceNamespace, String operator) {
+        List<RouteTag> routeTags = new ArrayList<>();
+        for (String sourceServiceName : sourceServiceNames) {
+            RouteTag routeTag = new RouteTag();
+            if (StringUtils.equals(sourceNamespace, RuleUtils.MATCH_ALL)) {
+                routeTag.setTagField(TagConstant.SYSTEM_FIELD.SOURCE_SERVICE_NAME);
+                routeTag.setTagValue(sourceServiceName);
+            } else {
+                routeTag.setTagField(TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME);
+                routeTag.setTagValue(sourceNamespace + "/" + sourceServiceName);
+            }
+            routeTag.setTagOperator(operator);
+            routeTags.add(routeTag);
+        }
 
         RoutingProto.Destination destination = RoutingProto.Destination.newBuilder()
                 .setNamespace(StringValue.newBuilder().setValue(NAMESPACE).build())
@@ -599,8 +669,10 @@ public class TsfRuleBasedRouterIntegrationTest {
         RoutingProto.Routing routing = RoutingProto.Routing.newBuilder()
                 .setService(StringValue.newBuilder().setValue(CALLEE_SERVICE).build())
                 .setNamespace(StringValue.newBuilder().setValue(NAMESPACE).build())
-                .addInbounds(RoutingProto.Route.newBuilder().addDestinations(destination)
-                        .addSources(source).build())
+                .addInbounds(RoutingProto.Route.newBuilder()
+                        .putMetadata(RouterConstants.MATCH_ALL_SOURCES, "true")
+                        .addDestinations(destination)
+                        .addAllSources(RouterUtils.parseTagListToSourceList(routeTags)).build())
                 .build();
 
         namingServer.getNamingService().setRouting(calleeServiceKey, routing);

@@ -36,6 +36,7 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
+import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -202,7 +203,8 @@ public class RoutingService extends ConsulService {
                     continue;
                 }
                 RoutingProto.Route.Builder routeBuilder = RoutingProto.Route.newBuilder();
-                routeBuilder.putExtendInfo(ROUTER_FAULT_TOLERANCE_ENABLE, String.valueOf(routeRuleGroup.getFallbackStatus()));
+                routeBuilder.putMetadata(ROUTER_FAULT_TOLERANCE_ENABLE, String.valueOf(routeRuleGroup.getFallbackStatus()));
+                routeBuilder.putMetadata(RouterConstants.MATCH_ALL_SOURCES, "true");
                 // parse sources
                 List<RoutingProto.Source> sources = RouterUtils.parseTagListToSourceList(routeRule.getTagList());
 
