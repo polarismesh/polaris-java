@@ -209,7 +209,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例
+            // 验证结果：应该返回 group1 实例
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -238,7 +238,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例
+            // 验证结果：应该返回 group1 实例
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -267,7 +267,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例
+            // 验证结果：应该返回 group1 实例
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -322,7 +322,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例
+            // 验证结果：应该返回 group1 实例
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -377,7 +377,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例（因为CallerService不等于MockService）
+            // 验证结果：应该返回 group1 实例（因为CallerService不等于MockService）
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -415,7 +415,7 @@ public class TsfRuleBasedRouterIntegrationTest {
 
     @Test
     public void testRouting10() throws InterruptedException {
-        // 设置规则：空服务名 + 边界情况测试
+        // 设置规则：空服务名 + 边界情况测试, 空服务名与 * 一样，满足 RuleUtils.isMatchAllValue
         setupSourceServiceNameRules("", "*", ModelProto.MatchString.MatchStringType.EXACT);
 
         // 等待服务发现数据同步
@@ -432,7 +432,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：空服务名可能触发默认路由行为，返回基线实例
+            // 验证结果：应该返回 group1 实例
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -461,7 +461,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例（通配符匹配所有服务）
+            // 验证结果：应该返回 group1 实例（通配符匹配所有服务）
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -516,7 +516,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例（EXACT匹配不区分大小写）
+            // 验证结果：应该返回 group1 实例（EXACT匹配不区分大小写）
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
@@ -545,7 +545,7 @@ public class TsfRuleBasedRouterIntegrationTest {
             // 执行路由
             ProcessRoutersResponse response = routerAPI.processRouters(request);
 
-            // 验证结果：应该返回基线实例（正则表达式匹配CallerService）
+            // 验证结果：应该返回 group1 实例（正则表达式匹配CallerService）
             List<Instance> routedInstances = response.getServiceInstances().getInstances();
             Assert.assertNotNull(routedInstances);
             Assert.assertEquals(2, routedInstances.size());
