@@ -16,17 +16,23 @@
  */
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+import com.ecwid.consul.json.GsonFactory;
+import com.ecwid.consul.transport.HttpResponse;
+import com.ecwid.consul.v1.kv.model.GetValue;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.StringValue;
-import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
-import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceInstances;
@@ -43,15 +49,21 @@ import com.tencent.polaris.factory.api.RouterAPIFactory;
 import com.tencent.polaris.metadata.core.MetadataContainer;
 import com.tencent.polaris.metadata.core.MetadataType;
 import com.tencent.polaris.metadata.core.TransitiveType;
+import com.tencent.polaris.metadata.core.manager.CalleeMetadataContainerGroup;
+import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
 import com.tencent.polaris.metadata.core.manager.MetadataContext;
 import com.tencent.polaris.metadata.core.manager.MetadataContextHolder;
 import com.tencent.polaris.plugins.connector.consul.service.common.TagConstant;
-import com.tencent.polaris.plugins.connector.consul.service.router.RouterUtils;
+import com.tencent.polaris.plugins.connector.consul.service.router.RoutingService;
+import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteDest;
+import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteDestItem;
+import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteRule;
+import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteRuleGroup;
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteTag;
+import com.tencent.polaris.plugins.router.metadata.MetadataRouter;
 import com.tencent.polaris.router.api.core.RouterAPI;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
-import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import com.tencent.polaris.test.common.TestUtils;
 import com.tencent.polaris.test.mock.discovery.NamingServer;
@@ -60,6 +72,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.yaml.snakeyaml.Yaml;
 
 import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_APPLICATION_ID;
 import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_GROUP_ID;
@@ -642,40 +655,108 @@ public class TsfRuleBasedRouterIntegrationTest {
         }
     }
 
-
-
     private void setupSourceServiceNameRules(List<String> sourceServiceNames, String sourceNamespace, String operator) {
-        List<RouteTag> routeTags = new ArrayList<>();
-        for (String sourceServiceName : sourceServiceNames) {
-            RouteTag routeTag = new RouteTag();
-            if (StringUtils.equals(sourceNamespace, RuleUtils.MATCH_ALL)) {
-                routeTag.setTagField(TagConstant.SYSTEM_FIELD.SOURCE_SERVICE_NAME);
-                routeTag.setTagValue(sourceServiceName);
-            } else {
-                routeTag.setTagField(TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME);
-                routeTag.setTagValue(sourceNamespace + "/" + sourceServiceName);
+        try {
+            // 1. 创建 RouteRuleGroup 对象
+            RouteRuleGroup routeRuleGroup = new RouteRuleGroup();
+            routeRuleGroup.setRouteId("test-route-id");
+            routeRuleGroup.setRouteName("test-route-name");
+            routeRuleGroup.setMicroserviceName(CALLEE_SERVICE);
+            routeRuleGroup.setNamespaceId(NAMESPACE);
+            routeRuleGroup.setFallbackStatus(true);
+            routeRuleGroup.setMicroserviceId("test-microservice-id");
+
+            // 2. 创建 RouteRule 对象
+            RouteRule routeRule = new RouteRule();
+            routeRule.setRouteRuleId("test-route-rule-id");
+            routeRule.setRouteId("test-route-id");
+
+            // 3. 创建 RouteTag 列表
+            List<RouteTag> routeTags = new ArrayList<>();
+            for (String sourceServiceName : sourceServiceNames) {
+                RouteTag routeTag = new RouteTag();
+                if (StringUtils.equals(sourceNamespace, RuleUtils.MATCH_ALL)) {
+                    routeTag.setTagField(TagConstant.SYSTEM_FIELD.SOURCE_SERVICE_NAME);
+                    routeTag.setTagValue(sourceServiceName);
+                } else {
+                    routeTag.setTagField(TagConstant.SYSTEM_FIELD.SOURCE_NAMESPACE_SERVICE_NAME);
+                    routeTag.setTagValue(sourceNamespace + "/" + sourceServiceName);
+                }
+                routeTag.setRouteRuleId("test-route-rule-id");
+                routeTag.setTagOperator(operator);
+                routeTag.setTagId(UUID.randomUUID().toString());
+                routeTag.setTagType(TagConstant.TYPE.SYSTEM);
+                routeTags.add(routeTag);
             }
-            routeTag.setTagOperator(operator);
-            routeTags.add(routeTag);
+            routeRule.setTagList(routeTags);
+
+            // 4. 创建 RouteDest 对象
+            RouteDest routeDest = new RouteDest();
+            routeDest.setDestId("test-dest-id");
+            routeDest.setDestWeight(100);
+            routeDest.setRouteRuleId("test-route-rule-id");
+
+            // 5. 创建 RouteDestItem 列表
+            List<RouteDestItem> destItems = new ArrayList<>();
+            RouteDestItem groupItem = new RouteDestItem();
+            groupItem.setDestItemField(TSF_GROUP_ID);
+            groupItem.setDestItemValue(ruleCalleeGroupId);
+            groupItem.setRouteDestId("test-dest-id");
+            groupItem.setRouteDestItemId("test-dest-item-id");
+            destItems.add(groupItem);
+            routeDest.setDestItemList(destItems);
+
+            // 6. 设置 RouteRule 的 destList
+            List<RouteDest> destList = new ArrayList<>();
+            destList.add(routeDest);
+            routeRule.setDestList(destList);
+
+            // 7. 设置 RouteRuleGroup 的 ruleList
+            List<RouteRule> ruleList = new ArrayList<>();
+            ruleList.add(routeRule);
+            routeRuleGroup.setRuleList(ruleList);
+
+            // 8. 将 RouteRuleGroup 转成 YAML 格式
+            Yaml yaml = new Yaml();
+            String yamlContent = yaml.dump(Arrays.asList(routeRuleGroup));
+
+            // 9. 将 YAML 转成 base64
+            String base64Content = Base64.getEncoder().encodeToString(yamlContent.getBytes());
+
+            // 10. 创建 GetValue 对象并设置 base64 内容
+            GetValue getValue = new GetValue();
+            getValue.setValue(base64Content);
+            
+            // 11. 创建 GetValue 列表并转成 JSON
+            List<GetValue> getValueList = Arrays.asList(getValue);
+            String jsonContent = GsonFactory.getGson().toJson(getValueList);
+
+            // 12. 创建模拟的 HttpResponse
+            HttpResponse response = new HttpResponse(200, "OK", jsonContent, null, false, 0L);
+
+            // 11. 通过反射调用 parseResponse 方法
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+            RoutingService routingService = new RoutingService(null, null, null, "test", mapper);
+            Method parseResponseMethod = RoutingService.class.getDeclaredMethod("parseResponse", HttpResponse.class, String.class, String.class);
+            parseResponseMethod.setAccessible(true);
+            
+            @SuppressWarnings("unchecked")
+            List<RoutingProto.Route> routes = (List<RoutingProto.Route>) parseResponseMethod.invoke(routingService, response, NAMESPACE, CALLEE_SERVICE);
+
+            // 12. 构建路由规则
+            RoutingProto.Routing routing = RoutingProto.Routing.newBuilder()
+                    .setService(StringValue.newBuilder().setValue(CALLEE_SERVICE).build())
+                    .setNamespace(StringValue.newBuilder().setValue(NAMESPACE).build())
+                    .addAllInbounds(routes)
+                    .build();
+
+            namingServer.getNamingService().setRouting(calleeServiceKey, routing);
+            
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to setup source service name rules", e);
         }
-
-        RoutingProto.Destination destination = RoutingProto.Destination.newBuilder()
-                .setNamespace(StringValue.newBuilder().setValue(NAMESPACE).build())
-                .setService(StringValue.newBuilder().setValue(CALLEE_SERVICE).build())
-                .putMetadata(TSF_GROUP_ID, ModelProto.MatchString.newBuilder().setValue(StringValue.newBuilder().setValue(ruleCalleeGroupId)).build())
-                .setWeight(UInt32Value.newBuilder().setValue(100).build())
-                .build();
-
-        RoutingProto.Routing routing = RoutingProto.Routing.newBuilder()
-                .setService(StringValue.newBuilder().setValue(CALLEE_SERVICE).build())
-                .setNamespace(StringValue.newBuilder().setValue(NAMESPACE).build())
-                .addInbounds(RoutingProto.Route.newBuilder()
-                        .putMetadata(RouterConstants.MATCH_ALL_SOURCES, "true")
-                        .addDestinations(destination)
-                        .addAllSources(RouterUtils.parseTagListToSourceList(routeTags)).build())
-                .build();
-
-        namingServer.getNamingService().setRouting(calleeServiceKey, routing);
     }
 
     // ==================== 辅助方法 ====================
@@ -694,9 +775,6 @@ public class TsfRuleBasedRouterIntegrationTest {
     /**
      * 构建路由请求
      * 模拟 caller（主调服务）调用 callee（被调服务）
-     * 
-     * Header 需要设置在 MetadataContext 的 MessageMetadataContainer 中，
-     * 而不是通过 addRouterMetadata 方法
      */
     private ProcessRoutersRequest buildRouterRequest(ServiceInstances serviceInstances,
                                                       String key,
@@ -717,14 +795,18 @@ public class TsfRuleBasedRouterIntegrationTest {
         // 设置目标实例（callee 的实例）
         request.setDstInstances(serviceInstances);
 
-        // 通过 MetadataContextHolder 设置 header 到 MetadataContainer
-        // LaneRouter 会从 MetadataContext 的 caller/callee MetadataContainer 中获取 key
+        MetadataContainerGroup metadataContainerGroup = new CalleeMetadataContainerGroup(
+                "X-Polaris-Metadata-Transitive-");
+        request.setMetadataContainerGroup(metadataContainerGroup);
         if (key != null && value != null) {
             MetadataContext metadataContext = MetadataContextHolder.getOrCreate();
             // 设置到 caller（主调方）的 MetadataContainer
             MetadataContainer calleeMessageContainer = metadataContext.getMetadataContainer(MetadataType.CUSTOM, false);
 
             calleeMessageContainer.putMetadataStringValue(key, value, TransitiveType.PASS_THROUGH);
+
+            MetadataContainer metadataContainer = metadataContainerGroup.getCustomMetadataContainer();
+            metadataContainer.putMetadataStringValue(key, value, TransitiveType.PASS_THROUGH);
         }
 
         return request;
