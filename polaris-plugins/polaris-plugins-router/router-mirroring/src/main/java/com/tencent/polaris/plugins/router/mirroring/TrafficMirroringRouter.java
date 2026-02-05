@@ -127,19 +127,22 @@ public class TrafficMirroringRouter extends AbstractServiceRouter {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
-        boolean matchAllSources = trafficMirroring.containsMetadata(RouterConstants.MATCH_ALL_SOURCES);
+        boolean tsfSourcesMatchMode = trafficMirroring.containsMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE);
         // source匹配成功标志
         boolean matched = true;
         for (RoutingProto.Source source : sources) {
             // 匹配source服务
             matched = RoutingUtils.matchSourceService(source, sourceService);
             if (!matched) {
+                if (tsfSourcesMatchMode) {
+                    break;
+                }
                 continue;
             }
             // 匹配source metadata
             matched = RoutingUtils.matchSourceMetadata(source, sourceService, metadataContainerGroup,
                     key -> flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
-            if (matchAllSources) {
+            if (tsfSourcesMatchMode) {
                 if (!matched) {
                     return false;
                 }

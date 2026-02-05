@@ -197,7 +197,7 @@ public class FaultService extends ConsulService {
                     continue;
                 }
                 FaultInjectionProto.FaultInjection.Builder faultInjectionBuilder = FaultInjectionProto.FaultInjection.newBuilder();
-                faultInjectionBuilder.putMetadata(RouterConstants.MATCH_ALL_SOURCES, "true");
+                faultInjectionBuilder.putMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE, "true");
                 // parse sources
                 List<RoutingProto.Source> sources = RouterUtils.parseTagListToSourceList(routeRule.getTagList());
                 faultInjectionBuilder.addAllSources(sources);

@@ -203,7 +203,7 @@ public class MirroringService extends ConsulService {
 
                 // parse enabled
                 trafficMirroringBuilder.setEnabled(BoolValue.of(mirrorRule.getEnabled()));
-                trafficMirroringBuilder.putMetadata(RouterConstants.MATCH_ALL_SOURCES, "true");
+                trafficMirroringBuilder.putMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE, "true");
                 // parse sources
                 List<RoutingProto.Source> sources = RouterUtils.parseTagListToSourceList(routeRule.getTagList());
 

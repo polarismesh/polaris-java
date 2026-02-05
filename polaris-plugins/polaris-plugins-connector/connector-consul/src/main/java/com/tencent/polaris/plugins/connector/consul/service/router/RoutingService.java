@@ -204,7 +204,7 @@ public class RoutingService extends ConsulService {
                 }
                 RoutingProto.Route.Builder routeBuilder = RoutingProto.Route.newBuilder();
                 routeBuilder.putMetadata(ROUTER_FAULT_TOLERANCE_ENABLE, String.valueOf(routeRuleGroup.getFallbackStatus()));
-                routeBuilder.putMetadata(RouterConstants.MATCH_ALL_SOURCES, "true");
+                routeBuilder.putMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE, "true");
                 // parse sources
                 List<RoutingProto.Source> sources = RouterUtils.parseTagListToSourceList(routeRule.getTagList());
 

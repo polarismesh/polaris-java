@@ -60,7 +60,6 @@ import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteD
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteRule;
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteRuleGroup;
 import com.tencent.polaris.plugins.connector.consul.service.router.entity.RouteTag;
-import com.tencent.polaris.plugins.router.metadata.MetadataRouter;
 import com.tencent.polaris.router.api.core.RouterAPI;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersRequest;
 import com.tencent.polaris.router.api.rpc.ProcessRoutersResponse;
@@ -655,7 +654,126 @@ public class TsfRuleBasedRouterIntegrationTest {
         }
     }
 
+    @Test
+    public void testRouting18() throws InterruptedException {
+        // 设置规则：多个规则，服务名 + 自定义标签 EQUAL，满足
+        Map<String, String> userTags = new HashMap<>();
+        userTags.put("k1", "v1");
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE), "*", TagConstant.OPERATOR.EQUAL, userTags);
+
+        // 等待服务发现数据同步
+        Thread.sleep(3000);
+
+        // 获取 callee 服务的所有实例
+        ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+        Assert.assertNotNull(serviceInstances);
+        Assert.assertEquals(4, serviceInstances.getInstances().size());
+
+        for (int i = 0; i < 10; i++) {
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, "k1", "v1");
+
+            // 执行路由
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+            // 验证结果
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+            Assert.assertNotNull(routedInstances);
+            Assert.assertEquals(2, routedInstances.size());
+
+            int[] ports = routedInstances.stream().mapToInt(Instance::getPort).sorted().toArray();
+            Assert.assertArrayEquals(new int[] {8080, 8081}, ports);
+        }
+    }
+
+    @Test
+    public void testRouting19() throws InterruptedException {
+        // 设置规则：多个规则，服务名 + 自定义标签 EQUAL，自定义标签不满足
+        Map<String, String> userTags = new HashMap<>();
+        userTags.put("k1", "v1");
+        setupSourceServiceNameRules(Arrays.asList(CALLER_SERVICE), "*", TagConstant.OPERATOR.EQUAL, userTags);
+
+        // 等待服务发现数据同步
+        Thread.sleep(3000);
+
+        // 获取 callee 服务的所有实例
+        ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+        Assert.assertNotNull(serviceInstances);
+        Assert.assertEquals(4, serviceInstances.getInstances().size());
+
+        for (int i = 0; i < 10; i++) {
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, "k1", "v2");
+
+            // 执行路由
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+            // 验证结果
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+            Assert.assertNotNull(routedInstances);
+            Assert.assertEquals(4, routedInstances.size());
+        }
+    }
+
+    @Test
+    public void testRouting20() throws InterruptedException {
+        // 设置规则：多个规则，服务名 + 自定义标签 EQUAL，服务名不满足
+        Map<String, String> userTags = new HashMap<>();
+        userTags.put("k1", "v1");
+        setupSourceServiceNameRules(Arrays.asList("mock-service"), "*", TagConstant.OPERATOR.EQUAL, userTags);
+
+        // 等待服务发现数据同步
+        Thread.sleep(3000);
+
+        // 获取 callee 服务的所有实例
+        ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+        Assert.assertNotNull(serviceInstances);
+        Assert.assertEquals(4, serviceInstances.getInstances().size());
+
+        for (int i = 0; i < 10; i++) {
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, "k1", "v1");
+
+            // 执行路由
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+            // 验证结果
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+            Assert.assertNotNull(routedInstances);
+            Assert.assertEquals(4, routedInstances.size());
+        }
+    }
+
+    @Test
+    public void testRouting21() throws InterruptedException {
+        // 设置规则：多个规则，服务名 + 自定义标签 EQUAL，均不满足
+        Map<String, String> userTags = new HashMap<>();
+        userTags.put("k1", "v1");
+        setupSourceServiceNameRules(Arrays.asList("mock-service"), "*", TagConstant.OPERATOR.EQUAL, userTags);
+
+        // 等待服务发现数据同步
+        Thread.sleep(3000);
+
+        // 获取 callee 服务的所有实例
+        ServiceInstances serviceInstances = getAllInstances(CALLEE_SERVICE);
+        Assert.assertNotNull(serviceInstances);
+        Assert.assertEquals(4, serviceInstances.getInstances().size());
+
+        for (int i = 0; i < 10; i++) {
+            ProcessRoutersRequest request = buildRouterRequest(serviceInstances, "k1", "v2");
+
+            // 执行路由
+            ProcessRoutersResponse response = routerAPI.processRouters(request);
+
+            // 验证结果
+            List<Instance> routedInstances = response.getServiceInstances().getInstances();
+            Assert.assertNotNull(routedInstances);
+            Assert.assertEquals(4, routedInstances.size());
+        }
+    }
+
     private void setupSourceServiceNameRules(List<String> sourceServiceNames, String sourceNamespace, String operator) {
+        setupSourceServiceNameRules(sourceServiceNames, sourceNamespace, operator, new HashMap<>());
+    }
+
+    private void setupSourceServiceNameRules(List<String> sourceServiceNames, String sourceNamespace, String operator, Map<String, String> userTags) {
         try {
             // 1. 创建 RouteRuleGroup 对象
             RouteRuleGroup routeRuleGroup = new RouteRuleGroup();
@@ -688,6 +806,18 @@ public class TsfRuleBasedRouterIntegrationTest {
                 routeTag.setTagType(TagConstant.TYPE.SYSTEM);
                 routeTags.add(routeTag);
             }
+
+            for (Map.Entry<String, String> entry : userTags.entrySet()) {
+                RouteTag routeTag = new RouteTag();
+                routeTag.setTagField(entry.getKey());
+                routeTag.setTagValue(entry.getValue());
+                routeTag.setRouteRuleId("test-route-rule-id");
+                routeTag.setTagOperator(operator);
+                routeTag.setTagId(UUID.randomUUID().toString());
+                routeTag.setTagType(TagConstant.TYPE.CUSTOM);
+                routeTags.add(routeTag);
+            }
+
             routeRule.setTagList(routeTags);
 
             // 4. 创建 RouteDest 对象

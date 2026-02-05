@@ -117,7 +117,8 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
-        boolean matchAllSources = route.containsMetadata(RouterConstants.MATCH_ALL_SOURCES);
+        // tsf mode, need match all sources, include service.
+        boolean tsfSourcesMatchMode = route.containsMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE);
 
         // source匹配成功标志
         boolean matched = true;
@@ -126,6 +127,9 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             if (ruleMatchType == RuleMatchType.destRouteRuleMatch) {
                 matched = RoutingUtils.matchSourceService(source, sourceService);
                 if (!matched) {
+                    if (tsfSourcesMatchMode) {
+                        break;
+                    }
                     continue;
                 }
             }
@@ -133,7 +137,7 @@ public class RuleBasedRouter extends AbstractServiceRouter implements PluginConf
             matched = RoutingUtils.matchSourceMetadata(source, sourceService, trafficLabels, metadataContainerGroup,
                     multiEnvRouterParamMap, globalVariablesConfig,
                     key -> flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
-            if (matchAllSources) {
+            if (tsfSourcesMatchMode) {
                 if (!matched) {
                     return false;
                 }

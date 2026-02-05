@@ -19,8 +19,8 @@ package com.tencent.polaris.api.plugin.route;
 
 public interface RouterConstants {
 
-    // match all sources
-    String MATCH_ALL_SOURCES = "match-all-sources";
+    // TSF sources match mode
+    String TSF_SOURCES_MATCH_MODE = "tsf-sources-match-mode";
 
     //set路由
     String SET_ENABLE_KEY = "internal-enable-set";

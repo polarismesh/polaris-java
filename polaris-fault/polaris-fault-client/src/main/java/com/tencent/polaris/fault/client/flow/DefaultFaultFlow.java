@@ -165,19 +165,22 @@ public class DefaultFaultFlow implements FaultFlow {
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
-        boolean matchAllSources = faultInjection.containsMetadata(RouterConstants.MATCH_ALL_SOURCES);
+        boolean tsfSourcesMatchMode = faultInjection.containsMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE);
         // source匹配成功标志
         boolean matched = true;
         for (RoutingProto.Source source : sources) {
             // 匹配source服务
             matched = RoutingUtils.matchSourceService(source, sourceService);
             if (!matched) {
+                if (tsfSourcesMatchMode) {
+                    break;
+                }
                 continue;
             }
             // 匹配source metadata
             matched = RoutingUtils.matchSourceMetadata(source, sourceService, metadataContainerGroup,
                     key -> getFlowCache().loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
-            if (matchAllSources) {
+            if (tsfSourcesMatchMode) {
                 if (!matched) {
                     return false;
                 }
