@@ -19,11 +19,6 @@
             <!-- polaris-common-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
-                <artifactId>polaris-protobuf</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.tencent.polaris</groupId>
                 <artifactId>polaris-model</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -472,11 +467,6 @@
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
                 <artifactId>location-provider-remotehttp</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.tencent.polaris</groupId>
-                <artifactId>location-provider-remoteservice</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
