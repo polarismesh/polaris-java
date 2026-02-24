@@ -68,7 +68,7 @@
 
     <properties>
         <!-- Project revision -->
-        <revision>2.1.1.0</revision>
+        <revision>2.1.2.0-SNAPSHOT</revision>
 
         <specification.version>1.7.0</specification.version>
         <timestamp>${maven.build.timestamp}</timestamp>
