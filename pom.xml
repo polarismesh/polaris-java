@@ -100,7 +100,7 @@
         <junit.version>4.13.1</junit.version>
         <byte-buddy.version>1.17.8</byte-buddy.version>
         <mockito.version>4.11.0</mockito.version>
-        <assertj.version>3.16.1</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
         <argLine>-Xmx2048m</argLine>
         <prometheus.version>0.11.0</prometheus.version>
         <otel.version>1.38.0</otel.version>
