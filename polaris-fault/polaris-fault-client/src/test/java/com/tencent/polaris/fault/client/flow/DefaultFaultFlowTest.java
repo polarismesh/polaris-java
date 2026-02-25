@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -184,24 +183,4 @@ public class DefaultFaultFlowTest {
         assertThat(rules).isEmpty();
     }
 
-    /**
-     * 辅助方法：通过反射设置私有属性
-     */
-    private static void setPrivateField(Object object, String fieldName, Object value)
-            throws NoSuchFieldException, IllegalAccessException {
-        Field field = object.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(object, value);
-    }
-
-    /**
-     * 辅助方法：通过反射获取私有属性
-     */
-    @SuppressWarnings("unchecked")
-    private static <T> T getPrivateField(Object object, String fieldName)
-            throws NoSuchFieldException, IllegalAccessException {
-        Field field = object.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return (T) field.get(object);
-    }
 }
