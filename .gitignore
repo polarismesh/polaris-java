@@ -44,3 +44,5 @@ dependency-reduced-pom.xml
 logs/
 lib/
 backup/
+.arthas/
+.codebuddy/
