@@ -25,19 +25,21 @@ import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.sync.RemoteSyncTask;
-import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto;
+import org.slf4j.Logger;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.*;
 
 import static com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter.*;
 
 public class RateLimitExtension extends Destroyable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RateLimitExtension.class);
 
     private final Extensions extensions;
 
@@ -113,9 +115,17 @@ public class RateLimitExtension extends Destroyable {
      * @param task 任务
      */
     public void submitSyncTask(RemoteSyncTask task, long initialDelay, long delay) {
+        if (scheduledTasks.containsKey(task.getWindow().getUniqueKey())) {
+            LOG.warn("task has exist, ignore, task {}, window {}, uniqueKey {} ", task, task.getWindow(),
+                    task.getWindow().getUniqueKey());
+            task.getWindow().setStatus(RateLimitWindow.WindowStatus.CREATED.ordinal());
+            return;
+        }
         ScheduledFuture<?> scheduledFuture = syncExecutor
-                .scheduleWithFixedDelay(task, 0, delay, TimeUnit.MILLISECONDS);
+                .scheduleWithFixedDelay(task, initialDelay, delay, TimeUnit.MILLISECONDS);
         scheduledTasks.put(task.getWindow().getUniqueKey(), scheduledFuture);
+        LOG.info("submit sync task success, task {}, future {}, window {}, uniqueKey {} ", task, scheduledFuture,
+                task.getWindow(), task.getWindow().getUniqueKey());
     }
 
     private static final int EXPIRE_INTERVAL_SECOND = 5;
@@ -130,8 +140,33 @@ public class RateLimitExtension extends Destroyable {
                 .scheduleWithFixedDelay(task, EXPIRE_INTERVAL_SECOND, EXPIRE_INTERVAL_SECOND, TimeUnit.SECONDS);
     }
 
-    public void stopSyncTask(String uniqueKey) {
+    /**
+     * 停止同步任务
+     *
+     * @param uniqueKey 窗口唯一标识
+     * @param window    限流窗口
+     */
+    public void stopSyncTask(String uniqueKey, RateLimitWindow window) {
+        // 从connector初始化列表清理
+        Runnable cleanTask = () -> {
+            try {
+                AsyncRateLimitConnector connector = window.getWindowSet().getAsyncRateLimitConnector();
+                ServiceIdentifier identifier = new ServiceIdentifier(window.getSvcKey().getService(),
+                        window.getSvcKey().getNamespace(), window.getLabels());
+                StreamCounterSet streamCounterSet = connector.getStreamCounterSet(
+                        window.getWindowSet().getRateLimitExtension().getExtensions(),
+                        window.getRemoteCluster(), window.getServiceAddressRepository(), window.getUniqueKey(), identifier);
+                if (streamCounterSet != null) {
+                    streamCounterSet.deleteInitRecord(identifier, window);
+                }
+                LOG.info("clean task run success, window {}", window);
+            } catch (Throwable e) {
+                LOG.error("clean task run failed, window {}", window.getUniqueKey(), e);
+            }
+        };
+        syncExecutor.schedule(cleanTask, 10, TimeUnit.MILLISECONDS);
         ScheduledFuture<?> future = scheduledTasks.remove(uniqueKey);
+        LOG.info("scheduledTasks remove uniqueKey {}, future {}", uniqueKey, future);
         if (null != future) {
             future.cancel(true);
         }

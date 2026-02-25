@@ -19,11 +19,10 @@ package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.slf4j.Logger;
 
 /**
  * 计数器对象
@@ -97,11 +96,20 @@ public class StreamCounterSet {
         return false;
     }
 
-    public void deleteInitRecord(ServiceIdentifier serviceIdentifier) {
+    public InitializeRecord deleteInitRecord(ServiceIdentifier serviceIdentifier) {
         StreamResource streamResource = currentStreamResource.get();
         if (null != streamResource) {
-            streamResource.deleteInitRecord(serviceIdentifier);
+            return streamResource.deleteInitRecord(serviceIdentifier);
         }
+        return null;
+    }
+
+    public InitializeRecord deleteInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow window) {
+        StreamResource streamResource = currentStreamResource.get();
+        if (null != streamResource) {
+            return streamResource.deleteInitRecord(serviceIdentifier, window);
+        }
+        return null;
     }
 
 

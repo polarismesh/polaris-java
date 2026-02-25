@@ -84,7 +84,13 @@ public class AsyncRateLimitConnector {
             }
             if (null != streamCounterSet) {
                 //切换了节点，去掉初始化记录
-                streamCounterSet.deleteInitRecord(serviceIdentifier);
+                InitializeRecord removedRecord = streamCounterSet.deleteInitRecord(serviceIdentifier);
+                if (removedRecord != null) {
+                    RateLimitWindow rateLimitWindow = removedRecord.getRateLimitWindow();
+                    uniqueKey = rateLimitWindow != null ? rateLimitWindow.getUniqueKey() : null;
+                    LOG.info("[getStreamCounterSet] host switched, and initRecord removed serviceIdentifier: {}, window "
+                            + "{} {}", serviceIdentifier, rateLimitWindow, uniqueKey);
+                }
                 //切换了节点，老的不再使用
                 if (streamCounterSet.decreaseReference()) {
                     nodeToStream.remove(node);
