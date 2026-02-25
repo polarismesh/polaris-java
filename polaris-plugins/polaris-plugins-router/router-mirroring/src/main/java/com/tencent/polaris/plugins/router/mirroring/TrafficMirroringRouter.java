@@ -23,6 +23,7 @@ import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.plugin.route.RouteResult;
+import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.plugin.route.RoutingUtils;
 import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
@@ -75,7 +76,7 @@ public class TrafficMirroringRouter extends AbstractServiceRouter {
                             continue;
                         }
                         // 匹配source规则
-                        boolean sourceMatched = matchSource(trafficMirroring.getSourcesList(),
+                        boolean sourceMatched = matchSource(trafficMirroring,
                                 routeInfo.getSourceService(), metadataContainerGroup);
                         if (!sourceMatched) {
                             LOG.debug("Source not matched, skipping traffic mirroring. TrafficMirroringProto.TrafficMirroring:{}", trafficMirroring);
@@ -121,23 +122,32 @@ public class TrafficMirroringRouter extends AbstractServiceRouter {
     /**
      * 匹配source规则
      */
-    private boolean matchSource(List<RoutingProto.Source> sources, Service sourceService, MetadataContainerGroup metadataContainerGroup) {
+    private boolean matchSource(TrafficMirroringProto.TrafficMirroring trafficMirroring, Service sourceService, MetadataContainerGroup metadataContainerGroup) {
+        List<RoutingProto.Source> sources = trafficMirroring.getSourcesList();
         if (CollectionUtils.isEmpty(sources)) {
             return true;
         }
+        boolean tsfSourcesMatchMode = trafficMirroring.containsMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE);
         // source匹配成功标志
         boolean matched = true;
         for (RoutingProto.Source source : sources) {
             // 匹配source服务
             matched = RoutingUtils.matchSourceService(source, sourceService);
             if (!matched) {
+                if (tsfSourcesMatchMode) {
+                    break;
+                }
                 continue;
             }
             // 匹配source metadata
             matched = RoutingUtils.matchSourceMetadata(source, sourceService, metadataContainerGroup,
                     key -> flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path)));
-            if (matched) {
-                break;
+            if (tsfSourcesMatchMode) {
+                if (!matched) {
+                    return false;
+                }
+            } else if (matched) {
+                return true;
             }
         }
         return matched;

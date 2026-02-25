@@ -37,6 +37,7 @@ import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.exception.ServerErrorResponseException;
+import com.tencent.polaris.api.plugin.route.RouterConstants;
 import com.tencent.polaris.api.plugin.server.ServerEvent;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -202,7 +203,7 @@ public class MirroringService extends ConsulService {
 
                 // parse enabled
                 trafficMirroringBuilder.setEnabled(BoolValue.of(mirrorRule.getEnabled()));
-
+                trafficMirroringBuilder.putMetadata(RouterConstants.TSF_SOURCES_MATCH_MODE, "true");
                 // parse sources
                 List<RoutingProto.Source> sources = RouterUtils.parseTagListToSourceList(routeRule.getTagList());
 

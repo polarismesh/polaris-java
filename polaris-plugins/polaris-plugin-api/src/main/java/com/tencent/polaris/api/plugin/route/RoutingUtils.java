@@ -22,7 +22,9 @@ import com.tencent.polaris.api.pojo.TrieNode;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.api.utils.RuleUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.metadata.core.constant.TsfMetadataConstants;
 import com.tencent.polaris.metadata.core.manager.MetadataContainerGroup;
+import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 
 import java.util.HashMap;
@@ -49,34 +51,62 @@ public class RoutingUtils {
                     .equals(ruleSource.getService().getValue())) {
                 return false;
             }
+            return true;
         } else {
-            // 如果有source服务信息, 需要匹配服务信息
-            // 如果命名空间|服务不为"*"且不等于原服务, 则匹配失败
-            String namespace = ruleSource.getNamespace().getValue();
-            if (!RuleUtils.MATCH_ALL.equals(namespace)
-                    && !StringUtils.equals(namespace, targetSourceService.getNamespace())) {
+            if (ruleSource.containsMetadata(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR)) {
+                ModelProto.MatchString.MatchStringType matchType = ruleSource.getMetadataMap().get(TsfMetadataConstants.TSF_SERVICE_TAG_OPERATOR).getType();
+                return matchTsfSourceService(matchType, ruleSource, targetSourceService);
+            } else {
+                return matchPolarisSourceService(ruleSource, targetSourceService);
+            }
+        }
+    }
+
+    private static boolean matchTsfSourceService(ModelProto.MatchString.MatchStringType matchType, RoutingProto.Source ruleSource, Service targetSourceService) {
+        // 如果有source服务信息, 需要匹配服务信息
+        // 如果命名空间|服务不为"*"且不等于原服务, 则匹配失败
+        String namespace = ruleSource.getNamespace().getValue();
+        if (!RuleUtils.MATCH_ALL.equals(namespace)
+                && !StringUtils.equals(namespace, targetSourceService.getNamespace())) {
+            switch (matchType) {
+            case NOT_EQUALS:
+            case NOT_IN:
+                return true;
+            default:
                 return false;
             }
-            String service = ruleSource.getService().getValue();
-            if (!RuleUtils.MATCH_ALL.equals(service) && !StringUtils.startsWith(service, "!")
-                    && !StringUtils.startsWith(service, "*")
-                    && !StringUtils.equals(service, targetSourceService.getService())) {
+        }
+        return RuleUtils.matchStringValue(matchType, targetSourceService.getService(),
+                ruleSource.getService().getValue());
+    }
+
+    private static boolean matchPolarisSourceService(RoutingProto.Source ruleSource, Service targetSourceService) {
+        // 如果有source服务信息, 需要匹配服务信息
+        // 如果命名空间|服务不为"*"且不等于原服务, 则匹配失败
+        String namespace = ruleSource.getNamespace().getValue();
+        if (!RuleUtils.MATCH_ALL.equals(namespace)
+                && !StringUtils.equals(namespace, targetSourceService.getNamespace())) {
+            return false;
+        }
+        String service = ruleSource.getService().getValue();
+        if (!RuleUtils.MATCH_ALL.equals(service) && !StringUtils.startsWith(service, "!")
+                && !StringUtils.startsWith(service, "*")
+                && !StringUtils.equals(service, targetSourceService.getService())) {
+            return false;
+        }
+        // 如果服务名不等于“*”，且服务名规则以“!”开头，则使用取反匹配
+        if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "!")) {
+            String realService = StringUtils.substring(service, 1);
+            if (StringUtils.equals(realService, targetSourceService.getService())) {
                 return false;
             }
-            // 如果服务名不等于“*”，且服务名规则以“!”开头，则使用取反匹配
-            if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "!")) {
-                String realService = StringUtils.substring(service, 1);
-                if (StringUtils.equals(realService, targetSourceService.getService())) {
-                    return false;
-                }
-            }
-            // 如果服务名不等于“*”，且服务名规则以“*”开头，则使用正则匹配
-            if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "*")) {
-                String regex = StringUtils.substring(service, 1);
-                Pattern pattern = Pattern.compile(regex);
-                if (!pattern.matcher(targetSourceService.getService()).find()) {
-                    return false;
-                }
+        }
+        // 如果服务名不等于“*”，且服务名规则以“*”开头，则使用正则匹配
+        if (!RuleUtils.MATCH_ALL.equals(service) && StringUtils.startsWith(service, "*")) {
+            String regex = StringUtils.substring(service, 1);
+            Pattern pattern = Pattern.compile(regex);
+            if (!pattern.matcher(targetSourceService.getService()).find()) {
+                return false;
             }
         }
         return true;
