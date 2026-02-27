@@ -23,8 +23,7 @@ import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.utils.MapUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.ratelimit.client.flow.*;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.*;
-import com.tencent.polaris.ratelimit.client.pb.RatelimitV2.RateLimitInitRequest.Builder;
+import com.tencent.polaris.specification.api.v1.traffic.manage.ratelimiter.RateLimiterProto.*;
 import org.slf4j.Logger;
 
 import java.util.Map;
@@ -136,7 +135,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
                 streamResource.getHostNode());
         initRecord.setInitStartTimeMilli(System.currentTimeMillis());
         //执行同步操作
-        Builder initRequest = RateLimitInitRequest.newBuilder();
+        RateLimitInitRequest.Builder initRequest = RateLimitInitRequest.newBuilder();
         initRequest.setClientId(window.getWindowSet().getClientId());
 
         //target
