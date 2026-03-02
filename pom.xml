@@ -318,7 +318,6 @@
                         <excludeArtifact>service-breaker-example</excludeArtifact>
                         <excludeArtifact>configuration-example</excludeArtifact>
                         <excludeArtifact>discovery-example</excludeArtifact>
-                        <excludeArtifact>location-example</excludeArtifact>
                         <excludeArtifact>quickstart-example</excludeArtifact>
                         <excludeArtifact>quickstart-example-consumer</excludeArtifact>
                         <excludeArtifact>quickstart-example-provider</excludeArtifact>

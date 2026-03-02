@@ -27,6 +27,5 @@
         <module>ratelimit-example</module>
         <module>quickstart-example</module>
         <module>configuration-example</module>
-		<module>location-example</module>
 	</modules>
 </project>

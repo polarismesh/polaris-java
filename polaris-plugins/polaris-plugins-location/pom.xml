@@ -20,7 +20,6 @@
         <module>location-provider-base</module>
         <module>location-provider-local</module>
         <module>location-provider-remotehttp</module>
-        <module>location-provider-remoteservice</module>
     </modules>
 
     <dependencies>
