@@ -42,6 +42,7 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.util.Utils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -96,6 +97,9 @@ public class BaseFlow {
         ServiceConfig serviceConfig = extensions.getConfiguration().getProvider().getService();
         RouteInfo routeInfo = new RouteInfo(
                 null, null, dstSvcInfo, null, "", serviceConfig);
+        if (StringUtils.isNotBlank(protocol)) {
+            routeInfo.putRouterMetadata("metadataRoute", metadata);
+        }
         ResourcesResponse resourcesResponse = BaseFlow
                 .syncGetResources(extensions, false, provider, flowControlParam);
         LOG.debug("[ConnectionManager]success to discover service {}", svcEventKey);
