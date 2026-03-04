@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -141,7 +142,11 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
                 streamClient.onCompleted();
             }
             if (null != channel) {
-                channel.shutdown();
+                if (closeSend) {
+                    channel.shutdown();       // 正常关闭：优雅等待
+                } else {
+                    channel.shutdownNow();    // 异常关闭：立即断开
+                }
             }
             // 重置窗口最后初始化时间，清初始化窗口记录、上报索引记录
             initRecord.forEach((serviceIdentifier, record) -> record.getRateLimitWindow().setLastInitTimeMs(0));
@@ -305,7 +310,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         TimeAdjustRequest timeAdjustRequest = TimeAdjustRequest.newBuilder().build();
         TimeAdjustResponse timeAdjustResponse;
         try {
-            timeAdjustResponse = client.timeAdjust(timeAdjustRequest);
+            timeAdjustResponse = client.withDeadlineAfter(1, TimeUnit.SECONDS).timeAdjust(timeAdjustRequest);
         } catch (Throwable e) {
             LOG.error("[RateLimit] fail to adjust time, err {}", e.getMessage());
             onError(e);
