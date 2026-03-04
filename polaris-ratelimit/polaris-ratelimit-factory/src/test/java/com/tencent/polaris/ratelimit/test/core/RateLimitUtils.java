@@ -22,7 +22,7 @@ import com.tencent.polaris.plugins.ratelimiter.common.slide.SlidingWindow;
 public class RateLimitUtils {
 
     public static void adjustTime() {
-        long step = 20;
+        long step = 200;
         while (true) {
             long curTimeMs = System.currentTimeMillis();
             long startTimeMs = SlidingWindow.calculateStartTimeMs(curTimeMs, 1000);
