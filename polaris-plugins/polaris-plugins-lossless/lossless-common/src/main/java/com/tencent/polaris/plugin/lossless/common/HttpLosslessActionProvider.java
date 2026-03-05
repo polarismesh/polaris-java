@@ -110,6 +110,6 @@ public class HttpLosslessActionProvider implements LosslessActionProvider {
 				map(LosslessProto.LosslessRule::getLosslessOnline).
 				map(LosslessProto.LosslessOnline::getDelayRegister).
 				map(LosslessProto.DelayRegister::getHealthCheckPath).
-				orElse("");
+				orElse(extensions.getConfiguration().getProvider().getLossless().getHealthCheckPath());
 	}
 }
