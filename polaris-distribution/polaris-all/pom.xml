@@ -133,6 +133,7 @@
                                         <exclude>META-INF/*.RSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
                                         <exclude>META-INF/io.netty.versions.properties</exclude>
+                                        <exclude>META-INF/org/apache/logging/log4j/core/config/plugins/Log4j2Plugins.dat</exclude>
                                         <exclude>module-info.java</exclude>
                                         <exclude>module-info.class</exclude>
                                     </excludes>
