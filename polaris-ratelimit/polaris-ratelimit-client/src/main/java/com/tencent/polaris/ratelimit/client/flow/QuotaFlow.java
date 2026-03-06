@@ -92,6 +92,15 @@ public class QuotaFlow extends Destroyable {
             FlowCache flowCache = extensions.getFlowCache();
             return flowCache.loadPluginCacheObject(API_ID, key, path -> TrieUtil.buildSimpleApiTrieNode((String) path));
         };
+        rateLimitExtension.submitExpireJob(() -> {
+            try {
+                for (Map.Entry<ServiceKey, RateLimitWindowSet> entry : svcToWindowSet.entrySet()) {
+                    entry.getValue().cleanupContainers();
+                }
+            } catch (Throwable e) {
+                LOG.error("Failed to cleanup expired rate limit window", e);
+            }
+        });
 
         // init tsf rate limit master utils if need
         Map<String, String> metadata = rateLimitConfig.getMetadata();

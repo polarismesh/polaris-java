@@ -70,7 +70,12 @@ public interface RateLimitConstants {
     /**
      * 等待服务端返回结果的时间 1000ms
      */
-    int INIT_WAIT_RESPONSE_TIME = 1 * 1000;
+    int INIT_WAIT_RESPONSE_TIME = 1000;
+
+    /**
+     * 窗口索引有效期时间 2000ms，服务器2000ms未收到请求则淘汰窗口
+     */
+    int WINDOW_INDEX_EXPIRE_TIME = 2000;
 
     /**
      * 服务端的返回code
