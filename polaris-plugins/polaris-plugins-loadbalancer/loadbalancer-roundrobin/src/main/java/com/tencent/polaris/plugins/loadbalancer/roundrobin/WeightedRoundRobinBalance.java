@@ -32,6 +32,9 @@ import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.utils.CollectionUtils;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -90,7 +93,7 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
             throw new PolarisException(ErrorCode.INSTANCE_NOT_FOUND,
                     "no instance found, serviceKey: " + svcInstances.getService());
         }
-        String key = svcInstances.getNamespace() + "." + svcInstances.getService();
+        String key = generateRouteKey(svcInstances.getInstances());
         ConcurrentMap<String, WeightedRoundRobin> map = methodWeightMap.computeIfAbsent(key, k -> new ConcurrentHashMap<>());
         int totalWeight = 0;
         long maxCurrent = Long.MIN_VALUE;
@@ -127,6 +130,39 @@ public class WeightedRoundRobinBalance extends Destroyable implements LoadBalanc
             return selectedInstance;
         }
         return svcInstances.getInstances().get(0);
+    }
+
+    /**
+     * 根据实例列表生成路由键
+     * 相同实例列表（不同顺序）将生成相同的路由键
+     *
+     * @param instances 实例列表
+     * @return 路由键
+     */
+    private String generateRouteKey(List<Instance> instances) {
+        if (CollectionUtils.isEmpty(instances)) {
+            return "empty";
+        }
+        
+        // 提取实例标识
+        List<String> identifiers = new ArrayList<>();
+        for (Instance instance : instances) {
+            String identifier = instance.getId();
+            if (identifier == null || identifier.isEmpty()) {
+                // 如果 instanceId 为空，则使用 host:port 组合
+                identifier = instance.getHost() + ":" + instance.getPort();
+            }
+            identifiers.add(identifier);
+        }
+        
+        // 字典排序
+        Collections.sort(identifiers);
+        
+        // 使用 # 分隔符拼接
+        String joined = String.join("#", identifiers);
+        
+        // 计算 hashCode 作为路由键
+        return String.valueOf(joined.hashCode());
     }
 
     private int getWeight(Map<String, InstanceWeight> dynamicWeights, Instance instance) {
