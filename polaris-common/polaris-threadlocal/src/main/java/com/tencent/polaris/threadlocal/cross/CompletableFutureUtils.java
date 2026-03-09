@@ -19,6 +19,7 @@ package com.tencent.polaris.threadlocal.cross;
 
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -35,9 +36,21 @@ public class CompletableFutureUtils {
         return CompletableFuture.supplyAsync(polarisSupplier);
     }
 
+    public static <U, T> CompletableFuture<U> supplyAsync(Supplier<U> supplier, Supplier<T> contextGetter,
+                                                          Consumer<T> contextSetter, Executor executor) {
+        Supplier<U> wrappedSupplier = new SupplierWrapper<>(supplier, contextGetter, contextSetter);
+        return CompletableFuture.supplyAsync(wrappedSupplier, executor);
+    }
+
     public static <T> CompletableFuture<Void> runAsync(Runnable runnable, Supplier<T> contextGetter,
                                                        Consumer<T> contextSetter) {
         Runnable polarisRunnable = new RunnableWrapper<>(runnable, contextGetter, contextSetter);
         return CompletableFuture.runAsync(polarisRunnable);
+    }
+
+    public static <T> CompletableFuture<Void> runAsync(Runnable runnable, Supplier<T> contextGetter,
+                                                       Consumer<T> contextSetter, Executor executor) {
+        Runnable wrappedRunnable = new RunnableWrapper<>(runnable, contextGetter, contextSetter);
+        return CompletableFuture.runAsync(wrappedRunnable, executor);
     }
 }

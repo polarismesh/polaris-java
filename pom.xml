@@ -117,6 +117,7 @@
         <httpclient.version>4.5.14</httpclient.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <bouncycastle.version>1.79</bouncycastle.version>
+        <reactor.version>3.8.3</reactor.version>
     </properties>
 
     <dependencies>
