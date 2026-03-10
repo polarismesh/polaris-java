@@ -156,6 +156,11 @@
             <artifactId>location-provider-remotehttp</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>location-provider-cloud</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- 优雅上下线插件 -->
         <dependency>

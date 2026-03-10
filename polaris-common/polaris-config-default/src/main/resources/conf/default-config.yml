@@ -148,6 +148,7 @@ global:
           region: ${REGION:}
           zone: ${ZONE:}
           campus: ${CAMPUS:}
+      - type: cloud
   # 证书管理相关配置
   certificate:
     # 是否启用证书管理

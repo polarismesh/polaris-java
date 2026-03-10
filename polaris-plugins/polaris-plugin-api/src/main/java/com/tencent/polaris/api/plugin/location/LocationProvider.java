@@ -27,7 +27,10 @@ public interface LocationProvider extends Plugin {
 
     enum ProviderType {
 
-        LOCAL("local", 0), REMOTE_HTTP("remoteHttp", 1), REMOTE_SERVICE("remoteService", 2);
+        LOCAL("local", 0),
+        REMOTE_HTTP("remoteHttp", 1),
+        REMOTE_SERVICE("remoteService", 2),
+        CLOUD("cloud", 3);
 
         final String name;
 
