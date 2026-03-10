@@ -26,7 +26,7 @@ import com.tencent.polaris.api.config.verify.Verifier;
  */
 public interface LocationProviderConfig extends Verifier {
 
-	String getTye();
+	String getType();
 
 	Map<String, Object> getOptions();
 

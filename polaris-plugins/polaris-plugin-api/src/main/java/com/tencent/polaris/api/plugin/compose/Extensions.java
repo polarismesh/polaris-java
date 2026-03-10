@@ -248,9 +248,9 @@ public class Extensions extends Destroyable {
 
         for (LocationProviderConfig providerConfig : locationConfig.getProviders()) {
             Plugin pluginValue = plugins
-                    .getOptionalPlugin(PluginTypes.LOCAL_PROVIDER.getBaseType(), providerConfig.getTye());
+                    .getOptionalPlugin(PluginTypes.LOCAL_PROVIDER.getBaseType(), providerConfig.getType());
             if (null == pluginValue) {
-                LOG.warn("locationProvider plugin {} not found", providerConfig.getTye());
+                LOG.warn("locationProvider plugin {} not found", providerConfig.getType());
                 continue;
             }
 

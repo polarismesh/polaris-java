@@ -40,7 +40,7 @@ public class CloudLocationProvider extends BaseLocationProvider<BaseLocationProv
     private static final Logger LOGGER = LoggerFactory.getLogger(CloudLocationProvider.class);
 
     /**
-     * cloud
+     * 对齐javaagent的实现
      */
     private static final String ZONE_URL = "http://metadata.tencentyun.com/latest/meta-data/placement/region";
 
