@@ -17,12 +17,12 @@
 
 package com.tencent.polaris.factory.config.global;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.LocationProviderConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -35,25 +35,20 @@ public class LocationProviderConfigImpl implements LocationProviderConfig {
 	@JsonProperty
 	private Map<String, Object> options = new HashMap<>();
 
-	String getType() {
-		return type;
-	}
-
-	void setType(String type) {
+	public void setType(String type) {
 		this.type = type;
 	}
 
-	void setOptions(Map<String, Object> options) {
-		this.options = options;
-	}
-
 	@Override
-	public String getTye() {
+	public String getType() {
 		return type;
 	}
 
 	@Override
 	public Map<String, Object> getOptions() {
+		if (options == null) {
+			options = new HashMap<>();
+		}
 		return options;
 	}
 

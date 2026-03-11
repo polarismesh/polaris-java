@@ -469,6 +469,11 @@
                 <artifactId>location-provider-remotehttp</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>location-provider-cloud</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- polaris-plugins-configfilter-->
             <dependency>
