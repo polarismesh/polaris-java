@@ -97,7 +97,7 @@
         <log4j2.version>2.19.0</log4j2.version>
         <disruptor.version>3.4.4</disruptor.version>
         <log4j.version>1.2.17</log4j.version>
-        <junit.version>4.13.1</junit.version>
+        <junit.version>4.13.2</junit.version>
         <byte-buddy.version>1.17.8</byte-buddy.version>
         <mockito.version>4.11.0</mockito.version>
         <assertj.version>3.27.7</assertj.version>
@@ -114,6 +114,7 @@
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
         <central.publishing.maven.plugin.version>0.8.0</central.publishing.maven.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
+        <mockwebserver.version>4.12.0</mockwebserver.version>
         <httpclient.version>4.5.14</httpclient.version>
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
         <bouncycastle.version>1.79</bouncycastle.version>
@@ -168,6 +169,12 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>${mockwebserver.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
