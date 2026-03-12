@@ -129,7 +129,7 @@ public class CloudLocationProviderTest {
      * 验证内容：zone 有值，region/campus 为空字符串，整体 Location 非 null
      */
     @Test
-    public void testDoGet_DefaultUrlFallbackOnUnavailable() {
+    public void testDoGet_RegionAndCampusEmpty_OnlyZoneReturned() {
         // Arrange
         server.enqueue(new MockResponse().setResponseCode(200).setBody(ZONE));
         String baseUrl = server.url("/").toString();
