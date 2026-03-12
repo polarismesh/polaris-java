@@ -181,7 +181,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
         }
         StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
 
-        if (!streamResource.hasInit(serviceIdentifier)) {
+        if (!streamResource.hasInit(serviceIdentifier, window)) {
             doRemoteInit(true);
             return;
         }
