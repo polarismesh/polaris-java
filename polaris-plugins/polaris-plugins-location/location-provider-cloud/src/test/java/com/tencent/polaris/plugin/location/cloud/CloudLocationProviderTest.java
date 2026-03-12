@@ -105,8 +105,8 @@ public class CloudLocationProviderTest {
 
     /**
      * 测试 doGet 全部 URL 为空时返回 null
-     * 测试目的：验证 region/zone/campus 均为空字符串时 doGet 返回 null
-     * 测试场景：所有 URL 置为空字符串
+     * 测试目的：验证所有 URL 均为空时，getResponse 直接返回空字符串，doGet 最终返回 null
+     * 测试场景：option 中 region/zone/campus URL 均置为空字符串
      * 验证内容：返回值为 null
      */
     @Test
@@ -171,24 +171,24 @@ public class CloudLocationProviderTest {
     }
 
     /**
-     * 测试 doGet 仅 zone 有效时仍返回 Location
+     * 测试 doGet 仅 campus 有效时仍返回 Location
      * 测试目的：验证只要有一个字段非空，doGet 就不返回 null
-     * 测试场景：仅 zone URL 指向 mock server，region/campus URL 为空
-     * 验证内容：返回非 null 的 Location，zone 有值
+     * 测试场景：仅 campus URL 指向 mock server，region/zone URL 为空
+     * 验证内容：返回非 null 的 Location，campus 有值
      */
     @Test
-    public void testDoGet_OnlyZoneValid() {
+    public void testDoGet_OnlyCampusValid() {
         // Arrange
-        server.enqueue(new MockResponse().setResponseCode(200).setBody(ZONE));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(CAMPUS));
         String baseUrl = server.url("/").toString();
-        BaseLocationProvider.GetOption option = buildOption("", baseUrl, "");
+        BaseLocationProvider.GetOption option = buildOption("", "", baseUrl);
 
         // Act
         ModelProto.Location location = provider.doGet(option);
 
         // Assert
         assertThat(location).isNotNull();
-        assertThat(location.getZone().getValue()).isEqualTo(ZONE);
+        assertThat(location.getCampus().getValue()).isEqualTo(CAMPUS);
     }
 
     /**
