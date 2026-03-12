@@ -42,9 +42,11 @@ public class CloudLocationProvider extends BaseLocationProvider<BaseLocationProv
     /**
      * 对齐javaagent的实现
      */
-    private static final String REGION_URL = "http://metadata.tencentyun.com/latest/meta-data/placement/region";
+    private static final String REGION_URL = "";
 
-    private static final String ZONE_URL = "http://metadata.tencentyun.com/latest/meta-data/placement/zone";
+    private static final String ZONE_URL = "http://metadata.tencentyun.com/latest/meta-data/placement/region";
+
+    private static final String CAMPUS_URL = "http://metadata.tencentyun.com/latest/meta-data/placement/zone";
 
     public CloudLocationProvider() {
         super(GetOption.class);
@@ -70,6 +72,9 @@ public class CloudLocationProvider extends BaseLocationProvider<BaseLocationProv
         String zone = getResponse(zoneUrl, "zone");
 
         String campusUrl = option.getCampus();
+        if (StringUtils.isBlank(campusUrl)) {
+            campusUrl = CAMPUS_URL;
+        }
         String campus = getResponse(campusUrl, "campus");
 
         if (StringUtils.isAllEmpty(region, zone, campus)) {

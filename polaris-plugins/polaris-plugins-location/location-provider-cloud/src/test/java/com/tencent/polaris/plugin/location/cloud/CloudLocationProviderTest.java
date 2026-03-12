@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(MockitoJUnitRunner.class)
 public class CloudLocationProviderTest {
 
-    private static final String REGION = "ap-guangzhou";
+    private static final String REGION = "huanan";
 
-    private static final String ZONE = "ap-guangzhou-3";
+    private static final String ZONE = "ap-guangzhou";
 
-    private static final String CAMPUS = "ap-guangzhou-3a";
+    private static final String CAMPUS = "ap-guangzhou-6";
 
     private MockWebServer server;
 
@@ -105,8 +105,8 @@ public class CloudLocationProviderTest {
 
     /**
      * 测试 doGet 全部 URL 为空时返回 null
-     * 测试目的：验证 region/zone/campus 均为空字符串时 doGet 返回 null
-     * 测试场景：所有 URL 置为空字符串
+     * 测试目的：验证所有 URL 均为空时，getResponse 直接返回空字符串，doGet 最终返回 null
+     * 测试场景：option 中 region/zone/campus URL 均置为空字符串
      * 验证内容：返回值为 null
      */
     @Test
@@ -122,25 +122,26 @@ public class CloudLocationProviderTest {
     }
 
     /**
-     * 测试 doGet zone/campus URL 为空时使用默认 URL 回退（默认 URL 不可达返回空字符串）
-     * 测试目的：验证 option 中 zone/campus URL 为空时回退到默认 URL，请求失败时字段为空字符串
-     * 测试场景：option 仅设置 region URL，zone/campus 留空；mock server 返回 region 值
-     * 验证内容：region 有值，zone/campus 为空字符串（默认 URL 不可达），整体 Location 非 null
+     * 测试 doGet region/campus URL 为空时字段降级为空字符串
+     * 测试目的：验证 option 中 region URL 为空时（无默认 URL）region 字段为空字符串，
+     *          campus URL 为空且默认 URL 不可达时 campus 字段为空字符串
+     * 测试场景：option 仅设置 zone URL，region/campus 留空；mock server 返回 zone 值
+     * 验证内容：zone 有值，region/campus 为空字符串，整体 Location 非 null
      */
     @Test
-    public void testDoGet_DefaultUrlFallbackOnUnavailable() {
+    public void testDoGet_RegionAndCampusEmpty_OnlyZoneReturned() {
         // Arrange
-        server.enqueue(new MockResponse().setResponseCode(200).setBody(REGION));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(ZONE));
         String baseUrl = server.url("/").toString();
-        BaseLocationProvider.GetOption option = buildOption(baseUrl, "", "");
+        BaseLocationProvider.GetOption option = buildOption("", baseUrl, "");
 
         // Act
         ModelProto.Location location = provider.doGet(option);
 
         // Assert
         assertThat(location).isNotNull();
-        assertThat(location.getRegion().getValue()).isEqualTo(REGION);
-        assertThat(location.getZone().getValue()).isEqualTo("");
+        assertThat(location.getRegion().getValue()).isEqualTo("");
+        assertThat(location.getZone().getValue()).isEqualTo(ZONE);
         assertThat(location.getCampus().getValue()).isEqualTo("");
     }
 
@@ -170,24 +171,24 @@ public class CloudLocationProviderTest {
     }
 
     /**
-     * 测试 doGet 仅 region 有效时仍返回 Location
+     * 测试 doGet 仅 campus 有效时仍返回 Location
      * 测试目的：验证只要有一个字段非空，doGet 就不返回 null
-     * 测试场景：仅 region URL 指向 mock server，zone/campus URL 为空
-     * 验证内容：返回非 null 的 Location，region 有值
+     * 测试场景：仅 campus URL 指向 mock server，region/zone URL 为空
+     * 验证内容：返回非 null 的 Location，campus 有值
      */
     @Test
-    public void testDoGet_OnlyRegionValid() {
+    public void testDoGet_OnlyCampusValid() {
         // Arrange
-        server.enqueue(new MockResponse().setResponseCode(200).setBody(REGION));
+        server.enqueue(new MockResponse().setResponseCode(200).setBody(CAMPUS));
         String baseUrl = server.url("/").toString();
-        BaseLocationProvider.GetOption option = buildOption(baseUrl, "", "");
+        BaseLocationProvider.GetOption option = buildOption("", "", baseUrl);
 
         // Act
         ModelProto.Location location = provider.doGet(option);
 
         // Assert
         assertThat(location).isNotNull();
-        assertThat(location.getRegion().getValue()).isEqualTo(REGION);
+        assertThat(location.getCampus().getValue()).isEqualTo(CAMPUS);
     }
 
     /**
