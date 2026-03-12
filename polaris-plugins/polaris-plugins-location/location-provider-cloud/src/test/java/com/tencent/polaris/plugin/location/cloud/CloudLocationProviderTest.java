@@ -122,11 +122,11 @@ public class CloudLocationProviderTest {
     }
 
     /**
-     * 测试 doGet zone/campus URL 为空时使用默认 URL 回退（默认 URL 不可达返回空字符串）
-     * 测试目的：验证 option 中 zone/campus URL 为空时回退到默认 URL，请求失败时字段为空字符串；
-     *          region 无默认 URL，option 中 region URL 为空时 region 字段为空字符串
+     * 测试 doGet region/campus URL 为空时字段降级为空字符串
+     * 测试目的：验证 option 中 region URL 为空时（无默认 URL）region 字段为空字符串，
+     *          campus URL 为空且默认 URL 不可达时 campus 字段为空字符串
      * 测试场景：option 仅设置 zone URL，region/campus 留空；mock server 返回 zone 值
-     * 验证内容：zone 有值，region/campus 为空字符串（region 无默认 URL，campus 默认 URL 不可达），整体 Location 非 null
+     * 验证内容：zone 有值，region/campus 为空字符串，整体 Location 非 null
      */
     @Test
     public void testDoGet_DefaultUrlFallbackOnUnavailable() {
