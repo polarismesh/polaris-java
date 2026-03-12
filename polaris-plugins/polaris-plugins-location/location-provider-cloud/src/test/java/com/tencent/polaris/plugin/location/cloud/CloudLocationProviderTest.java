@@ -41,11 +41,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(MockitoJUnitRunner.class)
 public class CloudLocationProviderTest {
 
-    private static final String REGION = "ap-guangzhou";
+    private static final String REGION = "huanan";
 
-    private static final String ZONE = "ap-guangzhou-3";
+    private static final String ZONE = "ap-guangzhou";
 
-    private static final String CAMPUS = "ap-guangzhou-3a";
+    private static final String CAMPUS = "ap-guangzhou-6";
 
     private MockWebServer server;
 
