@@ -25,4 +25,12 @@ public class TsfEventDataPair {
         this.key = key;
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "TsfEventDataPair{" +
+                "key='" + key + '\'' +
+                ", value='" + value + '\'' +
+                '}';
+    }
 }

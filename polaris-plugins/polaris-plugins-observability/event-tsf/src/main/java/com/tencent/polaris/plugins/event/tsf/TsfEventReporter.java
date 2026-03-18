@@ -66,8 +66,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.tencent.polaris.api.exception.ErrorCode.SERVER_USER_ERROR;
 import static com.tencent.polaris.api.plugin.event.tsf.TsfEventDataConstants.*;
 
 /**
@@ -79,9 +79,18 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
     private static final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 
-    private final BlockingQueue<TsfEventData> v1EventQueue = new LinkedBlockingQueue<>(QUEUE_THRESHOLD);
+    /** V1 事件上报业务失败最大重试次数 */
+    private static final int V1_MAX_RETRY = 3;
 
-    private final Map<String, BlockingQueue<Event>> reportEventQueueMap = new ConcurrentHashMap<>();
+    /** 通用异常最大重试次数 */
+    private static final int COMMON_MAX_RETRY = 120;
+
+    /** 通用异常重试间隔（秒） */
+    private static final long RETRY_INTERVAL_SECONDS = 60;
+
+    private final LinkedBlockingDeque<TsfEventData> v1EventQueue = new LinkedBlockingDeque<>(QUEUE_THRESHOLD);
+
+    private final Map<String, LinkedBlockingDeque<Event>> reportEventQueueMap = new ConcurrentHashMap<>();
 
     private volatile boolean init = true;
 
@@ -93,11 +102,36 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
     private URI reportEventUri;
 
+    /** 重试等待时间（毫秒），默认 60s，测试时可通过构造函数注入较小值 */
+    private final long retryIntervalMs;
+
     private final ScheduledExecutorService v1EventExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("event-tsf-v1"));
 
     protected ScheduledExecutorService reportEventExecutors = Executors.newScheduledThreadPool(1,
             new NamedThreadFactory("event-tsf-report"));
+
+    /**
+     * 独立重试调度器，用于网络异常后延迟恢复消费。
+     * 网络异常时设置 paused 标志，schedule 60s 后恢复，避免为每个事件单独重试导致任务堆积。
+     */
+    private final ScheduledExecutorService retryExecutors = new ScheduledThreadPoolExecutor(1,
+            new NamedThreadFactory("event-tsf-retry", true));
+
+    /** 通用异常重试计数（v1 和 report 共用） */
+    private final AtomicInteger commonRetryCount = new AtomicInteger(0);
+
+    /** 是否因网络异常暂停消费队列 */
+    private volatile boolean paused = false;
+
+    public TsfEventReporter() {
+        this.retryIntervalMs = RETRY_INTERVAL_SECONDS * 1000;
+    }
+
+    /** 测试专用构造函数，允许注入较小的重试等待时间 */
+    TsfEventReporter(long retryIntervalMs) {
+        this.retryIntervalMs = retryIntervalMs;
+    }
 
     @Override
     public boolean isEnabled() {
@@ -219,7 +253,7 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
             // 如果满了就抛出异常
             try {
-                BlockingQueue<Event> reportEventQueue = reportEventQueueMap.computeIfAbsent(cloudEvent.getEvent(), k -> new LinkedBlockingQueue<>(QUEUE_THRESHOLD));
+                LinkedBlockingDeque<Event> reportEventQueue = reportEventQueueMap.computeIfAbsent(cloudEvent.getEvent(), k -> new LinkedBlockingDeque<>(QUEUE_THRESHOLD));
                 reportEventQueue.add(cloudEvent);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("add report event to reportEventQueue: {}", cloudEvent);
@@ -326,15 +360,115 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
         }
     }
 
+    /**
+     * 网络异常时触发暂停：设置 paused=true，schedule retryIntervalMs 后恢复消费。
+     * 所有事件保留在队列中，恢复后由定时任务统一重新消费，避免为每个事件单独重试导致任务堆积。
+     */
+    private void handleCommonException(Throwable e) {
+        // 幂等保护：已经处于暂停状态则不重复调度 resume 任务
+        if (paused) {
+            return;
+        }
+        int count = commonRetryCount.incrementAndGet();
+        if (count > COMMON_MAX_RETRY) {
+            LOG.warn("Tsf event reporter failed after {} retries, giving up. Events in queue will be dropped.",
+                    COMMON_MAX_RETRY, e);
+            v1EventQueue.clear();
+            reportEventQueueMap.values().forEach(LinkedBlockingDeque::clear);
+            commonRetryCount.set(0);
+            paused = false;
+            return;
+        }
+        LOG.warn("Tsf event reporter task fail (retry {}/{}), pausing {}ms before next attempt.",
+                count, COMMON_MAX_RETRY, retryIntervalMs, e);
+        paused = true;
+        retryExecutors.schedule(() -> {
+            LOG.debug("Tsf event reporter resuming after pause (retry {}/{}).", commonRetryCount.get(), COMMON_MAX_RETRY);
+            paused = false;
+        }, retryIntervalMs, TimeUnit.MILLISECONDS);
+    }
+
+    private void postV1Event(TsfGenericEvent genericEvent) throws Exception {
+        StringEntity postBody = null;
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+            initEventUri();
+            HttpPost httpPost = null;
+            HttpResponse httpResponse;
+
+            // 基于 retCode 的重试逻辑，最多重试 V1_MAX_RETRY 次
+            final String bodyJson = gson.toJson(genericEvent);
+            for (int attempt = 0; attempt <= V1_MAX_RETRY; attempt++) {
+                // 每次重试都重新创建 HttpPost 和 StringEntity，避免 entity 已被消费无法重复读
+                httpPost = new HttpPost(v1EventUri);
+                postBody = new StringEntity(bodyJson);
+                httpPost.setEntity(postBody);
+                httpPost.setHeader("Content-Type", "application/json");
+
+                httpResponse = httpClient.execute(httpPost);
+                String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
+                TsfEventResponse response = gson.fromJson(resultString, TsfEventResponse.class);
+
+                if (response.getRetCode() != 0) {
+                    if (attempt < V1_MAX_RETRY) {
+                        LOG.warn("Report v1 event failed (attempt {}/{}), retrying. Response = [{}].",
+                                attempt + 1, V1_MAX_RETRY, resultString);
+                        continue;
+                    } else {
+                        LOG.warn("Report v1 event failed after {} retries, giving up. Response = [{}].",
+                                V1_MAX_RETRY, resultString);
+                        return;
+                    }
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("postV1Event body:{}", bodyJson);
+                }
+                LOG.info("Report v1 event To TSF event-center Success. Response is : {}", resultString);
+                return;
+            }
+        }
+    }
+
+    private void postReportEvent(List<Event> eventData) throws Exception {
+        RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
+        try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
+
+            HttpPost httpPost = new HttpPost(reportEventUri);
+            String body = gson.toJson(eventData);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Report report Event To TSF event-center. body is : {}", body);
+            }
+            httpPost.setEntity(new StringEntity(body));
+            httpPost.setHeader("Content-Type", "application/json");
+
+            HttpResponse httpResponse = httpClient.execute(httpPost);
+            String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
+            EventResponse response = gson.fromJson(resultString, EventResponse.class);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Report report Event To TSF event-center. Response is : {}", resultString);
+            }
+            // errorInfo 非空时直接放弃，不重试
+            if (StringUtils.isNotBlank(response.getErrorInfo())) {
+                LOG.warn("Report report event failed, giving up (no retry). Response = [{}].", resultString);
+                return;
+            }
+            LOG.info("Report report Event To TSF event-center Success. Response is : {}", resultString);
+        }
+    }
+
     @Override
     public void destroy() {
-        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{v1EventExecutors, reportEventExecutors});
+        ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{v1EventExecutors, reportEventExecutors, retryExecutors});
     }
 
     class TsfV1EventTask implements Runnable {
 
         @Override
         public void run() {
+            // 暂停期间跳过，事件保留在队列中等待恢复
+            if (paused) {
+                return;
+            }
             try {
                 // 每次把eventQueue发空结束
                 while (!v1EventQueue.isEmpty()) {
@@ -346,38 +480,25 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
                     genericEvent.setAppId(tsfEventReporterConfig.getAppId());
                     genericEvent.setRegion(tsfEventReporterConfig.getRegion());
 
-                    postV1Event(genericEvent);
+                    try {
+                        postV1Event(genericEvent);
+                        // 成功后重置重试计数
+                        commonRetryCount.set(0);
+                    } catch (Throwable e) {
+                        // 网络异常：将已取出的事件逆序放回队列头部，保持原有顺序，避免丢失
+                        // 一旦队列满导致 offerFirst 失败，立即停止回填并记录丢弃数量（继续尝试也必然失败，且会破坏顺序）
+                        for (int i = eventDataList.size() - 1; i >= 0; i--) {
+                            if (!v1EventQueue.offerFirst(eventDataList.get(i))) {
+                                LOG.warn("v1EventQueue is full, drop {} events on re-enqueue (index 0~{} dropped).",
+                                        i + 1, i);
+                                break;
+                            }
+                        }
+                        throw e;
+                    }
                 }
             } catch (Throwable e) {
-                LOG.warn("Tsf v1 event reporter task fail.", e);
-            }
-        }
-
-        private void postV1Event(TsfGenericEvent genericEvent) {
-            StringEntity postBody = null;
-            RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
-            try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-                initEventUri();
-                HttpPost httpPost = new HttpPost(v1EventUri);
-                postBody = new StringEntity(gson.toJson(genericEvent));
-                httpPost.setEntity(postBody);
-                httpPost.setHeader("Content-Type", "application/json");
-                HttpResponse httpResponse;
-
-                httpResponse = httpClient.execute(httpPost);
-                String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
-                TsfEventResponse response = gson.fromJson(resultString, TsfEventResponse.class);
-
-                if (response.getRetCode() != 0) {
-                    throw new RuntimeException("Report v1 event failed. Response = [" + resultString + "].");
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("postV1Event body:{}", postBody);
-                }
-                LOG.info("Report v1 event To TSF event-center Success. Response is : {}", resultString);
-            } catch (Exception e) {
-                String message = String.format("Report v1 event to event-master failed, postBody:%s.", postBody);
-                throw new PolarisException(SERVER_USER_ERROR, message, e);
+                handleCommonException(e);
             }
         }
     }
@@ -386,54 +507,39 @@ public class TsfEventReporter implements EventReporter, PluginConfigProvider {
 
         @Override
         public void run() {
+            // 暂停期间跳过，事件保留在队列中等待恢复
+            if (paused) {
+                return;
+            }
             try {
-                reportEventQueueMap.entrySet().stream().parallel().forEach((entry) -> {
-                    while (!entry.getValue().isEmpty()) {
+                for (Map.Entry<String, LinkedBlockingDeque<Event>> entry : reportEventQueueMap.entrySet()) {
+                    LinkedBlockingDeque<Event> queue = entry.getValue();
+                    while (!queue.isEmpty()) {
+                        List<Event> eventDataList = new ArrayList<>();
+                        queue.drainTo(eventDataList, MAX_BATCH_SIZE);
                         try {
-                            List<Event> eventDataList = new ArrayList<>();
-                            entry.getValue().drainTo(eventDataList, MAX_BATCH_SIZE);
                             postReportEvent(eventDataList);
+                            // 成功后重置重试计数
+                            commonRetryCount.set(0);
                         } catch (Throwable e) {
-                            LOG.warn("Tsf report event reporter task fail.", e);
+                            // 网络异常：将已取出的事件逆序放回队列头部，保持原有顺序，避免丢失
+                            // 一旦队列满导致 offerFirst 失败，立即停止回填并记录丢弃数量（继续尝试也必然失败，且会破坏顺序）
+                            for (int i = eventDataList.size() - 1; i >= 0; i--) {
+                                if (!queue.offerFirst(eventDataList.get(i))) {
+                                    LOG.warn("reportEventQueue {} is full, drop {} events on re-enqueue (index 0~{} dropped).",
+                                            entry.getKey(), i + 1, i);
+                                    break;
+                                }
+                            }
+                            throw e;
                         }
                     }
-                });
+                }
             } catch (Throwable e) {
-                LOG.warn("Tsf report event reporter task fail.", e);
-            }
-        }
-
-        private void postReportEvent(List<Event> eventData) {
-            StringEntity postBody = null;
-            RequestConfig config = RequestConfig.custom().setConnectTimeout(2000).setConnectionRequestTimeout(10000).setSocketTimeout(10000).build();
-            try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultRequestConfig(config).build()) {
-
-                HttpPost httpPost = new HttpPost(reportEventUri);
-                String body = gson.toJson(eventData);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Report report Event To TSF event-center. body is : {}", body);
-                }
-                postBody = new StringEntity(body);
-                httpPost.setEntity(postBody);
-                httpPost.setHeader("Content-Type", "application/json");
-
-                HttpResponse httpResponse = httpClient.execute(httpPost);
-                String resultString = EntityUtils.toString(httpResponse.getEntity(), "utf-8");
-                EventResponse response = gson.fromJson(resultString, EventResponse.class);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Report report Event To TSF event-center. Response is : {}", resultString);
-                }
-                if (StringUtils.isNotBlank(response.getErrorInfo())) {
-                    throw new RuntimeException("Report report event failed. Response = [" + resultString + "].");
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("postReportEvent body:{}", postBody);
-                }
-                LOG.info("Report report Event To TSF event-center Success. Response is : {}", resultString);
-            } catch (Exception e) {
-                String message = String.format("Report report event to event-master failed, postBody:%s.", postBody);
-                throw new PolarisException(SERVER_USER_ERROR, message, e);
+                handleCommonException(e);
             }
         }
     }
 }
+
+
