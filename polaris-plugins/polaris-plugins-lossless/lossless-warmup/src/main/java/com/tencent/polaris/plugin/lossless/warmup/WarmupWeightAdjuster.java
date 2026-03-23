@@ -170,7 +170,7 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
             }
         }
         if (needOverloadProtection) {
-            if (warmupInstanceCount / instances.getInstances().size() * 100 > overloadProtectionThreshold) {
+            if (warmupInstanceCount * 100 / instances.getInstances().size() > overloadProtectionThreshold) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("[getInstanceWeightFromMetadataRule] warmup instance count:{}, instance size:{}, threshold:{}",
                             warmupInstanceCount, instances.getInstances().size(), overloadProtectionThreshold);
@@ -202,7 +202,7 @@ public class WarmupWeightAdjuster implements WeightAdjuster {
         }
         if (warmup.getEnableOverloadProtection()) {
             int needWarmupCount = countNeedWarmupInstances(instances.getInstances(), warmup, currentTime);
-            if (needWarmupCount / instances.getInstances().size() * 100 >= warmup.getOverloadProtectionThreshold()) {
+            if (needWarmupCount * 100 / instances.getInstances().size() >= warmup.getOverloadProtectionThreshold()) {
                 LOG.debug("[getInstanceWeightFromLosslessRule] need warmup instance size:{}, instance size:{}, threshold:{}",
                         needWarmupCount, instances.getInstances().size(), warmup.getOverloadProtectionThreshold());
                 return originDynamicWeight;
