@@ -84,7 +84,7 @@ public class WeightedRandomBalance extends Destroyable implements LoadBalancer {
     }
 
     private int getWeight(Map<String, InstanceWeight> dynamicWeights, Instance instance) {
-        if (CollectionUtils.isNotEmpty(dynamicWeights)) {
+        if (CollectionUtils.isEmpty(dynamicWeights)) {
             return instance.getWeight();
         }
 
