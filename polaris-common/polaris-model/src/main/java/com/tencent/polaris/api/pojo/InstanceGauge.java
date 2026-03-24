@@ -134,4 +134,13 @@ public interface InstanceGauge extends Service {
      * @return ruleName
      */
     String getRuleName();
+
+    /**
+     * 获取被调实例类型
+     *
+     * @return instanceType
+     */
+    default InstanceType getInstanceType() {
+        return InstanceType.MICROSERVICE;
+    }
 }
