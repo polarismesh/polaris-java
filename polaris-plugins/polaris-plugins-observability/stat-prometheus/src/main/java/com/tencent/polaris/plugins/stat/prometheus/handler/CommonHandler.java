@@ -20,6 +20,7 @@ package com.tencent.polaris.plugins.stat.prometheus.handler;
 import com.tencent.polaris.api.plugin.stat.CircuitBreakGauge;
 import com.tencent.polaris.api.plugin.stat.RateLimitGauge;
 import com.tencent.polaris.api.pojo.InstanceGauge;
+import com.tencent.polaris.api.pojo.InstanceType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.plugins.stat.common.model.AbstractSignatureStatInfoCollector;
@@ -124,6 +125,13 @@ public class CommonHandler {
                     String retStatusStr =
                             null == insGauge.getRetStatus() ? null : insGauge.getRetStatus().getDesc();
                     addLabel(labelName, retStatusStr, labels);
+                    break;
+                case SystemMetricName.CALLEE_INSTANCE_TYPE:
+                    InstanceType instanceType = insGauge.getInstanceType();
+                    if (null == instanceType) {
+                        instanceType = InstanceType.MICROSERVICE;
+                    }
+                    addLabel(labelName, instanceType.getDesc(), labels);
                     break;
                 case SystemMetricName.CALLER_LABELS:
                     addLabel(labelName, insGauge.getLabels(), labels);

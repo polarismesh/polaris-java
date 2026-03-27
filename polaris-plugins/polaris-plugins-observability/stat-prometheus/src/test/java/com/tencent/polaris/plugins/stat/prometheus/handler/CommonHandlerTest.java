@@ -17,11 +17,15 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.handler;
 
+import com.tencent.polaris.api.pojo.InstanceType;
+import com.tencent.polaris.api.pojo.RetStatus;
+import com.tencent.polaris.api.rpc.ServiceCallResult;
 import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -154,5 +158,44 @@ public class CommonHandlerTest {
 
         // 验证
         assertThat(result).isEqualTo("GET");
+    }
+
+    @Test
+    public void testConvertInsGaugeToLabels_WithCalleeInstanceType() {
+        // Arrange
+        ServiceCallResult callResult = new ServiceCallResult();
+        callResult.setNamespace("testNamespace");
+        callResult.setService("testService");
+        callResult.setHost("127.0.0.1");
+        callResult.setPort(8080);
+        callResult.setRetStatus(RetStatus.RetSuccess);
+        callResult.setRetCode(200);
+        callResult.setMethod("GET");
+        callResult.setInstanceType(InstanceType.MCP);
+
+        // Act
+        Map<String, String> labels = CommonHandler.convertInsGaugeToLabels(callResult, "127.0.0.1", null);
+
+        // Assert
+        assertThat(labels.get("callee_instance_type")).isEqualTo("mcp");
+    }
+
+    @Test
+    public void testConvertInsGaugeToLabels_DefaultCalleeInstanceType() {
+        // Arrange
+        ServiceCallResult callResult = new ServiceCallResult();
+        callResult.setNamespace("testNamespace");
+        callResult.setService("testService");
+        callResult.setHost("127.0.0.1");
+        callResult.setPort(8080);
+        callResult.setRetStatus(RetStatus.RetSuccess);
+        callResult.setRetCode(200);
+        callResult.setMethod("GET");
+
+        // Act
+        Map<String, String> labels = CommonHandler.convertInsGaugeToLabels(callResult, "127.0.0.1", null);
+
+        // Assert
+        assertThat(labels.get("callee_instance_type")).isEqualTo("microservice");
     }
 }

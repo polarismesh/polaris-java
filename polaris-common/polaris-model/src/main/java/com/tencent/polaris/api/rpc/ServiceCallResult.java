@@ -19,6 +19,7 @@ package com.tencent.polaris.api.rpc;
 
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceGauge;
+import com.tencent.polaris.api.pojo.InstanceType;
 import com.tencent.polaris.api.pojo.RetStatus;
 import com.tencent.polaris.api.pojo.Service;
 import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString;
@@ -106,6 +107,11 @@ public class ServiceCallResult implements InstanceGauge {
      * 当 RetStatus 为 flow_control 或者 reject 时，需要设置生效的规则名称
      */
     private String ruleName;
+
+    /**
+     * 被调实例类型
+     */
+    private InstanceType instanceType = InstanceType.MICROSERVICE;
 
     @Override
     public String getHost() {
@@ -269,6 +275,15 @@ public class ServiceCallResult implements InstanceGauge {
     }
 
     @Override
+    public InstanceType getInstanceType() {
+        return instanceType;
+    }
+
+    public void setInstanceType(InstanceType instanceType) {
+        this.instanceType = instanceType;
+    }
+
+    @Override
     public String toString() {
         return "ServiceCallResult{" +
                 "service='" + service + '\'' +
@@ -286,6 +301,7 @@ public class ServiceCallResult implements InstanceGauge {
                 ", callerService=" + callerService +
                 ", callerIp='" + callerIp + '\'' +
                 ", ruleName='" + ruleName + '\'' +
+                ", instanceType=" + instanceType +
                 '}';
     }
 }

@@ -26,6 +26,7 @@ public class SystemMetricModel {
                 SystemMetricName.CALLEE_SERVICE,
                 SystemMetricName.CALLEE_METHOD,
                 SystemMetricName.CALLEE_INSTANCE,
+                SystemMetricName.CALLEE_INSTANCE_TYPE,
                 SystemMetricName.CALLEE_RET_CODE,
                 SystemMetricName.CALLEE_RESULT,
                 SystemMetricName.CALLER_LABELS,
@@ -66,6 +67,7 @@ public class SystemMetricModel {
         public static final String CALLEE_RET_CODE = "callee_result_code";
         public static final String CALLEE_METHOD = "callee_method";
         public static final String CALLEE_RESULT = "callee_result";
+        public static final String CALLEE_INSTANCE_TYPE = "callee_instance_type";
         public static final String CALLER_NAMESPACE = "caller_namespace";
         public static final String CALLER_SERVICE = "caller_service";
         public static final String CALLER_IP = "caller_ip";
