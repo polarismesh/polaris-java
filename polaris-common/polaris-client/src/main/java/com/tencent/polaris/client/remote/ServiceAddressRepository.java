@@ -24,11 +24,7 @@ import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
-import com.tencent.polaris.api.pojo.DefaultInstance;
-import com.tencent.polaris.api.pojo.DefaultServiceInstances;
-import com.tencent.polaris.api.pojo.Instance;
-import com.tencent.polaris.api.pojo.ServiceInstances;
-import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.*;
 import com.tencent.polaris.api.rpc.Criteria;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.IPAddressUtils;
@@ -190,11 +186,8 @@ public class ServiceAddressRepository {
     }
 
     private Instance getDiscoverInstance() throws PolarisException {
-        Instance instance = BaseFlow.commonGetOneInstance(extensions, remoteCluster, routers, lbPolicy, protocol,
+        return BaseFlow.commonGetOneInstance(extensions, remoteCluster, routers, lbPolicy, protocol,
                 clientId);
-        LOG.info("success to get instance for service {}, instance is {}:{}", remoteCluster, instance.getHost(),
-                instance.getPort());
-        return instance;
     }
 
     @JustForTest
