@@ -70,7 +70,7 @@ public class LosslessUtils {
 			return Collections.emptyList();
 		}
 		ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-		return discoverResponse.getLosslessRulesList();
+		return discoverResponse.getLosslessRuleListList();
 	}
 
 	public static Map<String, Map<String, LosslessProto.LosslessRule>> parseMetadataLosslessRules(

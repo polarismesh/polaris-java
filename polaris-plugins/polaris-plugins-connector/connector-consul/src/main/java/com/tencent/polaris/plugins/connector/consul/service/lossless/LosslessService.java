@@ -146,7 +146,7 @@ public class LosslessService extends ConsulService {
                     losslessRuleList.add(newLosslessRuleBuilder.build());
                 }
 
-                newDiscoverResponseBuilder.addAllLosslessRules(losslessRuleList);
+                newDiscoverResponseBuilder.addAllLosslessRuleList(losslessRuleList);
                 newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
                 newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.LOSSLESS);
                 ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
