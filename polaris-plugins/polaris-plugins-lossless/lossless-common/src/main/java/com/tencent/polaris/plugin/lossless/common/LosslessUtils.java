@@ -70,7 +70,23 @@ public class LosslessUtils {
 			return Collections.emptyList();
 		}
 		ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-		return discoverResponse.getLosslessRulesList();
+		return extractLosslessRules(discoverResponse);
+	}
+
+	/**
+	 * Extract lossless rules from DiscoverResponse with backward compatibility.
+	 * Try getLosslessRuleListList first (new spec), fallback to getLossless (old spec).
+	 */
+	public static List<LosslessProto.LosslessRule> extractLosslessRules(
+			ResponseProto.DiscoverResponse discoverResponse) {
+		List<LosslessProto.LosslessRule> ruleList = discoverResponse.getLosslessRuleListList();
+		if (CollectionUtils.isNotEmpty(ruleList)) {
+			return ruleList;
+		}
+		if (discoverResponse.hasLossless()) {
+			return Collections.singletonList(discoverResponse.getLossless());
+		}
+		return Collections.emptyList();
 	}
 
 	public static Map<String, Map<String, LosslessProto.LosslessRule>> parseMetadataLosslessRules(
