@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugin.lossless.common;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -85,9 +84,7 @@ public class LosslessUtils {
 			return ruleList;
 		}
 		if (discoverResponse.hasLossless()) {
-			List<LosslessProto.LosslessRule> fallbackList = new ArrayList<>();
-			fallbackList.add(discoverResponse.getLossless());
-			return fallbackList;
+			return Collections.singletonList(discoverResponse.getLossless());
 		}
 		return Collections.emptyList();
 	}
