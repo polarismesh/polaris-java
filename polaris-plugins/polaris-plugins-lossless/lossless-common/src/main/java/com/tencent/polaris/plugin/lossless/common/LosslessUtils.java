@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugin.lossless.common;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -70,7 +71,25 @@ public class LosslessUtils {
 			return Collections.emptyList();
 		}
 		ResponseProto.DiscoverResponse discoverResponse = (ResponseProto.DiscoverResponse) serviceRule.getRule();
-		return discoverResponse.getLosslessRuleListList();
+		return extractLosslessRules(discoverResponse);
+	}
+
+	/**
+	 * Extract lossless rules from DiscoverResponse with backward compatibility.
+	 * Try getLosslessRuleListList first (new spec), fallback to getLossless (old spec).
+	 */
+	public static List<LosslessProto.LosslessRule> extractLosslessRules(
+			ResponseProto.DiscoverResponse discoverResponse) {
+		List<LosslessProto.LosslessRule> ruleList = discoverResponse.getLosslessRuleListList();
+		if (CollectionUtils.isNotEmpty(ruleList)) {
+			return ruleList;
+		}
+		if (discoverResponse.hasLossless()) {
+			List<LosslessProto.LosslessRule> fallbackList = new ArrayList<>();
+			fallbackList.add(discoverResponse.getLossless());
+			return fallbackList;
+		}
+		return Collections.emptyList();
 	}
 
 	public static Map<String, Map<String, LosslessProto.LosslessRule>> parseMetadataLosslessRules(
