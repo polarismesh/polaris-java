@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.plugins.connector.grpc;
 
-import com.tencent.polaris.api.plugin.server.InterfaceDescriptor;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ServiceFeature;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
@@ -53,6 +52,21 @@ public class GrpcConnectorBuildServiceContractTest {
         buildMethod.setAccessible(true);
     }
 
+    private ReportServiceContractRequest createBaseRequest() {
+        ReportServiceContractRequest request = new ReportServiceContractRequest();
+        request.setName("test-contract");
+        request.setNamespace("default");
+        request.setService("test-service");
+        request.setProtocol("mcp-sse");
+        request.setInterfaceDescriptors(Collections.emptyList());
+        return request;
+    }
+
+    private ServiceContractProto.ServiceContract invokeBuilder(ReportServiceContractRequest request)
+            throws Exception {
+        return (ServiceContractProto.ServiceContract) buildMethod.invoke(grpcConnector, request);
+    }
+
     /**
      * 测试正常的 serviceFeatures 序列化
      * 测试目的：验证 ServiceFeature 列表能正确序列化到 protobuf 消息
@@ -62,13 +76,8 @@ public class GrpcConnectorBuildServiceContractTest {
     @Test
     public void testBuildRequest_WithServiceFeatures() throws Exception {
         // Arrange
-        ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName("test-contract");
-        request.setNamespace("default");
-        request.setService("test-service");
-        request.setProtocol("mcp-sse");
+        ReportServiceContractRequest request = createBaseRequest();
         request.setVersion("1.0.0");
-        request.setInterfaceDescriptors(Collections.emptyList());
 
         List<ServiceFeature> features = new ArrayList<>();
 
@@ -99,8 +108,7 @@ public class GrpcConnectorBuildServiceContractTest {
         request.setServiceFeatures(features);
 
         // Act
-        ServiceContractProto.ServiceContract result =
-                (ServiceContractProto.ServiceContract) buildMethod.invoke(grpcConnector, request);
+        ServiceContractProto.ServiceContract result = invokeBuilder(request);
 
         // Assert
         assertThat(result.getServiceFeaturesList()).hasSize(3);
@@ -131,16 +139,10 @@ public class GrpcConnectorBuildServiceContractTest {
     @Test
     public void testBuildRequest_WithNullServiceFeatures() throws Exception {
         // Arrange
-        ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName("test-contract");
-        request.setNamespace("default");
-        request.setService("test-service");
-        request.setProtocol("mcp-sse");
-        request.setInterfaceDescriptors(Collections.emptyList());
+        ReportServiceContractRequest request = createBaseRequest();
 
         // Act
-        ServiceContractProto.ServiceContract result =
-                (ServiceContractProto.ServiceContract) buildMethod.invoke(grpcConnector, request);
+        ServiceContractProto.ServiceContract result = invokeBuilder(request);
 
         // Assert
         assertThat(result.getServiceFeaturesList()).isEmpty();
@@ -155,17 +157,11 @@ public class GrpcConnectorBuildServiceContractTest {
     @Test
     public void testBuildRequest_WithEmptyServiceFeatures() throws Exception {
         // Arrange
-        ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName("test-contract");
-        request.setNamespace("default");
-        request.setService("test-service");
-        request.setProtocol("mcp-sse");
-        request.setInterfaceDescriptors(Collections.emptyList());
+        ReportServiceContractRequest request = createBaseRequest();
         request.setServiceFeatures(Collections.emptyList());
 
         // Act
-        ServiceContractProto.ServiceContract result =
-                (ServiceContractProto.ServiceContract) buildMethod.invoke(grpcConnector, request);
+        ServiceContractProto.ServiceContract result = invokeBuilder(request);
 
         // Assert
         assertThat(result.getServiceFeaturesList()).isEmpty();
@@ -180,12 +176,7 @@ public class GrpcConnectorBuildServiceContractTest {
     @Test
     public void testBuildRequest_WithNullStringFields() throws Exception {
         // Arrange
-        ReportServiceContractRequest request = new ReportServiceContractRequest();
-        request.setName("test-contract");
-        request.setNamespace("default");
-        request.setService("test-service");
-        request.setProtocol("mcp-sse");
-        request.setInterfaceDescriptors(Collections.emptyList());
+        ReportServiceContractRequest request = createBaseRequest();
 
         List<ServiceFeature> features = new ArrayList<>();
         ServiceFeature feature = new ServiceFeature();
@@ -195,8 +186,7 @@ public class GrpcConnectorBuildServiceContractTest {
         request.setServiceFeatures(features);
 
         // Act
-        ServiceContractProto.ServiceContract result =
-                (ServiceContractProto.ServiceContract) buildMethod.invoke(grpcConnector, request);
+        ServiceContractProto.ServiceContract result = invokeBuilder(request);
 
         // Assert
         ServiceContractProto.ServiceFeature protoFeature = result.getServiceFeatures(0);
