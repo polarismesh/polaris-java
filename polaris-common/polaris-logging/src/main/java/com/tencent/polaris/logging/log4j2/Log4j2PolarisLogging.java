@@ -21,10 +21,12 @@ import com.tencent.polaris.logging.AbstractPolarisLogging;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.status.StatusLogger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,13 +53,31 @@ public class Log4j2PolarisLogging extends AbstractPolarisLogging {
         Configuration configuration = loadConfiguration(loggerContext, location);
         configuration.start();
 
-        // append loggers and appenders to contextConfiguration
+        // Remove existing appenders/loggers before re-adding to avoid duplicates.
+        // removeAppender() only exists on AbstractConfiguration, not the Configuration interface.
+        AbstractConfiguration abstractConfig = null;
+        if (contextConfiguration instanceof AbstractConfiguration) {
+            abstractConfig = (AbstractConfiguration) contextConfiguration;
+        } else {
+            StatusLogger.getLogger().warn("Log4j2 contextConfiguration ({}) is not an instance of "
+                    + "AbstractConfiguration, cannot remove old appenders before re-adding. "
+                    + "Repeated loadConfiguration() calls may cause duplicate appenders.",
+                    contextConfiguration.getClass().getName());
+        }
         Map<String, Appender> appenders = configuration.getAppenders();
         for (Appender appender : appenders.values()) {
+            if (abstractConfig != null) {
+                abstractConfig.removeAppender(appender.getName());
+            }
             contextConfiguration.addAppender(appender);
         }
         Map<String, LoggerConfig> loggers = configuration.getLoggers();
-        loggers.forEach(contextConfiguration::addLogger);
+        for (Map.Entry<String, LoggerConfig> entry : loggers.entrySet()) {
+            if (abstractConfig != null) {
+                contextConfiguration.removeLogger(entry.getKey());
+            }
+            contextConfiguration.addLogger(entry.getKey(), entry.getValue());
+        }
         loggerContext.updateLoggers();
     }
 

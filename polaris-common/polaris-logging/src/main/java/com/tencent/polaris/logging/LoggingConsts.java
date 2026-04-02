@@ -24,6 +24,8 @@ package com.tencent.polaris.logging;
  */
 public interface LoggingConsts {
 
+    String LOGGING_POLARIS_PACKAGE = "com.tencent.polaris";
+
     String LOGGING_CONFIG_PROPERTY = "polaris.logging.config";
 
     String LOGGING_PATH_PROPERTY = "polaris.log.home";
