@@ -625,6 +625,20 @@ public class GrpcConnector extends DestroyableServerConnector {
             interfaceDescriptorList.add(interfaceDescriptorBuilder.build());
         }
         serviceContractBuilder.addAllInterfaces(interfaceDescriptorList);
+        if (req.getServiceFeatures() != null) {
+            List<ServiceContractProto.ServiceFeature> serviceFeatureList = new ArrayList<>();
+            for (ServiceFeature sf : req.getServiceFeatures()) {
+                ServiceContractProto.ServiceFeature.Builder serviceFeatureBuilder =
+                        ServiceContractProto.ServiceFeature.newBuilder();
+                serviceFeatureBuilder.setType(sf.getType());
+                serviceFeatureBuilder.setName(StringUtils.defaultString(sf.getName()));
+                serviceFeatureBuilder.setDescription(StringUtils.defaultString(sf.getDescription()));
+                serviceFeatureBuilder.setContent(StringUtils.defaultString(sf.getContent()));
+                serviceFeatureBuilder.setStatus(sf.getStatus());
+                serviceFeatureList.add(serviceFeatureBuilder.build());
+            }
+            serviceContractBuilder.addAllServiceFeatures(serviceFeatureList);
+        }
         return serviceContractBuilder.build();
     }
 
