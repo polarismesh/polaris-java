@@ -42,6 +42,8 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     private List<InterfaceDescriptor> interfaceDescriptors;
 
+    private List<ServiceFeature> serviceFeatures;
+
     private String revision;
 
     private TargetServer targetServer;
@@ -100,6 +102,14 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     public void setInterfaceDescriptors(List<InterfaceDescriptor> interfaceDescriptors) {
         this.interfaceDescriptors = interfaceDescriptors;
+    }
+
+    public List<ServiceFeature> getServiceFeatures() {
+        return serviceFeatures;
+    }
+
+    public void setServiceFeatures(List<ServiceFeature> serviceFeatures) {
+        this.serviceFeatures = serviceFeatures;
     }
 
     public String getRevision() {
