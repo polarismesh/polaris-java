@@ -17,25 +17,23 @@
 
 package com.tencent.polaris.plugins.stat.prometheus.exporter;
 
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
+import com.tencent.polaris.logging.LoggerFactory;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.DefaultHttpConnectionFactory;
+import io.prometheus.client.exporter.HttpConnectionFactory;
+import io.prometheus.client.exporter.common.TextFormat;
+import org.slf4j.Logger;
+
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
 
-import javax.xml.bind.DatatypeConverter;
-
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exporter.DefaultHttpConnectionFactory;
-import io.prometheus.client.exporter.HttpConnectionFactory;
-import io.prometheus.client.exporter.common.TextFormat;
-
 public class PushGateway extends io.prometheus.client.exporter.PushGateway {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PushGateway.class);
 
     private static final int MILLISECONDS_PER_SECOND = 1000;
 
@@ -53,6 +51,78 @@ public class PushGateway extends io.prometheus.client.exporter.PushGateway {
 
     /**
      * Pushes all metrics in a registry, replacing only previously pushed metrics of the same name, job and grouping key.
+     * <p>
+     * This uses the POST HTTP method.
+     */
+    @Override
+    public void pushAdd(CollectorRegistry registry, String job, Map<String, String> groupingKey) throws IOException {
+        doRequest(registry, job, groupingKey, "POST");
+    }
+
+    void doRequest(CollectorRegistry registry, String job, Map<String, String> groupingKey, String method) throws IOException {
+        String url = gatewayBaseURL;
+        if (job.contains("/")) {
+            url += "job@base64/" + base64url(job);
+        } else {
+            url += "job/" + URLEncoder.encode(job, "UTF-8");
+        }
+
+        if (groupingKey != null) {
+            for (Map.Entry<String, String> entry : groupingKey.entrySet()) {
+                if (entry.getValue().isEmpty()) {
+                    url += "/" + entry.getKey() + "@base64/=";
+                } else if (entry.getValue().contains("/")) {
+                    url += "/" + entry.getKey() + "@base64/" + base64url(entry.getValue());
+                } else {
+                    url += "/" + entry.getKey() + "/" + URLEncoder.encode(entry.getValue(), "UTF-8");
+                }
+            }
+        }
+        HttpURLConnection connection = connectionFactory.create(url);
+        connection.setRequestProperty("Content-Type", TextFormat.CONTENT_TYPE_004);
+        if (!method.equals("DELETE")) {
+            connection.setDoOutput(true);
+        }
+        connection.setRequestMethod(method);
+
+        connection.setConnectTimeout(10 * MILLISECONDS_PER_SECOND);
+        connection.setReadTimeout(10 * MILLISECONDS_PER_SECOND);
+        connection.connect();
+
+        try {
+            if (!method.equals("DELETE")) {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+                TextFormat.write004(writer, registry.metricFamilySamples());
+                writer.flush();
+                writer.close();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Push gateway request body to {}: \n{}", url, outputStream.toString("UTF-8"));
+                }
+                connection.getOutputStream().write(outputStream.toByteArray());
+                connection.getOutputStream().flush();
+                connection.getOutputStream().close();
+            }
+
+            int response = connection.getResponseCode();
+            if (response / 100 != 2) {
+                String errorMessage;
+                InputStream errorStream = connection.getErrorStream();
+                if (errorStream != null) {
+                    String errBody = readFromStream(errorStream);
+                    errorMessage = "Response code from " + url + " was " + response + ", response body: " + errBody;
+                } else {
+                    errorMessage = "Response code from " + url + " was " + response;
+                }
+                throw new IOException(errorMessage);
+            }
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    /**
+     * Pushes all metrics in a registry with gzip, replacing only previously pushed metrics of the same name, job and grouping key.
      * <p>
      * This uses the POST HTTP method.
      */
@@ -98,6 +168,9 @@ public class PushGateway extends io.prometheus.client.exporter.PushGateway {
                 TextFormat.write004(writer, registry.metricFamilySamples());
                 writer.flush();
                 writer.close();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Push gateway request body with gzip to {}: \n{}", url, outputStream.toString("UTF-8"));
+                }
                 GZIPOutputStream zipStream = new GZIPOutputStream(connection.getOutputStream());
                 zipStream.write(outputStream.toByteArray());
                 zipStream.finish();
