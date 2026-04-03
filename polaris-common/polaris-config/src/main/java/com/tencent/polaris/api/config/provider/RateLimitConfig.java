@@ -93,6 +93,13 @@ public interface RateLimitConfig extends PluginConfig, Verifier {
 
     Map<String, String> getMetadata();
 
+    /**
+     * 获取覆盖 IP 地址，不为空时将所有实例的 IP 替换为该值，保留原始端口
+     *
+     * @return 覆盖 IP
+     */
+    String getLimiterOverrideHost();
+
     enum Fallback {
         pass, reject,
     }

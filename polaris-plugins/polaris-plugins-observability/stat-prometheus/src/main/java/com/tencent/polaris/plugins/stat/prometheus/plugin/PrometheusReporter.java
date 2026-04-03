@@ -130,7 +130,8 @@ public class PrometheusReporter implements StatReporter, PluginConfigProvider, H
         this.port = extensions.getConfiguration().getGlobal().getAdmin().getPort();
 
         this.serviceAddressRepository = new ServiceAddressRepository(this.config.getAddress(),
-                extensions.getValueContext().getClientId(), extensions, new ServiceKey(config.getNamespace(), config.getService()));
+                extensions.getValueContext().getClientId(), extensions,
+                new ServiceKey(config.getNamespace(), config.getService()), config.getOverrideHost());
 
         if (CollectionUtils.isNotEmpty(config.getPathRegexList())) {
             for (String pathRegex : config.getPathRegexList()) {

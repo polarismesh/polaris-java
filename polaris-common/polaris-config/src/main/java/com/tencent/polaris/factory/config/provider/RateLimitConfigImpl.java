@@ -61,6 +61,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     @JsonProperty
     private Integer rangeDelayMilli;
 
+    @JsonProperty
+    private String limiterOverrideHost;
+
     private final Map<String, String> metadata = new HashMap<>();
 
     public boolean isEnable() {
@@ -185,6 +188,15 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
     }
 
     @Override
+    public String getLimiterOverrideHost() {
+        return limiterOverrideHost;
+    }
+
+    public void setLimiterOverrideHost(String limiterOverrideHost) {
+        this.limiterOverrideHost = limiterOverrideHost;
+    }
+
+    @Override
     public void setDefault(Object defaultObject) {
         if (null != defaultObject) {
             RateLimitConfig rateLimitConfig = (RateLimitConfig) defaultObject;
@@ -221,6 +233,9 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
             if (null == rangeDelayMilli) {
                 setRangeDelayMilli(rateLimitConfig.getRangeDelayMilli());
             }
+            if (null == limiterOverrideHost) {
+                setLimiterOverrideHost(rateLimitConfig.getLimiterOverrideHost());
+            }
             setDefaultPluginConfig(rateLimitConfig);
         }
     }
@@ -239,6 +254,7 @@ public class RateLimitConfigImpl extends PluginConfigImpl implements RateLimitCo
                 ", reportMetrics=" + reportMetrics +
                 ", remoteTaskIntervalMilli=" + remoteTaskIntervalMilli +
                 ", rangeDelayMilli=" + rangeDelayMilli +
+                ", limiterOverrideHost='" + limiterOverrideHost + '\'' +
                 ", metadata=" + metadata +
                 '}';
     }

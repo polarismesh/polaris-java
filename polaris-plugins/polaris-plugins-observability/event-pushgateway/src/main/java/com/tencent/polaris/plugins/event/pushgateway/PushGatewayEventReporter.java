@@ -154,7 +154,8 @@ public class PushGatewayEventReporter implements EventReporter, PluginConfigProv
 
                         serviceAddressRepository = new ServiceAddressRepository(this.config.getAddress(),
                                 ctx.getValueContext().getClientId(), ctx,
-                                new ServiceKey(config.getNamespace(), config.getService()));
+                                new ServiceKey(config.getNamespace(), config.getService()),
+                                config.getOverrideHost());
 
                         eventExecutors.scheduleWithFixedDelay(new PushGatewayEventTask(), 1000, 1000,
                                 TimeUnit.MILLISECONDS);
