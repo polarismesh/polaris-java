@@ -144,7 +144,8 @@ public class RateLimitWindow {
         this.syncParam = quotaRequest.getFlowControlParam();
         remoteCluster = getLimiterClusterService(rule.getCluster(), rateLimitConfig);
         serviceAddressRepository = buildServiceAddressRepository(rateLimitConfig.getLimiterAddresses(),
-                uniqueKey,  windowSet.getExtensions(), remoteCluster, null, LoadBalanceConfig.LOAD_BALANCE_RING_HASH, "grpc");
+                uniqueKey,  windowSet.getExtensions(), remoteCluster, null, LoadBalanceConfig.LOAD_BALANCE_RING_HASH, "grpc",
+                rateLimitConfig.getLimiterOverrideHost());
         allocatingBucket = getQuotaBucket(initCriteria, windowSet.getRateLimitExtension());
         lastAccessTimeMs.set(System.currentTimeMillis());
         this.rateLimitConfig = rateLimitConfig;
@@ -152,8 +153,8 @@ public class RateLimitWindow {
     }
 
     private ServiceAddressRepository buildServiceAddressRepository(List<String> addresses, String hash, Extensions extensions,
-            ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol) {
-        return  new ServiceAddressRepository(addresses, hash, extensions, remoteCluster, routers, lbPolicy, protocol);
+            ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol, String overrideHost) {
+        return  new ServiceAddressRepository(addresses, hash, extensions, remoteCluster, routers, lbPolicy, protocol, overrideHost);
     }
 
 
