@@ -615,14 +615,16 @@ public class GrpcConnector extends DestroyableServerConnector {
         serviceContractBuilder.setContent(StringUtils.defaultString(req.getContent()));
         serviceContractBuilder.setRevision(StringUtils.defaultString(req.getRevision()));
         List<ServiceContractProto.InterfaceDescriptor> interfaceDescriptorList = new ArrayList<>();
-        for (InterfaceDescriptor i : req.getInterfaceDescriptors()) {
-            ServiceContractProto.InterfaceDescriptor.Builder interfaceDescriptorBuilder =
-                    ServiceContractProto.InterfaceDescriptor.newBuilder();
-            interfaceDescriptorBuilder.setName(StringUtils.defaultString(i.getName()));
-            interfaceDescriptorBuilder.setMethod(StringUtils.defaultString(i.getMethod()));
-            interfaceDescriptorBuilder.setPath(StringUtils.defaultString(i.getPath()));
-            interfaceDescriptorBuilder.setContent(StringUtils.defaultString(i.getContent()));
-            interfaceDescriptorList.add(interfaceDescriptorBuilder.build());
+        if (req.getInterfaceDescriptors() != null) {
+            for (InterfaceDescriptor i : req.getInterfaceDescriptors()) {
+                ServiceContractProto.InterfaceDescriptor.Builder interfaceDescriptorBuilder =
+                        ServiceContractProto.InterfaceDescriptor.newBuilder();
+                interfaceDescriptorBuilder.setName(StringUtils.defaultString(i.getName()));
+                interfaceDescriptorBuilder.setMethod(StringUtils.defaultString(i.getMethod()));
+                interfaceDescriptorBuilder.setPath(StringUtils.defaultString(i.getPath()));
+                interfaceDescriptorBuilder.setContent(StringUtils.defaultString(i.getContent()));
+                interfaceDescriptorList.add(interfaceDescriptorBuilder.build());
+            }
         }
         serviceContractBuilder.addAllInterfaces(interfaceDescriptorList);
         if (req.getServiceFeatures() != null) {
