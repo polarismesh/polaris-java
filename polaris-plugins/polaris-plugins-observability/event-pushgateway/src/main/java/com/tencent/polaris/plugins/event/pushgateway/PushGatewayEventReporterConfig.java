@@ -50,6 +50,9 @@ public class PushGatewayEventReporterConfig implements Verifier {
     @JsonProperty
     private String service;
 
+    @JsonProperty
+    private String overrideHost;
+
     @Override
     public void verify() {
         ConfigUtils.validateNull(enable, "global.eventReporter.plugin.pushgateway.enable");
@@ -83,6 +86,9 @@ public class PushGatewayEventReporterConfig implements Verifier {
             }
             if (StringUtils.isBlank(service)) {
                 setService(pushGatewayEventReporterConfig.getService());
+            }
+            if (StringUtils.isBlank(overrideHost)) {
+                setOverrideHost(pushGatewayEventReporterConfig.getOverrideHost());
             }
         }
     }
@@ -138,6 +144,14 @@ public class PushGatewayEventReporterConfig implements Verifier {
         this.service = service;
     }
 
+    public String getOverrideHost() {
+        return overrideHost;
+    }
+
+    public void setOverrideHost(String overrideHost) {
+        this.overrideHost = overrideHost;
+    }
+
     @Override
     public String toString() {
         return "PushGatewayEventReporterConfig{" +
@@ -147,6 +161,7 @@ public class PushGatewayEventReporterConfig implements Verifier {
                 ", maxBatchSize=" + maxBatchSize +
                 ", namespace='" + namespace + '\'' +
                 ", service='" + service + '\'' +
+                ", overrideHost='" + overrideHost + '\'' +
                 '}';
     }
 }

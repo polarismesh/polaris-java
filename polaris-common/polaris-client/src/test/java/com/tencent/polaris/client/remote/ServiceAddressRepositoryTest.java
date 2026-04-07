@@ -224,4 +224,163 @@ public class ServiceAddressRepositoryTest {
         String address = repository.getServiceAddress();
         assertEquals("1.2.3.4:8080", address);
     }
+
+    /**
+     * 测试构造函数中 overrideHost 的默认值
+     * 测试目的：验证不传 overrideHost 时默认为 null
+     * 测试场景：使用两参数和七参数构造函数
+     * 验证内容：overrideHost 字段为 null
+     */
+    @Test
+    public void testConstructorOverrideHostDefault() {
+        List<String> addresses = Arrays.asList("host1:8080");
+
+        ServiceAddressRepository repoDefault = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster);
+        assertNull(repoDefault.getOverrideHost());
+
+        ServiceAddressRepository repoCustom = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster,
+                Collections.singletonList("router"), "weightedRandom", "grpc");
+        assertNull(repoCustom.getOverrideHost());
+    }
+
+    /**
+     * 测试设置 overrideHost 后构造函数正确保存值
+     * 测试目的：验证 overrideHost 被正确存储
+     * 测试场景：使用八参数构造函数传入 overrideHost
+     * 验证内容：getOverrideHost 返回设定值
+     */
+    @Test
+    public void testConstructorWithOverrideHost() {
+        List<String> addresses = Arrays.asList("host1:8080");
+
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster,
+                null, null, null, "127.0.0.1");
+        assertEquals("127.0.0.1", repository.getOverrideHost());
+    }
+
+    /**
+     * 测试本地节点轮询路径下 overrideHost 生效
+     * 测试目的：验证 IP 被替换、端口保留
+     * 测试场景：有本地节点，通过轮询获取地址
+     * 验证内容：返回的 host 为 overrideHost，port 为原始端口
+     */
+    @Test
+    public void testGetServiceAddressNodeWithOverrideHost_LocalNodes() throws PolarisException {
+        List<String> addresses = Arrays.asList("host1:8080", "host2:9090");
+
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster,
+                null, null, null, "10.0.0.1");
+
+        Node node1 = repository.getServiceAddressNode();
+        assertEquals("10.0.0.1", node1.getHost());
+        assertEquals(8080, node1.getPort());
+
+        Node node2 = repository.getServiceAddressNode();
+        assertEquals("10.0.0.1", node2.getHost());
+        assertEquals(9090, node2.getPort());
+    }
+
+    /**
+     * 测试服务发现路径下 overrideHost 生效
+     * 测试目的：验证通过服务发现获取的实例 IP 也被替换
+     * 测试场景：无本地节点，走服务发现，设置了 overrideHost
+     * 验证内容：返回的 host 为 overrideHost，port 为服务发现返回的端口
+     */
+    @Test
+    public void testGetServiceAddressNodeWithOverrideHost_Discovery() throws PolarisException {
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                Collections.emptyList(), clientId, extensions, remoteCluster,
+                null, null, null, "192.168.1.100");
+
+        mockedBaseFlow.when(() -> BaseFlow.commonGetOneInstance(
+                        any(), any(), anyList(), anyString(), anyString(), anyString()))
+                .thenReturn(mockInstance);
+
+        Node node = repository.getServiceAddressNode();
+        assertEquals("192.168.1.100", node.getHost());
+        assertEquals(8080, node.getPort());
+    }
+
+    /**
+     * 测试 getServiceAddress 在 overrideHost 设置后返回正确字符串
+     * 测试目的：验证 getServiceAddress 返回的字符串格式正确
+     * 测试场景：设置 overrideHost，调用 getServiceAddress
+     * 验证内容：返回 "overrideHost:原始端口" 格式
+     */
+    @Test
+    public void testGetServiceAddressWithOverrideHost() throws PolarisException {
+        List<String> addresses = Arrays.asList("host1:8080");
+
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster,
+                null, null, null, "127.0.0.1");
+
+        String address = repository.getServiceAddress();
+        assertEquals("127.0.0.1:8080", address);
+    }
+
+    /**
+     * 测试 overrideHost 为空白字符串时不生效
+     * 测试目的：验证空白 overrideHost 不会替换原始 IP
+     * 测试场景：传入空字符串作为 overrideHost
+     * 验证内容：返回原始的 host 和 port
+     */
+    @Test
+    public void testGetServiceAddressNodeWithBlankOverrideHost() throws PolarisException {
+        List<String> addresses = Arrays.asList("host1:8080");
+
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster,
+                null, null, null, "  ");
+
+        Node node = repository.getServiceAddressNode();
+        assertEquals("host1", node.getHost());
+        assertEquals(8080, node.getPort());
+    }
+
+    /**
+     * 测试 IPv6 格式的 overrideHost 经过 getIpCompatible 处理
+     * 测试目的：验证 IPv6 地址被自动加上方括号
+     * 测试场景：传入裸 IPv6 地址作为 overrideHost
+     * 验证内容：返回的 host 被包裹为 [IPv6] 格式
+     */
+    @Test
+    public void testGetServiceAddressNodeWithIpv6OverrideHost() throws PolarisException {
+        List<String> addresses = Arrays.asList("host1:8080");
+
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster,
+                null, null, null, "fd00::1");
+
+        Node node = repository.getServiceAddressNode();
+        assertEquals("[fd00::1]", node.getHost());
+        assertEquals(8080, node.getPort());
+    }
+
+    /**
+     * 测试五参数构造函数（含 overrideHost）保持默认路由行为
+     * 测试目的：验证五参数构造函数正确添加默认路由并传递 overrideHost
+     * 测试场景：使用五参数构造函数创建实例
+     * 验证内容：默认路由已添加，overrideHost 已设置，IP 正确替换
+     */
+    @Test
+    public void testConstructorWithOverrideHostAndDefaultRouters() throws PolarisException {
+        List<String> addresses = Arrays.asList("host1:8080");
+
+        ServiceAddressRepository repository = new ServiceAddressRepository(
+                addresses, clientId, extensions, remoteCluster, "127.0.0.1");
+
+        assertEquals("127.0.0.1", repository.getOverrideHost());
+        assertEquals(2, repository.getRouters().size());
+        assertEquals(ServiceRouterConfig.DEFAULT_ROUTER_METADATA, repository.getRouters().get(0));
+        assertEquals(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY, repository.getRouters().get(1));
+
+        Node node = repository.getServiceAddressNode();
+        assertEquals("127.0.0.1", node.getHost());
+        assertEquals(8080, node.getPort());
+    }
 }

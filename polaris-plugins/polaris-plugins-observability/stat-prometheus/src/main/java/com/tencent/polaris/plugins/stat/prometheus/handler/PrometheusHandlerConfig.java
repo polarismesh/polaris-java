@@ -57,6 +57,9 @@ public class PrometheusHandlerConfig implements Verifier {
     @JsonProperty
     private List<String> pathRegexList = new ArrayList<>();
 
+    @JsonProperty
+    private String overrideHost;
+
     public PrometheusHandlerConfig() {
     }
 
@@ -105,6 +108,9 @@ public class PrometheusHandlerConfig implements Verifier {
             }
             if (StringUtils.isBlank(service)) {
                 setService(config.getService());
+            }
+            if (StringUtils.isBlank(overrideHost)) {
+                setOverrideHost(config.getOverrideHost());
             }
         }
     }
@@ -173,6 +179,14 @@ public class PrometheusHandlerConfig implements Verifier {
         this.pathRegexList = pathRegexList;
     }
 
+    public String getOverrideHost() {
+        return overrideHost;
+    }
+
+    public void setOverrideHost(String overrideHost) {
+        this.overrideHost = overrideHost;
+    }
+
     @Override
     public String toString() {
         return "PrometheusHandlerConfig{" +
@@ -184,6 +198,7 @@ public class PrometheusHandlerConfig implements Verifier {
                 ", pushInterval=" + pushInterval +
                 ", openGzip=" + openGzip +
                 ", pathRegexList=" + pathRegexList +
+                ", overrideHost='" + overrideHost + '\'' +
                 '}';
     }
 }

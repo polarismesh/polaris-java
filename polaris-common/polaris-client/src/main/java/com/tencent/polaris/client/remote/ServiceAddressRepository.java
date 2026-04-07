@@ -70,16 +70,34 @@ public class ServiceAddressRepository {
 
     private final String protocol;
 
+    /**
+     * 覆盖 IP 地址，不为空时将所有实例的 IP 替换为该值，保留原始端口。
+     */
+    private final String overrideHost;
+
 
     public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
             ServiceKey remoteCluster) {
-        this(addresses, clientId, extensions, remoteCluster, null, null, null);
+        this(addresses, clientId, extensions, remoteCluster, null, null, null, null);
+        this.routers.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
+        this.routers.add(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY);
+    }
+
+    public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
+            ServiceKey remoteCluster, String overrideHost) {
+        this(addresses, clientId, extensions, remoteCluster, null, null, null, overrideHost);
         this.routers.add(ServiceRouterConfig.DEFAULT_ROUTER_METADATA);
         this.routers.add(ServiceRouterConfig.DEFAULT_ROUTER_NEARBY);
     }
 
     public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
             ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol) {
+        this(addresses, clientId, extensions, remoteCluster, routers, lbPolicy, protocol, null);
+    }
+
+    public ServiceAddressRepository(List<String> addresses, String clientId, Extensions extensions,
+            ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol,
+            String overrideHost) {
         // to ip addresses.
         this.nodes = new ArrayList<>();
         if (CollectionUtils.isNotEmpty(addresses)) {
@@ -123,6 +141,7 @@ public class ServiceAddressRepository {
         } else {
             this.protocol = protocol;
         }
+        this.overrideHost = overrideHost;
     }
 
     public String getServiceAddress() throws PolarisException {
@@ -143,7 +162,7 @@ public class ServiceAddressRepository {
                     LOG.debug("success to get instance for service {}, instance is {}", remoteCluster,
                             node.getHostPort());
                 }
-                return node;
+                return applyOverrideHost(node);
             }
             Criteria criteria = new Criteria();
             criteria.setHashKey(this.clientId);
@@ -153,7 +172,7 @@ public class ServiceAddressRepository {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("success to get instance for service {} from local address repository, instance is {}", remoteCluster, node.getHostPort());
             }
-            return node;
+            return applyOverrideHost(node);
         }
         Instance instance = getDiscoverInstance();
         String host = IPAddressUtils.getIpCompatible(instance.getHost());
@@ -161,7 +180,7 @@ public class ServiceAddressRepository {
             LOG.debug("success to get instance for service {} from discovery, instance is {}:{}", remoteCluster, host,
                     instance.getPort());
         }
-        return new Node(IPAddressUtils.getIpCompatible(host), instance.getPort());
+        return applyOverrideHost(new Node(IPAddressUtils.getIpCompatible(host), instance.getPort()));
     }
 
     private ServiceInstances buildDefaultInstances() {
@@ -187,6 +206,13 @@ public class ServiceAddressRepository {
 
     public int nodeListSize() {
         return nodes.size();
+    }
+
+    private Node applyOverrideHost(Node node) {
+        if (StringUtils.isNotBlank(overrideHost)) {
+            return new Node(IPAddressUtils.getIpCompatible(overrideHost), node.getPort());
+        }
+        return node;
     }
 
     private Instance getDiscoverInstance() throws PolarisException {
@@ -215,5 +241,10 @@ public class ServiceAddressRepository {
     @JustForTest
     String getProtocol() {
         return protocol;
+    }
+
+    @JustForTest
+    String getOverrideHost() {
+        return overrideHost;
     }
 }
