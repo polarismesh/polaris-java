@@ -73,18 +73,35 @@ public class ReportServiceContractRequestTest {
     }
 
     /**
-     * 测试 serviceFeatures 默认值为 null
-     * 测试目的：验证未设置时 serviceFeatures 为 null
+     * 测试 serviceFeatures 默认值为空列表
+     * 测试目的：验证未设置时 serviceFeatures 为空列表而非 null，避免 NPE
      * 测试场景：新建 request 不设置 serviceFeatures
-     * 验证内容：getServiceFeatures 返回 null
+     * 验证内容：getServiceFeatures 返回空列表
      */
     @Test
-    public void testServiceFeatures_DefaultNull() {
+    public void testServiceFeatures_DefaultEmptyList() {
         // Arrange & Act
         ReportServiceContractRequest request = new ReportServiceContractRequest();
 
         // Assert
-        assertThat(request.getServiceFeatures()).isNull();
+        assertThat(request.getServiceFeatures()).isNotNull();
+        assertThat(request.getServiceFeatures()).isEmpty();
+    }
+
+    /**
+     * 测试 interfaceDescriptors 默认值为空列表
+     * 测试目的：验证未设置时 interfaceDescriptors 为空列表而非 null，避免 NPE
+     * 测试场景：新建 request 不设置 interfaceDescriptors
+     * 验证内容：getInterfaceDescriptors 返回空列表
+     */
+    @Test
+    public void testInterfaceDescriptors_DefaultEmptyList() {
+        // Arrange & Act
+        ReportServiceContractRequest request = new ReportServiceContractRequest();
+
+        // Assert
+        assertThat(request.getInterfaceDescriptors()).isNotNull();
+        assertThat(request.getInterfaceDescriptors()).isEmpty();
     }
 
     /**
@@ -103,5 +120,57 @@ public class ReportServiceContractRequestTest {
 
         // Assert
         assertThat(request.getServiceFeatures()).isEmpty();
+    }
+
+    /**
+     * 测试 interfaceDescriptors 字段的设置和获取
+     * 测试目的：验证 interfaceDescriptors 字段可以正确设置和读取
+     * 测试场景：构造包含多个 InterfaceDescriptor 的列表，设置后读取
+     * 验证内容：列表大小和内容与设置时一致
+     */
+    @Test
+    public void testInterfaceDescriptors_NormalData() {
+        // Arrange
+        ReportServiceContractRequest request = new ReportServiceContractRequest();
+        List<InterfaceDescriptor> descriptors = new ArrayList<>();
+
+        InterfaceDescriptor descriptor1 = new InterfaceDescriptor();
+        descriptor1.setName("listTools");
+        descriptor1.setMethod("GET");
+        descriptor1.setPath("/api/tools");
+        descriptor1.setContent("{\"type\":\"list\"}");
+        descriptors.add(descriptor1);
+
+        InterfaceDescriptor descriptor2 = new InterfaceDescriptor();
+        descriptor2.setName("callTool");
+        descriptor2.setMethod("POST");
+        descriptor2.setPath("/api/tools/call");
+        descriptors.add(descriptor2);
+
+        // Act
+        request.setInterfaceDescriptors(descriptors);
+
+        // Assert
+        assertThat(request.getInterfaceDescriptors()).hasSize(2);
+        assertThat(request.getInterfaceDescriptors().get(0).getName()).isEqualTo("listTools");
+        assertThat(request.getInterfaceDescriptors().get(1).getName()).isEqualTo("callTool");
+    }
+
+    /**
+     * 测试 interfaceDescriptors 设置空列表
+     * 测试目的：验证设置空列表后可以正确读取
+     * 测试场景：设置 Collections.emptyList()
+     * 验证内容：返回空列表而非 null
+     */
+    @Test
+    public void testInterfaceDescriptors_EmptyList() {
+        // Arrange
+        ReportServiceContractRequest request = new ReportServiceContractRequest();
+
+        // Act
+        request.setInterfaceDescriptors(Collections.emptyList());
+
+        // Assert
+        assertThat(request.getInterfaceDescriptors()).isEmpty();
     }
 }

@@ -19,6 +19,7 @@ package com.tencent.polaris.api.plugin.server;
 
 import com.tencent.polaris.api.rpc.RequestBaseEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -40,9 +41,9 @@ public class ReportServiceContractRequest extends RequestBaseEntity {
 
     private String content;
 
-    private List<InterfaceDescriptor> interfaceDescriptors;
+    private List<InterfaceDescriptor> interfaceDescriptors = new ArrayList<>();
 
-    private List<ServiceFeature> serviceFeatures;
+    private List<ServiceFeature> serviceFeatures = new ArrayList<>();
 
     private String revision;
 

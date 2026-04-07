@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.connector.grpc;
 
+import com.tencent.polaris.api.plugin.server.InterfaceDescriptor;
 import com.tencent.polaris.api.plugin.server.ReportServiceContractRequest;
 import com.tencent.polaris.api.plugin.server.ServiceFeature;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceContractProto;
@@ -193,5 +194,74 @@ public class GrpcConnectorBuildServiceContractTest {
         assertThat(protoFeature.getName()).isEmpty();
         assertThat(protoFeature.getDescription()).isEmpty();
         assertThat(protoFeature.getContent()).isEmpty();
+    }
+
+    /**
+     * 测试 interfaceDescriptors 为 null 时不报错
+     * 测试目的：验证 null 防御逻辑正常工作，不抛出 NPE
+     * 测试场景：不设置 interfaceDescriptors（默认 null）
+     * 验证内容：protobuf 消息中 interfaces 为空列表
+     */
+    @Test
+    public void testBuildRequest_WithNullInterfaceDescriptors() throws Exception {
+        // Arrange
+        ReportServiceContractRequest request = new ReportServiceContractRequest();
+        request.setName("test-contract");
+        request.setNamespace("default");
+        request.setService("test-service");
+        request.setProtocol("mcp-sse");
+        // 不设置 interfaceDescriptors，默认为 null
+
+        // Act
+        ServiceContractProto.ServiceContract result = invokeBuilder(request);
+
+        // Assert
+        assertThat(result.getInterfacesList()).isEmpty();
+    }
+
+    /**
+     * 测试 interfaceDescriptors 正常序列化
+     * 测试目的：验证 InterfaceDescriptor 列表能正确序列化到 protobuf 消息
+     * 测试场景：构造包含多个 InterfaceDescriptor 的列表
+     * 验证内容：protobuf 消息中的 interfaces 数量、名称、方法、路径、内容均正确
+     */
+    @Test
+    public void testBuildRequest_WithInterfaceDescriptors() throws Exception {
+        // Arrange
+        ReportServiceContractRequest request = createBaseRequest();
+
+        List<InterfaceDescriptor> descriptors = new ArrayList<>();
+
+        InterfaceDescriptor descriptor1 = new InterfaceDescriptor();
+        descriptor1.setName("listTools");
+        descriptor1.setMethod("GET");
+        descriptor1.setPath("/api/tools");
+        descriptor1.setContent("{\"type\":\"list\"}");
+        descriptors.add(descriptor1);
+
+        InterfaceDescriptor descriptor2 = new InterfaceDescriptor();
+        descriptor2.setName("callTool");
+        descriptor2.setMethod("POST");
+        descriptor2.setPath("/api/tools/call");
+        descriptor2.setContent("{\"type\":\"call\"}");
+        descriptors.add(descriptor2);
+
+        request.setInterfaceDescriptors(descriptors);
+
+        // Act
+        ServiceContractProto.ServiceContract result = invokeBuilder(request);
+
+        // Assert
+        assertThat(result.getInterfacesList()).hasSize(2);
+
+        ServiceContractProto.InterfaceDescriptor proto1 = result.getInterfaces(0);
+        assertThat(proto1.getName()).isEqualTo("listTools");
+        assertThat(proto1.getMethod()).isEqualTo("GET");
+        assertThat(proto1.getPath()).isEqualTo("/api/tools");
+        assertThat(proto1.getContent()).isEqualTo("{\"type\":\"list\"}");
+
+        ServiceContractProto.InterfaceDescriptor proto2 = result.getInterfaces(1);
+        assertThat(proto2.getName()).isEqualTo("callTool");
+        assertThat(proto2.getMethod()).isEqualTo("POST");
     }
 }
