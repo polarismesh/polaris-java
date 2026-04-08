@@ -218,8 +218,10 @@ public class ServiceAddressRepository {
     private Instance getDiscoverInstance() throws PolarisException {
         Instance instance = BaseFlow.commonGetOneInstance(extensions, remoteCluster, routers, lbPolicy, protocol,
                 clientId);
-        LOG.info("success to get instance for service {}, instance is {}:{}", remoteCluster, instance.getHost(),
-                instance.getPort());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("success to get instance for service {}, instance is {}:{}", remoteCluster, instance.getHost(),
+                    instance.getPort());
+        }
         return instance;
     }
 
