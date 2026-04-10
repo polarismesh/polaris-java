@@ -76,7 +76,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class WindowExpireAndRecoverTest {
 
-    private static final int PORT = 10097;
+    private static int PORT;
 
     private static final String EXPIRE_TEST_SERVICE = "java_expire_test_service";
 
@@ -98,7 +98,8 @@ public class WindowExpireAndRecoverTest {
     @Before
     public void setUp() {
         try {
-            namingServer = NamingServer.startNamingServer(PORT);
+            namingServer = NamingServer.startNamingServer(-1);
+            PORT = namingServer.getPort();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

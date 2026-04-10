@@ -161,10 +161,12 @@ public class RemoteAwareBucket implements QuotaBucket {
                 //当前周期没有更新，则重置当前周期配额，避免出现时间周期开始时候的误限
                 remoteQuotaInfo = new RemoteQuotaInfo(tokenBucket.getRuleTotal(), remoteQuotaInfo.getClientCount(),
                         localCurStartMs, durationMs);
-                LOG.debug("[RateLimit]reset remote quota, localTimeMilli {}(startMilli {}), "
-                                + "remoteTimeMilli {}(startMilli {}), duration {}, remoteLeft is {}, reset to {}",
-                        localCurTimeMs, localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
-                        remoteQuotaLeft, remoteQuotaInfo.getRemoteQuotaLeft());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[RateLimit]period boundary reset, localTime={}(start={}), remoteTime={}(start={}), "
+                                    + "duration={}, originalLeft={}, resetTo={}, clientCount={}",
+                            localCurTimeMs, localCurStartMs, remoteCurTimeMs, remoteCurStartMs, durationMs,
+                            remoteQuotaLeft, remoteQuotaInfo.getRemoteQuotaLeft(), remoteQuotaInfo.getClientCount());
+                }
             } else {
                 tokenBucket.syncUpdateRemoteClientCount(remoteQuotaInfo);
                 //不在一个时间段内，丢弃
@@ -186,6 +188,11 @@ public class RemoteAwareBucket implements QuotaBucket {
             Result result = tokenBucket.getSlidingWindow().acquireCurrentValues(curTimeMs);
             LocalQuotaInfo localQuotaInfo = new LocalQuotaInfo(result.getPassed(), result.getLimited());
             localInfos.put(tokenBucket.getValidDurationSecond(), localQuotaInfo);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[RateLimit]fetchLocalUsage windowKey={}, duration={}s, swapPassed={}, swapLimited={}",
+                        tokenBucket.getWindowKey(), tokenBucket.getValidDurationSecond(),
+                        result.getPassed(), result.getLimited());
+            }
         }
         return localInfos;
     }
