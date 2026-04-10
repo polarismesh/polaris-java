@@ -181,7 +181,7 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
         }
         StreamResource streamResource = streamCounterSet.checkAndCreateResource(serviceIdentifier, window);
 
-        if (!streamResource.hasInit(serviceIdentifier)) {
+        if (!streamResource.hasInit(serviceIdentifier, window)) {
             doRemoteInit(true);
             return;
         }
@@ -211,6 +211,11 @@ public class PolarisRemoteSyncTask implements RemoteSyncTask {
             }
             quotaSum.setCounterKey(counterKey);
             rateLimitReportRequest.addQuotaUses(quotaSum.build());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[RateLimit]report window={}, duration={}s, used={}, limited={}, counterKey={}",
+                        window.getUniqueKey(), entry.getKey(),
+                        entry.getValue().getQuotaUsed(), entry.getValue().getQuotaLimited(), counterKey);
+            }
         }
 
         RateLimitRequest rateLimitRequest = RateLimitRequest.newBuilder().setCmd(RateLimitCmd.ACQUIRE)
