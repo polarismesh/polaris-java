@@ -186,18 +186,32 @@ public class NacosService extends Destroyable {
         }
     }
 
+    private String resolveSubscribeName(ServiceUpdateTask task) {
+        String polarisName = task.getServiceEventKey().getService();
+        if (!nacosContext.isDubboAdapt()) {
+            return polarisName;
+        }
+        String mapped = nacosContext.getServiceNameMappings().get(polarisName);
+        if (StringUtils.isNotEmpty(mapped)) {
+            return mapped;
+        }
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[NacosConnector] dubboAdapt=true, no mapping for polaris service {}, "
+                    + "fallthrough to original name.", polarisName);
+        }
+        return polarisName;
+    }
+
     public void asyncGetInstances(ServiceUpdateTask serviceUpdateTask) {
         try {
-            EventListener nacosEventListener = eventListeners.get(serviceUpdateTask.getServiceEventKey().getService());
+            String subscribeName = resolveSubscribeName(serviceUpdateTask);
+            EventListener nacosEventListener = eventListeners.get(subscribeName);
             if (nacosEventListener == null) {
                 nacosEventListener = new NacosEventListener(serviceUpdateTask, nacosContext);
-                namingService.subscribe(serviceUpdateTask.getServiceEventKey().getService(), nacosContext.getGroupName(),
-                        nacosEventListener);
-                LOG.debug("[NacosConnector] Subscribe instances of {} success. ",
-                        serviceUpdateTask.getServiceEventKey().getService());
+                namingService.subscribe(subscribeName, nacosContext.getGroupName(), nacosEventListener);
+                eventListeners.put(subscribeName, nacosEventListener);  // 修复：补充 put，避免 doDestroy() unsubscribe 失效
+                LOG.debug("[NacosConnector] Subscribe instances of {} success.", subscribeName);
             }
-
-
         } catch (NacosException nacosException) {
             String errorMsg = String.format("subscribe nacos service instances of %s failed.",
                     serviceUpdateTask.getServiceEventKey().getService());

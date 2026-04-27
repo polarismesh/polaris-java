@@ -42,6 +42,7 @@ dependency-reduced-pom.xml
 *.class
 .svn
 logs/
+docs/
 lib/
 backup/
 .arthas/
