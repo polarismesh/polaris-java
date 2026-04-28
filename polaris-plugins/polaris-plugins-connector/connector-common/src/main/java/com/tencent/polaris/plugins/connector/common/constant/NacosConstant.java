@@ -29,5 +29,13 @@ public interface NacosConstant {
         String NACOS_SERVICE_KEY = "nacos.service";
 
         String NACOS_WEIGHT_KEY = "nacos.weight";
+
+        String NACOS_DUBBO_ADAPT_KEY = "nacos.dubboAdapt";
+
+        String DUBBO_CATEGORY_KEY = "dubbo.category";
+
+        String DUBBO_VERSION_KEY = "dubbo.version";
+
+        String DUBBO_GROUP_KEY = "dubbo.group";
     }
 }

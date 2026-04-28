@@ -154,6 +154,9 @@ public class NacosConnector extends DestroyableServerConnector {
         if (metadata.containsKey(NACOS_WEIGHT_KEY)) {
             nacosContext.setNacosWeight(Double.parseDouble(metadata.get(NACOS_WEIGHT_KEY)));
         }
+        if (metadata.containsKey(NACOS_DUBBO_ADAPT_KEY)) {
+            nacosContext.setDubboAdapt(Boolean.parseBoolean(metadata.get(NACOS_DUBBO_ADAPT_KEY)));
+        }
         if (metadata.containsKey(PropertyKeyConst.NAMESPACE) && StringUtils.isNotEmpty(
                 metadata.get(PropertyKeyConst.NAMESPACE))) {
             nacosContext.setNamespace(metadata.get(PropertyKeyConst.NAMESPACE));
@@ -391,10 +394,17 @@ public class NacosConnector extends DestroyableServerConnector {
     }
 
     private String getServiceName(CommonProviderRequest req) {
-        // nacos上注册和polaris不同的服务名时优先用nacosContext中的serviceName
         String serviceName = req.getService();
         if (StringUtils.isNotEmpty(nacosContext.getServiceName())) {
             serviceName = nacosContext.getServiceName();
+        }
+        if (nacosContext.isDubboAdapt()) {
+            Map<String, String> metadata = Optional.ofNullable(req.getMetadata())
+                    .orElse(Collections.emptyMap());
+            String category = metadata.getOrDefault(DUBBO_CATEGORY_KEY, "providers");
+            String version  = metadata.getOrDefault(DUBBO_VERSION_KEY,  "");
+            String group    = metadata.getOrDefault(DUBBO_GROUP_KEY,    "");
+            serviceName = category + ":" + serviceName + ":" + version + ":" + group;
         }
         return serviceName;
     }
