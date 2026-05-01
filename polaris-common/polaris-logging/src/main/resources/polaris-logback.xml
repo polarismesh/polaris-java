@@ -141,6 +141,79 @@
         <appender-ref ref="POLARIS_UPDATE_EVENT_LOG_FILE"/>
     </appender>
 
+    <!-- Nacos shaded appenders -->
+    <appender name="NACOS_CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/nacos/config.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/nacos/config.log.%i</fileNamePattern>
+            <maxIndex>${nacos.config.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${nacos.config.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_NACOS_CONFIG" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="NACOS_CONFIG_LOG_FILE"/>
+    </appender>
+
+    <appender name="NACOS_REMOTE_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/nacos/remote.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/nacos/remote.log.%i</fileNamePattern>
+            <maxIndex>${nacos.remote.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${nacos.remote.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_NACOS_REMOTE" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="NACOS_REMOTE_LOG_FILE"/>
+    </appender>
+
+    <appender name="NACOS_NAMING_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${polaris.log.home}/nacos/naming.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>${polaris.log.home}/nacos/naming.log.%i</fileNamePattern>
+            <maxIndex>${nacos.naming.log.retain.count:-7}</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${nacos.naming.log.file.size:-10MB}</maxFileSize>
+        </triggeringPolicy>
+
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_NACOS_NAMING" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="NACOS_NAMING_LOG_FILE"/>
+    </appender>
+
     <logger name="com.tencent.polaris" level="${polaris.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_LOG_FILE"/>
@@ -184,5 +257,36 @@
             level="${polaris.event.log.level:-info}"
             additivity="false">
         <appender-ref ref="POLARIS_EVENT_LOG_FILE"/>
+    </logger>
+
+    <!-- Nacos shaded loggers -->
+    <logger name="shade.polaris.com.alibaba.nacos.client"
+            level="${nacos.config.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="ASYNC_NACOS_CONFIG"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.common.remote.client"
+            level="${nacos.config.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="ASYNC_NACOS_REMOTE"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.common.labels"
+            level="${nacos.config.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="ASYNC_NACOS_REMOTE"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.client.config"
+            level="${nacos.config.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="ASYNC_NACOS_CONFIG"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.client.naming"
+            level="${nacos.naming.log.level:-info}"
+            additivity="false">
+        <appender-ref ref="ASYNC_NACOS_NAMING"/>
     </logger>
 </configuration>
