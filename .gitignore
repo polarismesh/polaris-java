@@ -47,6 +47,5 @@ lib/
 backup/
 .arthas/
 .codebuddy/
-CLAUDE.md
-.claude/
+specs/
 */tls
