@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -75,6 +76,17 @@ public class RateLimitExtension extends Destroyable {
         expireExecutor.setMaximumPoolSize(1);
         syncExecutor = executor;
         windowExpireExecutor = expireExecutor;
+    }
+
+    /**
+     * 测试构造器：跳过插件扫描，直接注入执行器。
+     */
+    @JustForTest
+    RateLimitExtension(Extensions extensions, ScheduledExecutorService syncExecutor,
+                       ScheduledExecutorService windowExpireExecutor) {
+        this.extensions = extensions;
+        this.syncExecutor = syncExecutor;
+        this.windowExpireExecutor = windowExpireExecutor;
     }
 
     public ServiceRateLimiter getDefaultRateLimiter() {
@@ -153,9 +165,8 @@ public class RateLimitExtension extends Destroyable {
                 AsyncRateLimitConnector connector = window.getWindowSet().getAsyncRateLimitConnector();
                 ServiceIdentifier identifier = new ServiceIdentifier(window.getSvcKey().getService(),
                         window.getSvcKey().getNamespace(), window.getLabels());
-                StreamCounterSet streamCounterSet = connector.getStreamCounterSet(
-                        window.getWindowSet().getRateLimitExtension().getExtensions(),
-                        window.getRemoteCluster(), window.getServiceAddressRepository(), window.getUniqueKey(), identifier);
+                // 窗口已 DELETED，不能借此处再新建 stream 连接
+                StreamCounterSet streamCounterSet = connector.peekStreamCounterSet(window.getUniqueKey());
                 if (streamCounterSet != null) {
                     streamCounterSet.deleteInitRecord(identifier, window);
                 }
@@ -175,5 +186,10 @@ public class RateLimitExtension extends Destroyable {
     @Override
     protected void doDestroy() {
         ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{syncExecutor, windowExpireExecutor});
+    }
+
+    @JustForTest
+    Map<String, ScheduledFuture<?>> getScheduledTasks() {
+        return scheduledTasks;
     }
 }

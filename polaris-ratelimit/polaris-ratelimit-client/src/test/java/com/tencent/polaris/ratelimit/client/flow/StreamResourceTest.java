@@ -19,6 +19,7 @@ package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
+import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.specification.api.v1.traffic.manage.ratelimiter.RateLimiterProto.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,11 +27,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,16 +66,16 @@ public class StreamResourceTest {
     private StreamResource streamResource;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         when(oldWindow.getUniqueKey()).thenReturn("oldRevision#testService#testNamespace#|");
         when(newWindow.getUniqueKey()).thenReturn("newRevision#testService#testNamespace#|");
         when(oldWindow.getAllocatingBucket()).thenReturn(oldBucket);
         when(newWindow.getAllocatingBucket()).thenReturn(newBucket);
 
-        // 通过反射创建 StreamResource 并注入 mock 字段，绕过 gRPC 连接
-        streamResource = createStreamResourceWithoutGrpc();
-        initRecordMap = getPrivateField(streamResource, "initRecord");
-        countersMap = getPrivateField(streamResource, "counters");
+        // 用 @JustForTest 测试构造器创建，跳过 gRPC channel 建立
+        streamResource = new StreamResource(new Node("test-host", 8081), null, null, null);
+        initRecordMap = streamResource.getInitRecord();
+        countersMap = streamResource.getCounters();
     }
 
     /**
@@ -190,7 +188,7 @@ public class StreamResourceTest {
     }
 
     /**
-     * 通过反射调用 handleRateLimitInitResponse
+     * handleRateLimitInitResponse 是 private，为保留对它的细粒度测试用反射调用。
      */
     private void invokeHandleInitResponse(StreamResource resource, RateLimitInitResponse response) throws Exception {
         Method method = StreamResource.class.getDeclaredMethod("handleRateLimitInitResponse", RateLimitInitResponse.class);
@@ -198,53 +196,9 @@ public class StreamResourceTest {
         method.invoke(resource, response);
     }
 
-    /**
-     * 通过反射调用 handleRateLimitReportResponse
-     */
     private void invokeHandleReportResponse(StreamResource resource, RateLimitReportResponse response) throws Exception {
         Method method = StreamResource.class.getDeclaredMethod("handleRateLimitReportResponse", RateLimitReportResponse.class);
         method.setAccessible(true);
         method.invoke(resource, response);
-    }
-
-    /**
-     * 创建 StreamResource 实例，绕过 gRPC 连接初始化
-     */
-    private StreamResource createStreamResourceWithoutGrpc() throws Exception {
-        // 使用 Unsafe 或 ObjenesisStd 创建实例绕过构造函数
-        // 这里用反射 + setAccessible 设置必要字段
-        sun.misc.Unsafe unsafe = getUnsafe();
-        StreamResource resource = (StreamResource) unsafe.allocateInstance(StreamResource.class);
-
-        // 初始化必要字段
-        setPrivateField(resource, "initRecord", new ConcurrentHashMap<ServiceIdentifier, InitializeRecord>());
-        setPrivateField(resource, "counters", new ConcurrentHashMap<Integer, DurationBaseCallback>());
-        setPrivateField(resource, "lastRecvTime", new AtomicLong(0));
-        setPrivateField(resource, "timeDiffMilli", new AtomicLong(0));
-        setPrivateField(resource, "lastSyncTimeMilli", new AtomicLong(0));
-        setPrivateField(resource, "endStream", new java.util.concurrent.atomic.AtomicBoolean(false));
-        setPrivateField(resource, "lastConnectFailTimeMilli", new AtomicLong(0));
-        setPrivateField(resource, "syncInterval", new AtomicLong(30000));
-
-        return resource;
-    }
-
-    private static sun.misc.Unsafe getUnsafe() throws Exception {
-        Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-        unsafeField.setAccessible(true);
-        return (sun.misc.Unsafe) unsafeField.get(null);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T getPrivateField(Object object, String fieldName) throws Exception {
-        Field field = object.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return (T) field.get(object);
-    }
-
-    private static void setPrivateField(Object object, String fieldName, Object value) throws Exception {
-        Field field = object.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(object, value);
     }
 }

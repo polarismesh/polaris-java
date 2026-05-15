@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
@@ -156,6 +157,30 @@ public class RateLimitWindow {
         buildRemoteConfigMode();
     }
 
+    /**
+     * 测试构造器：跳过 ServiceAddressRepository / QuotaBucket 等重型初始化，
+     * 仅注入 unInit / isExpired 等单元测试需要的字段。
+     */
+    @JustForTest
+    RateLimitWindow(RateLimitWindowSet windowSet, ServiceKey svcKey, String labels, String uniqueKey,
+                    int configMode, boolean isTsfCluster) {
+        this.windowSet = windowSet;
+        this.svcKey = svcKey;
+        this.labels = labels;
+        this.uniqueKey = uniqueKey;
+        this.hashValue = uniqueKey.hashCode();
+        this.configMode = configMode;
+        this.isTsfCluster = isTsfCluster;
+        this.rule = null;
+        this.syncParam = null;
+        this.expireDurationMs = 0L;
+        this.remoteCluster = null;
+        this.serviceAddressRepository = null;
+        this.allocatingBucket = null;
+        this.rateLimitConfig = null;
+        this.lastAccessTimeMs.set(System.currentTimeMillis());
+    }
+
     private ServiceAddressRepository buildServiceAddressRepository(List<String> addresses, String hash, Extensions extensions,
             ServiceKey remoteCluster, List<String> routers, String lbPolicy, String protocol, String overrideHost) {
         return  new ServiceAddressRepository(addresses, hash, extensions, remoteCluster, routers, lbPolicy, protocol, overrideHost);
@@ -279,7 +304,8 @@ public class RateLimitWindow {
             status.set(WindowStatus.DELETED.ordinal());
             LOG.info("[RateLimitWindow] window {} {} is set to DELETED", uniqueKey, this);
             //从轮询队列中剔除
-            if (configMode == RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE) {
+            // TSF 集群限流虽然 configMode=LOCAL_MODE，但 init() 中实际提交了 TsfRemoteSyncTask，必须 stop
+            if (configMode == RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE && !isTsfCluster) {
                 return;
             }
             LOG.info("[RateLimitWindow] stopSyncTask( uniqueKey {}, window {} ) ", uniqueKey, this);

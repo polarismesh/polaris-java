@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -113,6 +114,19 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         RateLimitGRPCV2Stub rateLimitGRPCV2Stub = RateLimitGRPCV2Grpc.newStub(channel);
         streamClient = rateLimitGRPCV2Stub.service(this);
         client = RateLimitGRPCV2Grpc.newBlockingStub(channel);
+    }
+
+    /**
+     * 测试构造器：跳过 gRPC channel/stub 初始化，仅注入节点信息。
+     * initRecord/counters 等字段由各自的 final 初始化器置默认值。
+     */
+    @JustForTest
+    StreamResource(Node node, ManagedChannel channel, StreamObserver<RateLimitRequest> streamClient,
+                   RateLimitGRPCV2BlockingStub client) {
+        this.hostNode = node;
+        this.channel = channel;
+        this.streamClient = streamClient;
+        this.client = client;
     }
 
     /**
@@ -423,6 +437,16 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
             return null;
         }
         return initializeRecord.getDurationRecord().get(duration);
+    }
+
+    @JustForTest
+    Map<ServiceIdentifier, InitializeRecord> getInitRecord() {
+        return initRecord;
+    }
+
+    @JustForTest
+    Map<Integer, DurationBaseCallback> getCounters() {
+        return counters;
     }
 
 }

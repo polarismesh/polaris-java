@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -112,5 +113,13 @@ public class StreamCounterSet {
         return null;
     }
 
+    @JustForTest
+    void setCurrentStreamResource(StreamResource streamResource) {
+        currentStreamResource.set(streamResource);
+    }
 
+    @JustForTest
+    int getReferenceCount() {
+        return reference.get();
+    }
 }
