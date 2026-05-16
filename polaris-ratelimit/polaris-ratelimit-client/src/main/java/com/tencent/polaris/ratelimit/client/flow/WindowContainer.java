@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 public class WindowContainer {
@@ -36,6 +37,13 @@ public class WindowContainer {
 
     private final Map<String, RateLimitWindow> windowByLabel;
 
+    /**
+     * cleanup 时被设为 true。任何拿到 container 的调用方必须检查此标志，
+     * 若为 true 表示 container 已被淘汰，所属 window 不应继续使用，调用方应用
+     * windowByRule.compute(...) 替换为一个全新的 container。
+     */
+    private final AtomicBoolean expired = new AtomicBoolean(false);
+
     public WindowContainer(ServiceKey serviceKey, String labelStr, RateLimitWindow window, boolean regexSpread) {
         this.serviceKey = serviceKey;
         if (!regexSpread) {
@@ -46,6 +54,13 @@ public class WindowContainer {
             windowByLabel = new ConcurrentHashMap<>();
             windowByLabel.put(labelStr, window);
         }
+    }
+
+    /**
+     * @return 该 container 是否为 regexSpread 模式（按 label 维度展开多窗口）
+     */
+    public boolean isRegexSpread() {
+        return mainWindow == null;
     }
 
     public RateLimitWindow getLabelWindow(String label) {
@@ -80,12 +95,13 @@ public class WindowContainer {
      */
     public boolean checkAndCleanExpiredWindows() {
         if (null != mainWindow) {
-            boolean expired = mainWindow.isExpired();
-            if (expired) {
+            boolean expiredNow = mainWindow.isExpired();
+            if (expiredNow) {
                 LOG.info("[RateLimit] mainWindow have been cleaned up due to expiration, service {}", serviceKey);
                 mainWindow.unInit();
+                expired.set(true);
             }
-            return expired;
+            return expiredNow;
         }
         int expiredLabels = 0;
         Iterator<Map.Entry<String, RateLimitWindow>> iterator = windowByLabel.entrySet().iterator();
@@ -104,6 +120,29 @@ public class WindowContainer {
             LOG.info("[RateLimit] {} labels have been cleaned up due to expiration, service {}", expiredLabels,
                     serviceKey);
         }
-        return windowByLabel.isEmpty();
+        boolean shouldRemove = windowByLabel.isEmpty();
+        if (shouldRemove) {
+            expired.set(true);
+        }
+        return shouldRemove;
+    }
+
+    /**
+     * 是否已被 cleanup 标记为过期。
+     * addRateLimitWindow 拿到 container 后必须先检查此标志，
+     * 防止把新 window 写入已被卸载的 container（与 cleanupContainers 的并发竞态）。
+     */
+    public boolean isExpired() {
+        return expired.get();
+    }
+
+    /**
+     * 标记 container 为已过期。
+     * 由 cleanupContainers 与 deleteRules 调用，与 addRateLimitWindow 的 compute 互斥执行：
+     * 任何并发 add 拿到此 container 后看到 isExpired()==true 就会用新 container 替换，
+     * 确保新写入的 window 不会落在已脱链的 container 上。
+     */
+    public void markExpired() {
+        expired.set(true);
     }
 }
