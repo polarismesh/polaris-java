@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.pojo.ServiceKey;
@@ -84,10 +85,17 @@ public class AsyncRateLimitConnector {
             }
             if (null != streamCounterSet) {
                 //切换了节点，去掉初始化记录
-                streamCounterSet.deleteInitRecord(serviceIdentifier);
+                InitializeRecord removedRecord = streamCounterSet.deleteInitRecord(serviceIdentifier);
+                if (removedRecord != null) {
+                    RateLimitWindow removedWindow = removedRecord.getRateLimitWindow();
+                    String removedUniqueKey = removedWindow != null ? removedWindow.getUniqueKey() : null;
+                    LOG.info("[getStreamCounterSet] host switched, and initRecord removed serviceIdentifier: {}, "
+                            + "removedWindow {} {}", serviceIdentifier, removedWindow, removedUniqueKey);
+                }
                 //切换了节点，老的不再使用
                 if (streamCounterSet.decreaseReference()) {
-                    nodeToStream.remove(node);
+                    // 形参 node 是切换后的新 node，必须用旧 stream 自身的 node 才能命中
+                    nodeToStream.remove(streamCounterSet.getNode());
                 }
             }
             streamCounterSet = nodeToStream.get(node);
@@ -99,5 +107,26 @@ public class AsyncRateLimitConnector {
             uniqueKeyToStream.put(uniqueKey, streamCounterSet);
             return streamCounterSet;
         }
+    }
+
+    /**
+     * 仅查询 uniqueKey 对应的 StreamCounterSet，不创建。
+     * 用于窗口已 DELETED 后清理 initRecord 的场景，避免 getStreamCounterSet 的"获取或创建"副作用。
+     *
+     * @param uniqueKey 窗口唯一标识
+     * @return StreamCounterSet，不存在时返回 null
+     */
+    public StreamCounterSet peekStreamCounterSet(String uniqueKey) {
+        return uniqueKeyToStream.get(uniqueKey);
+    }
+
+    @JustForTest
+    Map<Node, StreamCounterSet> getNodeToStream() {
+        return nodeToStream;
+    }
+
+    @JustForTest
+    Map<String, StreamCounterSet> getUniqueKeyToStream() {
+        return uniqueKeyToStream;
     }
 }

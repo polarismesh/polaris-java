@@ -17,14 +17,16 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.consumer.LoadBalanceConfig;
+import com.tencent.polaris.api.config.consumer.ServiceRouterConfig;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
 import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
-import com.tencent.polaris.api.pojo.*;
+import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.FlowControlParam;
 import com.tencent.polaris.client.remote.ServiceAddressRepository;
@@ -39,11 +41,12 @@ import com.tencent.polaris.ratelimit.client.utils.RateLimiterEventUtils;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Amount;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimitCluster;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
-import java.util.Random;
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -96,6 +99,8 @@ public class RateLimitWindow {
     private final AtomicLong lastAccessTimeMs = new AtomicLong();
 
     private final AtomicLong lastInitTimeMs = new AtomicLong();
+
+    private final AtomicLong lastSyncTimeMs = new AtomicLong();
 
     // 执行正式分配的令牌桶
     private final QuotaBucket allocatingBucket;
@@ -150,6 +155,30 @@ public class RateLimitWindow {
         lastAccessTimeMs.set(System.currentTimeMillis());
         this.rateLimitConfig = rateLimitConfig;
         buildRemoteConfigMode();
+    }
+
+    /**
+     * 测试构造器：跳过 ServiceAddressRepository / QuotaBucket 等重型初始化，
+     * 仅注入 unInit / isExpired 等单元测试需要的字段。
+     */
+    @JustForTest
+    RateLimitWindow(RateLimitWindowSet windowSet, ServiceKey svcKey, String labels, String uniqueKey,
+                    int configMode, boolean isTsfCluster) {
+        this.windowSet = windowSet;
+        this.svcKey = svcKey;
+        this.labels = labels;
+        this.uniqueKey = uniqueKey;
+        this.hashValue = uniqueKey.hashCode();
+        this.configMode = configMode;
+        this.isTsfCluster = isTsfCluster;
+        this.rule = null;
+        this.syncParam = null;
+        this.expireDurationMs = 0L;
+        this.remoteCluster = null;
+        this.serviceAddressRepository = null;
+        this.allocatingBucket = null;
+        this.rateLimitConfig = null;
+        this.lastAccessTimeMs.set(System.currentTimeMillis());
     }
 
     private ServiceAddressRepository buildServiceAddressRepository(List<String> addresses, String hash, Extensions extensions,
@@ -250,10 +279,12 @@ public class RateLimitWindow {
             }
             if (configMode == RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE && !isTsfCluster) {
                 //本地限流，则直接可用
+                LOG.info("[RateLimitWindow] local window {} initiated", this);
                 status.set(WindowStatus.INITIALIZED.ordinal());
                 return;
             }
             //加入轮询队列，走异步调度
+            LOG.info("[RateLimitWindow] remote window {} first init", this);
             if (rule.getMetadataMap().containsKey("limiter")
                     && StringUtils.equalsIgnoreCase("tsf", rule.getMetadataMap().get("limiter"))) {
                 windowSet.getRateLimitExtension().submitSyncTask(new TsfRemoteSyncTask(this), 0L, 1000L);
@@ -271,8 +302,14 @@ public class RateLimitWindow {
                 return;
             }
             status.set(WindowStatus.DELETED.ordinal());
+            LOG.info("[RateLimitWindow] window {} {} is set to DELETED", uniqueKey, this);
             //从轮询队列中剔除
-            windowSet.getRateLimitExtension().stopSyncTask(uniqueKey);
+            // TSF 集群限流虽然 configMode=LOCAL_MODE，但 init() 中实际提交了 TsfRemoteSyncTask，必须 stop
+            if (configMode == RateLimitConstants.CONFIG_QUOTA_LOCAL_MODE && !isTsfCluster) {
+                return;
+            }
+            LOG.info("[RateLimitWindow] stopSyncTask( uniqueKey {}, window {} ) ", uniqueKey, this);
+            windowSet.getRateLimitExtension().stopSyncTask(uniqueKey, this);
         }
     }
 
@@ -302,16 +339,21 @@ public class RateLimitWindow {
 
     /**
      * 窗口已经过期
+     * TSF 设置为不过期
      *
      * @return boolean
      */
     public boolean isExpired() {
-        long curTimeMs = System.currentTimeMillis();
-        boolean expired = curTimeMs - lastAccessTimeMs.get() > expireDurationMs;
-        if (expired) {
-            LOG.info("[RateLimit]window has expired, expireDurationMs {}, uniqueKey {}", expireDurationMs, uniqueKey);
+        if (!isTsfCluster) {
+            long curTimeMs = System.currentTimeMillis();
+            boolean expired = curTimeMs - lastAccessTimeMs.get() > expireDurationMs;
+            if (expired) {
+                LOG.info("[RateLimit] window has expired, expireDurationMs {}, uniqueKey {}, window {}", expireDurationMs,
+                        uniqueKey, this);
+            }
+            return expired;
         }
-        return expired;
+        return false;
     }
 
     public long getLastInitTimeMs() {
@@ -320,6 +362,14 @@ public class RateLimitWindow {
 
     public void setLastInitTimeMs(long lastInitTimeMs) {
         this.lastInitTimeMs.set(lastInitTimeMs);
+    }
+
+    public long getLastSyncTimeMs() {
+        return lastSyncTimeMs.get();
+    }
+
+    public void setLastSyncTimeMs(long lastSyncTimeMs) {
+        this.lastSyncTimeMs.set(lastSyncTimeMs);
     }
 
     /**

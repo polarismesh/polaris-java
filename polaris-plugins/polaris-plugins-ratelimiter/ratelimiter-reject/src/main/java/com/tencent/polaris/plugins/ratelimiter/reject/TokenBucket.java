@@ -183,9 +183,17 @@ public class TokenBucket implements Comparable<TokenBucket> {
             writeLock.lock();
             updateRemoteClientCount(remoteQuotaInfo);
             long used = slidingWindow.touchCurrentPassed(remoteQuotaInfo.getCurTimeMs());
+            long oldTokenLeft = tokenLeft.get();
             //需要减去上报周期使用的配额数
-            tokenLeft.set(remoteQuotaInfo.getRemoteQuotaLeft() - used);
+            long newTokenLeft = remoteQuotaInfo.getRemoteQuotaLeft() - used;
+            tokenLeft.set(newTokenLeft);
             tokenBucketTimeSet.getLastRemoteUpdateMs().set(remoteQuotaInfo.getCurTimeMs());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[RateLimit]syncUpdate windowKey={}, remoteLeft={}, localUsed={}, newTokenLeft={}, "
+                                + "oldTokenLeft={}, clientCount={}, duration={}ms",
+                        windowKey, remoteQuotaInfo.getRemoteQuotaLeft(), used, newTokenLeft,
+                        oldTokenLeft, remoteQuotaInfo.getClientCount(), validDurationMs);
+            }
         }
     }
 
@@ -213,6 +221,10 @@ public class TokenBucket implements Comparable<TokenBucket> {
             //开始降级到本地限流
             tokenLeft.set(ruleToken.get());
             tokenBucketTimeSet.getStageStartMs().set(nowStageMs);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[RateLimit]degrade to LOCAL, windowKey={}, ruleToken={}, duration={}ms",
+                        windowKey, ruleToken.get(), validDurationMs);
+            }
         }
     }
 
@@ -281,6 +293,10 @@ public class TokenBucket implements Comparable<TokenBucket> {
         remoteToLocalTokenLeft.set(tokenPerInst);
         tokenBucketTimeSet.getStageStartMs().set(nowStageMs);
         identifier.getStageStartMs().set(nowMs);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[RateLimit]degrade to REMOTE_TO_LOCAL, windowKey={}, tokenPerInst={}, instanceCount={}, duration={}ms",
+                    windowKey, tokenPerInst, instanceCount.get(), validDurationMs);
+        }
         return remoteToLocalTokenLeft.addAndGet(-token);
     }
 
