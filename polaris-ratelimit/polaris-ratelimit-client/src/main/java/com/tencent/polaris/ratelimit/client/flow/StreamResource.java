@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -116,6 +117,19 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
     }
 
     /**
+     * 测试构造器：跳过 gRPC channel/stub 初始化，仅注入节点信息。
+     * initRecord/counters 等字段由各自的 final 初始化器置默认值。
+     */
+    @JustForTest
+    StreamResource(Node node, ManagedChannel channel, StreamObserver<RateLimitRequest> streamClient,
+                   RateLimitGRPCV2BlockingStub client) {
+        this.hostNode = node;
+        this.channel = channel;
+        this.streamClient = streamClient;
+        this.client = client;
+    }
+
+    /**
      * 创建连接
      *
      * @return Connection对象
@@ -206,7 +220,7 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         return initRecord.remove(serviceIdentifier);
     }
 
-    // 淘汰时删除窗口初始化映射信息
+    // 淘汰时删除窗口初始化映射信息：仅当 record 的 window 与传入 window 匹配时才删
     public InitializeRecord deleteInitRecord(ServiceIdentifier serviceIdentifier, RateLimitWindow rateLimitWindow) {
         InitializeRecord record = initRecord.get(serviceIdentifier);
         if (record != null && record.getRateLimitWindow() == rateLimitWindow) {
@@ -251,8 +265,22 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
             LOG.error("[handleRateLimitInitResponse] countersList is empty.");
             return;
         }
-        //重新初始化后，之前的记录就不要了
         RateLimitWindow rateLimitWindow = initializeRecord.getRateLimitWindow();
+        // window 已 DELETED 时丢弃响应，避免污染已淘汰窗口（写 lastSyncTimeMs / counters / bucket）；
+        // 但允许 INITIALIZING（首次 init）和 INITIALIZED（redoInit）两种状态——
+        // PolarisRemoteSyncTask.doRemoteInit(true) 在 status 已 INITIALIZED 时仍会发 INIT，
+        // 响应必须被接受才能刷新 counters，否则 hasInit 会一直 false 形成死循环。
+        // 注：状态读 → 写入之间无锁，存在「读到 INITIALIZED 进入分支后被并发 unInit 标 DELETED」的 race；
+        // 此时残留状态只污染已淘汰 window，不影响外部配额计算（getRateLimitWindow 会短路 expired container），
+        // 接受这条最终一致性 race 而不引入 initLock 跨类暴露。
+        WindowStatus currentStatus = rateLimitWindow.getStatus();
+        if (currentStatus != WindowStatus.INITIALIZING && currentStatus != WindowStatus.INITIALIZED) {
+            LOG.warn("[handleRateLimitInitResponse] drop response, window not in INITIALIZING/INITIALIZED. "
+                            + "window {} {}, status {} ",
+                    rateLimitWindow, rateLimitWindow.getUniqueKey(), currentStatus);
+            return;
+        }
+        //重新初始化后，之前的记录就不要了
         initializeRecord.getDurationRecord().forEach((duration, counterKey) -> counters.remove(counterKey));
         initializeRecord.getDurationRecord().clear();
         long remoteQuotaTimeMilli = rateLimitInitResponse.getTimestamp();
@@ -263,23 +291,29 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         countersList.forEach(counter -> {
             initializeRecord.getDurationRecord().putIfAbsent(counter.getDuration(), counter.getCounterKey());
             DurationBaseCallback callback = new DurationBaseCallback(counter.getDuration(), rateLimitWindow);
-            DurationBaseCallback pre = counters.putIfAbsent(counter.getCounterKey(), callback);
-            if (pre != null && pre.getRateLimitWindow() != rateLimitWindow) {
-                counters.put(counter.getCounterKey(), callback);
-                LOG.warn("[handleRateLimitInitResponse] remove counter for window {}, new window {} {}",
-                        pre.getRateLimitWindow().getUniqueKey(), rateLimitWindow.getUniqueKey(),
-                        counter.getCounterKey());
+            // 原实现 putIfAbsent + put 在两次调用之间存在 race，可能让旧 window 的 callback 短暂可见；
+            // 用 compute 把「判断是否覆盖」和「写入」放进同一 bin lock，counterKey 路由由概率收敛改为确定收敛。
+            // lambda 内仅做状态决策，把 LOG.warn 移到 lambda 外，避免 IO/格式化拖长 bin 锁持有时间。
+            String[] replacedFromUniqueKey = new String[1];
+            counters.compute(counter.getCounterKey(), (key, prev) -> {
+                if (prev != null && prev.getRateLimitWindow() != rateLimitWindow) {
+                    replacedFromUniqueKey[0] = prev.getRateLimitWindow().getUniqueKey();
+                    return callback;
+                }
+                return prev != null ? prev : callback;
+            });
+            if (replacedFromUniqueKey[0] != null) {
+                LOG.warn("[handleRateLimitInitResponse] replace counter from window {} to window {}, counterKey {}",
+                        replacedFromUniqueKey[0], rateLimitWindow.getUniqueKey(), counter.getCounterKey());
             }
             RemoteQuotaInfo remoteQuotaInfo = new RemoteQuotaInfo(counter.getLeft(), counter.getClientCount(),
                     localQuotaTimeMilli, counter.getDuration() * 1000L);
             rateLimitWindow.getAllocatingBucket().onRemoteUpdate(remoteQuotaInfo);
         });
-        if (rateLimitWindow.getStatus() == WindowStatus.INITIALIZING) {
+        // 仅在首次 init 完成时切换到 INITIALIZED；redoInit 场景下保持 INITIALIZED 不变
+        if (currentStatus == WindowStatus.INITIALIZING) {
             LOG.info("[handleRateLimitInitResponse] window {} has turn to initialized", rateLimitWindow.getUniqueKey());
             rateLimitWindow.setStatus(WindowStatus.INITIALIZED.ordinal());
-        } else {
-            LOG.warn("[handleRateLimitInitResponse] failed to set window to INITIALIZED. window {} {}, status {} ",
-                    rateLimitWindow, rateLimitWindow.getUniqueKey(), rateLimitWindow.getStatus());
         }
     }
 
@@ -399,9 +433,18 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
         if (record.getRateLimitWindow() != rateLimitWindow) {
             record.getDurationRecord().forEach((duration, counterKey) -> counters.remove(counterKey));
             initRecord.remove(serviceIdentifier); // 清理索引触发重新初始化
-            LOG.warn("[hasInit] init record {} is removed for switched. record window {} {}, param window {} {}",
-                    initRecord, record.getRateLimitWindow(), record.getRateLimitWindow().getUniqueKey(), rateLimitWindow,
-                    rateLimitWindow.getUniqueKey());
+            // warn 仅打 size，避免 ConcurrentHashMap.toString 在大流量场景下成为热点；debug 开启时打完整 map 便于排查
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[hasInit] init record removed for switched. initRecord {}, "
+                                + "record window {} {}, param window {} {}",
+                        initRecord, record.getRateLimitWindow(), record.getRateLimitWindow().getUniqueKey(),
+                        rateLimitWindow, rateLimitWindow.getUniqueKey());
+            } else {
+                LOG.warn("[hasInit] init record removed for switched. initRecord size {}, "
+                                + "record window {} {}, param window {} {}",
+                        initRecord.size(), record.getRateLimitWindow(), record.getRateLimitWindow().getUniqueKey(),
+                        rateLimitWindow, rateLimitWindow.getUniqueKey());
+            }
             return false;
         }
         if (System.currentTimeMillis() - rateLimitWindow.getLastSyncTimeMs()
@@ -423,6 +466,16 @@ public class StreamResource implements StreamObserver<RateLimitResponse> {
             return null;
         }
         return initializeRecord.getDurationRecord().get(duration);
+    }
+
+    @JustForTest
+    Map<ServiceIdentifier, InitializeRecord> getInitRecord() {
+        return initRecord;
+    }
+
+    @JustForTest
+    Map<Integer, DurationBaseCallback> getCounters() {
+        return counters;
     }
 
 }

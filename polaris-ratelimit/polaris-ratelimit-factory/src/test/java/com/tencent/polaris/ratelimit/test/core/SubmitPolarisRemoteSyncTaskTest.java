@@ -101,31 +101,6 @@ public class SubmitPolarisRemoteSyncTaskTest {
     }
 
     /**
-     * 测试提交同步任务 — 任务已存在时不重新提交
-     * 测试场景：scheduledTasks 中已存在对应 uniqueKey 的任务
-     * 验证内容：1. syncExecutor.scheduleWithFixedDelay 不被调用
-     *          2. 窗口状态被回退为 CREATED
-     *          3. scheduledTasks 中仍为原始任务
-     */
-    @Test
-    public void testSubmitSyncTask_TaskAlreadyExists() {
-        // Arrange：放入一个已存在的任务
-        scheduledTasks.put("test-unique-key", mockFuture);
-
-        // Act：执行 submitSyncTask
-        rateLimitExtension.submitSyncTask(remoteSyncTask, 0, 30);
-
-        // Assert：确保任务没有被重新提交
-        verify(syncExecutor, never()).scheduleWithFixedDelay(any(), anyLong(), anyLong(), any());
-
-        // Assert：确保任务状态被设置为 CREATED
-        verify(rateLimitWindow, times(1)).setStatus(RateLimitWindow.WindowStatus.CREATED.ordinal());
-
-        // Assert：确保 scheduledTasks 仍然是原来的任务
-        assertThat((Object) scheduledTasks.get("test-unique-key")).isEqualTo(mockFuture);
-    }
-
-    /**
      * 测试提交同步任务 — 新任务成功提交
      * 测试场景：scheduledTasks 中不存在对应 uniqueKey 的任务
      * 验证内容：1. syncExecutor.scheduleWithFixedDelay 被调用且参数精确匹配

@@ -19,6 +19,8 @@ package com.tencent.polaris.ratelimit.client.flow;
 
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaBucket;
 import com.tencent.polaris.api.plugin.ratelimiter.RemoteQuotaInfo;
+import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.ratelimit.client.utils.RateLimitConstants;
 import com.tencent.polaris.specification.api.v1.traffic.manage.ratelimiter.RateLimiterProto.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,11 +28,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,16 +67,19 @@ public class StreamResourceTest {
     private StreamResource streamResource;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         when(oldWindow.getUniqueKey()).thenReturn("oldRevision#testService#testNamespace#|");
         when(newWindow.getUniqueKey()).thenReturn("newRevision#testService#testNamespace#|");
         when(oldWindow.getAllocatingBucket()).thenReturn(oldBucket);
         when(newWindow.getAllocatingBucket()).thenReturn(newBucket);
+        // handleRateLimitInitResponse 现在要求 window 处于 INITIALIZING 才会写入
+        when(oldWindow.getStatus()).thenReturn(RateLimitWindow.WindowStatus.INITIALIZING);
+        when(newWindow.getStatus()).thenReturn(RateLimitWindow.WindowStatus.INITIALIZING);
 
-        // 通过反射创建 StreamResource 并注入 mock 字段，绕过 gRPC 连接
-        streamResource = createStreamResourceWithoutGrpc();
-        initRecordMap = getPrivateField(streamResource, "initRecord");
-        countersMap = getPrivateField(streamResource, "counters");
+        // 用 @JustForTest 测试构造器创建，跳过 gRPC channel 建立
+        streamResource = new StreamResource(new Node("test-host", 8081), null, null, null);
+        initRecordMap = streamResource.getInitRecord();
+        countersMap = streamResource.getCounters();
     }
 
     /**
@@ -168,6 +170,69 @@ public class StreamResourceTest {
     }
 
     /**
+     * H-3：WINDOW_INDEX_EXPIRE_TIME 阈值需覆盖典型的远端响应延迟。
+     * 默认 sync 间隔约 30~40ms，但服务端处理慢、网络抖动会造成偶发响应延迟超过 2 秒；
+     * 阈值过短会触发不必要的 reinit，加剧服务端压力。
+     */
+    @Test
+    public void hasInit_LastSyncWithinExpireWindow_ShouldNotTriggerReinit() {
+        ServiceIdentifier serviceId = new ServiceIdentifier(TEST_SERVICE, TEST_NAMESPACE, TEST_LABELS);
+        InitializeRecord record = new InitializeRecord(oldWindow);
+        record.getDurationRecord().put(DURATION_SECONDS, COUNTER_KEY);
+        initRecordMap.put(serviceId, record);
+
+        // 距上次 sync 略小于阈值，应当视为仍活跃；不硬编码具体值以避免阈值调整后失败
+        long graceMs = RateLimitConstants.WINDOW_INDEX_EXPIRE_TIME - 500L;
+        when(oldWindow.getLastSyncTimeMs()).thenReturn(System.currentTimeMillis() - graceMs);
+
+        boolean hasInit = streamResource.hasInit(serviceId, oldWindow);
+
+        assertThat(hasInit)
+                .as("距上次 sync 略小于阈值的窗口应视为仍活跃，不应触发 reinit")
+                .isTrue();
+        assertThat(initRecordMap)
+                .as("hasInit==true 时不应清理 initRecord")
+                .containsKey(serviceId);
+    }
+
+    /**
+     * L-1：handleRateLimitInitResponse 在 window 已 DELETED 时应直接丢弃响应，
+     * 不应再 onRemoteUpdate / 刷新 lastSyncTimeMs 等污染已淘汰窗口。
+     */
+    @Test
+    public void handleRateLimitInitResponse_WindowDeleted_DropsResponseWithoutSideEffect() throws Exception {
+        when(oldWindow.getStatus()).thenReturn(RateLimitWindow.WindowStatus.DELETED);
+        ServiceIdentifier serviceId = new ServiceIdentifier(TEST_SERVICE, TEST_NAMESPACE, TEST_LABELS);
+        initRecordMap.put(serviceId, new InitializeRecord(oldWindow));
+
+        invokeHandleInitResponse(streamResource, buildInitResponse(COUNTER_KEY, DURATION_SECONDS, 150000));
+
+        verify(oldBucket, never()).onRemoteUpdate(any(RemoteQuotaInfo.class));
+        verify(oldWindow, never()).setLastSyncTimeMs(anyLong());
+        assertThat(countersMap).as("DELETED 窗口的 counters 不应被写入").doesNotContainKey(COUNTER_KEY);
+    }
+
+    /**
+     * L-1 回归：redoInit 场景下 window 状态已经是 INITIALIZED，
+     * 但 PolarisRemoteSyncTask.doRemoteInit(true) 会再发一次 INIT 请求；
+     * 响应到达时 status 仍是 INITIALIZED，handleRateLimitInitResponse 必须接受并刷新 counters，
+     * 否则 hasInit 会一直返回 false，sync task 反复触发 redoInit 形成死循环。
+     */
+    @Test
+    public void handleRateLimitInitResponse_WindowInitialized_RedoInitResponseStillApplied() throws Exception {
+        when(oldWindow.getStatus()).thenReturn(RateLimitWindow.WindowStatus.INITIALIZED);
+        ServiceIdentifier serviceId = new ServiceIdentifier(TEST_SERVICE, TEST_NAMESPACE, TEST_LABELS);
+        initRecordMap.put(serviceId, new InitializeRecord(oldWindow));
+
+        invokeHandleInitResponse(streamResource, buildInitResponse(COUNTER_KEY, DURATION_SECONDS, 150000));
+
+        verify(oldBucket).onRemoteUpdate(any(RemoteQuotaInfo.class));
+        verify(oldWindow).setLastSyncTimeMs(anyLong());
+        assertThat(countersMap)
+                .as("INITIALIZED 窗口的 redoInit 响应必须被处理，否则 hasInit 死循环")
+                .containsKey(COUNTER_KEY);
+    }
+    /**
      * 构建 INIT 响应
      */
     private RateLimitInitResponse buildInitResponse(int counterKey, int durationSeconds, int quotaLeft) {
@@ -190,7 +255,7 @@ public class StreamResourceTest {
     }
 
     /**
-     * 通过反射调用 handleRateLimitInitResponse
+     * handleRateLimitInitResponse 是 private，为保留对它的细粒度测试用反射调用。
      */
     private void invokeHandleInitResponse(StreamResource resource, RateLimitInitResponse response) throws Exception {
         Method method = StreamResource.class.getDeclaredMethod("handleRateLimitInitResponse", RateLimitInitResponse.class);
@@ -198,53 +263,9 @@ public class StreamResourceTest {
         method.invoke(resource, response);
     }
 
-    /**
-     * 通过反射调用 handleRateLimitReportResponse
-     */
     private void invokeHandleReportResponse(StreamResource resource, RateLimitReportResponse response) throws Exception {
         Method method = StreamResource.class.getDeclaredMethod("handleRateLimitReportResponse", RateLimitReportResponse.class);
         method.setAccessible(true);
         method.invoke(resource, response);
-    }
-
-    /**
-     * 创建 StreamResource 实例，绕过 gRPC 连接初始化
-     */
-    private StreamResource createStreamResourceWithoutGrpc() throws Exception {
-        // 使用 Unsafe 或 ObjenesisStd 创建实例绕过构造函数
-        // 这里用反射 + setAccessible 设置必要字段
-        sun.misc.Unsafe unsafe = getUnsafe();
-        StreamResource resource = (StreamResource) unsafe.allocateInstance(StreamResource.class);
-
-        // 初始化必要字段
-        setPrivateField(resource, "initRecord", new ConcurrentHashMap<ServiceIdentifier, InitializeRecord>());
-        setPrivateField(resource, "counters", new ConcurrentHashMap<Integer, DurationBaseCallback>());
-        setPrivateField(resource, "lastRecvTime", new AtomicLong(0));
-        setPrivateField(resource, "timeDiffMilli", new AtomicLong(0));
-        setPrivateField(resource, "lastSyncTimeMilli", new AtomicLong(0));
-        setPrivateField(resource, "endStream", new java.util.concurrent.atomic.AtomicBoolean(false));
-        setPrivateField(resource, "lastConnectFailTimeMilli", new AtomicLong(0));
-        setPrivateField(resource, "syncInterval", new AtomicLong(30000));
-
-        return resource;
-    }
-
-    private static sun.misc.Unsafe getUnsafe() throws Exception {
-        Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
-        unsafeField.setAccessible(true);
-        return (sun.misc.Unsafe) unsafeField.get(null);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T getPrivateField(Object object, String fieldName) throws Exception {
-        Field field = object.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return (T) field.get(object);
-    }
-
-    private static void setPrivateField(Object object, String fieldName, Object value) throws Exception {
-        Field field = object.getClass().getDeclaredField(fieldName);
-        field.setAccessible(true);
-        field.set(object, value);
     }
 }
