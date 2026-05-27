@@ -110,16 +110,21 @@ public class CloudLocationProvider extends BaseLocationProvider<BaseLocationProv
             while ((str = reader.readLine()) != null) {
                 buffer.append(str);
             }
-            if (conn.getResponseCode() != 200) {
-                LOGGER.error("[Location][Provider][Cloud] get {} from remote {} fail: {}", label, url, buffer);
+            int responseCode = conn.getResponseCode();
+            String result = buffer.toString();
+            if (responseCode != 200) {
+                LOGGER.warn("[Location][Provider][Cloud] get {} from remote {} fail with response code {}: {}", label, url, responseCode, result);
                 return "";
             } else {
-                String result = buffer.toString();
                 LOGGER.debug("[Location][Provider][Cloud] get {} from remote {} success: {}", label, url, result);
                 return result;
             }
         } catch (IOException e) {
-            LOGGER.error("[Location][Provider][Cloud] get {} from remote {} fail : {}", label, path, e);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.warn("[Location][Provider][Cloud] get {} from remote {} fail : {}", label, path, e);
+            } else {
+                LOGGER.warn("[Location][Provider][Cloud] get {} from remote {} fail : {}", label, path, e.getMessage());
+            }
             return "";
         } finally {
             if (null != conn) {
