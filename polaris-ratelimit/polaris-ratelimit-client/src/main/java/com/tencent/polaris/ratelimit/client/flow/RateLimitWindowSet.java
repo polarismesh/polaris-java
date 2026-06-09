@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.ratelimit.client.flow;
 
+import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
@@ -29,6 +30,7 @@ import org.slf4j.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class RateLimitWindowSet {
@@ -77,7 +79,8 @@ public class RateLimitWindowSet {
 
     public RateLimitWindow getRateLimitWindow(Rule rule, String labelsStr) {
         WindowContainer windowContainer = windowByRule.get(rule.getRevision().getValue());
-        if (null == windowContainer) {
+        // 已 markExpired 的 container 内 window 处于 DELETED，返回 null 让上层重建
+        if (null == windowContainer || windowContainer.isExpired()) {
             return null;
         }
         return windowContainer.getLabelWindow(labelsStr);
@@ -94,24 +97,36 @@ public class RateLimitWindowSet {
                                               RateLimitConfig rateLimitConfig, InitCriteria initCriteria) {
         Rule targetRule = initCriteria.getRule();
         String revision = targetRule.getRevision().getValue();
-        Function<String, RateLimitWindow> createRateLimitWindow = new Function<String, RateLimitWindow>() {
-            @Override
-            public RateLimitWindow apply(String label) {
-                return new RateLimitWindow(RateLimitWindowSet.this, request, label, rateLimitConfig, initCriteria);
+        Function<String, RateLimitWindow> createRateLimitWindow = label ->
+                new RateLimitWindow(RateLimitWindowSet.this, request, label, rateLimitConfig, initCriteria);
+        return addLabelToRevision(revision, labelsStr, initCriteria.isRegexSpread(), createRateLimitWindow);
+    }
+
+    /**
+     * 在 windowByRule.compute 内完成 container 创建 + label 维度补齐，
+     * 与 cleanupContainers / deleteRules 在同一 bin 锁互斥，避免 add 出 compute 后 race。
+     * createRateLimitWindow 仅在真正需要新建 container 或新增 label 时调用，避免预创建后被丢弃浪费。
+     */
+    RateLimitWindow addLabelToRevision(String revision, String labelsStr, boolean newRegexSpread,
+                                       Function<String, RateLimitWindow> createRateLimitWindow) {
+        WindowContainer container = windowByRule.compute(revision, (key, existing) -> {
+            if (existing != null && !existing.isExpired()) {
+                if (existing.isRegexSpread() != newRegexSpread) {
+                    // 同一 revision 的 regexSpread 由 rule 内容决定，不一致说明上游传错 initCriteria
+                    LOG.error("[RateLimitWindowSet] regexSpread mismatch for revision {} service {}: "
+                                    + "existing={}, incoming={}. Keep existing container.",
+                            key, serviceKey, existing.isRegexSpread(), newRegexSpread);
+                }
+                // 持锁内补齐 label，避免离开 compute 后被 cleanup 抢入；仅在缺失时调 factory
+                if (existing.isRegexSpread() && existing.getLabelWindow(labelsStr) == null) {
+                    existing.computeLabelWindow(labelsStr, createRateLimitWindow);
+                }
+                return existing;
             }
-        };
-        WindowContainer container = windowByRule.computeIfAbsent(revision, new Function<String, WindowContainer>() {
-            @Override
-            public WindowContainer apply(String s) {
-                RateLimitWindow window = createRateLimitWindow.apply(labelsStr);
-                return new WindowContainer(serviceKey, labelsStr, window, initCriteria.isRegexSpread());
-            }
+            RateLimitWindow window = createRateLimitWindow.apply(labelsStr);
+            return new WindowContainer(serviceKey, labelsStr, window, newRegexSpread);
         });
-        RateLimitWindow mainWindow = container.getLabelWindow(labelsStr);
-        if (null != mainWindow) {
-            return mainWindow;
-        }
-        return container.computeLabelWindow(labelsStr, createRateLimitWindow);
+        return container.getLabelWindow(labelsStr);
     }
 
     public Extensions getExtensions() {
@@ -124,12 +139,42 @@ public class RateLimitWindowSet {
 
     public void deleteRules(Set<String> rules) {
         for (String rule : rules) {
-            WindowContainer container = windowByRule.remove(rule);
-            if (null == container) {
-                continue;
-            }
-            LOG.info("[RateLimit]container {} for service {} has been stopped", rule, serviceKey);
-            container.stopSyncTasks();
+            // 用 compute 与 add 严格互斥；markExpired 让并发 add 通过 isExpired() 重建 container
+            windowByRule.compute(rule, (key, container) -> {
+                if (container == null) {
+                    return null;
+                }
+                container.markExpired();
+                container.stopSyncTasks();
+                LOG.info("[RateLimit]container {} for service {} has been stopped", key, serviceKey);
+                return null;
+            });
+        }
+    }
+
+    /**
+     * 过期清理单个rule下所有WindowContainer
+     */
+    public void cleanupContainers() {
+        AtomicInteger rulesExpired = new AtomicInteger(0);
+        // 用 compute 让"判定 + 移除"与 add 在同一 bin 锁内原子完成
+        for (String revision : windowByRule.keySet()) {
+            windowByRule.compute(revision, (key, container) -> {
+                if (container == null) {
+                    return null;
+                }
+                if (!container.checkAndCleanExpiredWindows()) {
+                    return container;
+                }
+                rulesExpired.incrementAndGet();
+                LOG.info("[RateLimitWindowSet] rule {} for service {} has been expired, window container {}",
+                        key, serviceKey, container);
+                return null;
+            });
+        }
+        if (rulesExpired.get() > 0) {
+            LOG.info("[RateLimitWindowSet] {} rules have been cleaned up due to expiration, service {}",
+                    rulesExpired, serviceKey);
         }
     }
 
@@ -139,5 +184,10 @@ public class RateLimitWindowSet {
 
     public String getClientId() {
         return clientId;
+    }
+
+    @JustForTest
+    Map<String, WindowContainer> getWindowByRule() {
+        return windowByRule;
     }
 }

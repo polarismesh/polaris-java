@@ -256,6 +256,15 @@ public class RouteInfo {
         return Collections.unmodifiableMap(metadata);
     }
 
+    public void putRouterMetadata(String routerType, Map<String, String> metadata) {
+        Map<String, String> tempMetadata = routerMetadata.get(routerType);
+        if (tempMetadata == null || tempMetadata.isEmpty()) {
+            tempMetadata = new HashMap<>();
+            routerMetadata.put(routerType, tempMetadata);
+        }
+        tempMetadata.putAll(metadata);
+    }
+
     public void setRouterArguments(Map<String, Set<RouteArgument>> routerArguments) {
         Map<String, Map<String, String>> routerMetadata = this.routerMetadata;
 

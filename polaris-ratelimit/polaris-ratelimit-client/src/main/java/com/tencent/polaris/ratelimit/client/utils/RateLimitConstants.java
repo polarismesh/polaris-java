@@ -73,6 +73,21 @@ public interface RateLimitConstants {
     int INIT_WAIT_RESPONSE_TIME = 1 * 1000;
 
     /**
+     * stopSyncTask 触发的 connector 清理任务延迟（毫秒）。
+     *
+     * 不是正确性窗口——cleanTask 与 in-flight 响应若相撞，handleRateLimitReportResponse
+     * 已经能安全降级（counters.get==null 时丢弃 + warn）。设这个延迟只是减少 race 日志噪声。
+     */
+    long STOP_SYNC_CLEAN_DELAY_MS = 10;
+
+    /**
+     * initRecord 索引有效期。距上次远端 acquire/init 响应超过此时长则触发 reinit，
+     * 用于修复 server 侧丢失了客户端 init 状态后客户端无法感知的问题。
+     * 阈值需覆盖典型的远端响应延迟（包括偶发慢响应、网络抖动），过短会引起不必要的 reinit 风暴。
+     */
+    int WINDOW_INDEX_EXPIRE_TIME = 5000;
+
+    /**
      * 服务端的返回code
      */
     int SUCCESS = 200;
