@@ -21,6 +21,7 @@ import com.tencent.polaris.api.config.provider.RateLimitConfig;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
+import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.ratelimiter.InitCriteria;
 import com.tencent.polaris.api.plugin.ratelimiter.QuotaResult;
@@ -46,6 +47,7 @@ import com.tencent.polaris.specification.api.v1.model.ModelProto.MatchString.Mat
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.MatchArgument;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.RateLimit;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RateLimitProto.Rule;
+import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -187,10 +189,11 @@ public class QuotaFlow extends Destroyable {
             return windows;
         }
         ServiceKey serviceKey = request.getSvcEventKey().getServiceKey();
+        ValueContext valueContext = extensions.getValueContext();
         for (Rule rule : rules) {
             InitCriteria initCriteria = new InitCriteria();
             initCriteria.setRule(rule);
-            String labelsStr = formatLabelsToStr(request, initCriteria);
+            String labelsStr = formatLabelsToStr(request, initCriteria, valueContext);
             //3.获取已有的限流窗口
             RateLimitWindowSet rateLimitWindowSet = getRateLimitWindowSet(serviceKey);
             RateLimitWindow rateLimitWindow = rateLimitWindowSet.getRateLimitWindow(rule, labelsStr);
@@ -218,7 +221,8 @@ public class QuotaFlow extends Destroyable {
         });
     }
 
-    private static String formatLabelsToStr(CommonQuotaRequest request, InitCriteria initCriteria) {
+    private static String formatLabelsToStr(CommonQuotaRequest request, InitCriteria initCriteria,
+                                            ValueContext valueContext) {
         Rule rule = initCriteria.getRule();
         MatchString method = rule.getMethod();
         boolean regexCombine = rule.getRegexCombine().getValue();
@@ -247,6 +251,9 @@ public class QuotaFlow extends Destroyable {
                 Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
                 if (metadataContext != null) {
                     labelValue = getLabelValue(matchArgument, metadataContext);
+                }
+                if (StringUtils.isBlank(labelValue)) {
+                    labelValue = getLabelValueFromValueContext(matchArgument, valueContext);
                 }
                 if (StringUtils.isBlank(labelValue)) {
                     labelValue = getLabelValue(matchArgument, stringStringMap);
@@ -303,6 +310,37 @@ public class QuotaFlow extends Destroyable {
             }
             default:
                 return stringStringMap.get(matchArgument.getKey());
+        }
+    }
+
+    /**
+     * 从 ValueContext 中获取地域信息（REGION/ZONE/CAMPUS）作为 label 值
+     * 仅当 MatchArgument 类型为 CUSTOM 且 key 为地域相关字段时生效
+     * 注意：ValueContext 中地域信息的 key 为 LocationLevel.name()（大写），匹配时忽略大小写
+     */
+    private static String getLabelValueFromValueContext(MatchArgument matchArgument, ValueContext valueContext) {
+        if (valueContext == null) {
+            return null;
+        }
+        switch (matchArgument.getType()) {
+            case CUSTOM: {
+                String key = matchArgument.getKey();
+                if (StringUtils.isBlank(key)) {
+                    return null;
+                }
+                if (StringUtils.endsWithIgnoreCase(key, RoutingProto.NearbyRoutingConfig.LocationLevel.REGION.name())) {
+                    return valueContext.getValue(RoutingProto.NearbyRoutingConfig.LocationLevel.REGION.name());
+                }
+                if (StringUtils.endsWithIgnoreCase(key, RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE.name())) {
+                    return valueContext.getValue(RoutingProto.NearbyRoutingConfig.LocationLevel.ZONE.name());
+                }
+                if (StringUtils.endsWithIgnoreCase(key, RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS.name())) {
+                    return valueContext.getValue(RoutingProto.NearbyRoutingConfig.LocationLevel.CAMPUS.name());
+                }
+                return null;
+            }
+            default:
+                return null;
         }
     }
 
@@ -380,10 +418,14 @@ public class QuotaFlow extends Destroyable {
             List<MatchArgument> argumentsList = rule.getArgumentsList();
             boolean matched = true;
             if (CollectionUtils.isNotEmpty(argumentsList)) {
+                ValueContext valueContext = extensions.getValueContext();
                 for (MatchArgument matchArgument : argumentsList) {
                     String labelValue = null;
                     if (metadataContext != null) {
                         labelValue = getLabelValue(matchArgument, metadataContext);
+                    }
+                    if (StringUtils.isBlank(labelValue)) {
+                        labelValue = getLabelValueFromValueContext(matchArgument, valueContext);
                     }
                     if (StringUtils.isBlank(labelValue) && CollectionUtils.isNotEmpty(arguments)) {
                         Map<String, String> stringStringMap = arguments.get(matchArgument.getType().ordinal());
