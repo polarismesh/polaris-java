@@ -109,6 +109,64 @@
 
             <DefaultRolloverStrategy max="${sys:polaris.event.log.retain.count:-7}"/>
         </RollingFile>
+
+        <!-- Nacos shaded appenders -->
+        <RollingFile name="NACOS_CONFIG_LOG_FILE"
+                     fileName="${sys:polaris.log.home}/nacos/config.log"
+                     filePattern="${sys:polaris.log.home}/nacos/config.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:nacos.config.log.file.size:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:nacos.config.log.retain.count:-7}"/>
+        </RollingFile>
+
+        <Async name="ASYNC_NACOS_CONFIG" bufferSize="1024" blocking="false">
+            <AppenderRef ref="NACOS_CONFIG_LOG_FILE"/>
+        </Async>
+
+        <RollingFile name="NACOS_REMOTE_LOG_FILE"
+                     fileName="${sys:polaris.log.home}/nacos/remote.log"
+                     filePattern="${sys:polaris.log.home}/nacos/remote.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:nacos.remote.log.file.size:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:nacos.remote.log.retain.count:-7}"/>
+        </RollingFile>
+
+        <Async name="ASYNC_NACOS_REMOTE" bufferSize="1024" blocking="false">
+            <AppenderRef ref="NACOS_REMOTE_LOG_FILE"/>
+        </Async>
+
+        <RollingFile name="NACOS_NAMING_LOG_FILE"
+                     fileName="${sys:polaris.log.home}/nacos/naming.log"
+                     filePattern="${sys:polaris.log.home}/nacos/naming.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:nacos.naming.log.file.size:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:nacos.naming.log.retain.count:-7}"/>
+        </RollingFile>
+
+        <Async name="ASYNC_NACOS_NAMING" bufferSize="1024" blocking="false">
+            <AppenderRef ref="NACOS_NAMING_LOG_FILE"/>
+        </Async>
     </Appenders>
 
     <Loggers>
@@ -151,6 +209,37 @@
                 level="${sys:polaris.event.log.level:-info}"
                 additivity="false">
             <AppenderRef ref="POLARIS_EVENT_LOG_FILE"/>
+        </Logger>
+
+        <!-- Nacos shaded loggers -->
+        <Logger name="shade.polaris.com.alibaba.nacos.client"
+                level="${sys:nacos.config.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_NACOS_CONFIG"/>
+        </Logger>
+
+        <Logger name="shade.polaris.com.alibaba.nacos.common.remote.client"
+                level="${sys:nacos.config.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_NACOS_REMOTE"/>
+        </Logger>
+
+        <Logger name="shade.polaris.com.alibaba.nacos.common.labels"
+                level="${sys:nacos.config.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_NACOS_REMOTE"/>
+        </Logger>
+
+        <Logger name="shade.polaris.com.alibaba.nacos.client.config"
+                level="${sys:nacos.config.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_NACOS_CONFIG"/>
+        </Logger>
+
+        <Logger name="shade.polaris.com.alibaba.nacos.client.naming"
+                level="${sys:nacos.naming.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="ASYNC_NACOS_NAMING"/>
         </Logger>
     </Loggers>
 </Configuration>
