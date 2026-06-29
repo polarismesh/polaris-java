@@ -37,6 +37,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.detect.HealthChecker;
 import com.tencent.polaris.api.pojo.*;
+import com.tencent.polaris.api.pojo.CircuitBreakerStatus;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.TrieUtil;
 import com.tencent.polaris.client.flow.DefaultServiceResourceProvider;
@@ -294,9 +295,22 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
         });
     }
 
+    /**
+     * 判断规则是否使用接口级独立熔断模式（独享熔断器）。
+     * regex_separate=true 且规则使用 block_configs 格式时，每个实际匹配的接口路径独立维护熔断器。
+     */
+    private boolean isSeperate(CircuitBreakerProto.CircuitBreakerRule rule) {
+        return rule.getRegexSeparate() && rule.getBlockConfigsCount() > 0;
+    }
+
     private Resource computeResourceByRule(Resource resource, CircuitBreakerProto.CircuitBreakerRule circuitBreakerRule,
                                            Function<String, Pattern> regexToPattern, Function<String, TrieNode<String>> trieNodeFunction) {
         if (null == circuitBreakerRule || resource.getLevel() != Level.METHOD) {
+            return resource;
+        }
+        if (isSeperate(circuitBreakerRule)) {
+            LOG.debug("[CIRCUIT_BREAKER] rule {} is in separate mode (regex_separate=true), use original resource {} as cache key",
+                    circuitBreakerRule.getName(), resource);
             return resource;
         }
 
@@ -308,8 +322,11 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
                 //new path = matchPath + ":" + matchType
                 String newPath = api.getPath().getValue().getValue() + ":" + api.getPath().getType().name();
                 MethodResource originalResource = (MethodResource) resource;
-                return new MethodResource(originalResource.getService(), originalResource.getProtocol(),
+                MethodResource ruleResource = new MethodResource(originalResource.getService(), originalResource.getProtocol(),
                         originalResource.getMethod(), newPath, originalResource.getCallerService());
+                LOG.debug("[CIRCUIT_BREAKER] rule {} normalize resource {} to ruleResource {} (shared counter mode)",
+                        circuitBreakerRule.getName(), resource, ruleResource);
+                return ruleResource;
             }
         }
         return resource;
@@ -417,9 +434,23 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             values.asMap().forEach(new BiConsumer<Resource, Optional<ResourceCounters>>() {
                 @Override
                 public void accept(Resource resource, Optional<ResourceCounters> resourceCounters) {
-                    // 每隔一段时间清理占位的缓存数据，避免没规则的情况下，counters无法收敛
                     if (!resourceCounters.isPresent()) {
+                        // 清理占位的缓存数据，避免没规则的情况下，counters无法收敛
                         values.invalidate(resource);
+                    } else {
+                        ResourceCounters counters = resourceCounters.get();
+                        CircuitBreakerStatus status = counters.getCircuitBreakerStatus();
+                        // 只清理 CLOSE 状态且长时间未访问的 counter
+                        // OPEN/HALF_OPEN 状态的 counter 不能清理，否则会绕过正常的恢复流程
+                        if (status.getStatus() == CircuitBreakerStatus.Status.CLOSE) {
+                            long idleTimeMs = System.currentTimeMillis() - counters.getLastAccessTimeMs();
+                            long effectiveExpire = Math.max(resourceExpireInterval, counters.getMaxMetricWindowMs());
+                            if (idleTimeMs >= effectiveExpire) {
+                                LOG.info("[CIRCUIT_BREAKER] counter for resource {} expired, idle {}ms >= {}ms, cleanup",
+                                        resource, idleTimeMs, effectiveExpire);
+                                values.invalidate(resource);
+                            }
+                        }
                     }
                 }
             });

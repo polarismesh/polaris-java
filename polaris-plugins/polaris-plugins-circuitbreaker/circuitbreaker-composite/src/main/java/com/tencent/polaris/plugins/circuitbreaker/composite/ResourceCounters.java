@@ -52,6 +52,7 @@ import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -93,6 +94,10 @@ public class ResourceCounters implements StatusChangeHandler {
     private final CircuitBreakerConfig circuitBreakerConfig;
 
     private AtomicBoolean reloadFaultDetect = new AtomicBoolean(false);
+
+    private final AtomicLong lastAccessTimeMs = new AtomicLong(System.currentTimeMillis());
+
+    private long maxMetricWindowMs;
 
     public ResourceCounters(Resource resource, CircuitBreakerRule currentActiveRule,
                             ScheduledExecutorService stateChangeExecutors, PolarisCircuitBreaker polarisCircuitBreaker) {
@@ -156,6 +161,15 @@ public class ResourceCounters implements StatusChangeHandler {
                 }
             }
         }
+        // 计算所有 ErrRateCounter 中最大的统计窗口
+        for (TriggerCounter counter : counters) {
+            if (counter instanceof ErrRateCounter) {
+                maxMetricWindowMs = Math.max(maxMetricWindowMs, ((ErrRateCounter) counter).getMetricWindowMs());
+            }
+        }
+        CB_LOG.info("ResourceCounters initialized, resource={}, rule={}, regexSeparate={}, counters={}, maxMetricWindowMs={}",
+                resource, currentActiveRule.getName(), currentActiveRule.getRegexSeparate(),
+                counters.size(), maxMetricWindowMs);
     }
 
     private static FallbackInfo buildFallbackInfo(CircuitBreakerRule currentActiveRule) {
@@ -286,6 +300,7 @@ public class ResourceCounters implements StatusChangeHandler {
     }
 
     public void report(ResourceStat resourceStat) {
+        lastAccessTimeMs.set(System.currentTimeMillis());
         CircuitBreakerStatus circuitBreakerStatus = circuitBreakerStatusReference.get();
         LOG.debug("[CircuitBreaker] report resource stat {}", resourceStat);
         if (null != circuitBreakerStatus && circuitBreakerStatus.getStatus() == Status.HALF_OPEN) {
@@ -378,6 +393,14 @@ public class ResourceCounters implements StatusChangeHandler {
 
     public boolean checkReloadFaultDetect() {
         return reloadFaultDetect.compareAndSet(true, false);
+    }
+
+    public long getLastAccessTimeMs() {
+        return lastAccessTimeMs.get();
+    }
+
+    public long getMaxMetricWindowMs() {
+        return maxMetricWindowMs;
     }
 
     public void setDestroyed(boolean value) {
