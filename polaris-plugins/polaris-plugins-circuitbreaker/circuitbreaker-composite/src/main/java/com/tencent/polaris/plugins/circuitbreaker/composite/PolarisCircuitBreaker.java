@@ -81,8 +81,9 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
     private final ScheduledExecutorService ruleCheckExecutors = new ScheduledThreadPoolExecutor(1,
             new NamedThreadFactory("circuitbreaker-rule-check-worker"));
 
-    // map the wildcard resource to rule specific resource,
-    // eg. /path/wildcard/123 => /path/wildcard/.+
+    // map the actual resource to rule specific resource,
+    // - shared mode:   /path/wildcard/123 => /path/wildcard/.+:REGEX
+    // - separate mode: /path/wildcard/123 => /path/wildcard/123:EXACT 
     private final Map<Resource, ResourceWrap> resourceMapping = new ConcurrentHashMap<>();
 
     private Extensions extensions;
@@ -321,19 +322,22 @@ public class PolarisCircuitBreaker extends Destroyable implements CircuitBreaker
             boolean methodMatched = matchMethod(resource, blockConfig.getApi(), regexToPattern, trieNodeFunction);
             if (methodMatched) {
                 ModelProto.API api = blockConfig.getApi();
-                //new path = matchPath + ":" + matchType
-                String newPath = api.getPath().getValue().getValue() + ":" + api.getPath().getType().name();
-                // 共享模式：以 blockConfig.api 的匹配模式作为 ruleResource path，让匹配的接口共享熔断器
+                String newPath;
                 MethodResource originalResource = (MethodResource) resource;
-                boolean isSeperate = isSeperate(circuitBreakerRule);
-                if (isSeperate) {
+                boolean seperate = isSeperate(circuitBreakerRule); // 独立熔断判断
+                if (seperate) {
                     // 独立模式：以实际路径作为 EXACT 归一化，让每个接口路径独立占用 cache key
+                    //new path = matchPath + ":" + matchType
                     newPath = originalResource.getPath() + ":" + ModelProto.MatchString.MatchStringType.EXACT.name();
+                } else {
+                    // 走共享模式：以 blockConfig.api 的匹配模式作为 ruleResource path，让匹配的接口共享熔断器
+                    //new path = matchPath + ":" + matchType
+                    newPath = api.getPath().getValue().getValue() + ":" + api.getPath().getType().name();
                 }
                 MethodResource ruleResource = new MethodResource(originalResource.getService(), originalResource.getProtocol(),
                         originalResource.getMethod(), newPath, originalResource.getCallerService());
                 LOG.debug("[CIRCUIT_BREAKER] rule {} normalize resource {} to ruleResource {} (seperate={})",
-                        circuitBreakerRule.getName(), resource, ruleResource, isSeperate);
+                        circuitBreakerRule.getName(), resource, ruleResource, seperate);
                 return ruleResource;
             }
         }
