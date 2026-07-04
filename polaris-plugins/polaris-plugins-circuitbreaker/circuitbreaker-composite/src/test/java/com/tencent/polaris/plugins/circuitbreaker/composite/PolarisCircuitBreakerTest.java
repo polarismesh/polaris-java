@@ -229,7 +229,7 @@ public class PolarisCircuitBreakerTest {
                 EventType.CIRCUIT_BREAKING);
         mockServiceRuleProvider.putServiceRule(serviceEventKey, serviceRule);
 
-        // isSeperate=true: each path needs its own 11 errors to exceed threshold of 10
+        // isseparate=true: each path needs its own 11 errors to exceed threshold of 10
         for (int i = 0; i < 1000; i++) {
             Resource methodResource = new MethodResource(serviceKey, String.format("/d/customers/base/%d", i));
             for (int j = 0; j < 11; j++) {
@@ -248,7 +248,7 @@ public class PolarisCircuitBreakerTest {
             assertThat(circuitBreakerStatus.getStatus()).isEqualTo(Status.OPEN);
         }
         assertThat(polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size()).isEqualTo(1000);
-        // isSeperate=true 时，每个接口路径都写入 resourceMapping（EXACT 归一化）
+        // isseparate=true 时，每个接口路径都写入 resourceMapping（EXACT 归一化）
         assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(1000);
 
         //check cleanup — OPEN 状态的 counter 不会被清理
@@ -336,7 +336,7 @@ public class PolarisCircuitBreakerTest {
     }
 
     @Test
-    public void testSeperateMethodCircuitBreaker() throws InterruptedException {
+    public void testseparateMethodCircuitBreaker() throws InterruptedException {
         MockServiceResourceProvider mockServiceRuleProvider = new MockServiceResourceProvider();
         PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
         Configuration configuration = ConfigAPIFactory.defaultConfig();
