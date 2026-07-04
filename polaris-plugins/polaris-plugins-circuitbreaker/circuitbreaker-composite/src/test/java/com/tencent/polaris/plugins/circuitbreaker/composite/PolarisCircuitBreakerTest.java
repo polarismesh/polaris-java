@@ -248,8 +248,8 @@ public class PolarisCircuitBreakerTest {
             assertThat(circuitBreakerStatus.getStatus()).isEqualTo(Status.OPEN);
         }
         assertThat(polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size()).isEqualTo(1000);
-        // isSeperate=true 时，不写入 resourceMapping
-        assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(0);
+        // isSeperate=true 时，每个接口路径都写入 resourceMapping（EXACT 归一化）
+        assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(1000);
 
         //check cleanup — OPEN 状态的 counter 不会被清理
         try {
@@ -258,7 +258,7 @@ public class PolarisCircuitBreakerTest {
             e.printStackTrace();
         }
         polarisCircuitBreaker.cleanupExpiredResources();
-        // resourceMapping 为空（isSeperate 模式不写入）
+        // resourceMapping 因 lastAccessTimeMilli 超时被清理
         assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(0);
         // OPEN 状态的 counter 不被清理，仍然是 1000
         assertThat(polarisCircuitBreaker.getCountersCache().get(Level.METHOD).size()).isEqualTo(1000);
@@ -385,8 +385,8 @@ public class PolarisCircuitBreakerTest {
         Cache<Resource, Optional<ResourceCounters>> methodCache = polarisCircuitBreaker.getCountersCache().get(Level.METHOD);
         assertThat(methodCache.size()).isEqualTo(2);
 
-        // 验证 resourceMapping 为空（isSeperate 模式下不写入）
-        assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(0);
+        // 验证 resourceMapping 中有 2 个 EXACT 归一化条目
+        assertThat(polarisCircuitBreaker.getResourceMappingSize()).isEqualTo(2);
     }
 
     @Test
