@@ -143,4 +143,8 @@ public class ErrRateCounter extends TriggerCounter {
     public String getReason() {
         return "error_rate:" + errorPercent + "%";
     }
+
+    public long getMetricWindowMs() {
+        return metricWindowMs;
+    }
 }

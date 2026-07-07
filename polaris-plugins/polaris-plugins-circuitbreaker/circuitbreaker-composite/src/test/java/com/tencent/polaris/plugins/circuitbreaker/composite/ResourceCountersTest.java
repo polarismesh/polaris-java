@@ -100,6 +100,88 @@ public class ResourceCountersTest {
     }
 
     @Test
+    public void testLastAccessTimeUpdatedOnReport() throws InterruptedException {
+        CircuitBreakerRule.Builder builder = CircuitBreakerRule.newBuilder();
+        builder.setName("test_cb_rule_expire");
+        builder.setEnable(true);
+        builder.setLevel(Level.METHOD);
+        BlockConfig.Builder blockConfigBuilder = BlockConfig.newBuilder();
+        blockConfigBuilder.addTriggerConditions(TriggerCondition.newBuilder()
+                .setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(100).build());
+        blockConfigBuilder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT)
+                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        builder.addBlockConfigs(blockConfigBuilder.build());
+        builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        polarisCircuitBreaker.setCircuitBreakerConfig(ConfigAPIFactory.defaultConfig().getConsumer().getCircuitBreaker());
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(),
+                scheduledExecutorService, polarisCircuitBreaker);
+
+        long initialTime = resourceCounters.getLastAccessTimeMs();
+        Assert.assertTrue(initialTime > 0);
+
+        Thread.sleep(50);
+        Resource methodResource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
+        ResourceStat resourceStat = new ResourceStat(methodResource, 200, 100, RetStatus.RetSuccess);
+        resourceCounters.report(resourceStat);
+
+        long afterReportTime = resourceCounters.getLastAccessTimeMs();
+        Assert.assertTrue(afterReportTime > initialTime);
+    }
+
+    @Test
+    public void testMaxMetricWindowMs() {
+        CircuitBreakerRule.Builder builder = CircuitBreakerRule.newBuilder();
+        builder.setName("test_cb_rule_metric");
+        builder.setEnable(true);
+        builder.setLevel(Level.METHOD);
+        BlockConfig.Builder blockConfigBuilder = BlockConfig.newBuilder();
+        blockConfigBuilder.addTriggerConditions(TriggerCondition.newBuilder()
+                .setTriggerType(TriggerType.ERROR_RATE).setErrorPercent(50).setMinimumRequest(10)
+                .setInterval(30).build());
+        blockConfigBuilder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT)
+                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        builder.addBlockConfigs(blockConfigBuilder.build());
+        builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        polarisCircuitBreaker.setCircuitBreakerConfig(ConfigAPIFactory.defaultConfig().getConsumer().getCircuitBreaker());
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(),
+                scheduledExecutorService, polarisCircuitBreaker);
+
+        Assert.assertEquals(30000L, resourceCounters.getMaxMetricWindowMs());
+    }
+
+    @Test
+    public void testMaxMetricWindowMsConsecutiveOnly() {
+        CircuitBreakerRule.Builder builder = CircuitBreakerRule.newBuilder();
+        builder.setName("test_cb_rule_consecutive");
+        builder.setEnable(true);
+        builder.setLevel(Level.METHOD);
+        BlockConfig.Builder blockConfigBuilder = BlockConfig.newBuilder();
+        blockConfigBuilder.addTriggerConditions(TriggerCondition.newBuilder()
+                .setTriggerType(TriggerType.CONSECUTIVE_ERROR).setErrorCount(5).build());
+        blockConfigBuilder.addErrorConditions(ErrorCondition.newBuilder().setInputType(InputType.RET_CODE).setCondition(
+                MatchString.newBuilder().setType(MatchStringType.EXACT)
+                        .setValue(StringValue.newBuilder().setValue("500").build()).build()).build());
+        builder.addBlockConfigs(blockConfigBuilder.build());
+        builder.setRecoverCondition(RecoverCondition.newBuilder().setConsecutiveSuccess(2).setSleepWindow(5).build());
+        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        Resource resource = new MethodResource(new ServiceKey("test", "TestSvc"), "foo");
+        PolarisCircuitBreaker polarisCircuitBreaker = new PolarisCircuitBreaker();
+        polarisCircuitBreaker.setCircuitBreakerConfig(ConfigAPIFactory.defaultConfig().getConsumer().getCircuitBreaker());
+        ResourceCounters resourceCounters = new ResourceCounters(resource, builder.build(),
+                scheduledExecutorService, polarisCircuitBreaker);
+
+        Assert.assertEquals(0L, resourceCounters.getMaxMetricWindowMs());
+    }
+
+    @Test
     public void testDestroy() {
         CircuitBreakerRule.Builder builder = CircuitBreakerRule.newBuilder();
         builder.setName("test_cb_rule");
