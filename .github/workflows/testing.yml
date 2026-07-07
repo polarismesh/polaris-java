@@ -39,6 +39,7 @@ jobs:
       - name: Test with Maven
         run: mvn clean test -B -U -Psonatype --file pom.xml
       - name: Upload coverage reports to Codecov
+        if: matrix.java == 8
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
