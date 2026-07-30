@@ -34,6 +34,7 @@ import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.auth.Authenticator;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.certificate.CertificateManager;
+import com.tencent.polaris.api.plugin.client.ClientReporter;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
@@ -90,6 +91,8 @@ public class Extensions extends Destroyable {
     private CircuitBreaker resourceBreaker;
 
     private final List<StatReporter> statReporters = new ArrayList<>();
+
+    private final List<ClientReporter> clientReporters = new ArrayList<>();
 
     private TraceReporter traceReporter;
 
@@ -211,6 +214,9 @@ public class Extensions extends Destroyable {
         // 加载监控上报
         loadStatReporters(plugins);
 
+        // 加载客户端画像上报
+        loadClientReporters(plugins);
+
         // 加载调用链上报
         loadTraceReporter(plugins);
 
@@ -305,6 +311,15 @@ public class Extensions extends Destroyable {
         if (CollectionUtils.isNotEmpty(reporters)) {
             for (Plugin reporter : reporters) {
                 statReporters.add((StatReporter) reporter);
+            }
+        }
+    }
+
+    private void loadClientReporters(Supplier plugins) throws PolarisException {
+        Collection<Plugin> reporters = plugins.getPlugins(PluginTypes.CLIENT_REPORTER.getBaseType());
+        if (CollectionUtils.isNotEmpty(reporters)) {
+            for (Plugin reporter : reporters) {
+                clientReporters.add((ClientReporter) reporter);
             }
         }
     }
@@ -515,6 +530,10 @@ public class Extensions extends Destroyable {
 
     public List<StatReporter> getStatReporters() {
         return statReporters;
+    }
+
+    public List<ClientReporter> getClientReporters() {
+        return clientReporters;
     }
 
     public List<HealthChecker> getHealthCheckers() {

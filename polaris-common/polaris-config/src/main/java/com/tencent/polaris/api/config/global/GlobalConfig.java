@@ -80,6 +80,13 @@ public interface GlobalConfig extends Verifier {
     EventReporterConfig getEventReporter();
 
     /**
+     * Configuration of prefix of "global.clientReporter"
+     *
+     * @return ClientReporterConfig
+     */
+    ClientReporterConfig getClientReporter();
+
+    /**
      * Configuration of prefix of "global.admin"
      *
      * @return

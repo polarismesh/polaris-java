@@ -62,6 +62,9 @@ public class GlobalConfigImpl implements GlobalConfig {
     private EventReporterConfigImpl eventReporter;
 
     @JsonProperty
+    private ClientReporterConfigImpl clientReporter;
+
+    @JsonProperty
     private AdminConfigImpl admin;
 
     @JsonProperty
@@ -132,6 +135,11 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
+    public ClientReporterConfigImpl getClientReporter() {
+        return clientReporter;
+    }
+
+    @Override
     public AdminConfigImpl getAdmin() {
         return admin;
     }
@@ -152,6 +160,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         ConfigUtils.validateNull(statReporter, "statReporter");
         ConfigUtils.validateNull(traceReporter, "traceReporter");
         ConfigUtils.validateNull(eventReporter, "eventReporter");
+        ConfigUtils.validateNull(clientReporter, "clientReporter");
         ConfigUtils.validateNull(admin, "admin");
         ConfigUtils.validateNull(certificate, "certificate");
 
@@ -171,6 +180,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         statReporter.verify();
         traceReporter.verify();
         eventReporter.verify();
+        clientReporter.verify();
         admin.verify();
         certificate.verify();
     }
@@ -194,6 +204,9 @@ public class GlobalConfigImpl implements GlobalConfig {
         }
         if (null == eventReporter) {
             eventReporter = new EventReporterConfigImpl();
+        }
+        if (null == clientReporter) {
+            clientReporter = new ClientReporterConfigImpl();
         }
         if (null == admin) {
             admin = new AdminConfigImpl();
@@ -225,6 +238,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             statReporter.setDefault(globalConfig.getStatReporter());
             traceReporter.setDefault(globalConfig.getTraceReporter());
             eventReporter.setDefault(globalConfig.getEventReporter());
+            clientReporter.setDefault(globalConfig.getClientReporter());
             admin.setDefault(globalConfig.getAdmin());
             location.setDefault(globalConfig.getLocation());
             certificate.setDefault(globalConfig.getCertificate());
@@ -241,6 +255,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 ", statReporter=" + statReporter +
                 ", traceReporter=" + traceReporter +
                 ", eventReporter=" + eventReporter +
+                ", clientReporter=" + clientReporter +
                 ", admin=" + admin +
                 ", location=" + location +
                 ", certificate=" + certificate +

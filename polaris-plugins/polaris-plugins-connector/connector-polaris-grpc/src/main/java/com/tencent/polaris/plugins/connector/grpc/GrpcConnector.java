@@ -19,6 +19,7 @@ package com.tencent.polaris.plugins.connector.grpc;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.TextFormat;
+import com.google.protobuf.BoolValue;
 import com.google.protobuf.UInt32Value;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
@@ -429,6 +430,12 @@ public class GrpcConnector extends DestroyableServerConnector {
                         .setProtocol(StringValue.newBuilder().setValue(reporterMetaInfo.getProtocol()).build())
                         .build())));
         builder.setId(StringValue.newBuilder().setValue(clientInstanceId).build());
+        if (req.getConfigEnabled() != null) {
+            builder.setConfigEnabled(BoolValue.newBuilder().setValue(req.getConfigEnabled()).build());
+        }
+        if (StringUtils.isNotBlank(req.getConfigMetadata())) {
+            builder.setConfigMetadata(StringValue.newBuilder().setValue(req.getConfigMetadata()).build());
+        }
         return builder.build();
     }
 
