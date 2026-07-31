@@ -104,19 +104,19 @@ global:
         maxBatchSize: 100
         # 描述：事件服务的命名空间
         namespace: Polaris
-       # 描述：事件服务的服务名
-       service: polaris.pushgateway
+        # 描述：事件服务的服务名
+        service: polaris.pushgateway
   # 描述：客户端上报（目前用于服务配置监听上报）相关配置
   clientReporter:
     # 描述：是否启用客户端画像上报
-    enable: false
+    enable: true
     # 描述：客户端上报插件配置
     plugin:
       # 描述：配置监听画像上报插件配置
       config-watch:
         # 描述：是否上报配置监听画像
         enable: true
- # 描述：Admin相关的配置
+  # 描述：Admin相关的配置
   admin:
     # 描述：Admin的监听的IP
     host: 0.0.0.0
