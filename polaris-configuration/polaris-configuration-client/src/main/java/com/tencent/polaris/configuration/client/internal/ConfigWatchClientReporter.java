@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * 配置监听画像上报插件，向 ReportClient 贡献 config_enabled 和 config_metadata 字段。
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ConfigWatchClientReporter implements ClientReporter, PluginConfigProvider {
 
@@ -81,7 +81,9 @@ public class ConfigWatchClientReporter implements ClientReporter, PluginConfigPr
         }
         request.setConfigEnabled(Boolean.TRUE);
         request.setConfigMetadata(buildSnapshotJson());
-        LOG.debug("contribute config_metadata: {}", request.getConfigMetadata());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("contribute config_metadata: {}", request.getConfigMetadata());
+        }
     }
 
     private String buildSnapshotJson() {

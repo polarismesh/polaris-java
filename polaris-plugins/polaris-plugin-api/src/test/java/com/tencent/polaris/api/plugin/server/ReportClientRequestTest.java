@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Test for {@link ReportClientRequest} config fields.
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ReportClientRequestTest {
 

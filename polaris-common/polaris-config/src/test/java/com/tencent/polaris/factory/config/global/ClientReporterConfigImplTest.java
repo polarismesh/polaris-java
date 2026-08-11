@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 /**
  * Test for {@link ClientReporterConfigImpl}.
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ClientReporterConfigImplTest {
 

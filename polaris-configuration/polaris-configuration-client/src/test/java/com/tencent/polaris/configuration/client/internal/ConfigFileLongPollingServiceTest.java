@@ -20,6 +20,7 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.RetriableException;
 import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
@@ -48,10 +49,13 @@ public class ConfigFileLongPollingServiceTest {
     private ConfigFileConnector configFileConnector;
     @Mock
     private SDKContext sdkContext;
+    @Mock
+    private Supplier plugins;
 
     @Before
     public void setUp() throws Exception {
         when(configFileConnector.isNotifiedVersionIncreaseStrictly()).thenReturn(true);
+        when(sdkContext.getPlugins()).thenReturn(plugins);
     }
 
     @Test

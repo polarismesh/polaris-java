@@ -25,7 +25,7 @@ import com.tencent.polaris.api.plugin.server.ReportClientRequest;
  *
  * <p>每个插件只负责填充自己领域相关的请求字段，不能覆盖 host、version、stat 等基础字段。</p>
  *
- * @author polaris
+ * @author fishtailfu
  */
 public interface ClientReporter extends Plugin {
 

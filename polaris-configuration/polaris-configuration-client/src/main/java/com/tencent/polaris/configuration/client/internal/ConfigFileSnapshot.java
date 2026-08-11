@@ -20,7 +20,7 @@ package com.tencent.polaris.configuration.client.internal;
 /**
  * ConfigFile 版本和 MD5 的不可变快照，保证两者来自同一份配置对象。
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ConfigFileSnapshot {
 

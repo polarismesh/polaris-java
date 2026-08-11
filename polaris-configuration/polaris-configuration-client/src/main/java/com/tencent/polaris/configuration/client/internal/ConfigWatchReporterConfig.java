@@ -24,7 +24,7 @@ import com.tencent.polaris.factory.util.ConfigUtils;
 /**
  * 配置监听画像上报插件配置。
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ConfigWatchReporterConfig implements Verifier {
 

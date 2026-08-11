@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 /**
  * Test for {@link ConfigWatchClientReporter}.
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ConfigWatchClientReporterTest {
 

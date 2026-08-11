@@ -20,7 +20,7 @@ package com.tencent.polaris.configuration.client.internal;
 /**
  * 配置监听画像中的单个监听项快照。
  *
- * @author polaris
+ * @author fishtailfu
  */
 public class ConfigWatchInfo {
 
