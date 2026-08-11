@@ -82,7 +82,7 @@ public class ConfigFileLongPullService {
      */
     private final RetryPolicy retryPolicy;
 
-    private ConfigWatchClientReporter configWatchClientReporter;
+    private ConfigWatchReportRequestCustomizer configWatchRequestCustomizer;
 
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
@@ -92,9 +92,10 @@ public class ConfigFileLongPullService {
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.connector = configFileConnector;
         Plugin plugin = sdkContext.getPlugins().getOptionalPlugin(
-                PluginTypes.CLIENT_REPORTER.getBaseType(), ConfigWatchClientReporter.NAME);
-        if (plugin instanceof ConfigWatchClientReporter) {
-            this.configWatchClientReporter = (ConfigWatchClientReporter) plugin;
+                PluginTypes.REPORT_CLIENT_REQUEST_CUSTOMIZER.getBaseType(),
+                ConfigWatchReportRequestCustomizer.NAME);
+        if (plugin instanceof ConfigWatchReportRequestCustomizer) {
+            this.configWatchRequestCustomizer = (ConfigWatchReportRequestCustomizer) plugin;
         }
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");
@@ -111,8 +112,8 @@ public class ConfigFileLongPullService {
         //长轮询起始的配置文件版本号应该以第一次同步拉取为准
         notifiedVersion.putIfAbsent(configFileMetadata, version);
 
-        if (configWatchClientReporter != null) {
-            configWatchClientReporter.register(remoteConfigFileRepo);
+        if (configWatchRequestCustomizer != null) {
+            configWatchRequestCustomizer.register(remoteConfigFileRepo);
         }
 
         if (!started.get()) {

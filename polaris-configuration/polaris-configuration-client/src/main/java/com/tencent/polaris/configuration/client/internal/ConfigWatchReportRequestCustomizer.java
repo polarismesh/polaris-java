@@ -9,9 +9,9 @@
  *
  * https://opensource.org/licenses/BSD-3-Clause
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
 
@@ -23,7 +23,7 @@ import com.tencent.polaris.api.config.plugin.PluginConfigProvider;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.plugin.PluginType;
-import com.tencent.polaris.api.plugin.client.ClientReporter;
+import com.tencent.polaris.api.plugin.client.ReportClientRequestCustomizer;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -39,13 +39,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * 配置监听画像上报插件，向 ReportClient 贡献 config_enabled 和 config_metadata 字段。
+ * 配置监听画像请求定制器，向 ReportClientRequest 追加 config_enabled 和 config_metadata 字段。
  *
  * @author fishtailfu
  */
-public class ConfigWatchClientReporter implements ClientReporter, PluginConfigProvider {
+public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCustomizer, PluginConfigProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ConfigWatchClientReporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigWatchReportRequestCustomizer.class);
 
     public static final String NAME = "config-watch";
 
@@ -75,14 +75,14 @@ public class ConfigWatchClientReporter implements ClientReporter, PluginConfigPr
     }
 
     @Override
-    public void contribute(ReportClientRequest request) {
+    public void customize(ReportClientRequest request) {
         if (!enable) {
             return;
         }
         request.setConfigEnabled(Boolean.TRUE);
         request.setConfigMetadata(buildSnapshotJson());
         if (LOG.isDebugEnabled()) {
-            LOG.debug("contribute config_metadata: {}", request.getConfigMetadata());
+            LOG.debug("customize config_metadata: {}", request.getConfigMetadata());
         }
     }
 
@@ -113,7 +113,7 @@ public class ConfigWatchClientReporter implements ClientReporter, PluginConfigPr
 
     @Override
     public PluginType getType() {
-        return PluginTypes.CLIENT_REPORTER.getBaseType();
+        return PluginTypes.REPORT_CLIENT_REQUEST_CUSTOMIZER.getBaseType();
     }
 
     @Override

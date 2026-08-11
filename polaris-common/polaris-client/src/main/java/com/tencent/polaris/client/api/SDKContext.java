@@ -32,7 +32,7 @@ import com.tencent.polaris.api.plugin.Manager;
 import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.Supplier;
 import com.tencent.polaris.api.plugin.TypeProvider;
-import com.tencent.polaris.api.plugin.client.ClientReporter;
+import com.tencent.polaris.api.plugin.client.ReportClientRequestCustomizer;
 import com.tencent.polaris.api.plugin.common.InitContext;
 import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.Extensions;
@@ -379,11 +379,11 @@ public class SDKContext extends Destroyable implements InitContext, AutoCloseabl
                 reportClientRequest.setReporterMetaInfos(reporterMetaInfos);
                 reportClientRequest.setTimeoutMs(extensions.getConfiguration().getGlobal().getAPI().getTimeout());
 
-                for (ClientReporter reporter : extensions.getClientReporters()) {
+                for (ReportClientRequestCustomizer customizer : extensions.getReportClientRequestCustomizers()) {
                     try {
-                        reporter.contribute(reportClientRequest);
+                        customizer.customize(reportClientRequest);
                     } catch (Throwable e) {
-                        LOG.warn("client reporter {} contribute failed", reporter.getName(), e);
+                        LOG.warn("report client request customizer {} failed", customizer.getName(), e);
                     }
                 }
 

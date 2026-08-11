@@ -21,7 +21,7 @@ import com.tencent.polaris.api.plugin.PluginType;
 import com.tencent.polaris.api.plugin.auth.Authenticator;
 import com.tencent.polaris.api.plugin.cache.FlowCache;
 import com.tencent.polaris.api.plugin.certificate.CertificateManager;
-import com.tencent.polaris.api.plugin.client.ClientReporter;
+import com.tencent.polaris.api.plugin.client.ReportClientRequestCustomizer;
 import com.tencent.polaris.api.plugin.circuitbreaker.CircuitBreaker;
 import com.tencent.polaris.api.plugin.circuitbreaker.InstanceCircuitBreaker;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
@@ -151,9 +151,9 @@ public enum PluginTypes {
     CERTIFICATE_MANAGER(new PluginType(CertificateManager.class, 2)),
 
     /**
-     * 客户端画像上报扩展点
+     * 客户端画像请求定制扩展点
      */
-    CLIENT_REPORTER(new PluginType(ClientReporter.class, 2));
+    REPORT_CLIENT_REQUEST_CUSTOMIZER(new PluginType(ReportClientRequestCustomizer.class, 2));
 
     private PluginType baseType;
 
