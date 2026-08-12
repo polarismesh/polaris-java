@@ -108,8 +108,6 @@ global:
         service: polaris.pushgateway
   # 描述：ReportClient 请求定制器（目前用于服务配置监听上报）相关配置
   reportClientRequestCustomizer:
-    # 描述：是否启用 ReportClient 请求定制器
-    enable: true
     # 描述：ReportClient 请求定制插件配置
     plugin:
       # 描述：配置监听画像请求定制器配置

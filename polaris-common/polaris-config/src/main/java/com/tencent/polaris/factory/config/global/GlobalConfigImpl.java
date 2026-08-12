@@ -23,6 +23,7 @@ import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.global.LocationConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
+import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
 import java.util.HashMap;
@@ -62,7 +63,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     private EventReporterConfigImpl eventReporter;
 
     @JsonProperty
-    private ReportClientRequestCustomizerConfigImpl reportClientRequestCustomizer;
+    private PluginConfigImpl reportClientRequestCustomizer;
 
     @JsonProperty
     private AdminConfigImpl admin;
@@ -135,7 +136,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
-    public ReportClientRequestCustomizerConfigImpl getReportClientRequestCustomizer() {
+    public PluginConfigImpl getReportClientRequestCustomizer() {
         return reportClientRequestCustomizer;
     }
 
@@ -180,7 +181,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         statReporter.verify();
         traceReporter.verify();
         eventReporter.verify();
-        reportClientRequestCustomizer.verify();
+        reportClientRequestCustomizer.verifyPluginConfig();
         admin.verify();
         certificate.verify();
     }
@@ -206,7 +207,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             eventReporter = new EventReporterConfigImpl();
         }
         if (null == reportClientRequestCustomizer) {
-            reportClientRequestCustomizer = new ReportClientRequestCustomizerConfigImpl();
+            reportClientRequestCustomizer = new PluginConfigImpl();
         }
         if (null == admin) {
             admin = new AdminConfigImpl();
@@ -238,7 +239,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             statReporter.setDefault(globalConfig.getStatReporter());
             traceReporter.setDefault(globalConfig.getTraceReporter());
             eventReporter.setDefault(globalConfig.getEventReporter());
-            reportClientRequestCustomizer.setDefault(globalConfig.getReportClientRequestCustomizer());
+            reportClientRequestCustomizer.setDefaultPluginConfig(globalConfig.getReportClientRequestCustomizer());
             admin.setDefault(globalConfig.getAdmin());
             location.setDefault(globalConfig.getLocation());
             certificate.setDefault(globalConfig.getCertificate());

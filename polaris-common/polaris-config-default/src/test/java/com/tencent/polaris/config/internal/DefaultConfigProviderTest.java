@@ -18,7 +18,7 @@
 package com.tencent.polaris.config.internal;
 
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.factory.config.global.ReportClientRequestCustomizerConfigImpl;
+import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import org.junit.Test;
 
 import java.util.Map;
@@ -33,14 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultConfigProviderTest {
 
     @Test
-    public void testReportClientRequestCustomizerConfigLoaded() {
+    public void testReportClientRequestCustomizerPluginConfigLoaded() {
         Configuration configuration = new DefaultConfigProvider().getDefaultConfig();
-        ReportClientRequestCustomizerConfigImpl config =
-                (ReportClientRequestCustomizerConfigImpl) configuration.getGlobal()
+        PluginConfigImpl config =
+                (PluginConfigImpl) configuration.getGlobal()
                         .getReportClientRequestCustomizer();
 
         assertThat(config).isNotNull();
-        assertThat(config.isEnable()).isTrue();
         Map<?, ?> pluginConfig = config.getPlugin().get("config-watch");
         assertThat(pluginConfig.get("enable")).isEqualTo(true);
     }

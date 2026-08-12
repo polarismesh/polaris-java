@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.config.global;
 
+import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
 
@@ -82,9 +83,9 @@ public interface GlobalConfig extends Verifier {
     /**
      * Configuration of prefix of "global.reportClientRequestCustomizer"
      *
-     * @return ReportClientRequestCustomizerConfig
+     * @return PluginConfig
      */
-    ReportClientRequestCustomizerConfig getReportClientRequestCustomizer();
+    PluginConfig getReportClientRequestCustomizer();
 
     /**
      * Configuration of prefix of "global.admin"
