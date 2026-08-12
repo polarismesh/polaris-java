@@ -23,7 +23,6 @@ import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.global.LocationConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
 import com.tencent.polaris.api.utils.CollectionUtils;
-import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
 import java.util.HashMap;
@@ -63,7 +62,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     private EventReporterConfigImpl eventReporter;
 
     @JsonProperty
-    private PluginConfigImpl reportClientRequestCustomizer;
+    private ReportClientRequestCustomizerConfigImpl reportClientRequestCustomizer;
 
     @JsonProperty
     private AdminConfigImpl admin;
@@ -136,7 +135,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
-    public PluginConfigImpl getReportClientRequestCustomizer() {
+    public ReportClientRequestCustomizerConfigImpl getReportClientRequestCustomizer() {
         return reportClientRequestCustomizer;
     }
 
@@ -207,7 +206,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             eventReporter = new EventReporterConfigImpl();
         }
         if (null == reportClientRequestCustomizer) {
-            reportClientRequestCustomizer = new PluginConfigImpl();
+            reportClientRequestCustomizer = new ReportClientRequestCustomizerConfigImpl();
         }
         if (null == admin) {
             admin = new AdminConfigImpl();

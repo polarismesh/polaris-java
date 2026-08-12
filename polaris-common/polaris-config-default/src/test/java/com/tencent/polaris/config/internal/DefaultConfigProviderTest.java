@@ -18,7 +18,7 @@
 package com.tencent.polaris.config.internal;
 
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
+import com.tencent.polaris.factory.config.global.ReportClientRequestCustomizerConfigImpl;
 import org.junit.Test;
 
 import java.util.Map;
@@ -35,8 +35,8 @@ public class DefaultConfigProviderTest {
     @Test
     public void testReportClientRequestCustomizerPluginConfigLoaded() {
         Configuration configuration = new DefaultConfigProvider().getDefaultConfig();
-        PluginConfigImpl config =
-                (PluginConfigImpl) configuration.getGlobal()
+        ReportClientRequestCustomizerConfigImpl config =
+                (ReportClientRequestCustomizerConfigImpl) configuration.getGlobal()
                         .getReportClientRequestCustomizer();
 
         assertThat(config).isNotNull();
