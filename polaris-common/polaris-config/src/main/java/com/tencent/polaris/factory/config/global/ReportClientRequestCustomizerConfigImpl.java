@@ -27,4 +27,16 @@ import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
  */
 public class ReportClientRequestCustomizerConfigImpl extends PluginConfigImpl
         implements ReportClientRequestCustomizerConfig {
+
+    @Override
+    public void verify() {
+        verifyPluginConfig();
+    }
+
+    @Override
+    public void setDefault(Object defaultObject) {
+        if (defaultObject != null) {
+            setDefaultPluginConfig((ReportClientRequestCustomizerConfig) defaultObject);
+        }
+    }
 }

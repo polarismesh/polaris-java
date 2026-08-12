@@ -180,7 +180,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         statReporter.verify();
         traceReporter.verify();
         eventReporter.verify();
-        reportClientRequestCustomizer.verifyPluginConfig();
+        reportClientRequestCustomizer.verify();
         admin.verify();
         certificate.verify();
     }
@@ -238,7 +238,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             statReporter.setDefault(globalConfig.getStatReporter());
             traceReporter.setDefault(globalConfig.getTraceReporter());
             eventReporter.setDefault(globalConfig.getEventReporter());
-            reportClientRequestCustomizer.setDefaultPluginConfig(globalConfig.getReportClientRequestCustomizer());
+            reportClientRequestCustomizer.setDefault(globalConfig.getReportClientRequestCustomizer());
             admin.setDefault(globalConfig.getAdmin());
             location.setDefault(globalConfig.getLocation());
             certificate.setDefault(globalConfig.getCertificate());

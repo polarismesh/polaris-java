@@ -18,11 +18,12 @@
 package com.tencent.polaris.api.config.global;
 
 import com.tencent.polaris.api.config.plugin.PluginConfig;
+import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
  * Configuration container for ReportClient request customizers.
  *
  * @author fishtailfu
  */
-public interface ReportClientRequestCustomizerConfig extends PluginConfig {
+public interface ReportClientRequestCustomizerConfig extends PluginConfig, Verifier {
 }
