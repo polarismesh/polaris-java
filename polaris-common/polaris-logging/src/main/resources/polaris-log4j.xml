@@ -83,6 +83,55 @@
         </layout>
     </appender>
 
+    <!-- Nacos shaded appenders -->
+    <appender name="NACOS_CONFIG_LOG_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${polaris.log.home}/nacos/config.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
+        </layout>
+    </appender>
+    <appender name="ASYNC_NACOS_CONFIG" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="1024"/>
+        <param name="Blocking" value="false"/>
+        <appender-ref ref="NACOS_CONFIG_LOG_FILE"/>
+    </appender>
+
+    <appender name="NACOS_REMOTE_LOG_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${polaris.log.home}/nacos/remote.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
+        </layout>
+    </appender>
+    <appender name="ASYNC_NACOS_REMOTE" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="1024"/>
+        <param name="Blocking" value="false"/>
+        <appender-ref ref="NACOS_REMOTE_LOG_FILE"/>
+    </appender>
+
+    <appender name="NACOS_NAMING_LOG_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="${polaris.log.home}/nacos/naming.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%-5p] [method:%l]%n%m%n%n"/>
+        </layout>
+    </appender>
+    <appender name="ASYNC_NACOS_NAMING" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="1024"/>
+        <param name="Blocking" value="false"/>
+        <appender-ref ref="NACOS_NAMING_LOG_FILE"/>
+    </appender>
+
     <logger name="com.tencent.polaris" additivity="false">
         <level value="${polaris.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_LOG_FILE"/>
@@ -114,5 +163,31 @@
     <logger name="polaris-event" additivity="false">
         <level value="${polaris.event.log.level:-INFO}"/>
         <appender-ref ref="POLARIS_EVENT_LOG_FILE"/>
+    </logger>
+
+    <!-- Nacos shaded loggers -->
+    <logger name="shade.polaris.com.alibaba.nacos.client" additivity="false">
+        <level value="${nacos.config.log.level:-INFO}"/>
+        <appender-ref ref="ASYNC_NACOS_CONFIG"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.common.remote.client" additivity="false">
+        <level value="${nacos.config.log.level:-INFO}"/>
+        <appender-ref ref="ASYNC_NACOS_REMOTE"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.common.labels" additivity="false">
+        <level value="${nacos.config.log.level:-INFO}"/>
+        <appender-ref ref="ASYNC_NACOS_REMOTE"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.client.config" additivity="false">
+        <level value="${nacos.config.log.level:-INFO}"/>
+        <appender-ref ref="ASYNC_NACOS_CONFIG"/>
+    </logger>
+
+    <logger name="shade.polaris.com.alibaba.nacos.client.naming" additivity="false">
+        <level value="${nacos.naming.log.level:-INFO}"/>
+        <appender-ref ref="ASYNC_NACOS_NAMING"/>
     </logger>
 </log4j:configuration>
