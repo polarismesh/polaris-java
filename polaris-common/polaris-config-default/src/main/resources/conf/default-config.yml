@@ -106,6 +106,16 @@ global:
         namespace: Polaris
         # 描述：事件服务的服务名
         service: polaris.pushgateway
+  # 描述：ReportClient 请求定制器（目前用于服务配置监听上报）相关配置
+  reportClientRequestCustomizer:
+    # 描述：是否启用 ReportClient 请求定制器
+    enable: true
+    # 描述：ReportClient 请求定制插件配置
+    plugin:
+      # 描述：配置监听画像请求定制器配置
+      config-watch:
+        # 描述：是否在 ReportClient 请求中追加配置监听画像
+        enable: true
   # 描述：Admin相关的配置
   admin:
     # 描述：Admin的监听的IP
