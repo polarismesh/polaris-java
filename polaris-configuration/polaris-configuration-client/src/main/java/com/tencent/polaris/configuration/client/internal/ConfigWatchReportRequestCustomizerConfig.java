@@ -15,19 +15,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.factory.config.global;
+package com.tencent.polaris.configuration.client.internal;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.tencent.polaris.api.config.global.ClientReporterConfig;
-import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
+import com.tencent.polaris.api.config.verify.Verifier;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
-public class ClientReporterConfigImpl extends PluginConfigImpl implements ClientReporterConfig {
+/**
+ * 配置监听画像请求定制器配置。
+ *
+ * @author fishtailfu
+ */
+public class ConfigWatchReportRequestCustomizerConfig implements Verifier {
 
     @JsonProperty
     private Boolean enable;
 
     @Override
+    public void verify() {
+        ConfigUtils.validateNull(enable, "reportClientRequestCustomizer.plugin.config-watch.enable");
+    }
+
+    @Override
+    public void setDefault(Object defaultObject) {
+        if (null != defaultObject) {
+            ConfigWatchReportRequestCustomizerConfig config = (ConfigWatchReportRequestCustomizerConfig) defaultObject;
+            if (null == enable) {
+                setEnable(config.isEnable());
+            }
+        }
+    }
+
     public boolean isEnable() {
         if (null == enable) {
             return false;
@@ -40,27 +58,8 @@ public class ClientReporterConfigImpl extends PluginConfigImpl implements Client
     }
 
     @Override
-    public void verify() {
-        ConfigUtils.validateNull(enable, "clientReporter.enable");
-        verifyPluginConfig();
-    }
-
-    @Override
-    public void setDefault(Object defaultObject) {
-        if (null != defaultObject) {
-            ClientReporterConfig clientReporterConfig = (ClientReporterConfig) defaultObject;
-            if (null == enable) {
-                setEnable(clientReporterConfig.isEnable());
-            }
-            if (enable) {
-                setDefaultPluginConfig(clientReporterConfig);
-            }
-        }
-    }
-
-    @Override
     public String toString() {
-        return "ClientReporterConfigImpl{" +
+        return "ConfigWatchReportRequestCustomizerConfig{" +
                 "enable=" + enable +
                 '}';
     }

@@ -62,7 +62,7 @@ public class GlobalConfigImpl implements GlobalConfig {
     private EventReporterConfigImpl eventReporter;
 
     @JsonProperty
-    private ClientReporterConfigImpl clientReporter;
+    private ReportClientRequestCustomizerConfigImpl reportClientRequestCustomizer;
 
     @JsonProperty
     private AdminConfigImpl admin;
@@ -135,8 +135,8 @@ public class GlobalConfigImpl implements GlobalConfig {
     }
 
     @Override
-    public ClientReporterConfigImpl getClientReporter() {
-        return clientReporter;
+    public ReportClientRequestCustomizerConfigImpl getReportClientRequestCustomizer() {
+        return reportClientRequestCustomizer;
     }
 
     @Override
@@ -160,7 +160,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         ConfigUtils.validateNull(statReporter, "statReporter");
         ConfigUtils.validateNull(traceReporter, "traceReporter");
         ConfigUtils.validateNull(eventReporter, "eventReporter");
-        ConfigUtils.validateNull(clientReporter, "clientReporter");
+        ConfigUtils.validateNull(reportClientRequestCustomizer, "reportClientRequestCustomizer");
         ConfigUtils.validateNull(admin, "admin");
         ConfigUtils.validateNull(certificate, "certificate");
 
@@ -180,7 +180,7 @@ public class GlobalConfigImpl implements GlobalConfig {
         statReporter.verify();
         traceReporter.verify();
         eventReporter.verify();
-        clientReporter.verify();
+        reportClientRequestCustomizer.verify();
         admin.verify();
         certificate.verify();
     }
@@ -205,8 +205,8 @@ public class GlobalConfigImpl implements GlobalConfig {
         if (null == eventReporter) {
             eventReporter = new EventReporterConfigImpl();
         }
-        if (null == clientReporter) {
-            clientReporter = new ClientReporterConfigImpl();
+        if (null == reportClientRequestCustomizer) {
+            reportClientRequestCustomizer = new ReportClientRequestCustomizerConfigImpl();
         }
         if (null == admin) {
             admin = new AdminConfigImpl();
@@ -238,7 +238,7 @@ public class GlobalConfigImpl implements GlobalConfig {
             statReporter.setDefault(globalConfig.getStatReporter());
             traceReporter.setDefault(globalConfig.getTraceReporter());
             eventReporter.setDefault(globalConfig.getEventReporter());
-            clientReporter.setDefault(globalConfig.getClientReporter());
+            reportClientRequestCustomizer.setDefault(globalConfig.getReportClientRequestCustomizer());
             admin.setDefault(globalConfig.getAdmin());
             location.setDefault(globalConfig.getLocation());
             certificate.setDefault(globalConfig.getCertificate());
@@ -255,7 +255,7 @@ public class GlobalConfigImpl implements GlobalConfig {
                 ", statReporter=" + statReporter +
                 ", traceReporter=" + traceReporter +
                 ", eventReporter=" + eventReporter +
-                ", clientReporter=" + clientReporter +
+                ", reportClientRequestCustomizer=" + reportClientRequestCustomizer +
                 ", admin=" + admin +
                 ", location=" + location +
                 ", certificate=" + certificate +

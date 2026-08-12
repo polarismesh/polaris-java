@@ -25,17 +25,17 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Test for {@link ClientReporterConfigImpl}.
+ * Test for {@link ReportClientRequestCustomizerConfigImpl}.
  *
  * @author fishtailfu
  */
-public class ClientReporterConfigImplTest {
+public class ReportClientRequestCustomizerConfigImplTest {
 
-    private ClientReporterConfigImpl config;
+    private ReportClientRequestCustomizerConfigImpl config;
 
     @Before
     public void setUp() {
-        config = new ClientReporterConfigImpl();
+        config = new ReportClientRequestCustomizerConfigImpl();
     }
 
     @Test
@@ -53,7 +53,7 @@ public class ClientReporterConfigImplTest {
     public void testVerifyEnableNullThrows() {
         assertThatThrownBy(() -> config.verify())
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("clientReporter.enable");
+                .hasMessageContaining("reportClientRequestCustomizer.enable");
     }
 
     @Test
@@ -64,7 +64,7 @@ public class ClientReporterConfigImplTest {
 
     @Test
     public void testSetDefaultFromNull() {
-        ClientReporterConfigImpl defaults = new ClientReporterConfigImpl();
+        ReportClientRequestCustomizerConfigImpl defaults = new ReportClientRequestCustomizerConfigImpl();
         defaults.setEnable(true);
         config.setDefault(defaults);
 
@@ -74,7 +74,7 @@ public class ClientReporterConfigImplTest {
     @Test
     public void testSetDefaultDoesNotOverrideExisting() {
         config.setEnable(false);
-        ClientReporterConfigImpl defaults = new ClientReporterConfigImpl();
+        ReportClientRequestCustomizerConfigImpl defaults = new ReportClientRequestCustomizerConfigImpl();
         defaults.setEnable(true);
         config.setDefault(defaults);
 

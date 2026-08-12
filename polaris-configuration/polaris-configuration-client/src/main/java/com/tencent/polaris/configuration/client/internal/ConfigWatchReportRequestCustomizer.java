@@ -61,8 +61,9 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
 
     @Override
     public void postContextInit(Extensions extensions) throws PolarisException {
-        ConfigWatchReporterConfig config = extensions.getConfiguration().getGlobal().getClientReporter()
-                .getPluginConfig(getName(), ConfigWatchReporterConfig.class);
+        ConfigWatchReportRequestCustomizerConfig config = extensions.getConfiguration().getGlobal()
+                .getReportClientRequestCustomizer()
+                .getPluginConfig(getName(), ConfigWatchReportRequestCustomizerConfig.class);
         this.enable = config.isEnable();
     }
 
@@ -118,7 +119,7 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
 
     @Override
     public Class<? extends Verifier> getPluginConfigClazz() {
-        return ConfigWatchReporterConfig.class;
+        return ConfigWatchReportRequestCustomizerConfig.class;
     }
 
     @Override

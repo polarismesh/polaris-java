@@ -62,7 +62,7 @@ public class ConfigWatchReportRequestCustomizerTest {
 
     @Test
     public void testGetPluginConfigClazz() {
-        assertThat(customizer.getPluginConfigClazz()).isEqualTo(ConfigWatchReporterConfig.class);
+        assertThat(customizer.getPluginConfigClazz()).isEqualTo(ConfigWatchReportRequestCustomizerConfig.class);
     }
 
     @Test
@@ -191,7 +191,7 @@ public class ConfigWatchReportRequestCustomizerTest {
     }
 
     private void enableCustomizer() {
-        ConfigWatchReporterConfig config = new ConfigWatchReporterConfig();
+        ConfigWatchReportRequestCustomizerConfig config = new ConfigWatchReportRequestCustomizerConfig();
         config.setEnable(true);
         try {
             java.lang.reflect.Field field = ConfigWatchReportRequestCustomizer.class.getDeclaredField("enable");

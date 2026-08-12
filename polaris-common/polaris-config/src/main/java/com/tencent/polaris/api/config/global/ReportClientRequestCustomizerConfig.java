@@ -21,12 +21,12 @@ import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
- * 客户端画像上报配置。
+ * ReportClient 请求定制器配置。
  */
-public interface ClientReporterConfig extends PluginConfig, Verifier {
+public interface ReportClientRequestCustomizerConfig extends PluginConfig, Verifier {
 
     /**
-     * 是否启用客户端画像上报。
+     * 是否启用 ReportClient 请求定制器。
      *
      * @return 启用开关
      */
