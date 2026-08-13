@@ -17,53 +17,26 @@
 
 package com.tencent.polaris.factory.config.global;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.global.ReportClientRequestCustomizerConfig;
 import com.tencent.polaris.factory.config.plugin.PluginConfigImpl;
-import com.tencent.polaris.factory.util.ConfigUtils;
 
+/**
+ * Default implementation of {@link ReportClientRequestCustomizerConfig}.
+ *
+ * @author fishtailfu
+ */
 public class ReportClientRequestCustomizerConfigImpl extends PluginConfigImpl
         implements ReportClientRequestCustomizerConfig {
 
-    @JsonProperty
-    private Boolean enable;
-
-    @Override
-    public boolean isEnable() {
-        if (null == enable) {
-            return false;
-        }
-        return enable;
-    }
-
-    public void setEnable(boolean enable) {
-        this.enable = enable;
-    }
-
     @Override
     public void verify() {
-        ConfigUtils.validateNull(enable, "reportClientRequestCustomizer.enable");
         verifyPluginConfig();
     }
 
     @Override
     public void setDefault(Object defaultObject) {
-        if (null != defaultObject) {
-            ReportClientRequestCustomizerConfig customizerConfig =
-                    (ReportClientRequestCustomizerConfig) defaultObject;
-            if (null == enable) {
-                setEnable(customizerConfig.isEnable());
-            }
-            if (enable) {
-                setDefaultPluginConfig(customizerConfig);
-            }
+        if (defaultObject != null) {
+            setDefaultPluginConfig((ReportClientRequestCustomizerConfig) defaultObject);
         }
-    }
-
-    @Override
-    public String toString() {
-        return "ReportClientRequestCustomizerConfigImpl{" +
-                "enable=" + enable +
-                '}';
     }
 }

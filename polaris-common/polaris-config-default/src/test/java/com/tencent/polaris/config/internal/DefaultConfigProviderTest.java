@@ -33,14 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DefaultConfigProviderTest {
 
     @Test
-    public void testReportClientRequestCustomizerConfigLoaded() {
+    public void testReportClientRequestCustomizerPluginConfigLoaded() {
         Configuration configuration = new DefaultConfigProvider().getDefaultConfig();
         ReportClientRequestCustomizerConfigImpl config =
                 (ReportClientRequestCustomizerConfigImpl) configuration.getGlobal()
                         .getReportClientRequestCustomizer();
 
         assertThat(config).isNotNull();
-        assertThat(config.isEnable()).isTrue();
         Map<?, ?> pluginConfig = config.getPlugin().get("config-watch");
         assertThat(pluginConfig.get("enable")).isEqualTo(true);
     }

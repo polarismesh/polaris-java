@@ -21,14 +21,9 @@ import com.tencent.polaris.api.config.plugin.PluginConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
- * ReportClient 请求定制器配置。
+ * Configuration container for ReportClient request customizers.
+ *
+ * @author fishtailfu
  */
 public interface ReportClientRequestCustomizerConfig extends PluginConfig, Verifier {
-
-    /**
-     * 是否启用 ReportClient 请求定制器。
-     *
-     * @return 启用开关
-     */
-    boolean isEnable();
 }
