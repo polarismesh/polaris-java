@@ -46,7 +46,7 @@ public class ConfigWatchReportRequestCustomizerTest {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespace, group, fileName);
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
-        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5));
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5, null, 0));
         return repo;
     }
 

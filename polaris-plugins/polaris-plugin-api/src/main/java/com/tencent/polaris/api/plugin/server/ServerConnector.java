@@ -96,6 +96,21 @@ public interface ServerConnector extends Plugin {
     ReportClientResponse reportClient(ReportClientRequest req) throws PolarisException;
 
     /**
+     * 建立与服务端的双向事件流，接收服务端推送的客户端事件并回传应答。
+     * <p>
+     * 默认实现不支持该能力，仅 Polaris gRPC 连接器实现。实现方负责建流、断流重连与 WATCH 首帧重发；
+     * 服务端推送的事件经 {@link ClientEventHandler#onPush} 处理后回传应答。
+     *
+     * @param handler 事件处理器
+     * @return 事件流句柄，close 关流并停止重连
+     * @throws PolarisException 连接器不支持或建流失败
+     */
+    default AutoCloseable watchClientEvents(ClientEventHandler handler) throws PolarisException {
+        throw new PolarisException(com.tencent.polaris.api.exception.ErrorCode.NOT_SUPPORT,
+                "watchClientEvents is not supported by this connector");
+    }
+
+    /**
      * Report service contract.
      *
      * @throws PolarisException

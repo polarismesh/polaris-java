@@ -92,6 +92,16 @@ public class GrpcConnector extends DestroyableServerConnector {
     private ServerConnectorConfigImpl connectorConfig;
 
     /**
+     * 配置生效实时查询的事件流处理器（注册即常驻，直到 SDK 销毁）
+     */
+    private volatile ClientEventHandler clientEventHandler;
+
+    /**
+     * 配置生效实时查询的当前事件流
+     */
+    private final AtomicReference<ClientEventStream> clientEventStreamRef = new AtomicReference<>();
+
+    /**
      * 发送消息的线程池
      */
     private ScheduledThreadPoolExecutor sendDiscoverExecutor;
@@ -611,6 +621,76 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
     }
 
+    @Override
+    public AutoCloseable watchClientEvents(ClientEventHandler handler) throws PolarisException {
+        checkDestroyed();
+        this.clientEventHandler = handler;
+        connectClientEventStream();
+        return () -> {
+            clientEventHandler = null;
+            ClientEventStream stream = clientEventStreamRef.getAndSet(null);
+            if (stream != null) {
+                stream.close();
+            }
+        };
+    }
+
+    /**
+     * 重建配置生效查询事件流（由 ClientEventStream 断流时回调）。复用服务发现的任务调度：
+     * 固定 500ms 延迟、sendDiscoverExecutor 线程池、destroy 检查，与 retryServiceUpdateTask 一致。
+     *
+     * @param broken 已断开的流
+     */
+    public void retryClientEventStream(ClientEventStream broken) {
+        // 只重建当前活跃流，防止旧流的延迟重建覆盖新流
+        if (clientEventStreamRef.get() != broken || broken.isUnimplemented() || isDestroyed()
+                || clientEventHandler == null) {
+            return;
+        }
+        clientEventStreamRef.compareAndSet(broken, null);
+        sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * 建立配置生效查询事件流。对齐 GrpcServiceUpdateTask#execute：先检查集群就绪与销毁状态，
+     * 再取连接建流；失败经 retryClientEventStream 重新调度。
+     */
+    private void connectClientEventStream() {
+        ClientEventHandler handler = clientEventHandler;
+        if (handler == null || isDestroyed() || clientEventStreamRef.get() != null) {
+            return;
+        }
+        if (!connectionManager.checkReady(ClusterType.SERVICE_DISCOVER_CLUSTER)) {
+            LOG.info("[ClientEvent] {} service is not ready, retry later", ClusterType.SERVICE_DISCOVER_CLUSTER);
+            sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS,
+                    TimeUnit.MILLISECONDS);
+            return;
+        }
+        Connection connection = null;
+        try {
+            connection = connectionManager.getConnection(GrpcUtil.OP_KEY_WATCH_CLIENT_EVENTS,
+                    ClusterType.SERVICE_DISCOVER_CLUSTER);
+            ClientEventStream stream = new ClientEventStream(this, connection, handler);
+            clientEventStreamRef.set(stream);
+            LOG.info("[ClientEvent] watch client events stream established, clientId = {}", clientInstanceId);
+        } catch (Throwable t) {
+            if (connection != null) {
+                connection.reportFail(ErrorCode.NETWORK_ERROR);
+                connection.release(GrpcUtil.OP_KEY_WATCH_CLIENT_EVENTS);
+            }
+            ClientEventStream broken = clientEventStreamRef.get();
+            if (broken != null && broken.recordConnectFailure(t)) {
+                LOG.warn("[ClientEvent] connect failed (starting race), retry after {}ms, clientId = {}",
+                        TASK_RETRY_INTERVAL_MS, clientInstanceId, t);
+            } else {
+                LOG.error("[ClientEvent] connect failed, retry after {}ms, clientId = {}",
+                        TASK_RETRY_INTERVAL_MS, clientInstanceId, t);
+            }
+            sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS,
+                    TimeUnit.MILLISECONDS);
+        }
+    }
+
     private ServiceContractProto.ServiceContract buildReportServiceContractRequest(ReportServiceContractRequest req) {
         ServiceContractProto.ServiceContract.Builder serviceContractBuilder =
                 ServiceContractProto.ServiceContract.newBuilder();
@@ -787,6 +867,11 @@ public class GrpcConnector extends DestroyableServerConnector {
     public void doDestroy() {
         if (initialized) {
             LOG.info("start to destroy connector {}", getName());
+            clientEventHandler = null;
+            ClientEventStream eventStream = clientEventStreamRef.getAndSet(null);
+            if (eventStream != null) {
+                eventStream.close();
+            }
             ThreadPoolUtils.waitAndStopThreadPools(
                     new ExecutorService[]{sendDiscoverExecutor, buildInExecutor, updateServiceExecutor});
             destroyStreamClient();
@@ -798,6 +883,15 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     public ConnectionManager getConnectionManager() {
         return connectionManager;
+    }
+
+    /**
+     * 获取客户端实例 ID（与 ReportClient 上报一致），供 WatchClientEvents 首帧自证身份。
+     *
+     * @return 客户端实例 ID
+     */
+    public String getClientInstanceId() {
+        return clientInstanceId;
     }
 
 

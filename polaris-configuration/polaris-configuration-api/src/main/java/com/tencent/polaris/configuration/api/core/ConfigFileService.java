@@ -96,4 +96,13 @@ public interface ConfigFileService {
      * @return config file group with config file metadata list
      */
     ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata configFileGroupMetadata);
+
+    /**
+     * Register a provider that resolves the effective value and source of a config key in the running runtime.
+     * Used by upper frameworks (e.g. Spring Cloud Tencent) to enrich the config-effective query response.
+     *
+     * @param provider the effective value provider
+     * @return a registration handle; close it to unregister
+     */
+    ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider);
 }

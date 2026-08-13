@@ -196,4 +196,15 @@ public class ConfigFileManager {
             }
         });
     }
+
+    /**
+     * 注册配置生效值提供者，委托给长轮询服务持有的查询处理器。
+     *
+     * @param provider 提供者
+     * @return 注册句柄，close 注销
+     */
+    public com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration registerEffectiveValueProvider(
+            com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider provider) {
+        return longPullService.registerEffectiveValueProvider(provider);
+    }
 }

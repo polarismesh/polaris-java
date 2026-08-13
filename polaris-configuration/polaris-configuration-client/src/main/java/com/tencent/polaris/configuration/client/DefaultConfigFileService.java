@@ -24,6 +24,7 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
 import com.tencent.polaris.configuration.api.flow.ConfigFileGroupFlow;
+import com.tencent.polaris.configuration.client.flow.DefaultConfigFileFlow;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileGroupMetadata;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
@@ -90,6 +91,14 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     @Override
     public ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata configFileGroupMetadata) {
         return configFileGroupFlow.getConfigFileGroup(configFileGroupMetadata);
+    }
+
+    @Override
+    public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        if (!(configFileFlow instanceof DefaultConfigFileFlow)) {
+            return () -> { };
+        }
+        return ((DefaultConfigFileFlow) configFileFlow).registerEffectiveValueProvider(provider);
     }
 
     @JustForTest

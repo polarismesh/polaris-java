@@ -75,6 +75,16 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
         watchedFiles.remove(metadata);
     }
 
+    /**
+     * 按 (namespace, group, fileName) 查询单个监听配置文件的仓库。
+     *
+     * @param metadata 配置文件坐标
+     * @return 命中返回仓库，未监听返回 null
+     */
+    public RemoteConfigFileRepo getWatchedFile(ConfigFileMetadata metadata) {
+        return watchedFiles.get(metadata);
+    }
+
     @Override
     public void customize(ReportClientRequest request) {
         if (!enable) {

@@ -26,8 +26,11 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -84,6 +87,10 @@ public class ConfigFileLongPullService {
 
     private ConfigWatchReportRequestCustomizer configWatchRequestCustomizer;
 
+    private ClientEventQueryHandler clientEventQueryHandler;
+
+    private AutoCloseable clientEventStream;
+
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
         this.started = new AtomicReference<>(false);
@@ -100,6 +107,8 @@ public class ConfigFileLongPullService {
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");
         this.longPollingService = Executors.newSingleThreadExecutor(threadFactory);
+        //初始化配置生效实时查询（开关默认关闭）
+        initClientEventQuery(sdkContext);
     }
 
     public void addConfigFile(RemoteConfigFileRepo remoteConfigFileRepo) {
@@ -221,8 +230,60 @@ public class ConfigFileLongPullService {
         this.isLongPullingStopped.compareAndSet(false, true);
     }
 
+    /**
+     * 初始化配置生效实时查询。开关（reportClientRequestCustomizer.plugin.config-effective.enable）默认关闭，
+     * 未启用或连接器不支持（default 抛 NOT_SUPPORT，如 consul/nacos）时静默跳过，不影响长轮询。
+     */
+    private void initClientEventQuery(SDKContext sdkContext) {
+        try {
+            if (!isConfigEffectiveEnabled(sdkContext)) {
+                return;
+            }
+            ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins()
+                    .getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
+                            sdkContext.getValueContext().getServerConnectorProtocol());
+            clientEventQueryHandler = new ClientEventQueryHandler(configWatchRequestCustomizer);
+            clientEventStream = serverConnector.watchClientEvents(clientEventQueryHandler::onPush);
+            LOGGER.info("[Config] config effective query stream started.");
+        } catch (Throwable t) {
+            LOGGER.warn("[Config] config effective query stream start skipped: {}", t.getMessage());
+        }
+    }
+
+    private boolean isConfigEffectiveEnabled(SDKContext sdkContext) {
+        try {
+            ConfigEffectiveQueryConfig config = sdkContext.getConfig().getGlobal()
+                    .getReportClientRequestCustomizer()
+                    .getPluginConfig(ConfigEffectiveQueryConfig.NAME, ConfigEffectiveQueryConfig.class);
+            return config != null && config.isEnable();
+        } catch (Throwable t) {
+            LOGGER.warn("[Config] read config effective switch failed, default disabled: {}", t.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 注册配置生效值提供者，返回注销句柄。未启用实时查询时返回空句柄。
+     *
+     * @param provider 提供者
+     * @return 注册句柄，close 注销
+     */
+    public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        if (clientEventQueryHandler == null) {
+            return () -> { };
+        }
+        return clientEventQueryHandler.registerProvider(provider);
+    }
+
     public void doLongPullingDestroy() {
         stopLongPulling();
+        if (clientEventStream != null) {
+            try {
+                clientEventStream.close();
+            } catch (Throwable t) {
+                LOGGER.warn("[Config] close client event stream failed.", t);
+            }
+        }
         if (longPollingService != null) {
             ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{longPollingService});
         }

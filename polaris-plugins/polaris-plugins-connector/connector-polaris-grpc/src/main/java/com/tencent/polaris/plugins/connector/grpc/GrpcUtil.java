@@ -56,6 +56,8 @@ public class GrpcUtil {
 
     public static final String OP_KEY_REPORT_SERVICE_CONTRACT = "ReportServiceContract";
 
+    public static final String OP_KEY_WATCH_CLIENT_EVENTS = "WatchClientEvents";
+
     /**
      * 请求ID的key
      */

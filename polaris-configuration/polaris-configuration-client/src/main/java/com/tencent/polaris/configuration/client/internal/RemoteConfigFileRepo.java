@@ -53,6 +53,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
     private final AtomicLong notifiedVersion;
+    //配置在客户端本地的实际生效时刻（毫秒时间戳），仅在写入非删除配置时更新，删除场景保留上次生效时间
+    private final AtomicLong effectiveTime;
     private final ConfigFileConnector configFileConnector;
     private final ConfigFileFilterChain configFileFilterChain;
     private final RetryPolicy retryPolicy;
@@ -88,6 +90,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.remoteConfigFile = new AtomicReference<>();
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
+        this.effectiveTime = new AtomicLong(0);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
         this.configFileFilterChain = configFileFilterChain;
@@ -143,16 +146,31 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     /**
-     * 一次性读取当前版本和 MD5，保证两者来自同一份 ConfigFile 快照。
+     * 一次性读取当前版本、MD5、内容与生效时间，保证四者来自同一份 ConfigFile 快照。
      *
-     * @return 包含 version 和 md5 的快照
+     * @return 包含 version、md5、content、effectiveTime 的快照
      */
     public ConfigFileSnapshot getSnapshot() {
         ConfigFile configFile = remoteConfigFile.get();
         if (configFile == null) {
-            return new ConfigFileSnapshot(INIT_VERSION, "");
+            return new ConfigFileSnapshot(INIT_VERSION, "", null, effectiveTime.get());
         }
-        return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5());
+        return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5(), configFile.getContent(),
+                effectiveTime.get());
+    }
+
+    /**
+     * 触发变更回调。非删除场景（configFile 非 null）记录配置在本地实际生效的时刻，供配置生效查询 ACK 上报。
+     * 该时间戳不持久化到本地缓存：进程重启后重新拉取记为本次拉取时刻，fallback 本地缓存恢复记为本次恢复时刻。
+     *
+     * @param configFile 变更后的配置文件，null 表示配置被删除
+     */
+    @Override
+    protected void fireChangeEvent(ConfigFile configFile) {
+        if (configFile != null) {
+            effectiveTime.set(System.currentTimeMillis());
+        }
+        super.fireChangeEvent(configFile);
     }
 
     @Override
