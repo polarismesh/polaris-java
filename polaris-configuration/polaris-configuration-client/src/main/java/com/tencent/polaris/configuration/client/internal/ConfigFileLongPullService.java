@@ -107,7 +107,7 @@ public class ConfigFileLongPullService {
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");
         this.longPollingService = Executors.newSingleThreadExecutor(threadFactory);
-        //初始化配置生效实时查询（开关默认关闭）
+        //初始化配置生效实时查询（开关默认开启）
         initClientEventQuery(sdkContext);
     }
 
@@ -231,8 +231,9 @@ public class ConfigFileLongPullService {
     }
 
     /**
-     * 初始化配置生效实时查询。开关（reportClientRequestCustomizer.plugin.config-effective.enable）默认关闭，
+     * 初始化配置生效实时查询。开关（reportClientRequestCustomizer.plugin.config-effective.enable）默认开启，
      * 未启用或连接器不支持（default 抛 NOT_SUPPORT，如 consul/nacos）时静默跳过，不影响长轮询。
+     * 建流成功后才赋值字段，避免失败路径残留 handler 导致注册被静默吞掉。
      */
     private void initClientEventQuery(SDKContext sdkContext) {
         try {
@@ -242,8 +243,10 @@ public class ConfigFileLongPullService {
             ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins()
                     .getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
                             sdkContext.getValueContext().getServerConnectorProtocol());
-            clientEventQueryHandler = new ClientEventQueryHandler(configWatchRequestCustomizer);
-            clientEventStream = serverConnector.watchClientEvents(clientEventQueryHandler::onPush);
+            ClientEventQueryHandler queryHandler = new ClientEventQueryHandler(configWatchRequestCustomizer);
+            AutoCloseable eventStream = serverConnector.watchClientEvents(queryHandler::onPush);
+            this.clientEventQueryHandler = queryHandler;
+            this.clientEventStream = eventStream;
             LOGGER.info("[Config] config effective query stream started.");
         } catch (Throwable t) {
             LOGGER.warn("[Config] config effective query stream start skipped: {}", t.getMessage());

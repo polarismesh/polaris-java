@@ -63,6 +63,9 @@ public class ClientEventQueryHandler {
 
     private static final String REASON_NOT_WATCHED = "not_watched";
 
+    /** 已监听该配置文件但尚未拉取生效（首次拉取失败/重试中）。 */
+    private static final String REASON_PENDING = "pending";
+
     /**
      * 序列化 ACK 自身失败时的兜底应答，避免服务端收到无法诊断的空对象。
      */
@@ -94,9 +97,6 @@ public class ClientEventQueryHandler {
         if (!KIND_CONFIG.equals(query.getKind())) {
             return marshalAck(newAck(query.getKind(), cfg, REASON_UNKNOWN_KIND));
         }
-        if (cfg == null || cfg.getNamespace() == null || cfg.getFileName() == null) {
-            return marshalAck(newAck(query.getKind(), cfg, REASON_BAD_CONTENT));
-        }
         if (watchRegistry == null) {
             return marshalAck(newAck(query.getKind(), cfg, REASON_CONFIG_DISABLED));
         }
@@ -124,11 +124,20 @@ public class ClientEventQueryHandler {
     }
 
     private String handleConfigQuery(ClientEventQuery.QueryConfig cfg) {
-        ConfigFileMetadata metadata = new DefaultConfigFileMetadata(cfg.getNamespace(), cfg.getGroup(),
-                cfg.getFileName());
+        // null 一律归一为 ""，对齐 Go 零值查询：构造不出合法坐标时查不到 → not_watched
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespaceOf(cfg), groupOf(cfg), fileNameOf(cfg));
         RemoteConfigFileRepo repo = watchRegistry.getWatchedFile(metadata);
         if (repo == null) {
             return marshalAck(newAck(KIND_CONFIG, cfg, REASON_NOT_WATCHED));
+        }
+        if (!repo.isPulled()) {
+            // 已监听但尚未拉取生效（首次拉取失败/重试中/已被删除）：applied=false + pending，
+            // version 回带 notifiedVersion 供服务端参考，不带 md5/content/effective_time
+            ClientEventAck pendingAck = newAck(KIND_CONFIG, cfg, REASON_PENDING);
+            if (repo.getNotifiedVersion() > 0) {
+                pendingAck.setVersion(repo.getNotifiedVersion());
+            }
+            return marshalAck(pendingAck);
         }
         ClientEventAck ack = newAck(KIND_CONFIG, cfg, null);
         ack.setApplied(true);
@@ -139,9 +148,26 @@ public class ClientEventQueryHandler {
         return marshalAck(ack);
     }
 
+    private String namespaceOf(ClientEventQuery.QueryConfig cfg) {
+        return cfg == null || cfg.getNamespace() == null ? "" : cfg.getNamespace();
+    }
+
+    private String groupOf(ClientEventQuery.QueryConfig cfg) {
+        return cfg == null || cfg.getGroup() == null ? "" : cfg.getGroup();
+    }
+
+    private String fileNameOf(ClientEventQuery.QueryConfig cfg) {
+        return cfg == null || cfg.getFileName() == null ? "" : cfg.getFileName();
+    }
+
     private void fillSnapshot(ClientEventAck ack, ConfigFileSnapshot snapshot) {
-        ack.setVersion(snapshot.getVersion());
-        ack.setMd5(snapshot.getMd5());
+        // 对齐 Go 的 omitempty:version/md5/effective_time 零值时省略字段
+        if (snapshot.getVersion() > 0) {
+            ack.setVersion(snapshot.getVersion());
+        }
+        if (snapshot.getMd5() != null && !snapshot.getMd5().isEmpty()) {
+            ack.setMd5(snapshot.getMd5());
+        }
         if (snapshot.getEffectiveTime() > 0) {
             ack.setEffectiveTime(snapshot.getEffectiveTime());
         }
@@ -268,12 +294,11 @@ public class ClientEventQueryHandler {
     }
 
     private ClientEventAck.AckConfig toAckConfig(ClientEventQuery.QueryConfig cfg) {
+        // 对齐 Go 零值回带:config 三元组无 omitempty,缺省输出空串而非省略字段
         ClientEventAck.AckConfig ackConfig = new ClientEventAck.AckConfig();
-        if (cfg != null) {
-            ackConfig.setNamespace(cfg.getNamespace());
-            ackConfig.setGroup(cfg.getGroup());
-            ackConfig.setFileName(cfg.getFileName());
-        }
+        ackConfig.setNamespace(namespaceOf(cfg));
+        ackConfig.setGroup(groupOf(cfg));
+        ackConfig.setFileName(fileNameOf(cfg));
         return ackConfig;
     }
 

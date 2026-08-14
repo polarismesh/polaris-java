@@ -71,6 +71,7 @@ public class ClientEventQueryHandlerTest {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespace, group, fileName);
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.isPulled()).thenReturn(true);
         when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5, content, effectiveTime));
         watchRegistry.register(repo);
         return repo;
@@ -222,8 +223,8 @@ public class ClientEventQueryHandlerTest {
 
     /**
      * 测试目的：超长 content 按字节截断并标记 content_truncated、content_length 为原始字节数。
-     * 测试场景：构造超过 512KB 的内容。
-     * 验证内容：content_truncated=true、content_length 为原始字节数、content 变短。
+     * 测试场景：构造超过 512KB 的纯 ASCII 内容。
+     * 验证内容：content_truncated=true、content_length 为原始字节数、截断后恰为原文前缀且不超 512KB。
      */
     @Test
     public void testContentTruncated() {
@@ -236,8 +237,33 @@ public class ClientEventQueryHandlerTest {
 
         assertThat(ack.get("applied").getAsBoolean()).isTrue();
         assertThat(ack.get("content_truncated").getAsBoolean()).isTrue();
-        assertThat(ack.get("content_length").getAsInt()).isEqualTo(bigContent.getBytes().length);
-        assertThat(ack.get("content").getAsString().length()).isLessThanOrEqualTo(512 * 1024);
+        assertThat(ack.get("content_length").getAsInt())
+                .isEqualTo(bigContent.getBytes(java.nio.charset.StandardCharsets.UTF_8).length);
+        String truncated = ack.get("content").getAsString();
+        assertThat(truncated.length()).isLessThanOrEqualTo(512 * 1024);
+        assertThat(bigContent.startsWith(truncated)).isTrue();
+    }
+
+    /**
+     * 测试目的：截断点落在多字节字符中间时不产生乱码（忽略末尾不完整字符）。
+     * 测试场景：构造字节数超 512KB 且边界为中文的内容。
+     * 验证内容：截断结果不含 U+FFFD 替换符、可被 UTF-8 正常解码、content_truncated=true。
+     */
+    @Test
+    public void testContentTruncatedMultibyte() {
+        StringBuilder sb = new StringBuilder();
+        while (sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8).length <= 512 * 1024 + 6) {
+            sb.append("中文配置值");
+        }
+        String bigContent = sb.toString();
+        registerWatched("ns", "g", "big.yaml", bigContent, 1, "md5", 100L);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "big.yaml")));
+
+        assertThat(ack.get("content_truncated").getAsBoolean()).isTrue();
+        String truncated = ack.get("content").getAsString();
+        assertThat(truncated).doesNotContain("�");
+        assertThat(bigContent.startsWith(truncated)).isTrue();
     }
 
     /**
@@ -253,5 +279,64 @@ public class ClientEventQueryHandlerTest {
 
         assertThat(ack.has("content_length")).isFalse();
         assertThat(ack.has("content_truncated")).isFalse();
+    }
+
+    /**
+     * 测试目的：已监听但尚未拉取生效（isPulled=false）时回 applied=false + reason=pending。
+     * 测试场景：注册 repo 但 isPulled=false、notifiedVersion=2。
+     * 验证内容：applied=false、reason=pending、version 回带 2、无 md5/effective_time、content 为空串。
+     */
+    @Test
+    public void testPendingWhenNotPulled() {
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "f.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.isPulled()).thenReturn(false);
+        when(repo.getNotifiedVersion()).thenReturn(2L);
+        watchRegistry.register(repo);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isFalse();
+        assertThat(ack.get("reason").getAsString()).isEqualTo("pending");
+        assertThat(ack.get("version").getAsLong()).isEqualTo(2L);
+        assertThat(ack.has("md5")).isFalse();
+        assertThat(ack.has("effective_time")).isFalse();
+        assertThat(ack.get("content").getAsString()).isEmpty();
+    }
+
+    /**
+     * 测试目的：version=0/md5="" 时字段省略，对齐 Go 的 omitempty。
+     * 测试场景：已拉取但 version=0、md5 为空。
+     * 验证内容：ACK 无 version、无 md5 字段。
+     */
+    @Test
+    public void testZeroVersionAndEmptyMd5Omitted() {
+        registerWatched("ns", "g", "f.yaml", "content", 0, "", 100L);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        assertThat(ack.has("version")).isFalse();
+        assertThat(ack.has("md5")).isFalse();
+    }
+
+    /**
+     * 测试目的：查询缺 group 字段时不 NPE，按零值查询回 not_watched（对齐 Go 零值语义）。
+     * 测试场景：PUSH 的 config 缺 group，本地有监听文件。
+     * 验证内容：applied=false、reason=not_watched、config 回带零值字段。
+     */
+    @Test
+    public void testMissingGroupReturnsNotWatched() {
+        registerWatched("ns", "g", "f.yaml", "content", 1, "md5", 100L);
+
+        JsonObject ack = ackOf(handler.onPush(1, "{\"kind\":\"config\",\"config\":{\"namespace\":\"ns\",\"file_name\":\"f.yaml\"}}"));
+
+        assertThat(ack.get("applied").getAsBoolean()).isFalse();
+        assertThat(ack.get("reason").getAsString()).isEqualTo("not_watched");
+        JsonObject config = ack.get("config").getAsJsonObject();
+        assertThat(config.get("namespace").getAsString()).isEqualTo("ns");
+        assertThat(config.get("group").getAsString()).isEmpty();
+        assertThat(config.get("file_name").getAsString()).isEqualTo("f.yaml");
     }
 }

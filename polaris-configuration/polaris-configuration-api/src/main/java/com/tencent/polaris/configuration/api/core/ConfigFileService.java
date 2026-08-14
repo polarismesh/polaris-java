@@ -104,5 +104,7 @@ public interface ConfigFileService {
      * @param provider the effective value provider
      * @return a registration handle; close it to unregister
      */
-    ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider);
+    default ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        return () -> { };
+    }
 }

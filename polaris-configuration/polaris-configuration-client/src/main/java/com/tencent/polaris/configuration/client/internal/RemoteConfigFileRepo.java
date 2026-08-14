@@ -146,7 +146,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     /**
-     * 一次性读取当前版本、MD5、内容与生效时间，保证四者来自同一份 ConfigFile 快照。
+     * 一次性读取当前版本、MD5、源内容与生效时间。content 取源内容（sourceContent，加密配置为密文），
+     * 与 md5（源内容摘要）自洽且不回传解密明文；非加密配置源内容为空时回退 content。
      *
      * @return 包含 version、md5、content、effectiveTime 的快照
      */
@@ -155,8 +156,28 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         if (configFile == null) {
             return new ConfigFileSnapshot(INIT_VERSION, "", null, effectiveTime.get());
         }
-        return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5(), configFile.getContent(),
+        String content = configFile.getSourceContent() != null ? configFile.getSourceContent()
+                : configFile.getContent();
+        return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5(), content,
                 effectiveTime.get());
+    }
+
+    /**
+     * 是否已拉取到远端配置（remoteConfigFile 非空）。已订阅但首次拉取失败/重试中/已被删除时为 false。
+     *
+     * @return true 表示已拉取生效
+     */
+    public boolean isPulled() {
+        return remoteConfigFile.get() != null;
+    }
+
+    /**
+     * 服务端通知的版本号（可能落后于服务端实际版本）。pending 场景回带供服务端参考。
+     *
+     * @return 通知版本号
+     */
+    public long getNotifiedVersion() {
+        return notifiedVersion.get();
     }
 
     /**
@@ -367,6 +388,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 new ConfigFile(sourceConfigFile.getNamespace(), sourceConfigFile.getFileGroup(),
                         sourceConfigFile.getFileName());
         configFile.setContent(sourceConfigFile.getContent());
+        configFile.setSourceContent(sourceConfigFile.getSourceContent());
         configFile.setVersion(sourceConfigFile.getVersion());
         configFile.setName(sourceConfigFile.getName());
         configFile.setMd5(sourceConfigFile.getMd5());

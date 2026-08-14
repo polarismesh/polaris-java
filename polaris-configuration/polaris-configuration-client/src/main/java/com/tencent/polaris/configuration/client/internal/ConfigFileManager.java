@@ -205,6 +205,9 @@ public class ConfigFileManager {
      */
     public com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration registerEffectiveValueProvider(
             com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider provider) {
+        if (longPullService == null) {
+            return () -> { };
+        }
         return longPullService.registerEffectiveValueProvider(provider);
     }
 }

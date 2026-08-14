@@ -1,1 +1,2 @@
 com.tencent.polaris.configuration.client.internal.ConfigWatchReportRequestCustomizer
+com.tencent.polaris.configuration.client.internal.ConfigEffectiveQueryConfigProvider

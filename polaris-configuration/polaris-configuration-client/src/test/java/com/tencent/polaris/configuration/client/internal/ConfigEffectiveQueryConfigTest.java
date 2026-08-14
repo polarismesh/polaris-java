@@ -83,22 +83,22 @@ public class ConfigEffectiveQueryConfigTest {
 
     /**
      * 测试目的：setDefault 用默认值填充未设置的 enable，已设置时不覆盖。
-     * 测试场景：目标未设置 / 已设置。
+     * 测试场景：目标未设置 / 已设置（默认值为 false，避免与缺省 true 相同导致断言恒真）。
      * 验证内容：未设置取默认值，已设置保留原值。
      */
     @Test
     public void testSetDefault() {
         ConfigEffectiveQueryConfig defaults = new ConfigEffectiveQueryConfig();
-        defaults.setEnable(true);
+        defaults.setEnable(false);
 
         ConfigEffectiveQueryConfig target = new ConfigEffectiveQueryConfig();
         target.setDefault(defaults);
-        assertThat(target.isEnable()).isTrue();
+        assertThat(target.isEnable()).isFalse();
 
         ConfigEffectiveQueryConfig target2 = new ConfigEffectiveQueryConfig();
-        target2.setEnable(false);
+        target2.setEnable(true);
         target2.setDefault(defaults);
-        assertThat(target2.isEnable()).isFalse();
+        assertThat(target2.isEnable()).isTrue();
     }
 
     /**

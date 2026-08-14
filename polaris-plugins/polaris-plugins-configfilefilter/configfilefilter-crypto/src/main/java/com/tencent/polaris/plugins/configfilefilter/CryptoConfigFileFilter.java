@@ -81,6 +81,9 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
                             return response;
                         }
                         byte[] password = rsaService.decrypt(dataKey);
+                        // 解密前保留源内容（密文），供配置生效查询 ACK 回传——与 md5（源内容摘要）自洽，
+                        // 且避免解密明文经 ACK 回传扩大暴露面
+                        configFileResponse.setSourceContent(configFileResponse.getContent());
                         crypto.doDecrypt(configFileResponse, password);
                     }
                     return response;

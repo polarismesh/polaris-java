@@ -35,6 +35,11 @@ public class ConfigFile extends BaseEntity {
     private String fileGroup;
     private String fileName;
     private String content;
+    /**
+     * 配置源内容（加密配置为密文）。非加密配置该字段为空，源内容即 content。
+     * 加密 filter 解密前保留原文到此字段，供配置生效查询 ACK 回传（与 md5 源内容摘要自洽，不回传解密明文）。
+     */
+    private String sourceContent;
     private long version;
     private String name;
     private String md5;
@@ -76,9 +81,16 @@ public class ConfigFile extends BaseEntity {
     public String getContent() {
         return content;
     }
-
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getSourceContent() {
+        return sourceContent;
+    }
+
+    public void setSourceContent(String sourceContent) {
+        this.sourceContent = sourceContent;
     }
 
     public long getVersion() {
