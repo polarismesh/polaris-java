@@ -120,6 +120,11 @@ public class ServiceInstancesWrap implements ServiceInstances {
         return serviceInstances.getMetadata();
     }
 
+    @Override
+    public ServiceType getServiceType() {
+        return serviceInstances.getServiceType();
+    }
+
     public List<Instance> getAllInstances() {
         return serviceInstances.getInstances();
     }

@@ -34,4 +34,13 @@ public interface ServiceMetadata extends Service {
      */
     Map<String, String> getMetadata();
 
+    /**
+     * Get service type, such as microservice, MCP server or AI agent.
+     *
+     * @return service type, defaults to {@link ServiceType#MICROSERVICE}
+     */
+    default ServiceType getServiceType() {
+        return ServiceType.MICROSERVICE;
+    }
+
 }

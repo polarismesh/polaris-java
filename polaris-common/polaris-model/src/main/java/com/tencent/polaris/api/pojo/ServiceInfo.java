@@ -33,6 +33,8 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
     private String revision;
 
+    private ServiceType serviceType = ServiceType.MICROSERVICE;
+
     @Override
     public String getNamespace() {
         return serviceKey.getNamespace();
@@ -68,6 +70,15 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         this.metadata = metadata;
     }
 
+    @Override
+    public ServiceType getServiceType() {
+        return serviceType;
+    }
+
+    public void setServiceType(ServiceType serviceType) {
+        this.serviceType = serviceType;
+    }
+
     public ServiceKey getServiceKey() {
         return serviceKey;
     }
@@ -79,6 +90,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
                 "namespace='" + serviceKey.getNamespace() + '\'' +
                 ", service='" + serviceKey.getService() + '\'' +
                 ", metadata=" + metadata +
+                ", serviceType=" + serviceType +
                 '}';
     }
 
@@ -99,6 +111,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         private String service;
         private Map<String, String> metadata;
         private String revision;
+        private ServiceType serviceType = ServiceType.MICROSERVICE;
 
         private ServiceInfoBuilder() {
         }
@@ -123,12 +136,18 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
             return this;
         }
 
+        public ServiceInfoBuilder serviceType(ServiceType serviceType) {
+            this.serviceType = serviceType;
+            return this;
+        }
+
         public ServiceInfo build() {
             ServiceInfo serviceInfo = new ServiceInfo();
             serviceInfo.setNamespace(namespace);
             serviceInfo.setService(service);
             serviceInfo.setMetadata(metadata);
             serviceInfo.setRevision(revision);
+            serviceInfo.setServiceType(serviceType);
             return serviceInfo;
         }
     }

@@ -21,6 +21,7 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.api.pojo.ServiceKey;
+import com.tencent.polaris.api.pojo.ServiceType;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
@@ -79,6 +80,7 @@ public class ServicesByProto implements Services, RegistryCacheValue {
                         .service(service.getName().getValue())
                         .metadata(service.getMetadataMap())
                         .revision(service.getRevision().getValue())
+                        .serviceType(ServiceType.fromProto(service.getServiceType()))
                         .build());
                 originServicesList.add(service);
             });
