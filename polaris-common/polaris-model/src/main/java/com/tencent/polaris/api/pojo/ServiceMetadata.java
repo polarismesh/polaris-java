@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.util.Map;
 
 /**
@@ -37,10 +38,10 @@ public interface ServiceMetadata extends Service {
     /**
      * Get service type, such as microservice, MCP server or AI agent.
      *
-     * @return service type, defaults to {@link ServiceType#MICROSERVICE}
+     * @return service type, defaults to {@link ServiceProto.ServiceType#SERVICE_TYPE_MICROSERVICE}
      */
-    default ServiceType getServiceType() {
-        return ServiceType.MICROSERVICE;
+    default ServiceProto.ServiceType getServiceType() {
+        return ServiceProto.ServiceType.SERVICE_TYPE_MICROSERVICE;
     }
 
 }

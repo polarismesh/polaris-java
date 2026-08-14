@@ -18,7 +18,6 @@
 package com.tencent.polaris.client.pojo;
 
 import com.google.protobuf.StringValue;
-import com.tencent.polaris.api.pojo.ServiceType;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import org.junit.Test;
@@ -39,7 +38,7 @@ public class ServiceInstancesByProtoTest {
      * 测试实例发现结果暴露 service_type
      * 测试目的：验证 DiscoverResponse.service.service_type 能透传到 ServiceInstances
      * 测试场景：构造含 SERVICE_TYPE_AI_AGENT 的实例发现响应
-     * 验证内容：getServiceType() 返回 AI_AGENT
+     * 验证内容：getServiceType() 返回 SERVICE_TYPE_AI_AGENT
      */
     @Test
     public void testGetServiceTypeAiAgent() {
@@ -58,21 +57,22 @@ public class ServiceInstancesByProtoTest {
         ServiceInstancesByProto serviceInstances = new ServiceInstancesByProto(response, null, false);
 
         // Assert
-        assertThat(serviceInstances.getServiceType()).isEqualTo(ServiceType.AI_AGENT);
+        assertThat(serviceInstances.getServiceType())
+                .isEqualTo(ServiceProto.ServiceType.SERVICE_TYPE_AI_AGENT);
         assertThat(serviceInstances.getNamespace()).isEqualTo("default");
         assertThat(serviceInstances.getService()).isEqualTo("ai-agent-demo");
     }
 
     /**
      * 测试空实例对象的默认服务类型
-     * 测试目的：验证 EMPTY_INSTANCES 默认为 MICROSERVICE
+     * 测试目的：验证 EMPTY_INSTANCES 默认为 SERVICE_TYPE_MICROSERVICE
      * 测试场景：读取 EMPTY_INSTANCES
-     * 验证内容：getServiceType() 返回 MICROSERVICE
+     * 验证内容：getServiceType() 返回 SERVICE_TYPE_MICROSERVICE
      */
     @Test
     public void testEmptyInstancesDefaultServiceType() {
         // Arrange & Act & Assert
         assertThat(ServiceInstancesByProto.EMPTY_INSTANCES.getServiceType())
-                .isEqualTo(ServiceType.MICROSERVICE);
+                .isEqualTo(ServiceProto.ServiceType.SERVICE_TYPE_MICROSERVICE);
     }
 }

@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.util.Map;
 
 /**
@@ -33,7 +34,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
     private String revision;
 
-    private ServiceType serviceType = ServiceType.MICROSERVICE;
+    private ServiceProto.ServiceType serviceType = ServiceProto.ServiceType.SERVICE_TYPE_MICROSERVICE;
 
     @Override
     public String getNamespace() {
@@ -71,11 +72,11 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
     }
 
     @Override
-    public ServiceType getServiceType() {
+    public ServiceProto.ServiceType getServiceType() {
         return serviceType;
     }
 
-    public void setServiceType(ServiceType serviceType) {
+    public void setServiceType(ServiceProto.ServiceType serviceType) {
         this.serviceType = serviceType;
     }
 
@@ -111,7 +112,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         private String service;
         private Map<String, String> metadata;
         private String revision;
-        private ServiceType serviceType = ServiceType.MICROSERVICE;
+        private ServiceProto.ServiceType serviceType = ServiceProto.ServiceType.SERVICE_TYPE_MICROSERVICE;
 
         private ServiceInfoBuilder() {
         }
@@ -136,7 +137,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
             return this;
         }
 
-        public ServiceInfoBuilder serviceType(ServiceType serviceType) {
+        public ServiceInfoBuilder serviceType(ServiceProto.ServiceType serviceType) {
             this.serviceType = serviceType;
             return this;
         }

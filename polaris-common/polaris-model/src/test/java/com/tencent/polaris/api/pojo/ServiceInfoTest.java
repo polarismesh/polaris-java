@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -33,9 +34,9 @@ public class ServiceInfoTest {
 
     /**
      * 测试默认服务类型
-     * 测试目的：验证未设置时默认为 MICROSERVICE
+     * 测试目的：验证未设置时默认为 SERVICE_TYPE_MICROSERVICE
      * 测试场景：直接 new ServiceInfo
-     * 验证内容：getServiceType() 返回 MICROSERVICE
+     * 验证内容：getServiceType() 返回 SERVICE_TYPE_MICROSERVICE
      */
     @Test
     public void testDefaultServiceType() {
@@ -43,14 +44,15 @@ public class ServiceInfoTest {
         ServiceInfo serviceInfo = new ServiceInfo();
 
         // Act & Assert
-        assertThat(serviceInfo.getServiceType()).isEqualTo(ServiceType.MICROSERVICE);
+        assertThat(serviceInfo.getServiceType())
+                .isEqualTo(ServiceProto.ServiceType.SERVICE_TYPE_MICROSERVICE);
     }
 
     /**
      * 测试 Builder 设置服务类型
-     * 测试目的：验证 builder 能正确写入 AI_AGENT
+     * 测试目的：验证 builder 能正确写入 SERVICE_TYPE_AI_AGENT
      * 测试场景：通过 builder 构建 ServiceInfo
-     * 验证内容：getServiceType() 返回 AI_AGENT，toString 包含 serviceType
+     * 验证内容：getServiceType() 返回 SERVICE_TYPE_AI_AGENT，toString 包含 serviceType
      */
     @Test
     public void testBuilderServiceType() {
@@ -58,19 +60,20 @@ public class ServiceInfoTest {
         ServiceInfo serviceInfo = ServiceInfo.builder()
                 .namespace("default")
                 .service("ai-agent-demo")
-                .serviceType(ServiceType.AI_AGENT)
+                .serviceType(ServiceProto.ServiceType.SERVICE_TYPE_AI_AGENT)
                 .build();
 
         // Assert
-        assertThat(serviceInfo.getServiceType()).isEqualTo(ServiceType.AI_AGENT);
-        assertThat(serviceInfo.toString()).contains("serviceType=AI_AGENT");
+        assertThat(serviceInfo.getServiceType())
+                .isEqualTo(ServiceProto.ServiceType.SERVICE_TYPE_AI_AGENT);
+        assertThat(serviceInfo.toString()).contains("serviceType=SERVICE_TYPE_AI_AGENT");
     }
 
     /**
      * 测试 setter 设置服务类型
      * 测试目的：验证 setServiceType 生效
-     * 测试场景：设置为 MCP_SERVER
-     * 验证内容：getServiceType() 返回 MCP_SERVER
+     * 测试场景：设置为 SERVICE_TYPE_MCP_SERVER
+     * 验证内容：getServiceType() 返回 SERVICE_TYPE_MCP_SERVER
      */
     @Test
     public void testSetServiceType() {
@@ -78,9 +81,10 @@ public class ServiceInfoTest {
         ServiceInfo serviceInfo = new ServiceInfo();
 
         // Act
-        serviceInfo.setServiceType(ServiceType.MCP_SERVER);
+        serviceInfo.setServiceType(ServiceProto.ServiceType.SERVICE_TYPE_MCP_SERVER);
 
         // Assert
-        assertThat(serviceInfo.getServiceType()).isEqualTo(ServiceType.MCP_SERVER);
+        assertThat(serviceInfo.getServiceType())
+                .isEqualTo(ServiceProto.ServiceType.SERVICE_TYPE_MCP_SERVER);
     }
 }

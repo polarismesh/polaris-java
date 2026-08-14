@@ -20,6 +20,7 @@ package com.tencent.polaris.api.pojo;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 
 import java.util.List;
 import java.util.Map;
@@ -121,7 +122,7 @@ public class ServiceInstancesWrap implements ServiceInstances {
     }
 
     @Override
-    public ServiceType getServiceType() {
+    public ServiceProto.ServiceType getServiceType() {
         return serviceInstances.getServiceType();
     }
 

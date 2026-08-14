@@ -23,7 +23,6 @@ import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
-import com.tencent.polaris.api.pojo.ServiceType;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
@@ -58,7 +57,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     private final Map<String, String> metadata;
 
-    private final ServiceType serviceType;
+    private final ServiceProto.ServiceType serviceType;
 
     private final boolean initialized;
 
@@ -117,7 +116,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.totalWeight = totalWeight;
         this.initialized = true;
         this.metadata = Collections.unmodifiableMap(this.service.getMetadataMap());
-        this.serviceType = ServiceType.fromProto(this.service.getServiceType());
+        this.serviceType = this.service.getServiceType();
         this.loadedFromFile = loadFromFile;
     }
 
@@ -133,7 +132,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.idMap = Collections.emptyMap();
         this.nodeMap = Collections.emptyMap();
         this.metadata = Collections.emptyMap();
-        this.serviceType = ServiceType.MICROSERVICE;
+        this.serviceType = ServiceProto.ServiceType.SERVICE_TYPE_MICROSERVICE;
         this.loadedFromFile = false;
         this.totalWeight = 0;
         hashCode = Objects.hash(instances);
@@ -199,7 +198,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
     }
 
     @Override
-    public ServiceType getServiceType() {
+    public ServiceProto.ServiceType getServiceType() {
         return serviceType;
     }
 
