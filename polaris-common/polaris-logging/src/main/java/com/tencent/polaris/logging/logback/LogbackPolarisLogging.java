@@ -44,6 +44,7 @@ public class LogbackPolarisLogging extends AbstractPolarisLogging {
             LoggingConsts.LOGGING_LOSSLESS_EVENT,
             LoggingConsts.LOGGING_HEARTBEAT_RECORD,
             LoggingConsts.LOGGING_EVENT,
+            LoggingConsts.LOGGING_AUDIT,
     };
 
     @Override

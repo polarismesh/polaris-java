@@ -28,6 +28,8 @@ public interface StatReporterConfig extends PluginConfig, Verifier {
 
     String DEFAULT_REPORTER_PROMETHEUS = "prometheus";
 
+    String DEFAULT_REPORTER_AUDIT_LOG = "auditLog";
+
     /**
      * 是否启用数据上报
      *

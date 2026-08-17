@@ -139,6 +139,11 @@
             <artifactId>stat-prometheus</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>stat-audit</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!--地理位置信息获取插件-->
         <dependency>

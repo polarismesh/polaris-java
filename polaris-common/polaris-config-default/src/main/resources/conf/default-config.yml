@@ -149,6 +149,12 @@ global:
         namespace: Polaris
         # 描述：监控服务的服务名
         service: polaris.pushgateway
+      # 接口调用审计日志配置
+      auditLog:
+        # 是否启用接口调用审计日志
+        enable: false
+        # 审计日志输出格式，目前仅支持 json
+        format: json
   location:
     providers:
       - type: local

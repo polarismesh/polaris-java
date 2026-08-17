@@ -18,6 +18,7 @@
     <modules>
         <module>stat-prometheus</module>
         <module>stat-common</module>
+        <module>stat-audit</module>
         <module>trace-otel</module>
         <module>event-logger</module>
         <module>event-tsf</module>

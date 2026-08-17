@@ -43,4 +43,6 @@ public interface LoggingConsts {
     String LOGGING_HEARTBEAT_RECORD = "polaris-instance-heartbeat";
 
     String LOGGING_EVENT = "polaris-event";
+
+    String LOGGING_AUDIT = "polaris-audit";
 }

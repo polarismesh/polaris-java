@@ -69,6 +69,11 @@
             <artifactId>stat-prometheus</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>stat-audit</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- updateTraceAttributes 的基础依赖 -->
         <!--依赖调用链上报插件-->
