@@ -142,6 +142,19 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         return remoteConfigFile.get().getVersion();
     }
 
+    /**
+     * 一次性读取当前版本和 MD5，保证两者来自同一份 ConfigFile 快照。
+     *
+     * @return 包含 version 和 md5 的快照
+     */
+    public ConfigFileSnapshot getSnapshot() {
+        ConfigFile configFile = remoteConfigFile.get();
+        if (configFile == null) {
+            return new ConfigFileSnapshot(INIT_VERSION, "");
+        }
+        return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5());
+    }
+
     @Override
     protected void doPull() {
         long startTime = System.currentTimeMillis();

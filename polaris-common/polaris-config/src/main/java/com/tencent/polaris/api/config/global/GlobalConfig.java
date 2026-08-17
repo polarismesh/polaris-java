@@ -80,6 +80,13 @@ public interface GlobalConfig extends Verifier {
     EventReporterConfig getEventReporter();
 
     /**
+     * Configuration of prefix of "global.reportClientRequestCustomizer"
+     *
+     * @return ReportClientRequestCustomizerConfig
+     */
+    ReportClientRequestCustomizerConfig getReportClientRequestCustomizer();
+
+    /**
      * Configuration of prefix of "global.admin"
      *
      * @return

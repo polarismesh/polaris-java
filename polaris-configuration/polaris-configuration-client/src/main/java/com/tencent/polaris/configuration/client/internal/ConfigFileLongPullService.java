@@ -24,6 +24,8 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
+import com.tencent.polaris.api.plugin.Plugin;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -80,6 +82,8 @@ public class ConfigFileLongPullService {
      */
     private final RetryPolicy retryPolicy;
 
+    private ConfigWatchReportRequestCustomizer configWatchRequestCustomizer;
+
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
         this.started = new AtomicReference<>(false);
@@ -87,6 +91,12 @@ public class ConfigFileLongPullService {
         this.notifiedVersion = Maps.newConcurrentMap();
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.connector = configFileConnector;
+        Plugin plugin = sdkContext.getPlugins().getOptionalPlugin(
+                PluginTypes.REPORT_CLIENT_REQUEST_CUSTOMIZER.getBaseType(),
+                ConfigWatchReportRequestCustomizer.NAME);
+        if (plugin instanceof ConfigWatchReportRequestCustomizer) {
+            this.configWatchRequestCustomizer = (ConfigWatchReportRequestCustomizer) plugin;
+        }
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");
         this.longPollingService = Executors.newSingleThreadExecutor(threadFactory);
@@ -101,6 +111,10 @@ public class ConfigFileLongPullService {
         configFilePool.putIfAbsent(configFileMetadata, remoteConfigFileRepo);
         //长轮询起始的配置文件版本号应该以第一次同步拉取为准
         notifiedVersion.putIfAbsent(configFileMetadata, version);
+
+        if (configWatchRequestCustomizer != null) {
+            configWatchRequestCustomizer.register(remoteConfigFileRepo);
+        }
 
         if (!started.get()) {
             startLongPollingTask();

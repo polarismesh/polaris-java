@@ -43,6 +43,10 @@ public class ReportClientRequest {
 
     private List<ReporterMetaInfo> reporterMetaInfos;
 
+    private Boolean configEnabled;
+
+    private String configMetadata;
+
     public List<ReporterMetaInfo> getReporterMetaInfos() {
         return reporterMetaInfos;
     }
@@ -99,6 +103,22 @@ public class ReportClientRequest {
         this.timeoutMs = timeoutMs;
     }
 
+    public Boolean getConfigEnabled() {
+        return configEnabled;
+    }
+
+    public void setConfigEnabled(Boolean configEnabled) {
+        this.configEnabled = configEnabled;
+    }
+
+    public String getConfigMetadata() {
+        return configMetadata;
+    }
+
+    public void setConfigMetadata(String configMetadata) {
+        this.configMetadata = configMetadata;
+    }
+
     @Override
     public String toString() {
         return "ReportClientRequest{" +
@@ -109,6 +129,8 @@ public class ReportClientRequest {
                 ", targetServer=" + targetServer +
                 ", timeoutMs=" + timeoutMs +
                 ", reporterMetaInfos=" + reporterMetaInfos +
+                ", configEnabled=" + configEnabled +
+                ", configMetadata='" + configMetadata + '\'' +
                 '}';
     }
 }
