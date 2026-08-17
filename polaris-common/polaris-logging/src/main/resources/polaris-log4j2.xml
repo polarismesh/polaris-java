@@ -109,6 +109,21 @@
 
             <DefaultRolloverStrategy max="${sys:polaris.event.log.retain.count:-7}"/>
         </RollingFile>
+
+        <RollingFile name="POLARIS_AUDIT_LOG_FILE"
+                     fileName="${sys:polaris.log.home}/audit/polaris-audit.log"
+                     filePattern="${sys:polaris.log.home}/audit/polaris-audit.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:polaris.audit.log.file.size:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:polaris.audit.log.retain.count:-7}"/>
+        </RollingFile>
     </Appenders>
 
     <Loggers>
@@ -151,6 +166,11 @@
                 level="${sys:polaris.event.log.level:-info}"
                 additivity="false">
             <AppenderRef ref="POLARIS_EVENT_LOG_FILE"/>
+        </Logger>
+        <Logger name="polaris-audit"
+                level="${sys:polaris.audit.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="POLARIS_AUDIT_LOG_FILE"/>
         </Logger>
     </Loggers>
 </Configuration>

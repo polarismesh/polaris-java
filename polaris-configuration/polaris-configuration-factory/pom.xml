@@ -120,6 +120,11 @@
             <artifactId>stat-prometheus</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
+            <artifactId>stat-audit</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!--依赖事件上报插件-->
         <dependency>
             <groupId>com.tencent.polaris</groupId>
