@@ -128,6 +128,9 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
         if (event.getType() != ClientEvent.ClientEventType.PUSH) {
             return;
         }
+        // #region agent log
+        LOG.info("[ClientEvent] received push, index = {}, clientId = {}", event.getIndex(), clientId);
+        // #endregion
         if (isEndStream()) {
             // 关流后不再接收处理，避免 submit 到已 shutdown 的 executor
             return;
@@ -172,6 +175,10 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
                         .setContent(ackContent)
                         .build());
             }
+            // #region agent log
+            LOG.info("[ClientEvent] ack sent, index = {}, clientId = {}, ackChars = {}", index, clientId,
+                    ackContent == null ? -1 : ackContent.length());
+            // #endregion
         } catch (Throwable t) {
             LOG.warn("[ClientEvent] send ack failed, index = {}, clientId = {}", index, clientId, t);
         }

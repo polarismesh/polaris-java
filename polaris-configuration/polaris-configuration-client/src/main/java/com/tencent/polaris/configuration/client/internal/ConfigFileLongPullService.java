@@ -91,6 +91,12 @@ public class ConfigFileLongPullService {
 
     private AutoCloseable clientEventStream;
 
+    private final String clientId;
+
+    // #region agent log
+    private volatile String clientEventInitError = "not-called";
+    // #endregion
+
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
         this.started = new AtomicReference<>(false);
@@ -98,6 +104,7 @@ public class ConfigFileLongPullService {
         this.notifiedVersion = Maps.newConcurrentMap();
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.connector = configFileConnector;
+        this.clientId = sdkContext.getValueContext().getClientId();
         Plugin plugin = sdkContext.getPlugins().getOptionalPlugin(
                 PluginTypes.REPORT_CLIENT_REQUEST_CUSTOMIZER.getBaseType(),
                 ConfigWatchReportRequestCustomizer.NAME);
@@ -155,6 +162,10 @@ public class ConfigFileLongPullService {
     private void doLongPolling() {
         while (!isLongPullingStopped.get() && !Thread.currentThread().isInterrupted()) {
             try {
+                // #region agent log
+                LOGGER.info("[Config] client event stream status: stream = {}, handler = {}, clientId = {}, init = {}",
+                        clientEventStream != null, clientEventQueryHandler != null, clientId, clientEventInitError);
+                // #endregion
                 List<ConfigFile> watchConfigFiles = assembleWatchConfigFiles();
                 LOGGER.debug("[Config] do long polling. config file size = {}, delay time = {}", watchConfigFiles.size(),
                         retryPolicy.getCurrentDelayTime());
@@ -238,17 +249,33 @@ public class ConfigFileLongPullService {
     private void initClientEventQuery(SDKContext sdkContext) {
         try {
             if (!isConfigEffectiveEnabled(sdkContext)) {
+                // #region agent log
+                clientEventInitError = "switch-disabled";
+                // #endregion
                 return;
             }
             ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins()
                     .getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
                             sdkContext.getValueContext().getServerConnectorProtocol());
+            // #region agent log
+            if (serverConnector == null) {
+                clientEventInitError = "connector-null, protocol = " + sdkContext.getValueContext()
+                        .getServerConnectorProtocol();
+                return;
+            }
+            // #endregion
             ClientEventQueryHandler queryHandler = new ClientEventQueryHandler(configWatchRequestCustomizer);
             AutoCloseable eventStream = serverConnector.watchClientEvents(queryHandler::onPush);
             this.clientEventQueryHandler = queryHandler;
             this.clientEventStream = eventStream;
+            // #region agent log
+            clientEventInitError = "ok";
+            // #endregion
             LOGGER.info("[Config] config effective query stream started.");
         } catch (Throwable t) {
+            // #region agent log
+            clientEventInitError = "exception: " + t.getClass().getName() + ": " + t.getMessage();
+            // #endregion
             LOGGER.warn("[Config] config effective query stream start skipped: {}", t.getMessage());
         }
     }
@@ -258,8 +285,18 @@ public class ConfigFileLongPullService {
             ConfigEffectiveQueryConfig config = sdkContext.getConfig().getGlobal()
                     .getReportClientRequestCustomizer()
                     .getPluginConfig(ConfigEffectiveQueryConfig.NAME, ConfigEffectiveQueryConfig.class);
-            return config != null && config.isEnable();
+            // #region agent log
+            if (config == null) {
+                clientEventInitError = "switch-config-null";
+                return false;
+            }
+            clientEventInitError = "switch-read: enable = " + config.isEnable();
+            // #endregion
+            return config.isEnable();
         } catch (Throwable t) {
+            // #region agent log
+            clientEventInitError = "switch-read-exception: " + t.getClass().getName() + ": " + t.getMessage();
+            // #endregion
             LOGGER.warn("[Config] read config effective switch failed, default disabled: {}", t.getMessage());
             return false;
         }

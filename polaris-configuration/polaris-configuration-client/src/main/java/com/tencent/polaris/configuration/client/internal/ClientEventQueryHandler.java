@@ -89,6 +89,18 @@ public class ClientEventQueryHandler {
      * @return ACK content JSON
      */
     public String onPush(long index, String pushContent) {
+        // #region agent log
+        LOG.info("[Config] received config effective query, index = {}, content = {}", index, pushContent);
+        // #endregion
+        String ack = doOnPush(index, pushContent);
+        // #region agent log
+        LOG.info("[Config] config effective query ack, index = {}, ackChars = {}", index,
+                ack == null ? -1 : ack.length());
+        // #endregion
+        return ack;
+    }
+
+    private String doOnPush(long index, String pushContent) {
         ClientEventQuery query = parseQuery(pushContent);
         if (query == null) {
             return marshalAck(newAck(null, null, REASON_BAD_CONTENT));

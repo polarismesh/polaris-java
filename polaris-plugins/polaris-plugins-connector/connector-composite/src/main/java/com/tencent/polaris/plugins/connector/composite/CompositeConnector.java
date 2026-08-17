@@ -243,6 +243,21 @@ public class CompositeConnector extends DestroyableServerConnector {
         return response;
     }
 
+    /**
+     * 委托给组合内的 gRPC 连接器建流。组合模式下 valueContext 的协议名为 composite，
+     * 若走 ServerConnector 默认实现会抛 NOT_SUPPORT，导致配置生效查询等依赖事件流的能力被静默禁用。
+     */
+    @Override
+    public AutoCloseable watchClientEvents(ClientEventHandler handler) throws PolarisException {
+        checkDestroyed();
+        DestroyableServerConnector grpcConnector = getServerConnectorByType(DefaultPlugins.SERVER_CONNECTOR_GRPC);
+        if (grpcConnector == null) {
+            throw new PolarisException(ErrorCode.NOT_SUPPORT,
+                    "watchClientEvents is not supported: no grpc connector in composite");
+        }
+        return grpcConnector.watchClientEvents(handler);
+    }
+
     @Override
     public ReportServiceContractResponse reportServiceContract(ReportServiceContractRequest req) throws PolarisException {
         checkDestroyed();
