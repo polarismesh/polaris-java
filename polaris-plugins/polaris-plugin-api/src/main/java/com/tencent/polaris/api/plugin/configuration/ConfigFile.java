@@ -45,6 +45,7 @@ public class ConfigFile extends BaseEntity {
     private String md5;
     private String publicKey;
     private String dataKey;
+    private String encryptAlgo;
     private boolean encrypted = Boolean.FALSE;
     private Date releaseTime;
 
@@ -139,6 +140,14 @@ public class ConfigFile extends BaseEntity {
 
     public void setDataKey(String dataKey) {
         this.dataKey = dataKey;
+    }
+
+    public String getEncryptAlgo() {
+        return encryptAlgo;
+    }
+
+    public void setEncryptAlgo(String encryptAlgo) {
+        this.encryptAlgo = encryptAlgo;
     }
 
     public Date getReleaseTime() {

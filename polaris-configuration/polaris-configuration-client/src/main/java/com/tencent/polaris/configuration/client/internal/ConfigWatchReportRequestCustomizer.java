@@ -68,11 +68,11 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
     }
 
     public void register(RemoteConfigFileRepo repo) {
-        watchedFiles.putIfAbsent(repo.getConfigFileMetadata(), repo);
+        watchedFiles.putIfAbsent(toMetadataKey(repo.getConfigFileMetadata()), repo);
     }
 
     public void unregister(ConfigFileMetadata metadata) {
-        watchedFiles.remove(metadata);
+        watchedFiles.remove(toMetadataKey(metadata));
     }
 
     /**
@@ -82,7 +82,11 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
      * @return 命中返回仓库，未监听返回 null
      */
     public RemoteConfigFileRepo getWatchedFile(ConfigFileMetadata metadata) {
-        return watchedFiles.get(metadata);
+        return watchedFiles.get(toMetadataKey(metadata));
+    }
+
+    private ConfigFileMetadata toMetadataKey(ConfigFileMetadata metadata) {
+        return new DefaultConfigFileMetadata(metadata.getNamespace(), metadata.getFileGroup(), metadata.getFileName());
     }
 
     @Override
@@ -103,7 +107,7 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
             ConfigFileMetadata metadata = entry.getKey();
             RemoteConfigFileRepo repo = entry.getValue();
             ConfigFileSnapshot snapshot = repo.getSnapshot();
-            String md5 = snapshot.getMd5();
+            String md5 = snapshot == null ? "" : snapshot.getMd5();
             if (md5 == null) {
                 md5 = "";
             }
@@ -111,7 +115,7 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
                     metadata.getNamespace(),
                     metadata.getFileGroup(),
                     metadata.getFileName(),
-                    snapshot.getVersion(),
+                    snapshot == null ? 0 : snapshot.getVersion(),
                     md5));
         }
         return gson.toJson(java.util.Collections.singletonMap("config_watch", watchList));

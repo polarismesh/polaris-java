@@ -98,6 +98,57 @@ public class RemoteConfigFileRepoTest {
         Assert.assertEquals(version, remoteConfigFileRepo.getConfigFileVersion());
     }
 
+    /**
+     * 测试目的：加密配置查询只返回源密文。
+     * 测试场景：过滤链返回同时包含解密内容和 sourceContent 的配置。
+     * 验证内容：快照 content 为密文。
+     */
+    @Test
+    public void testEncryptedSnapshotUsesSourceContent() {
+        ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
+                ConfigFileTestUtils.testFileName);
+        configFile.setContent("plain-text");
+        configFile.setSourceContent("cipher-text");
+        configFile.setEncrypted(true);
+        configFile.setEncryptAlgo("AES");
+        configFile.setDataKey("UDEyMzQ1Njc4OTAxMjM0NQ==");
+        configFile.setVersion(1);
+        when(configFileFilterChain.execute(any(), any()))
+                .thenReturn(new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile));
+
+        RemoteConfigFileRepo repo = new RemoteConfigFileRepo(sdkContext, configFileLongPollingService,
+                configFileFilterChain, configFileConnector, ConfigFileTestUtils.assembleDefaultConfigFileMeta(),
+                configFilePersistHandler);
+
+        ConfigFileSnapshot snapshot = repo.getSnapshot();
+        assertThat(snapshot.getContent()).isEqualTo("cipher-text");
+        assertThat(snapshot.isEncrypted()).isTrue();
+        assertThat(snapshot.getEncryptAlgo()).isEqualTo("AES");
+        assertThat(snapshot.getDataKey()).isEqualTo("UDEyMzQ1Njc4OTAxMjM0NQ==");
+    }
+
+    /**
+     * 测试目的：旧加密缓存缺少源密文时禁止回退到解密明文。
+     * 测试场景：加密配置只有 content，没有 sourceContent。
+     * 验证内容：快照 content 为空串。
+     */
+    @Test
+    public void testEncryptedSnapshotWithoutSourceDoesNotExposePlainText() {
+        ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
+                ConfigFileTestUtils.testFileName);
+        configFile.setContent("plain-text");
+        configFile.setEncrypted(true);
+        configFile.setVersion(1);
+        when(configFileFilterChain.execute(any(), any()))
+                .thenReturn(new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile));
+
+        RemoteConfigFileRepo repo = new RemoteConfigFileRepo(sdkContext, configFileLongPollingService,
+                configFileFilterChain, configFileConnector, ConfigFileTestUtils.assembleDefaultConfigFileMeta(),
+                configFilePersistHandler);
+
+        assertThat(repo.getSnapshot().getContent()).isEmpty();
+    }
+
     @Test
     public void testPullNotFoundConfigFile() {
         ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
@@ -115,6 +166,7 @@ public class RemoteConfigFileRepoTest {
 
         Assert.assertNull(remoteConfigFileRepo.getContent());
         Assert.assertEquals(0, remoteConfigFileRepo.getConfigFileVersion());
+        Assert.assertNull(remoteConfigFileRepo.getSnapshot());
     }
 
     @Test

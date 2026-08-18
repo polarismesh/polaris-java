@@ -32,11 +32,25 @@ public class ConfigFileSnapshot {
 
     private final long effectiveTime;
 
+    private final boolean encrypted;
+
+    private final String encryptAlgo;
+
+    private final String dataKey;
+
     public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime) {
+        this(version, md5, content, effectiveTime, false, null, null);
+    }
+
+    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime, boolean encrypted,
+            String encryptAlgo, String dataKey) {
         this.version = version;
         this.md5 = md5;
         this.content = content;
         this.effectiveTime = effectiveTime;
+        this.encrypted = encrypted;
+        this.encryptAlgo = encryptAlgo;
+        this.dataKey = dataKey;
     }
 
     public long getVersion() {
@@ -53,5 +67,17 @@ public class ConfigFileSnapshot {
 
     public long getEffectiveTime() {
         return effectiveTime;
+    }
+
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
+    public String getEncryptAlgo() {
+        return encryptAlgo;
+    }
+
+    public String getDataKey() {
+        return dataKey;
     }
 }

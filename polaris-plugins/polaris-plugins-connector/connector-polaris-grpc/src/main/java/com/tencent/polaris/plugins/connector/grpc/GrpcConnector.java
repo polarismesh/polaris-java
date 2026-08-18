@@ -102,7 +102,7 @@ public class GrpcConnector extends DestroyableServerConnector {
      */
     private final AtomicReference<ClientEventStream> clientEventStreamRef = new AtomicReference<>();
 
-    /** 配置生效查询连续建流/接收失败次数（用于日志分级与降频），建流成功归零。 */
+    /** 配置生效查询连续建流/接收失败次数（用于日志分级与降频），收到有效 PUSH 后归零。 */
     private final AtomicInteger clientEventFailCount = new AtomicInteger(0);
 
     /** 服务端 client 缓存未命中（NOT_FOUND）记 warn 的连续失败次数上限。 */
@@ -635,13 +635,22 @@ public class GrpcConnector extends DestroyableServerConnector {
     }
 
     @Override
-    public AutoCloseable watchClientEvents(ClientEventHandler handler) throws PolarisException {
+    public synchronized AutoCloseable watchClientEvents(ClientEventHandler handler) throws PolarisException {
         checkDestroyed();
+        if (clientEventHandler != null) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                    "watchClientEvents only supports one active handler");
+        }
         this.clientEventHandler = handler;
         connectClientEventStream();
         return () -> {
-            clientEventHandler = null;
-            ClientEventStream stream = clientEventStreamRef.getAndSet(null);
+            ClientEventStream stream = null;
+            synchronized (GrpcConnector.this) {
+                if (clientEventHandler == handler) {
+                    clientEventHandler = null;
+                    stream = clientEventStreamRef.getAndSet(null);
+                }
+            }
             if (stream != null) {
                 stream.close();
             }
@@ -674,7 +683,7 @@ public class GrpcConnector extends DestroyableServerConnector {
             return;
         }
         if (!connectionManager.checkReady(ClusterType.SERVICE_DISCOVER_CLUSTER)) {
-            LOG.info("[ClientEvent] {} service is not ready, retry later", ClusterType.SERVICE_DISCOVER_CLUSTER);
+            LOG.debug("[ClientEvent] {} service is not ready, retry later", ClusterType.SERVICE_DISCOVER_CLUSTER);
             sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS,
                     TimeUnit.MILLISECONDS);
             return;
@@ -697,8 +706,7 @@ public class GrpcConnector extends DestroyableServerConnector {
                 return;
             }
             stream.start();
-            clientEventFailCount.set(0);
-            LOG.info("[ClientEvent] watch client events stream established, clientId = {}", clientInstanceId);
+            LOG.debug("[ClientEvent] watch client events stream established, clientId = {}", clientInstanceId);
         } catch (Throwable t) {
             // start() 失败时流已自关闭（closeStream 幂等释放连接）；getConnection 失败时未 acquire 无需释放
             if (stream != null) {
@@ -733,6 +741,14 @@ public class GrpcConnector extends DestroyableServerConnector {
             LOG.error("[ClientEvent] watch stream failed (consecutive {}), clientId = {}", count, clientInstanceId,
                     t);
         }
+    }
+
+    /**
+     * 收到有效服务端 PUSH 后重置连续失败计数。不能在 WATCH 刚发出时重置，
+     * 否则服务端立即拒绝建流的循环会永远被当作第一次失败。
+     */
+    public void noteClientEventSuccess() {
+        clientEventFailCount.set(0);
     }
 
     private ServiceContractProto.ServiceContract buildReportServiceContractRequest(ReportServiceContractRequest req) {

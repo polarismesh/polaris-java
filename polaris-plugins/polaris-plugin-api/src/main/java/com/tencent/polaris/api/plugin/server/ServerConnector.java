@@ -174,7 +174,7 @@ public interface ServerConnector extends Plugin {
      * @param discoveryEnable
      */
     default void setDiscoveryEnable(boolean discoveryEnable) {
-        
+
     }
 
     /**

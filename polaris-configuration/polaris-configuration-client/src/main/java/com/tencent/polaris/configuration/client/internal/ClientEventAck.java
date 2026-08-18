@@ -55,6 +55,15 @@ class ClientEventAck {
     @SerializedName("content_length")
     private Integer contentLength;
 
+    @SerializedName("encrypted")
+    private Boolean encrypted;
+
+    @SerializedName("encrypt_algo")
+    private String encryptAlgo;
+
+    @SerializedName("data_key")
+    private String dataKey;
+
     @SerializedName("applied")
     private boolean applied;
 
@@ -126,6 +135,30 @@ class ClientEventAck {
 
     void setContentLength(Integer contentLength) {
         this.contentLength = contentLength;
+    }
+
+    Boolean getEncrypted() {
+        return encrypted;
+    }
+
+    void setEncrypted(Boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+
+    String getEncryptAlgo() {
+        return encryptAlgo;
+    }
+
+    void setEncryptAlgo(String encryptAlgo) {
+        this.encryptAlgo = encryptAlgo;
+    }
+
+    String getDataKey() {
+        return dataKey;
+    }
+
+    void setDataKey(String dataKey) {
+        this.dataKey = dataKey;
     }
 
     boolean isApplied() {

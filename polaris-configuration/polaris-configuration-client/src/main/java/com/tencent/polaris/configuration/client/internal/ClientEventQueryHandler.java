@@ -53,6 +53,11 @@ public class ClientEventQueryHandler {
      */
     private static final int MAX_ACK_CONTENT_BYTES = 512 * 1024;
 
+    /**
+     * ACK 中 properties 数组的最大序列化字节数，避免属性明细挤爆 gRPC 消息体。
+     */
+    private static final int MAX_ACK_PROPERTIES_BYTES = 512 * 1024;
+
     private static final String KIND_CONFIG = "config";
 
     private static final String REASON_BAD_CONTENT = "bad_content";
@@ -70,6 +75,8 @@ public class ClientEventQueryHandler {
      * 序列化 ACK 自身失败时的兜底应答，避免服务端收到无法诊断的空对象。
      */
     private static final String MARSHAL_FAILED_ACK = "{\"applied\":false,\"reason\":\"marshal_failed\"}";
+
+    private static final String INTERNAL_ERROR_ACK = "{\"applied\":false,\"reason\":\"internal_error\"}";
 
     private final ConfigWatchReportRequestCustomizer watchRegistry;
 
@@ -89,15 +96,12 @@ public class ClientEventQueryHandler {
      * @return ACK content JSON
      */
     public String onPush(long index, String pushContent) {
-        // #region agent log
-        LOG.info("[Config] received config effective query, index = {}, content = {}", index, pushContent);
-        // #endregion
-        String ack = doOnPush(index, pushContent);
-        // #region agent log
-        LOG.info("[Config] config effective query ack, index = {}, ackChars = {}", index,
-                ack == null ? -1 : ack.length());
-        // #endregion
-        return ack;
+        try {
+            return doOnPush(index, pushContent);
+        } catch (RuntimeException e) {
+            LOG.warn("[Config] handle config effective query failed: {}", e.getMessage());
+            return INTERNAL_ERROR_ACK;
+        }
     }
 
     private String doOnPush(long index, String pushContent) {
@@ -142,7 +146,8 @@ public class ClientEventQueryHandler {
         if (repo == null) {
             return marshalAck(newAck(KIND_CONFIG, cfg, REASON_NOT_WATCHED));
         }
-        if (!repo.isPulled()) {
+        ConfigFileSnapshot snapshot = repo.getSnapshot();
+        if (snapshot == null) {
             // 已监听但尚未拉取生效（首次拉取失败/重试中/已被删除）：applied=false + pending，
             // version 回带 notifiedVersion 供服务端参考，不带 md5/content/effective_time
             ClientEventAck pendingAck = newAck(KIND_CONFIG, cfg, REASON_PENDING);
@@ -153,7 +158,6 @@ public class ClientEventQueryHandler {
         }
         ClientEventAck ack = newAck(KIND_CONFIG, cfg, null);
         ack.setApplied(true);
-        ConfigFileSnapshot snapshot = repo.getSnapshot();
         fillSnapshot(ack, snapshot);
         fillContent(ack, snapshot, metadata);
         fillProperties(ack, metadata);
@@ -182,6 +186,15 @@ public class ClientEventQueryHandler {
         }
         if (snapshot.getEffectiveTime() > 0) {
             ack.setEffectiveTime(snapshot.getEffectiveTime());
+        }
+        if (snapshot.isEncrypted()) {
+            ack.setEncrypted(true);
+            if (snapshot.getEncryptAlgo() != null && !snapshot.getEncryptAlgo().isEmpty()) {
+                ack.setEncryptAlgo(snapshot.getEncryptAlgo());
+            }
+            if (snapshot.getDataKey() != null && !snapshot.getDataKey().isEmpty()) {
+                ack.setDataKey(snapshot.getDataKey());
+            }
         }
     }
 
@@ -225,16 +238,31 @@ public class ClientEventQueryHandler {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        List<ClientEventAck.PropertyEntry> entries = new ArrayList<>(keys.size());
+        List<ClientEventAck.PropertyEntry> entries = new ArrayList<>();
+        int serializedBytes = 2;
         for (String key : keys) {
-            entries.add(buildPropertyEntry(provider, key, metadata));
+            if (key != null) {
+                ClientEventAck.PropertyEntry entry = buildPropertyEntry(provider, key, metadata);
+                int entryBytes = gson.toJson(entry).getBytes(StandardCharsets.UTF_8).length;
+                int separatorBytes = entries.isEmpty() ? 0 : 1;
+                if (serializedBytes + separatorBytes + entryBytes > MAX_ACK_PROPERTIES_BYTES) {
+                    LOG.warn("[Config] ack properties truncated, file = {}, included = {}, total = {}, limit = {} bytes",
+                            metadata, entries.size(), keys.size(), MAX_ACK_PROPERTIES_BYTES);
+                    break;
+                }
+                entries.add(entry);
+                serializedBytes += separatorBytes + entryBytes;
+            }
         }
-        ack.setProperties(entries);
+        if (!entries.isEmpty()) {
+            ack.setProperties(entries);
+        }
     }
 
     private List<String> safeGetKeys(ConfigEffectiveValueProvider provider, ConfigFileMetadata metadata) {
         try {
-            return provider.getKeys(metadata);
+            List<String> keys = provider.getKeys(metadata);
+            return keys == null ? null : new ArrayList<>(keys);
         } catch (RuntimeException e) {
             LOG.warn("[Config] resolve keys failed, file = {}", metadata);
             return null;
@@ -270,7 +298,8 @@ public class ClientEventQueryHandler {
             ConfigFileMetadata metadata) {
         List<ConfigKeyConflict> conflicts;
         try {
-            conflicts = provider.resolveConflicts(key, metadata);
+            List<ConfigKeyConflict> resolvedConflicts = provider.resolveConflicts(key, metadata);
+            conflicts = resolvedConflicts == null ? null : new ArrayList<>(resolvedConflicts);
         } catch (RuntimeException e) {
             LOG.warn("[Config] resolve conflicts failed, key = {}", key);
             conflicts = null;
@@ -280,7 +309,9 @@ public class ClientEventQueryHandler {
             return entries;
         }
         for (ConfigKeyConflict conflict : conflicts) {
-            entries.add(toConflictEntry(conflict));
+            if (conflict != null) {
+                entries.add(toConflictEntry(conflict));
+            }
         }
         return entries;
     }

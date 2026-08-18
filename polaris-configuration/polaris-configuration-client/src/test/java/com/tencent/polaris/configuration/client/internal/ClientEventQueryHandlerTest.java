@@ -71,7 +71,6 @@ public class ClientEventQueryHandlerTest {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespace, group, fileName);
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
-        when(repo.isPulled()).thenReturn(true);
         when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5, content, effectiveTime));
         watchRegistry.register(repo);
         return repo;
@@ -96,6 +95,53 @@ public class ClientEventQueryHandlerTest {
         assertThat(ack.get("content").getAsString()).isEqualTo("server:\n  port: 8080");
         assertThat(ack.has("reason")).isFalse();
         assertThat(ack.has("properties")).isFalse();
+        assertThat(ack.has("encrypted")).isFalse();
+        assertThat(ack.has("encrypt_algo")).isFalse();
+        assertThat(ack.has("data_key")).isFalse();
+    }
+
+    /**
+     * 测试目的：加密配置 ACK 携带密文、算法和 base64 明文数据密钥。
+     * 测试场景：注册一份已解密生效且保留源密文的加密配置快照。
+     * 验证内容：encrypted/encrypt_algo/data_key 与快照一致。
+     */
+    @Test
+    public void testEncryptedConfigIncludesCryptoFields() {
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, "AES", "UDEyMzQ1Njc4OTAxMjM0NQ=="));
+        watchRegistry.register(repo);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "secret.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        assertThat(ack.get("content").getAsString()).isEqualTo("cipher-content");
+        assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
+        assertThat(ack.get("encrypt_algo").getAsString()).isEqualTo("AES");
+        assertThat(ack.get("data_key").getAsString()).isEqualTo("UDEyMzQ1Njc4OTAxMjM0NQ==");
+    }
+
+    /**
+     * 测试目的：加密元数据缺失时只输出 encrypted，不输出空字符串字段。
+     * 测试场景：加密快照的算法与数据密钥为空。
+     * 验证内容：主 ACK 正常，encrypt_algo/data_key 被省略。
+     */
+    @Test
+    public void testEncryptedConfigOmitsMissingCryptoFields() {
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, null, null));
+        watchRegistry.register(repo);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "secret.yaml")));
+
+        assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
+        assertThat(ack.has("encrypt_algo")).isFalse();
+        assertThat(ack.has("data_key")).isFalse();
     }
 
     /**
@@ -201,6 +247,38 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
+     * 测试目的：properties 序列化结果超过字节预算时停止追加，避免 ACK 超过 gRPC 消息上限。
+     * 测试场景：首个属性正常，第二个属性包含超长生效值。
+     * 验证内容：ACK 只保留预算内的首个属性，且整体大小受控。
+     */
+    @Test
+    public void testPropertiesTruncatedWhenSerializedSizeExceedsLimit() {
+        registerWatched("ns", "g", "f.yaml", "small=value", 12, "md5abc", 1785900000000L);
+        char[] chars = new char[600 * 1024];
+        Arrays.fill(chars, 'a');
+        String largeValue = new String(chars);
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Arrays.asList("small", "large"));
+        when(provider.resolve(any(String.class), any())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            if ("small".equals(key)) {
+                return new EffectiveValue("value", "value", "test");
+            }
+            return new EffectiveValue(largeValue, largeValue, "test");
+        });
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        String ackJson = handler.onPush(1, pushJson("ns", "g", "f.yaml"));
+        JsonObject ack = ackOf(ackJson);
+
+        assertThat(ack.getAsJsonArray("properties")).hasSize(1);
+        assertThat(ack.getAsJsonArray("properties").get(0).getAsJsonObject().get("key").getAsString())
+                .isEqualTo("small");
+        assertThat(ackJson.getBytes(java.nio.charset.StandardCharsets.UTF_8).length).isLessThan(1024 * 1024);
+    }
+
+    /**
      * 测试目的：Provider 单 key 解析抛异常时该 key 降级，整体仍 applied=true。
      * 测试场景：resolve 抛异常。
      * 验证内容：applied=true、properties 元素无 effective_value。
@@ -219,6 +297,28 @@ public class ClientEventQueryHandlerTest {
         assertThat(ack.get("applied").getAsBoolean()).isTrue();
         JsonObject prop = ack.getAsJsonArray("properties").get(0).getAsJsonObject();
         assertThat(prop.has("effective_value")).isFalse();
+    }
+
+    /**
+     * 测试目的：Provider 返回含 null 的冲突列表时不影响整体 ACK。
+     * 测试场景：resolveConflicts 返回一个 null 元素。
+     * 验证内容：applied=true，conflicts 输出空数组。
+     */
+    @Test
+    public void testNullConflictIsIgnored() {
+        registerWatched("ns", "g", "f.yaml", "k=v", 1, "md5", 100L);
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("k"));
+        when(provider.resolve(any(String.class), any())).thenReturn(new EffectiveValue("v", "v", "test"));
+        when(provider.resolveConflicts(any(String.class), any()))
+                .thenReturn(Collections.singletonList(null));
+        handler.registerProvider(provider);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        JsonObject prop = ack.getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.getAsJsonArray("conflicts")).isEmpty();
     }
 
     /**
@@ -291,7 +391,6 @@ public class ClientEventQueryHandlerTest {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "f.yaml");
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
-        when(repo.isPulled()).thenReturn(false);
         when(repo.getNotifiedVersion()).thenReturn(2L);
         watchRegistry.register(repo);
 

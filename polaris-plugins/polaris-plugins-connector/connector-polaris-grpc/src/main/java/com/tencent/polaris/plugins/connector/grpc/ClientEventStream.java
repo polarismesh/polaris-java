@@ -27,8 +27,11 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -47,6 +50,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ClientEventStream implements StreamObserver<ClientEvent>, AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(ClientEventStream.class);
+
+    private static final int QUERY_QUEUE_CAPACITY = 16;
+
+    private static final String INTERNAL_ERROR_ACK = "{\"applied\":false,\"reason\":\"internal_error\"}";
 
     /**
      * 同步锁：StreamObserver 非线程安全，onNext/onCompleted 全部经此锁串行
@@ -67,8 +74,9 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
     /**
      * 查询处理线程：单线程，与接收循环顺序一致
      */
-    private final ExecutorService queryExecutor = Executors
-            .newSingleThreadExecutor(new NamedThreadFactory("client-event-query"));
+    private final ExecutorService queryExecutor = new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS,
+            new ArrayBlockingQueue<>(QUERY_QUEUE_CAPACITY), new NamedThreadFactory("client-event-query"),
+            ClientEventStream::blockWhenQueueFull);
 
     /**
      * 连接对象
@@ -128,34 +136,45 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
         if (event.getType() != ClientEvent.ClientEventType.PUSH) {
             return;
         }
-        // #region agent log
-        LOG.info("[ClientEvent] received push, index = {}, clientId = {}", event.getIndex(), clientId);
-        // #endregion
         if (isEndStream()) {
             // 关流后不再接收处理，避免 submit 到已 shutdown 的 executor
             return;
         }
+        grpcConnector.noteClientEventSuccess();
         try {
             queryExecutor.submit(() -> handlePush(event));
-        } catch (java.util.concurrent.RejectedExecutionException e) {
-            // 与关流并发的在途帧，直接丢弃
+        } catch (RejectedExecutionException e) {
             LOG.debug("[ClientEvent] push rejected, stream closing, clientId = {}", clientId);
         }
     }
 
-    private void handlePush(ClientEvent event) {
+    private static void blockWhenQueueFull(Runnable task, ThreadPoolExecutor executor) {
+        if (executor.isShutdown()) {
+            throw new RejectedExecutionException("client event query executor is shutdown");
+        }
         try {
-            String ackContent = handler.onPush(event.getIndex(), event.getContent());
-            if (ackContent == null) {
+            executor.getQueue().put(task);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RejectedExecutionException("interrupted while waiting for client event query queue", e);
+        }
+    }
+
+    private void handlePush(ClientEvent event) {
+        String ackContent = INTERNAL_ERROR_ACK;
+        try {
+            String handlerAck = handler.onPush(event.getIndex(), event.getContent());
+            if (handlerAck != null) {
+                ackContent = handlerAck;
+            } else {
                 LOG.error("[ClientEvent] handler returned null ack, index = {}, clientId = {}", event.getIndex(),
                         clientId);
-                return;
             }
-            sendAck(event.getIndex(), ackContent);
         } catch (Throwable t) {
-            // 对齐 Go：单条处理失败只记日志不回 ACK（此时无法构造可信应答），由服务端按超时处理
-            LOG.error("[ClientEvent] handle push failed, index = {}, clientId = {}", event.getIndex(), clientId, t);
+            LOG.error("[ClientEvent] handle push failed, send fallback ack, index = {}, clientId = {}",
+                    event.getIndex(), clientId, t);
         }
+        sendAck(event.getIndex(), ackContent);
     }
 
     private void sendAck(long index, String ackContent) {
@@ -175,10 +194,6 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
                         .setContent(ackContent)
                         .build());
             }
-            // #region agent log
-            LOG.info("[ClientEvent] ack sent, index = {}, clientId = {}, ackChars = {}", index, clientId,
-                    ackContent == null ? -1 : ackContent.length());
-            // #endregion
         } catch (Throwable t) {
             LOG.warn("[ClientEvent] send ack failed, index = {}, clientId = {}", index, clientId, t);
         }
@@ -209,10 +224,16 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
         }
         // 分级日志（瞬时网络错误/NOT_FOUND 启动竞态记 warn）与失败计数统一由 GrpcConnector 管理
         grpcConnector.noteClientEventFailure(t);
-        // report down
-        connection.reportFail(ErrorCode.NETWORK_ERROR);
+        if (isNetworkFailure(t)) {
+            connection.reportFail(ErrorCode.NETWORK_ERROR);
+        }
         // 触发重建：复用 GrpcConnector 的任务调度（延迟、线程池、destroy 检查由其统一处理）
         grpcConnector.retryClientEventStream(this);
+    }
+
+    private boolean isNetworkFailure(Throwable t) {
+        return GrpcUtil.hasGrpcCode(t, Status.Code.UNAVAILABLE)
+                || GrpcUtil.hasGrpcCode(t, Status.Code.DEADLINE_EXCEEDED);
     }
 
     /**

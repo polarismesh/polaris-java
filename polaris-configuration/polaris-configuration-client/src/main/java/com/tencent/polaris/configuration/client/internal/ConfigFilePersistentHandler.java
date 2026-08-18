@@ -252,6 +252,22 @@ public class ConfigFilePersistentHandler {
             resConfigFile.setContent(jsonMap.get("content").toString());
             resConfigFile.setMd5(jsonMap.get("md5").toString());
             resConfigFile.setVersion(Long.valueOf(String.valueOf(jsonMap.get("version"))));
+            Object sourceContent = jsonMap.get("sourceContent");
+            if (sourceContent != null) {
+                resConfigFile.setSourceContent(sourceContent.toString());
+            }
+            Object encrypted = jsonMap.get("encrypted");
+            boolean encryptedValue = encrypted == null ? configFile.isEncrypted()
+                    : Boolean.parseBoolean(encrypted.toString());
+            resConfigFile.setEncrypted(encryptedValue);
+            Object encryptAlgo = jsonMap.get("encryptAlgo");
+            if (encryptAlgo != null) {
+                resConfigFile.setEncryptAlgo(encryptAlgo.toString());
+            }
+            Object dataKey = jsonMap.get("dataKey");
+            if (dataKey != null) {
+                resConfigFile.setDataKey(dataKey.toString());
+            }
             return resConfigFile;
         } catch (IOException e) {
             LOG.warn("fail to read file :" + persistFile.getAbsoluteFile(), e);
