@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,5 +36,14 @@ public interface ServiceMetadata extends Service {
      * @return metadata
      */
     Map<String, String> getMetadata();
+
+    /**
+     * 获取服务扩展元数据。
+     *
+     * @return extended metadata
+     */
+    default List<ServiceProto.ExtendedMetadata> getExtendedMetadata() {
+        return Collections.emptyList();
+    }
 
 }

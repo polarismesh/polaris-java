@@ -78,6 +78,7 @@ public class ServicesByProto implements Services, RegistryCacheValue {
                         .namespace(service.getNamespace().getValue())
                         .service(service.getName().getValue())
                         .metadata(service.getMetadataMap())
+                        .extendedMetadata(service.getExtendedMetadataList())
                         .revision(service.getRevision().getValue())
                         .build());
                 originServicesList.add(service);

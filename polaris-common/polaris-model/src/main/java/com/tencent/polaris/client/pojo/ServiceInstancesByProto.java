@@ -57,6 +57,8 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     private final Map<String, String> metadata;
 
+    private final List<ServiceProto.ExtendedMetadata> extendedMetadata;
+
     private final boolean initialized;
 
     private final int totalWeight;
@@ -114,6 +116,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.totalWeight = totalWeight;
         this.initialized = true;
         this.metadata = Collections.unmodifiableMap(this.service.getMetadataMap());
+        this.extendedMetadata = Collections.unmodifiableList(this.service.getExtendedMetadataList());
         this.loadedFromFile = loadFromFile;
     }
 
@@ -129,6 +132,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.idMap = Collections.emptyMap();
         this.nodeMap = Collections.emptyMap();
         this.metadata = Collections.emptyMap();
+        this.extendedMetadata = Collections.emptyList();
         this.loadedFromFile = false;
         this.totalWeight = 0;
         hashCode = Objects.hash(instances);
@@ -190,7 +194,12 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     @Override
     public Map<String, String> getMetadata() {
-        return metadata;
+        return this.metadata;
+    }
+
+    @Override
+    public List<ServiceProto.ExtendedMetadata> getExtendedMetadata() {
+        return this.extendedMetadata;
     }
 
     /**
