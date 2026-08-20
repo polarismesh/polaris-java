@@ -21,7 +21,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.ConfigProvider;
 import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.config.ai.AiConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl;
 import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
@@ -62,6 +64,9 @@ public class ConfigurationImpl implements Configuration {
 
     @JsonProperty
     private ConfigFileConfigImpl config;
+
+    @JsonProperty
+    private AiConfigImpl ai;
 
     public ConfigurationImpl() {
         defaultConfigName = ConfigProvider.DEFAULT_CONFIG;
@@ -108,6 +113,15 @@ public class ConfigurationImpl implements Configuration {
     }
 
     @Override
+    public AiConfigImpl getAi() {
+        return ai;
+    }
+
+    public void setAi(AiConfigImpl ai) {
+        this.ai = ai;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(global, "global");
         ConfigUtils.validateNull(consumer, "consumer");
@@ -116,6 +130,9 @@ public class ConfigurationImpl implements Configuration {
         consumer.verify();
         provider.verify();
         config.verify();
+        if (ai != null) {
+            ai.verify();
+        }
     }
 
     private Configuration getDefaultConfig() {
@@ -147,12 +164,31 @@ public class ConfigurationImpl implements Configuration {
         if (null == config) {
             config = new ConfigFileConfigImpl();
         }
+        if (null == ai) {
+            ai = new AiConfigImpl();
+        }
         if (null != defaultObject) {
             Configuration configuration = (Configuration) defaultObject;
             global.setDefault(configuration.getGlobal());
             consumer.setDefault(configuration.getConsumer());
             provider.setDefault(configuration.getProvider());
             config.setDefault(configuration.getConfigFile());
+            ai.setDefault(configuration.getAi());
+            inheritAiConnectorFromGlobal();
+        }
+    }
+
+    private void inheritAiConnectorFromGlobal() {
+        if (ai.getServerConnector() == null || global.getServerConnector() == null) {
+            return;
+        }
+        if (CollectionUtils.isEmpty(ai.getServerConnector().getAddresses())
+                && !CollectionUtils.isEmpty(global.getServerConnector().getAddresses())) {
+            ai.getServerConnector().setAddresses(global.getServerConnector().getAddresses());
+        }
+        if (StringUtils.isBlank(ai.getServerConnector().getToken())
+                && StringUtils.isNotBlank(global.getServerConnector().getToken())) {
+            ai.getServerConnector().setToken(global.getServerConnector().getToken());
         }
     }
 

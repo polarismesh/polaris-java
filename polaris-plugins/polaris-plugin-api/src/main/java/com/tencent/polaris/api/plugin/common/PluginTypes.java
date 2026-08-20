@@ -37,6 +37,7 @@ import com.tencent.polaris.api.plugin.ratelimiter.ServiceRateLimiter;
 import com.tencent.polaris.api.plugin.registry.LocalRegistry;
 import com.tencent.polaris.api.plugin.route.ServiceRouter;
 import com.tencent.polaris.api.plugin.server.ServerConnector;
+import com.tencent.polaris.api.plugin.skill.SkillConnector;
 import com.tencent.polaris.api.plugin.stat.StatReporter;
 import com.tencent.polaris.api.plugin.stat.TraceReporter;
 import com.tencent.polaris.api.plugin.weight.WeightAdjuster;
@@ -149,6 +150,11 @@ public enum PluginTypes {
      * 证书管理扩展点
      */
     CERTIFICATE_MANAGER(new PluginType(CertificateManager.class, 2)),
+
+    /**
+     * Skill 连接器扩展点
+     */
+    SKILL_CONNECTOR(new PluginType(SkillConnector.class, 2)),
 
     /**
      * 客户端画像请求定制扩展点

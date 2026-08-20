@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.factory.api;
 
+import com.tencent.polaris.ai.api.core.SkillAPI;
+import com.tencent.polaris.ai.factory.SkillAPIFactory;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
@@ -238,5 +240,37 @@ public class APIFactory {
      */
     public static ConfigFileService createConfigFileService(Configuration config) throws PolarisException {
         return ConfigFileServiceFactory.createConfigFileService(config);
+    }
+
+    /**
+     * Create SkillAPI by default config.
+     *
+     * @return SkillAPI
+     * @throws PolarisException init error
+     */
+    public static SkillAPI createSkillAPI() throws PolarisException {
+        return SkillAPIFactory.createSkillAPI();
+    }
+
+    /**
+     * Create SkillAPI by SDKContext.
+     *
+     * @param context SDK context
+     * @return SkillAPI
+     * @throws PolarisException init error
+     */
+    public static SkillAPI createSkillAPIByContext(SDKContext context) throws PolarisException {
+        return SkillAPIFactory.createSkillAPIByContext(context);
+    }
+
+    /**
+     * Create SkillAPI by configuration.
+     *
+     * @param config configuration
+     * @return SkillAPI
+     * @throws PolarisException init error
+     */
+    public static SkillAPI createSkillAPIByConfig(Configuration config) throws PolarisException {
+        return SkillAPIFactory.createSkillAPIByConfig(config);
     }
 }
