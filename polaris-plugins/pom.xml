@@ -32,5 +32,6 @@
         <module>polaris-plugins-lossless</module>
         <module>polaris-plugins-auth</module>
         <module>polaris-plugins-certificate</module>
+        <module>polaris-plugins-ai</module>
     </modules>
 </project>

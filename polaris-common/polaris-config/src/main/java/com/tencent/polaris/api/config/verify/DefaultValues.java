@@ -99,6 +99,8 @@ public interface DefaultValues {
 
     String CONFIG_FILE_DEFAULT_CACHE_PERSIST_DIR = DEFAULT_CACHE_PERSIST_DIR + "/config";
 
+    String SKILL_DEFAULT_CACHE_PERSIST_DIR = DEFAULT_CACHE_PERSIST_DIR + "/skill";
+
     /**
      * 是否打开熔断能力，默认true
      */
