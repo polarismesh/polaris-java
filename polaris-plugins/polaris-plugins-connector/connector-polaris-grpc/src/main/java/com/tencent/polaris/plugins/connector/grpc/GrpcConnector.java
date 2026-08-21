@@ -445,6 +445,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     private ClientProto.Client buildReportRequest(ReportClientRequest req) {
         Client.Builder builder = Client.newBuilder().setHost(StringValue.newBuilder().setValue(req.getClientHost()))
                 .setVersion(StringValue.newBuilder().setValue(req.getVersion()));
+        builder.setType(ClientProto.Client.ClientType.SDK);
         Optional.ofNullable(req.getReporterMetaInfos()).ifPresent(reporterMetaInfos -> reporterMetaInfos.forEach(
                 reporterMetaInfo -> builder.addStat(StatInfo.newBuilder()
                         .setTarget(StringValue.newBuilder().setValue(reporterMetaInfo.getTarget()).build())
