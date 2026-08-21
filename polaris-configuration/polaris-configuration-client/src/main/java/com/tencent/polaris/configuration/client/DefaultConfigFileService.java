@@ -24,14 +24,19 @@ import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.*;
 import com.tencent.polaris.configuration.api.flow.ConfigFileFlow;
 import com.tencent.polaris.configuration.api.flow.ConfigFileGroupFlow;
+import com.tencent.polaris.configuration.client.flow.DefaultConfigFileFlow;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileGroupMetadata;
 import com.tencent.polaris.configuration.client.internal.DefaultConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
+import com.tencent.polaris.logging.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * @author lepdou 2022-03-01
  */
 public class DefaultConfigFileService extends BaseEngine implements ConfigFileService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultConfigFileService.class);
 
     private ConfigFileFlow configFileFlow;
 
@@ -90,6 +95,17 @@ public class DefaultConfigFileService extends BaseEngine implements ConfigFileSe
     @Override
     public ConfigFileGroup getConfigFileGroup(ConfigFileGroupMetadata configFileGroupMetadata) {
         return configFileGroupFlow.getConfigFileGroup(configFileGroupMetadata);
+    }
+
+    @Override
+    public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        ConfigEffectiveValueRegistration registration = () -> { };
+        if (!(configFileFlow instanceof DefaultConfigFileFlow)) {
+            LOGGER.warn("configFileFlow is not DefaultConfigFileFlow, effective value provider will not take effect");
+        } else {
+            registration = ((DefaultConfigFileFlow) configFileFlow).registerEffectiveValueProvider(provider);
+        }
+        return registration;
     }
 
     @JustForTest

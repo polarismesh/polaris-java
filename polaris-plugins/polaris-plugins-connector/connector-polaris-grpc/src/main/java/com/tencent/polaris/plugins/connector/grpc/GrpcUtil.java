@@ -56,6 +56,8 @@ public class GrpcUtil {
 
     public static final String OP_KEY_REPORT_SERVICE_CONTRACT = "ReportServiceContract";
 
+    public static final String OP_KEY_WATCH_CLIENT_EVENTS = "WatchClientEvents";
+
     /**
      * 请求ID的key
      */
@@ -229,5 +231,22 @@ public class GrpcUtil {
             // 如果是服务端未实现
             throw new PolarisException(ErrorCode.SERVER_ERROR, grpcEx.getMessage());
         }
+    }
+
+    /**
+     * 判断错误是否携带指定的 gRPC status code。错误可能被包装，先直接判断，再逐层解 cause 重试。
+     *
+     * @param t    异常
+     * @param code gRPC status code
+     * @return 命中返回 true
+     */
+    public static boolean hasGrpcCode(Throwable t, Status.Code code) {
+        for (Throwable cur = t; cur != null; cur = cur.getCause()) {
+            if (cur instanceof StatusRuntimeException
+                    && ((StatusRuntimeException) cur).getStatus().getCode() == code) {
+                return true;
+            }
+        }
+        return false;
     }
 }

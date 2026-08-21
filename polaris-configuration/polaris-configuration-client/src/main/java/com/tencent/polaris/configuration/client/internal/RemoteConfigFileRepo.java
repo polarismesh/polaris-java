@@ -50,9 +50,13 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     private static Set<String> configFileInitSet = new HashSet<>();
 
+    private final Object snapshotLock = new Object();
+
     private final AtomicReference<ConfigFile> remoteConfigFile;
     //服务端通知的版本号，此版本号有可能落后于服务端
     private final AtomicLong notifiedVersion;
+    //配置在客户端本地的实际生效时刻（毫秒时间戳），仅在写入非删除配置时更新，删除场景保留上次生效时间
+    private final AtomicLong effectiveTime;
     private final ConfigFileConnector configFileConnector;
     private final ConfigFileFilterChain configFileFilterChain;
     private final RetryPolicy retryPolicy;
@@ -88,6 +92,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         this.token = sdkContext.getConfig().getConfigFile().getServerConnector().getToken();
         this.remoteConfigFile = new AtomicReference<>();
         this.notifiedVersion = new AtomicLong(INIT_VERSION);
+        this.effectiveTime = new AtomicLong(0);
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.configFilePersistHandler = handler;
         this.configFileFilterChain = configFileFilterChain;
@@ -143,16 +148,55 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     /**
-     * 一次性读取当前版本和 MD5，保证两者来自同一份 ConfigFile 快照。
+     * 一次性读取当前版本、MD5、源内容与生效时间。content 取源内容（sourceContent，加密配置为密文），
+     * 与 md5（源内容摘要）自洽且不回传解密明文；非加密配置源内容为空时回退 content。
      *
-     * @return 包含 version 和 md5 的快照
+     * @return 包含 version、md5、content、effectiveTime 的快照
      */
     public ConfigFileSnapshot getSnapshot() {
-        ConfigFile configFile = remoteConfigFile.get();
-        if (configFile == null) {
-            return new ConfigFileSnapshot(INIT_VERSION, "");
+        synchronized (snapshotLock) {
+            ConfigFile configFile = remoteConfigFile.get();
+            if (configFile == null) {
+                return null;
+            }
+            String content = configFile.getSourceContent();
+            if (content == null) {
+                content = configFile.isEncrypted() ? "" : configFile.getContent();
+            }
+            return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5(), content,
+                    effectiveTime.get(), configFile.isEncrypted(), configFile.getEncryptAlgo(),
+                    configFile.getDataKey());
         }
-        return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5());
+    }
+
+    /**
+     * 服务端通知的版本号（可能落后于服务端实际版本）。pending 场景回带供服务端参考。
+     *
+     * @return 通知版本号
+     */
+    public long getNotifiedVersion() {
+        return notifiedVersion.get();
+    }
+
+    private void updateRemoteConfigFile(ConfigFile configFile) {
+        synchronized (snapshotLock) {
+            remoteConfigFile.set(configFile);
+            effectiveTime.set(System.currentTimeMillis());
+        }
+        super.fireChangeEvent(configFile);
+    }
+
+    private void removeRemoteConfigFile() {
+        boolean removed = false;
+        synchronized (snapshotLock) {
+            if (remoteConfigFile.get() != null) {
+                remoteConfigFile.set(null);
+                removed = true;
+            }
+        }
+        if (removed) {
+            super.fireChangeEvent(null);
+        }
     }
 
     @Override
@@ -196,9 +240,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                     // 构造更新回调动作
                     Runnable runnable = () -> {
                         ConfigFile copiedConfigFile = deepCloneConfigFile(pulledConfigFile);
-                        remoteConfigFile.set(copiedConfigFile);
-                        //配置有更新，触发回调
-                        fireChangeEvent(copiedConfigFile);
+                        updateRemoteConfigFile(copiedConfigFile);
 
                         // update local file cache
                         this.configFilePersistHandler.asyncSaveConfigFile(pulledConfigFile);
@@ -227,11 +269,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                                         configFileMetadata.getFileGroup(), configFileMetadata.getFileName()));
 
                         //删除配置文件
-                        if (remoteConfigFile.get() != null) {
-                            remoteConfigFile.set(null);
-                            //删除配置文件也需要触发通知
-                            fireChangeEvent(null);
-                        }
+                        removeRemoteConfigFile();
                     };
                     if (checkEmptyProtect(response)) {
                         fallbackIfNecessaryWhenStartingUp(pullConfigFileReq);
@@ -291,9 +329,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
             ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq, needRetry);
             if (configFileRes != null) {
                 LOGGER.info("[Config] load local cache success.{}.", configFileRes);
-                remoteConfigFile.set(configFileRes);
-                //配置有更新，触发回调
-                fireChangeEvent(configFileRes);
+                updateRemoteConfigFile(configFileRes);
                 return;
             }
             LOGGER.info("[Config] load local cache fail.{}.", configFileReq);
@@ -349,9 +385,14 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 new ConfigFile(sourceConfigFile.getNamespace(), sourceConfigFile.getFileGroup(),
                         sourceConfigFile.getFileName());
         configFile.setContent(sourceConfigFile.getContent());
+        configFile.setSourceContent(sourceConfigFile.getSourceContent());
         configFile.setVersion(sourceConfigFile.getVersion());
         configFile.setName(sourceConfigFile.getName());
         configFile.setMd5(sourceConfigFile.getMd5());
+        configFile.setEncrypted(sourceConfigFile.isEncrypted());
+        configFile.setPublicKey(sourceConfigFile.getPublicKey());
+        configFile.setDataKey(sourceConfigFile.getDataKey());
+        configFile.setEncryptAlgo(sourceConfigFile.getEncryptAlgo());
         return configFile;
     }
 

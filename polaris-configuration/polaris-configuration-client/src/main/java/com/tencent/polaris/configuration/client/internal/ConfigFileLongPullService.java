@@ -26,8 +26,11 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.api.plugin.Plugin;
 import com.tencent.polaris.api.plugin.common.PluginTypes;
+import com.tencent.polaris.api.plugin.server.ServerConnector;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -84,6 +87,12 @@ public class ConfigFileLongPullService {
 
     private ConfigWatchReportRequestCustomizer configWatchRequestCustomizer;
 
+    private ClientEventQueryHandler clientEventQueryHandler;
+
+    private AutoCloseable clientEventStream;
+
+    private final String clientId;
+
     public ConfigFileLongPullService(SDKContext sdkContext, ConfigFileConnector configFileConnector) {
         isLongPullingStopped = new AtomicBoolean(false);
         this.started = new AtomicReference<>(false);
@@ -91,6 +100,7 @@ public class ConfigFileLongPullService {
         this.notifiedVersion = Maps.newConcurrentMap();
         this.retryPolicy = new ExponentialRetryPolicy(1, 120);
         this.connector = configFileConnector;
+        this.clientId = sdkContext.getValueContext().getClientId();
         Plugin plugin = sdkContext.getPlugins().getOptionalPlugin(
                 PluginTypes.REPORT_CLIENT_REQUEST_CUSTOMIZER.getBaseType(),
                 ConfigWatchReportRequestCustomizer.NAME);
@@ -100,6 +110,8 @@ public class ConfigFileLongPullService {
         //初始化 long polling 线程池
         NamedThreadFactory threadFactory = new NamedThreadFactory("Configuration-LongPolling");
         this.longPollingService = Executors.newSingleThreadExecutor(threadFactory);
+        //初始化配置生效实时查询（开关默认开启）
+        initClientEventQuery(sdkContext);
     }
 
     public void addConfigFile(RemoteConfigFileRepo remoteConfigFileRepo) {
@@ -221,8 +233,70 @@ public class ConfigFileLongPullService {
         this.isLongPullingStopped.compareAndSet(false, true);
     }
 
+    /**
+     * 初始化配置生效实时查询。开关（reportClientRequestCustomizer.plugin.config-effective.enable）默认开启，
+     * 未启用或连接器不支持（default 抛 NOT_SUPPORT，如 consul/nacos）时静默跳过，不影响长轮询。
+     * 建流成功后才赋值字段，避免失败路径残留 handler 导致注册被静默吞掉。
+     */
+    private void initClientEventQuery(SDKContext sdkContext) {
+        try {
+            if (!isConfigEffectiveEnabled(sdkContext)) {
+                return;
+            }
+            ServerConnector serverConnector = (ServerConnector) sdkContext.getPlugins()
+                    .getPlugin(PluginTypes.SERVER_CONNECTOR.getBaseType(),
+                            sdkContext.getValueContext().getServerConnectorProtocol());
+            ClientEventQueryHandler queryHandler = new ClientEventQueryHandler(configWatchRequestCustomizer);
+            AutoCloseable eventStream = serverConnector.watchClientEvents(queryHandler::onPush);
+            this.clientEventQueryHandler = queryHandler;
+            this.clientEventStream = eventStream;
+            LOGGER.info("[Config] config effective query stream started.");
+        } catch (Throwable t) {
+            LOGGER.warn("[Config] config effective query stream start skipped: {}", t.getMessage());
+        }
+    }
+
+    boolean isConfigEffectiveEnabled(SDKContext sdkContext) {
+        try {
+            ConfigEffectiveQueryConfig config = sdkContext.getConfig().getGlobal()
+                    .getReportClientRequestCustomizer()
+                    .getPluginConfig(ConfigEffectiveQueryConfig.NAME, ConfigEffectiveQueryConfig.class);
+            if (config == null) {
+                return true;
+            }
+            return config.isEnable();
+        } catch (Throwable t) {
+            LOGGER.warn("[Config] read config effective switch failed, default enabled: {}", t.getMessage());
+            return true;
+        }
+    }
+
+    /**
+     * 注册配置生效值提供者，返回注销句柄。未启用实时查询时返回空句柄。
+     *
+     * @param provider 提供者
+     * @return 注册句柄，close 注销
+     */
+    public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        ConfigEffectiveValueRegistration registration = () -> { };
+        if (clientEventQueryHandler == null) {
+            LOGGER.warn("config-effective query is disabled or not initialized, "
+                    + "effective value provider will not take effect");
+        } else {
+            registration = clientEventQueryHandler.registerProvider(provider);
+        }
+        return registration;
+    }
+
     public void doLongPullingDestroy() {
         stopLongPulling();
+        if (clientEventStream != null) {
+            try {
+                clientEventStream.close();
+            } catch (Throwable t) {
+                LOGGER.warn("[Config] close client event stream failed.", t);
+            }
+        }
         if (longPollingService != null) {
             ThreadPoolUtils.waitAndStopThreadPools(new ExecutorService[]{longPollingService});
         }

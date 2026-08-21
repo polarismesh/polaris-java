@@ -20,6 +20,8 @@ package com.tencent.polaris.configuration.client.flow;
 import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.config.global.FlowConfig;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -63,5 +65,15 @@ public class DefaultConfigFileFlow implements ConfigFileFlow {
     @Override
     public ConfigKVFile getConfigYamlFile(ConfigFileMetadata configFileMetadata) {
         return configFileManager.getConfigKVFile(configFileMetadata, ConfigFileFormat.Yaml);
+    }
+
+    /**
+     * 注册配置生效值提供者，委托给配置管理器持有的查询处理器。
+     *
+     * @param provider 提供者
+     * @return 注册句柄，close 注销
+     */
+    public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        return configFileManager.registerEffectiveValueProvider(provider);
     }
 }

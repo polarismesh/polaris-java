@@ -46,7 +46,7 @@ public class ConfigWatchReportRequestCustomizerTest {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespace, group, fileName);
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
-        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5));
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5, null, 0));
         return repo;
     }
 
@@ -136,6 +136,7 @@ public class ConfigWatchReportRequestCustomizerTest {
     public void testCustomizeVersionZeroWhenNotPulled() throws Exception {
         enableCustomizer();
         RemoteConfigFileRepo repo = mockRepo("ns", "g", "f", 0, "");
+        when(repo.getSnapshot()).thenReturn(null);
         customizer.register(repo);
 
         ReportClientRequest request = new ReportClientRequest();
@@ -143,6 +144,43 @@ public class ConfigWatchReportRequestCustomizerTest {
 
         assertThat(request.getConfigMetadata()).contains("\"version\":0");
         assertThat(request.getConfigMetadata()).contains("\"md5\":\"\"");
+    }
+
+    /**
+     * 测试目的：监听坐标不依赖 ConfigFileMetadata 的具体实现类。
+     * 测试场景：使用自定义 Metadata 注册，再用默认 Metadata 查询。
+     * 验证内容：能够命中同一仓库。
+     */
+    @Test
+    public void testCustomMetadataCanBeQueriedByDefaultMetadata() {
+        ConfigFileMetadata customMetadata = new ConfigFileMetadata() {
+            @Override
+            public String getNamespace() {
+                return "ns";
+            }
+
+            @Override
+            public String getFileGroup() {
+                return "g";
+            }
+
+            @Override
+            public String getFileName() {
+                return "f";
+            }
+
+            @Override
+            public String getFileVersion() {
+                return null;
+            }
+        };
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        when(repo.getConfigFileMetadata()).thenReturn(customMetadata);
+        customizer.register(repo);
+
+        RemoteConfigFileRepo actual = customizer.getWatchedFile(new DefaultConfigFileMetadata("ns", "g", "f"));
+
+        assertThat(actual).isSameAs(repo);
     }
 
     @Test

@@ -20,6 +20,8 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilter;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -35,6 +37,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
+
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 /**
@@ -195,5 +201,58 @@ public class ConfigFileManagerTest {
 
         ConfigFileResponse response = fileManager.releaseConfigFile(request);
         System.out.println(response);
+    }
+
+    /**
+     * 测试目的：provider 为 null 时立即抛 NullPointerException（fail-fast），避免静默清空已注册的 provider。
+     * 测试场景：传 null 调用 registerEffectiveValueProvider。
+     * 验证内容：抛出 NullPointerException，且异常信息包含 provider。
+     */
+    @Test
+    public void testRegisterEffectiveValueProviderWithNull() {
+        assertThatThrownBy(() -> fileManager.registerEffectiveValueProvider(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("provider");
+    }
+
+    /**
+     * 测试目的：longPullService 未初始化（仅测试场景）时返回空句柄，而不是返回 null 或抛异常。
+     * 测试场景：无参构造的 ConfigFileManager 注册 provider。
+     * 验证内容：返回非 null 句柄，close() 正常执行不抛异常。
+     */
+    @Test
+    public void testRegisterEffectiveValueProviderWithoutLongPullService() {
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+
+        ConfigEffectiveValueRegistration registration = fileManager.registerEffectiveValueProvider(provider);
+
+        Assert.assertNotNull(registration);
+        assertThatCode(() -> registration.close()).doesNotThrowAnyException();
+    }
+
+    /**
+     * 测试目的：longPullService 正常时，注册请求原样委托给它。
+     * 测试场景：通过反射注入 mock 的 ConfigFileLongPullService。
+     * 验证内容：返回的句柄就是 longPullService 返回的句柄。
+     */
+    @Test
+    public void testRegisterEffectiveValueProviderDelegatesToLongPullService() throws Exception {
+        ConfigFileManager manager = new ConfigFileManager();
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        ConfigEffectiveValueRegistration expected = mock(ConfigEffectiveValueRegistration.class);
+        ConfigFileLongPullService longPullService = mock(ConfigFileLongPullService.class);
+        when(longPullService.registerEffectiveValueProvider(provider)).thenReturn(expected);
+        setPrivateField(manager, "longPullService", longPullService);
+
+        ConfigEffectiveValueRegistration registration = manager.registerEffectiveValueProvider(provider);
+
+        Assert.assertSame(expected, registration);
+    }
+
+    private static void setPrivateField(Object object, String fieldName, Object value)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = object.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(object, value);
     }
 }

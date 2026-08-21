@@ -25,6 +25,8 @@ import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.api.plugin.configuration.ConfigPublishFile;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
+import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration;
 import com.tencent.polaris.configuration.api.core.ConfigFile;
 import com.tencent.polaris.configuration.api.core.ConfigFileFormat;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
@@ -36,6 +38,7 @@ import com.tencent.polaris.configuration.api.rpc.UpdateConfigFileRequest;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.tencent.polaris.configuration.client.internal.AbstractConfigFileRepo.LOGGER;
@@ -195,5 +198,23 @@ public class ConfigFileManager {
                 persistentHandler.doDestroy();
             }
         });
+    }
+
+    /**
+     * 注册配置生效值提供者，委托给长轮询服务持有的查询处理器。
+     * 长轮询服务未初始化（仅测试场景）时，记录告警并返回空句柄。
+     *
+     * @param provider 提供者，不能为 null
+     * @return 注册句柄，close 注销
+     */
+    public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        Objects.requireNonNull(provider, "provider must not be null");
+        ConfigEffectiveValueRegistration registration = () -> { };
+        if (longPullService == null) {
+            LOGGER.warn("longPullService is not initialized, effective value provider will not take effect");
+        } else {
+            registration = longPullService.registerEffectiveValueProvider(provider);
+        }
+        return registration;
     }
 }

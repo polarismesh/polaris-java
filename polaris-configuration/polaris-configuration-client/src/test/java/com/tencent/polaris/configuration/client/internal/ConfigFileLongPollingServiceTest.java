@@ -17,16 +17,21 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.config.Configuration;
+import com.tencent.polaris.api.config.global.GlobalConfig;
+import com.tencent.polaris.api.config.global.ReportClientRequestCustomizerConfig;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.RetriableException;
 import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.Supplier;
+import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,11 +56,71 @@ public class ConfigFileLongPollingServiceTest {
     private SDKContext sdkContext;
     @Mock
     private Supplier plugins;
+    @Mock
+    private ValueContext valueContext;
+    @Mock
+    private Configuration configuration;
+    @Mock
+    private GlobalConfig globalConfig;
+    @Mock
+    private ReportClientRequestCustomizerConfig reportCustomizerConfig;
 
     @Before
     public void setUp() throws Exception {
         when(configFileConnector.isNotifiedVersionIncreaseStrictly()).thenReturn(true);
         when(sdkContext.getPlugins()).thenReturn(plugins);
+        when(sdkContext.getValueContext()).thenReturn(valueContext);
+        when(sdkContext.getConfig()).thenReturn(configuration);
+        when(configuration.getGlobal()).thenReturn(globalConfig);
+        when(globalConfig.getReportClientRequestCustomizer()).thenReturn(reportCustomizerConfig);
+    }
+
+    /**
+     * 测试目的：配置生效查询开关显式关闭时不启用。
+     * 测试场景：插件配置返回 enable=false。
+     * 验证内容：开关读取结果为 false。
+     */
+    @Test
+    public void testConfigEffectiveExplicitlyDisabled() throws Exception {
+        ConfigEffectiveQueryConfig config = new ConfigEffectiveQueryConfig();
+        config.setEnable(false);
+        when(reportCustomizerConfig.getPluginConfig(ConfigEffectiveQueryConfig.NAME,
+                ConfigEffectiveQueryConfig.class)).thenReturn(config);
+        ConfigFileLongPullService service = new ConfigFileLongPullService(sdkContext, configFileConnector);
+
+        boolean enabled = service.isConfigEffectiveEnabled(sdkContext);
+
+        Assertions.assertThat(enabled).isFalse();
+    }
+
+    /**
+     * 测试目的：插件配置缺失时沿用功能默认开启语义。
+     * 测试场景：插件配置查询返回 null。
+     * 验证内容：开关读取结果为 true。
+     */
+    @Test
+    public void testConfigEffectiveDefaultsEnabledWhenConfigMissing() {
+        ConfigFileLongPullService service = new ConfigFileLongPullService(sdkContext, configFileConnector);
+
+        boolean enabled = service.isConfigEffectiveEnabled(sdkContext);
+
+        Assertions.assertThat(enabled).isTrue();
+    }
+
+    /**
+     * 测试目的：读取插件配置异常时沿用功能默认开启语义。
+     * 测试场景：插件配置查询抛运行时异常。
+     * 验证内容：开关读取结果为 true。
+     */
+    @Test
+    public void testConfigEffectiveDefaultsEnabledWhenReadFails() throws Exception {
+        when(reportCustomizerConfig.getPluginConfig(ConfigEffectiveQueryConfig.NAME,
+                ConfigEffectiveQueryConfig.class)).thenThrow(new RuntimeException("read failed"));
+        ConfigFileLongPullService service = new ConfigFileLongPullService(sdkContext, configFileConnector);
+
+        boolean enabled = service.isConfigEffectiveEnabled(sdkContext);
+
+        Assertions.assertThat(enabled).isTrue();
     }
 
     @Test

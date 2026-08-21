@@ -60,6 +60,7 @@ import org.slf4j.Logger;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.tencent.polaris.specification.api.v1.model.CodeProto.Code.InvalidDiscoverResource;
@@ -90,6 +91,28 @@ public class GrpcConnector extends DestroyableServerConnector {
     private boolean isReportServiceContractEnable = true;
 
     private ServerConnectorConfigImpl connectorConfig;
+
+    /**
+     * 配置生效实时查询的事件流处理器（注册即常驻，直到 SDK 销毁）
+     */
+    private volatile ClientEventHandler clientEventHandler;
+
+    /**
+     * 配置生效实时查询的当前事件流
+     */
+    private final AtomicReference<ClientEventStream> clientEventStreamRef = new AtomicReference<>();
+
+    /** 配置生效查询连续建流/接收失败次数（用于日志分级与降频），收到有效 PUSH 后归零。 */
+    private final AtomicInteger clientEventFailCount = new AtomicInteger(0);
+
+    /** 服务端 client 缓存未命中（NOT_FOUND）记 warn 的连续失败次数上限。 */
+    private static final int NOT_FOUND_WARN_COUNT = 3;
+
+    /** 连续失败超过该次数后降低日志频率。 */
+    private static final int LOG_SUPPRESS_AFTER = 5;
+
+    /** 降频后每 N 次失败打印一条日志。 */
+    private static final int LOG_SUPPRESS_EVERY = 10;
 
     /**
      * 发送消息的线程池
@@ -422,6 +445,7 @@ public class GrpcConnector extends DestroyableServerConnector {
     private ClientProto.Client buildReportRequest(ReportClientRequest req) {
         Client.Builder builder = Client.newBuilder().setHost(StringValue.newBuilder().setValue(req.getClientHost()))
                 .setVersion(StringValue.newBuilder().setValue(req.getVersion()));
+        builder.setType(ClientProto.Client.ClientType.SDK);
         Optional.ofNullable(req.getReporterMetaInfos()).ifPresent(reporterMetaInfos -> reporterMetaInfos.forEach(
                 reporterMetaInfo -> builder.addStat(StatInfo.newBuilder()
                         .setTarget(StringValue.newBuilder().setValue(reporterMetaInfo.getTarget()).build())
@@ -611,6 +635,123 @@ public class GrpcConnector extends DestroyableServerConnector {
         }
     }
 
+    @Override
+    public synchronized AutoCloseable watchClientEvents(ClientEventHandler handler) throws PolarisException {
+        checkDestroyed();
+        if (clientEventHandler != null) {
+            throw new PolarisException(ErrorCode.API_INVALID_ARGUMENT,
+                    "watchClientEvents only supports one active handler");
+        }
+        this.clientEventHandler = handler;
+        connectClientEventStream();
+        return () -> {
+            ClientEventStream stream = null;
+            synchronized (GrpcConnector.this) {
+                if (clientEventHandler == handler) {
+                    clientEventHandler = null;
+                    stream = clientEventStreamRef.getAndSet(null);
+                }
+            }
+            if (stream != null) {
+                stream.close();
+            }
+        };
+    }
+
+    /**
+     * 重建配置生效查询事件流（由 ClientEventStream 断流时回调）。复用服务发现的任务调度：
+     * 固定 500ms 延迟、sendDiscoverExecutor 线程池、destroy 检查，与 retryServiceUpdateTask 一致。
+     *
+     * @param broken 已断开的流
+     */
+    public void retryClientEventStream(ClientEventStream broken) {
+        // 只重建当前活跃流，防止旧流的延迟重建覆盖新流
+        if (clientEventStreamRef.get() != broken || broken.isUnimplemented() || isDestroyed()
+                || clientEventHandler == null) {
+            return;
+        }
+        clientEventStreamRef.compareAndSet(broken, null);
+        sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * 建立配置生效查询事件流。对齐 GrpcServiceUpdateTask#execute：先检查集群就绪与销毁状态，
+     * 再取连接建流；构造与建流分离，先 CAS 登记活跃流引用再 start()，避免建流期异步 onError 丢失重建。
+     */
+    private void connectClientEventStream() {
+        ClientEventHandler handler = clientEventHandler;
+        if (handler == null || isDestroyed() || clientEventStreamRef.get() != null) {
+            return;
+        }
+        if (!connectionManager.checkReady(ClusterType.SERVICE_DISCOVER_CLUSTER)) {
+            LOG.debug("[ClientEvent] {} service is not ready, retry later", ClusterType.SERVICE_DISCOVER_CLUSTER);
+            sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS,
+                    TimeUnit.MILLISECONDS);
+            return;
+        }
+        ClientEventStream stream = null;
+        try {
+            Connection connection = connectionManager.getConnection(GrpcUtil.OP_KEY_WATCH_CLIENT_EVENTS,
+                    ClusterType.SERVICE_DISCOVER_CLUSTER);
+            stream = new ClientEventStream(this, connection, handler);
+            // 先登记再建流：start() 内注册观察者后异步 onError 即可被 retryClientEventStream 正常识别
+            if (!clientEventStreamRef.compareAndSet(null, stream)) {
+                stream.closeStream(false);
+                return;
+            }
+            if (clientEventHandler == null || isDestroyed()) {
+                // 登记与销毁/注销并发：由关闭路径负责清理,这里不再启动
+                if (clientEventStreamRef.compareAndSet(stream, null)) {
+                    stream.closeStream(false);
+                }
+                return;
+            }
+            stream.start();
+            LOG.debug("[ClientEvent] watch client events stream established, clientId = {}", clientInstanceId);
+        } catch (Throwable t) {
+            // start() 失败时流已自关闭（closeStream 幂等释放连接）；getConnection 失败时未 acquire 无需释放
+            if (stream != null) {
+                clientEventStreamRef.compareAndSet(stream, null);
+            }
+            noteClientEventFailure(t);
+            sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS,
+                    TimeUnit.MILLISECONDS);
+        }
+    }
+
+    /**
+     * 记录一次建流/接收失败并分级记日志（对齐 Go shouldLogFailureAsWarn）：
+     * 瞬时网络错误（UNAVAILABLE/DEADLINE_EXCEEDED，服务端滚动重启典型表现）始终记 warn；
+     * 服务端 client 缓存未命中（NOT_FOUND）前 3 次记 warn（启动竞态可自愈），超出升 error；
+     * 连续失败超阈值后降频，避免服务端长期不可用时刷屏。
+     *
+     * @param t 失败异常
+     */
+    public void noteClientEventFailure(Throwable t) {
+        int count = clientEventFailCount.incrementAndGet();
+        if (count > LOG_SUPPRESS_AFTER && count % LOG_SUPPRESS_EVERY != 0) {
+            return;
+        }
+        boolean warnOnly = GrpcUtil.hasGrpcCode(t, io.grpc.Status.Code.UNAVAILABLE)
+                || GrpcUtil.hasGrpcCode(t, io.grpc.Status.Code.DEADLINE_EXCEEDED)
+                || (count <= NOT_FOUND_WARN_COUNT && GrpcUtil.hasGrpcCode(t, io.grpc.Status.Code.NOT_FOUND));
+        if (warnOnly) {
+            LOG.warn("[ClientEvent] watch stream failed (consecutive {}), clientId = {}: {}", count,
+                    clientInstanceId, t == null ? "EOF" : t.getMessage());
+        } else {
+            LOG.error("[ClientEvent] watch stream failed (consecutive {}), clientId = {}", count, clientInstanceId,
+                    t);
+        }
+    }
+
+    /**
+     * 收到有效服务端 PUSH 后重置连续失败计数。不能在 WATCH 刚发出时重置，
+     * 否则服务端立即拒绝建流的循环会永远被当作第一次失败。
+     */
+    public void noteClientEventSuccess() {
+        clientEventFailCount.set(0);
+    }
+
     private ServiceContractProto.ServiceContract buildReportServiceContractRequest(ReportServiceContractRequest req) {
         ServiceContractProto.ServiceContract.Builder serviceContractBuilder =
                 ServiceContractProto.ServiceContract.newBuilder();
@@ -774,6 +915,17 @@ public class GrpcConnector extends DestroyableServerConnector {
     public void postContextInit(Extensions extensions) throws PolarisException {
         if (initialized) {
             connectionManager.setExtensions(extensions);
+            // 计划换节点（SwitchServerTask）时关闭当前事件流并触发重建到新节点——
+            // 本流不进 streamClients 清理链路，不注册回调会永久钉死在旧节点的旧 channel 上
+            connectionManager.setCallbackOnSwitched(connID -> {
+                ClientEventStream stream = clientEventStreamRef.getAndSet(null);
+                if (stream != null && !isDestroyed()) {
+                    LOG.info("[ClientEvent] server switched to {}, close event stream and rebuild", connID);
+                    stream.closeStream(false);
+                    sendDiscoverExecutor.schedule(this::connectClientEventStream, TASK_RETRY_INTERVAL_MS,
+                            TimeUnit.MILLISECONDS);
+                }
+            });
             this.updateServiceExecutor.scheduleWithFixedDelay(new ClearIdleStreamClientTask(),
                     this.connectionIdleTimeoutMs, this.connectionIdleTimeoutMs, TimeUnit.MILLISECONDS);
             if (standalone) {
@@ -787,6 +939,15 @@ public class GrpcConnector extends DestroyableServerConnector {
     public void doDestroy() {
         if (initialized) {
             LOG.info("start to destroy connector {}", getName());
+            clientEventHandler = null;
+            ClientEventStream eventStream = clientEventStreamRef.getAndSet(null);
+            if (eventStream != null) {
+                try {
+                    eventStream.close();
+                } catch (Throwable t) {
+                    LOG.warn("[ClientEvent] close client event stream failed on destroy", t);
+                }
+            }
             ThreadPoolUtils.waitAndStopThreadPools(
                     new ExecutorService[]{sendDiscoverExecutor, buildInExecutor, updateServiceExecutor});
             destroyStreamClient();
@@ -798,6 +959,15 @@ public class GrpcConnector extends DestroyableServerConnector {
 
     public ConnectionManager getConnectionManager() {
         return connectionManager;
+    }
+
+    /**
+     * 获取客户端实例 ID（与 ReportClient 上报一致），供 WatchClientEvents 首帧自证身份。
+     *
+     * @return 客户端实例 ID
+     */
+    public String getClientInstanceId() {
+        return clientInstanceId;
     }
 
 
