@@ -278,10 +278,14 @@ public class ConfigFileLongPullService {
      * @return 注册句柄，close 注销
      */
     public ConfigEffectiveValueRegistration registerEffectiveValueProvider(ConfigEffectiveValueProvider provider) {
+        ConfigEffectiveValueRegistration registration = () -> { };
         if (clientEventQueryHandler == null) {
-            return () -> { };
+            LOGGER.warn("config-effective query is disabled or not initialized, "
+                    + "effective value provider will not take effect");
+        } else {
+            registration = clientEventQueryHandler.registerProvider(provider);
         }
-        return clientEventQueryHandler.registerProvider(provider);
+        return registration;
     }
 
     public void doLongPullingDestroy() {
