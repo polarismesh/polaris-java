@@ -24,12 +24,15 @@ import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKeyConflict;
 import com.tencent.polaris.configuration.api.core.EffectiveValue;
+import com.tencent.polaris.encrypt.util.RSAUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.security.KeyPair;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,6 +62,12 @@ public class ClientEventQueryHandlerTest {
 
     private String pushJson(String namespace, String group, String fileName) {
         return "{\"kind\":\"config\",\"config\":{\"namespace\":\"" + namespace + "\",\"group\":\"" + group
+                + "\",\"file_name\":\"" + fileName + "\"}}";
+    }
+
+    private String pushJsonWithPublicKey(String namespace, String group, String fileName, String publicKey) {
+        return "{\"kind\":\"config\",\"public_key\":\"" + publicKey
+                + "\",\"config\":{\"namespace\":\"" + namespace + "\",\"group\":\"" + group
                 + "\",\"file_name\":\"" + fileName + "\"}}";
     }
 
@@ -101,12 +110,41 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
-     * 测试目的：加密配置 ACK 携带密文、算法和 base64 明文数据密钥。
-     * 测试场景：注册一份已解密生效且保留源密文的加密配置快照。
-     * 验证内容：encrypted/encrypt_algo/data_key 与快照一致。
+     * 测试目的：加密配置且 PUSH 携带 RSA 公钥时，ACK 回 AES 密文并用该公钥封装 data_key。
+     * 测试场景：注册加密快照后查询，PUSH 含 public_key。
+     * 验证内容：encrypted/encrypt_algo 与快照一致，data_key 为 RSA 密文且私钥可还原 AES 密钥。
      */
     @Test
-    public void testEncryptedConfigIncludesCryptoFields() {
+    public void testEncryptedConfigWrapsDataKeyWithPublicKey() {
+        String plainDataKey = "UDEyMzQ1Njc4OTAxMjM0NQ==";
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, "AES", plainDataKey));
+        watchRegistry.register(repo);
+        KeyPair keyPair = RSAUtil.generateRsaKeyPair();
+        String publicKey = RSAUtil.toPkcs1PublicKeyBase64(keyPair.getPublic());
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJsonWithPublicKey("ns", "g", "secret.yaml", publicKey)));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        assertThat(ack.get("content").getAsString()).isEqualTo("cipher-content");
+        assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
+        assertThat(ack.get("encrypt_algo").getAsString()).isEqualTo("AES");
+        assertThat(ack.get("data_key").getAsString()).isNotEqualTo(plainDataKey);
+        byte[] decrypted = RSAUtil.decrypt(Base64.getDecoder().decode(ack.get("data_key").getAsString()),
+                keyPair.getPrivate());
+        assertThat(decrypted).isEqualTo(Base64.getDecoder().decode(plainDataKey));
+    }
+
+    /**
+     * 测试目的：加密配置但 PUSH 未带公钥时不回传明文 data_key。
+     * 测试场景：注册加密快照后查询，PUSH 无 public_key。
+     * 验证内容：encrypted/encrypt_algo 仍输出，data_key 省略。
+     */
+    @Test
+    public void testEncryptedConfigOmitsDataKeyWithoutPublicKey() {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
@@ -120,7 +158,29 @@ public class ClientEventQueryHandlerTest {
         assertThat(ack.get("content").getAsString()).isEqualTo("cipher-content");
         assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
         assertThat(ack.get("encrypt_algo").getAsString()).isEqualTo("AES");
-        assertThat(ack.get("data_key").getAsString()).isEqualTo("UDEyMzQ1Njc4OTAxMjM0NQ==");
+        assertThat(ack.has("data_key")).isFalse();
+    }
+
+    /**
+     * 测试目的：公钥无法用于 RSA 加密时省略 data_key，不影响 applied/content。
+     * 测试场景：PUSH 携带非法 public_key。
+     * 验证内容：主 ACK 正常，data_key 省略。
+     */
+    @Test
+    public void testEncryptedConfigOmitsDataKeyWhenPublicKeyInvalid() {
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, "AES", "UDEyMzQ1Njc4OTAxMjM0NQ=="));
+        watchRegistry.register(repo);
+
+        JsonObject ack = ackOf(handler.onPush(1,
+                pushJsonWithPublicKey("ns", "g", "secret.yaml", "not-a-rsa-key")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
+        assertThat(ack.has("data_key")).isFalse();
     }
 
     /**

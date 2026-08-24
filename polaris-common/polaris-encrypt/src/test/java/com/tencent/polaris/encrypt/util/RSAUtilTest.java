@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Base64;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -39,6 +40,21 @@ public class RSAUtilTest {
         byte[] content = "test content".getBytes();
         byte[] encrypted = RSAUtil.encrypt(content, publicKey);
         byte[] decrypted = RSAUtil.decrypt(encrypted, privateKey);
+        assertArrayEquals(content, decrypted);
+    }
+
+    /**
+     * 测试目的：PKCS1 公钥编解码往返后仍能 RSA 加解密。
+     * 测试场景：公钥按 PKCS1 DER+base64 编码后再解析。
+     * 验证内容：密文可用原私钥还原明文。
+     */
+    @Test
+    public void testEncryptToBase64WithPkcs1PublicKey() {
+        KeyPair keyPair = RSAUtil.generateRsaKeyPair();
+        byte[] content = "P123456789012345".getBytes();
+        String pkcs1PublicKey = RSAUtil.toPkcs1PublicKeyBase64(keyPair.getPublic());
+        String cipherText = RSAUtil.encryptToBase64(content, pkcs1PublicKey);
+        byte[] decrypted = RSAUtil.decrypt(Base64.getDecoder().decode(cipherText), keyPair.getPrivate());
         assertArrayEquals(content, decrypted);
     }
 }

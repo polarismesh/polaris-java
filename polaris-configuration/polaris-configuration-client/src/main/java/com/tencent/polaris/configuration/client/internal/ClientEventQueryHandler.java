@@ -24,6 +24,7 @@ import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistrati
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKeyConflict;
 import com.tencent.polaris.configuration.api.core.EffectiveValue;
+import com.tencent.polaris.encrypt.util.RSAUtil;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
@@ -33,6 +34,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -116,7 +118,7 @@ public class ClientEventQueryHandler {
         if (watchRegistry == null) {
             return marshalAck(newAck(query.getKind(), cfg, REASON_CONFIG_DISABLED));
         }
-        return handleConfigQuery(cfg);
+        return handleConfigQuery(query);
     }
 
     /**
@@ -139,7 +141,8 @@ public class ClientEventQueryHandler {
         }
     }
 
-    private String handleConfigQuery(ClientEventQuery.QueryConfig cfg) {
+    private String handleConfigQuery(ClientEventQuery query) {
+        ClientEventQuery.QueryConfig cfg = query.getConfig();
         // null 一律归一为 ""，对齐 Go 零值查询：构造不出合法坐标时查不到 → not_watched
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespaceOf(cfg), groupOf(cfg), fileNameOf(cfg));
         RemoteConfigFileRepo repo = watchRegistry.getWatchedFile(metadata);
@@ -158,7 +161,7 @@ public class ClientEventQueryHandler {
         }
         ClientEventAck ack = newAck(KIND_CONFIG, cfg, null);
         ack.setApplied(true);
-        fillSnapshot(ack, snapshot);
+        fillSnapshot(ack, snapshot, query.getPublicKey());
         fillContent(ack, snapshot, metadata);
         fillProperties(ack, metadata);
         return marshalAck(ack);
@@ -176,7 +179,7 @@ public class ClientEventQueryHandler {
         return cfg == null || cfg.getFileName() == null ? "" : cfg.getFileName();
     }
 
-    private void fillSnapshot(ClientEventAck ack, ConfigFileSnapshot snapshot) {
+    private void fillSnapshot(ClientEventAck ack, ConfigFileSnapshot snapshot, String publicKey) {
         // 对齐 Go 的 omitempty:version/md5/effective_time 零值时省略字段
         if (snapshot.getVersion() > 0) {
             ack.setVersion(snapshot.getVersion());
@@ -192,10 +195,33 @@ public class ClientEventQueryHandler {
             if (snapshot.getEncryptAlgo() != null && !snapshot.getEncryptAlgo().isEmpty()) {
                 ack.setEncryptAlgo(snapshot.getEncryptAlgo());
             }
-            if (snapshot.getDataKey() != null && !snapshot.getDataKey().isEmpty()) {
-                ack.setDataKey(snapshot.getDataKey());
+            String wrappedDataKey = wrapAckDataKey(snapshot.getDataKey(), publicKey);
+            if (!wrappedDataKey.isEmpty()) {
+                ack.setDataKey(wrappedDataKey);
             }
         }
+    }
+
+    /**
+     * Wrap the symmetric data key with the query RSA public key.
+     * Missing key or encrypt failure returns empty so Gson omits data_key; never return plaintext.
+     *
+     * @param plainDataKey Base64 plaintext AES key from snapshot
+     * @param publicKey PKCS1 public key from PUSH
+     * @return RSA wrapped data key, or empty on failure
+     */
+    private String wrapAckDataKey(String plainDataKey, String publicKey) {
+        String wrapped = "";
+        if (plainDataKey != null && !plainDataKey.isEmpty() && publicKey != null && !publicKey.isEmpty()) {
+            try {
+                byte[] rawKey = Base64.getDecoder().decode(plainDataKey);
+                wrapped = RSAUtil.encryptToBase64(rawKey, publicKey);
+            } catch (RuntimeException e) {
+                LOG.warn("[Config] rsa wrap data_key failed: {}", e.getMessage());
+                wrapped = "";
+            }
+        }
+        return wrapped;
     }
 
     /**

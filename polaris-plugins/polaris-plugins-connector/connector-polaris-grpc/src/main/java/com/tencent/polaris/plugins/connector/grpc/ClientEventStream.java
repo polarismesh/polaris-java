@@ -161,6 +161,10 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
     }
 
     private void handlePush(ClientEvent event) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("[ClientEvent] received push, index = {}, clientId = {}, content = {}",
+                    event.getIndex(), clientId, event.getContent());
+        }
         String ackContent = INTERNAL_ERROR_ACK;
         try {
             String handlerAck = handler.onPush(event.getIndex(), event.getContent());
@@ -186,6 +190,10 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
             return;
         }
         try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[ClientEvent] send ack, index = {}, clientId = {}, content = {}",
+                        index, clientId, ackContent);
+            }
             synchronized (clientLock) {
                 observer.onNext(ClientEvent.newBuilder()
                         .setType(ClientEvent.ClientEventType.ACK)

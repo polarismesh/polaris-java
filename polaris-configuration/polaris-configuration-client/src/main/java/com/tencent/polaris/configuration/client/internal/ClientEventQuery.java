@@ -29,11 +29,18 @@ class ClientEventQuery {
     @SerializedName("kind")
     private String kind;
 
+    @SerializedName("public_key")
+    private String publicKey;
+
     @SerializedName("config")
     private QueryConfig config;
 
     String getKind() {
         return kind;
+    }
+
+    String getPublicKey() {
+        return publicKey;
     }
 
     QueryConfig getConfig() {
