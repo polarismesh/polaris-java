@@ -24,6 +24,7 @@ import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistrati
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKeyConflict;
 import com.tencent.polaris.configuration.api.core.EffectiveValue;
+import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.encrypt.util.RSAUtil;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -163,7 +164,7 @@ public class ClientEventQueryHandler {
         ack.setApplied(true);
         fillSnapshot(ack, snapshot, query.getPublicKey());
         fillContent(ack, snapshot, metadata);
-        fillProperties(ack, metadata);
+        fillProperties(ack, metadata, snapshot);
         return marshalAck(ack);
     }
 
@@ -252,18 +253,30 @@ public class ClientEventQueryHandler {
     }
 
     /**
-     * 填充 properties[]。未注册 Provider 时保持 null，Gson 省略该字段，ACK 退化为与 Go 一致的形态。
+     * 填充 properties。未注册 Provider 时保持 null，Gson 省略该字段，ACK 退化为与 Go 一致的形态。
      * 单个 key 解析失败只降级该 key，不影响整体 applied=true。
+     * 加密文件：先组明文数组，再用快照 AES data_key 整体加密（与 content 同一把密钥、AES-CBC/IV=key[:16]），
+     * ACK.properties 输出密文字符串；无密钥或加密失败则省略该字段，永不回传明文数组。
      */
-    private void fillProperties(ClientEventAck ack, ConfigFileMetadata metadata) {
+    private void fillProperties(ClientEventAck ack, ConfigFileMetadata metadata, ConfigFileSnapshot snapshot) {
         ConfigEffectiveValueProvider provider = providerRef.get();
-        if (provider == null) {
-            return;
+        List<String> keys = provider == null ? null : safeGetKeys(provider, metadata);
+        if (provider != null && keys != null && !keys.isEmpty()) {
+            applyProperties(ack, buildPropertyEntries(provider, keys, metadata), snapshot);
         }
-        List<String> keys = safeGetKeys(provider, metadata);
-        if (keys == null || keys.isEmpty()) {
-            return;
+    }
+
+    private void applyProperties(ClientEventAck ack, List<ClientEventAck.PropertyEntry> entries,
+            ConfigFileSnapshot snapshot) {
+        if (!entries.isEmpty() && snapshot.isEncrypted()) {
+            setEncryptedProperties(ack, entries, snapshot);
+        } else if (!entries.isEmpty()) {
+            ack.setProperties(entries);
         }
+    }
+
+    private List<ClientEventAck.PropertyEntry> buildPropertyEntries(ConfigEffectiveValueProvider provider,
+            List<String> keys, ConfigFileMetadata metadata) {
         List<ClientEventAck.PropertyEntry> entries = new ArrayList<>();
         int serializedBytes = 2;
         for (String key : keys) {
@@ -280,9 +293,32 @@ public class ClientEventQueryHandler {
                 serializedBytes += separatorBytes + entryBytes;
             }
         }
-        if (!entries.isEmpty()) {
-            ack.setProperties(entries);
+        return entries;
+    }
+
+    private void setEncryptedProperties(ClientEventAck ack, List<ClientEventAck.PropertyEntry> entries,
+            ConfigFileSnapshot snapshot) {
+        byte[] aesKey = decodeAckAesKey(snapshot.getDataKey());
+        if (aesKey == null) {
+            return;
         }
+        try {
+            ack.setProperties(AESUtil.encrypt(gson.toJson(entries), aesKey));
+        } catch (RuntimeException e) {
+            LOG.warn("[Config] encrypt properties failed: {}", e.getMessage());
+        }
+    }
+
+    private byte[] decodeAckAesKey(String plainDataKey) {
+        byte[] aesKey = null;
+        if (plainDataKey != null && !plainDataKey.isEmpty()) {
+            try {
+                aesKey = Base64.getDecoder().decode(plainDataKey);
+            } catch (RuntimeException e) {
+                LOG.warn("[Config] decode aes data_key failed: {}", e.getMessage());
+            }
+        }
+        return aesKey;
     }
 
     private List<String> safeGetKeys(ConfigEffectiveValueProvider provider, ConfigFileMetadata metadata) {
@@ -314,9 +350,9 @@ public class ClientEventQueryHandler {
             effectiveValue = null;
         }
         if (effectiveValue != null) {
+            entry.setPropertySource(effectiveValue.getPropertySource());
             entry.setFileValue(effectiveValue.getFileValue());
             entry.setEffectiveValue(effectiveValue.getEffectiveValue());
-            entry.setPropertySource(effectiveValue.getPropertySource());
         }
     }
 

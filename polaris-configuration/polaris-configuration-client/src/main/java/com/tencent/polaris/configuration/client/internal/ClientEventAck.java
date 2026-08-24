@@ -26,6 +26,7 @@ import java.util.List;
  * <p>
  * 字段输出规则对齐 Go 端 client_event_ack：null 字段被省略（模拟 omitempty），
  * content 始终输出（未命中时为空串，供服务端区分"内容为空"与"未返回内容"）。
+ * 加密文件的 properties 为 AES 密文字符串（与 content 同一把 data_key），非加密时为数组。
  *
  * @author evelynwei
  */
@@ -71,7 +72,7 @@ class ClientEventAck {
     private String reason;
 
     @SerializedName("properties")
-    private List<PropertyEntry> properties;
+    private Object properties;
 
     String getKind() {
         return kind;
@@ -177,11 +178,11 @@ class ClientEventAck {
         this.reason = reason;
     }
 
-    List<PropertyEntry> getProperties() {
+    Object getProperties() {
         return properties;
     }
 
-    void setProperties(List<PropertyEntry> properties) {
+    void setProperties(Object properties) {
         this.properties = properties;
     }
 

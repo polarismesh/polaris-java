@@ -24,6 +24,7 @@ import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKeyConflict;
 import com.tencent.polaris.configuration.api.core.EffectiveValue;
+import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.encrypt.util.RSAUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -304,6 +305,72 @@ public class ClientEventQueryHandlerTest {
         JsonObject conflictJson = prop.getAsJsonArray("conflicts").get(0).getAsJsonObject();
         assertThat(conflictJson.get("file_name").getAsString()).isEqualTo("common.yaml");
         assertThat(conflictJson.get("value").getAsString()).isEqualTo("8081");
+    }
+
+    /**
+     * 测试目的：加密文件将 properties 整体 AES 加密，ACK 中为密文字符串。
+     * 测试场景：加密快照且已注册 Provider。
+     * 验证内容：properties 不是数组；用同一把 data_key 解密后还原明文 JSON。
+     */
+    @Test
+    public void testEncryptedConfigEncryptsPropertiesBlob() {
+        String plainDataKey = "UDEyMzQ1Njc4OTAxMjM0NQ==";
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, "AES", plainDataKey));
+        watchRegistry.register(repo);
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("password"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("plain-file", "plain-effective", "polaris:ns/g/secret.yaml"));
+        ConfigKeyConflict conflict = new ConfigKeyConflict("ns", "g", "other.yaml", "conflict-plain");
+        when(provider.resolveConflicts(any(String.class), any()))
+                .thenReturn(Collections.singletonList(conflict));
+        handler.registerProvider(provider);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "secret.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
+        assertThat(ack.get("properties").isJsonArray()).isFalse();
+        String cipher = ack.get("properties").getAsString();
+        assertThat(cipher).isNotEqualTo("plain-effective");
+        String plainJson = AESUtil.decrypt(cipher, Base64.getDecoder().decode(plainDataKey));
+        JsonObject prop = JsonParser.parseString(plainJson).getAsJsonArray().get(0).getAsJsonObject();
+        assertThat(prop.get("key").getAsString()).isEqualTo("password");
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("plain-file");
+        assertThat(prop.get("effective_value").getAsString()).isEqualTo("plain-effective");
+        assertThat(prop.get("property_source").getAsString()).isEqualTo("polaris:ns/g/secret.yaml");
+        assertThat(prop.getAsJsonArray("conflicts").get(0).getAsJsonObject().get("value").getAsString())
+                .isEqualTo("conflict-plain");
+    }
+
+    /**
+     * 测试目的：加密文件缺少 data_key 时省略 properties，不回传明文数组。
+     * 测试场景：加密快照 data_key 为空，已注册 Provider。
+     * 验证内容：ACK 无 properties 字段。
+     */
+    @Test
+    public void testEncryptedConfigOmitsPropertiesWithoutDataKey() {
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, "AES", null));
+        watchRegistry.register(repo);
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("password"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("plain-file", "plain-effective", "src"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "secret.yaml")));
+
+        assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
+        assertThat(ack.has("properties")).isFalse();
     }
 
     /**
