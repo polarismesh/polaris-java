@@ -38,7 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * WatchClientEvents 双向事件流，用于配置生效实时查询。
  * 建流后发送 WATCH 首帧自证身份，持续接收服务端 PUSH 查询并回 ACK。
  * 断流时经 {@link GrpcConnector} 的任务调度机制重建（对齐 SpecStreamClient 的连接管理模式），
- * 重建成功后重发 WATCH 首帧；UNIMPLEMENTED 表示服务端未发布该 RPC，永久停连。
+ * 重建成功后重发 WATCH 首帧；建流成功打 INFO 锚点（含 clientId）。
+ * UNIMPLEMENTED 表示服务端未发布该 RPC，永久停连。
  * 本流不进空闲关流清理链路——服务端按需触发，可能数小时无帧，存活性只依赖 channel keepalive。
  * <p>
  * 处理逻辑协议无关，由 {@link ClientEventHandler} 实现；本类只负责建流、收发与资源管理。
@@ -111,6 +112,8 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
             requestObserver = stub.watchClientEvents(this);
             // 发送 WATCH 首帧自证身份，client_id 与 ReportClient 上报一致
             sendWatch();
+            // INFO 锚点：默认日志级别即可被 verify 抓取 clientId，无需开 DEBUG
+            LOG.info("[ClientEvent] watch client events stream established, clientId = {}", clientId);
         } catch (RuntimeException | Error t) {
             closeStream(false);
             throw t;

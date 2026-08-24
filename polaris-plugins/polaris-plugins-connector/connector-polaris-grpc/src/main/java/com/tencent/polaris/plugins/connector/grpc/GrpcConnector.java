@@ -707,7 +707,6 @@ public class GrpcConnector extends DestroyableServerConnector {
                 return;
             }
             stream.start();
-            LOG.debug("[ClientEvent] watch client events stream established, clientId = {}", clientInstanceId);
         } catch (Throwable t) {
             // start() 失败时流已自关闭（closeStream 幂等释放连接）；getConnection 失败时未 acquire 无需释放
             if (stream != null) {
