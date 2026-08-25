@@ -113,6 +113,8 @@ public class ClientEventQueryHandler {
             return marshalAck(newAck(null, null, REASON_BAD_CONTENT));
         }
         ClientEventQuery.QueryConfig cfg = query.getConfig();
+        LOG.debug("[Config] handle config effective query, index = {}, kind = {}, file = {}/{}/{}",
+                index, query.getKind(), namespaceOf(cfg), groupOf(cfg), fileNameOf(cfg));
         if (!KIND_CONFIG.equals(query.getKind())) {
             return marshalAck(newAck(query.getKind(), cfg, REASON_UNKNOWN_KIND));
         }
