@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 配置生效查询处理器，解析服务端 PUSH 指令并组装 ACK content JSON。
  * <p>
  * 任何分支都必须返回可发送的 JSON：服务端同步等待 ACK，静默会把它挂到超时。
- * 日志只记文件坐标、applied、reason、耗时与字节数，绝不记录配置值（含 DEBUG）。
+ * 本类 INFO 只记文件坐标；PUSH/ACK 全文由连接器按 INFO 输出。
  *
  * @author evelynwei
  */
@@ -113,7 +113,7 @@ public class ClientEventQueryHandler {
             return marshalAck(newAck(null, null, REASON_BAD_CONTENT));
         }
         ClientEventQuery.QueryConfig cfg = query.getConfig();
-        LOG.debug("[Config] handle config effective query, index = {}, kind = {}, file = {}/{}/{}",
+        LOG.info("[Config] handle config effective query, index = {}, kind = {}, file = {}/{}/{}",
                 index, query.getKind(), namespaceOf(cfg), groupOf(cfg), fileNameOf(cfg));
         if (!KIND_CONFIG.equals(query.getKind())) {
             return marshalAck(newAck(query.getKind(), cfg, REASON_UNKNOWN_KIND));

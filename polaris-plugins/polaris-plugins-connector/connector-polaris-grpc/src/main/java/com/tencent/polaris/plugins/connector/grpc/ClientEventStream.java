@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * WatchClientEvents 双向事件流，用于配置生效实时查询。
  * 建流后发送 WATCH 首帧自证身份，持续接收服务端 PUSH 查询并回 ACK。
  * 断流时经 {@link GrpcConnector} 的任务调度机制重建（对齐 SpecStreamClient 的连接管理模式），
- * 重建成功后重发 WATCH 首帧；建流成功打 INFO 锚点（含 clientId）。
+ * 重建成功后重发 WATCH 首帧；建流成功、收 PUSH、回 ACK 均打 INFO（含 clientId）。
  * UNIMPLEMENTED 表示服务端未发布该 RPC，永久停连。
  * 本流不进空闲关流清理链路——服务端按需触发，可能数小时无帧，存活性只依赖 channel keepalive。
  * <p>
@@ -164,10 +164,8 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
     }
 
     private void handlePush(ClientEvent event) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("[ClientEvent] received push, index = {}, clientId = {}, content = {}",
-                    event.getIndex(), clientId, event.getContent());
-        }
+        LOG.info("[ClientEvent] received push, index = {}, clientId = {}, content = {}",
+                event.getIndex(), clientId, event.getContent());
         String ackContent = INTERNAL_ERROR_ACK;
         try {
             String handlerAck = handler.onPush(event.getIndex(), event.getContent());
@@ -193,10 +191,8 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
             return;
         }
         try {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("[ClientEvent] send ack, index = {}, clientId = {}, content = {}",
-                        index, clientId, ackContent);
-            }
+            LOG.info("[ClientEvent] send ack, index = {}, clientId = {}, content = {}",
+                    index, clientId, ackContent);
             synchronized (clientLock) {
                 observer.onNext(ClientEvent.newBuilder()
                         .setType(ClientEvent.ClientEventType.ACK)
