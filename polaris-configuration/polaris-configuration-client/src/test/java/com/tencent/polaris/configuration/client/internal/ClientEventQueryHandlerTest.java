@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.util.Arrays;
 import java.util.Base64;
@@ -133,6 +134,34 @@ public class ClientEventQueryHandlerTest {
         assertThat(ack.get("content").getAsString()).isEqualTo("cipher-content");
         assertThat(ack.get("encrypted").getAsBoolean()).isTrue();
         assertThat(ack.get("encrypt_algo").getAsString()).isEqualTo("AES");
+        assertThat(ack.get("data_key").getAsString()).isNotEqualTo(plainDataKey);
+        byte[] decrypted = RSAUtil.decrypt(Base64.getDecoder().decode(ack.get("data_key").getAsString()),
+                keyPair.getPrivate());
+        assertThat(decrypted).isEqualTo(Base64.getDecoder().decode(plainDataKey));
+    }
+
+    /**
+     * 测试目的：服务端下发 Base64(PEM) 公钥时仍能封装 data_key。
+     * 测试场景：PUSH public_key 为 X.509 PEM 再 Base64。
+     * 验证内容：data_key 可用私钥还原 AES 密钥。
+     */
+    @Test
+    public void testEncryptedConfigWrapsDataKeyWithPemPublicKey() {
+        String plainDataKey = "UDEyMzQ1Njc4OTAxMjM0NQ==";
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata("ns", "g", "secret.yaml");
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(3, "cipher-md5", "cipher-content",
+                1785900000000L, true, "AES", plainDataKey));
+        watchRegistry.register(repo);
+        KeyPair keyPair = RSAUtil.generateRsaKeyPair();
+        String pem = "-----BEGIN PUBLIC KEY-----\r\n"
+                + Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded())
+                + "\r\n-----END PUBLIC KEY-----\r\n";
+        String publicKey = Base64.getEncoder().encodeToString(pem.getBytes(StandardCharsets.US_ASCII));
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJsonWithPublicKey("ns", "g", "secret.yaml", publicKey)));
+
         assertThat(ack.get("data_key").getAsString()).isNotEqualTo(plainDataKey);
         byte[] decrypted = RSAUtil.decrypt(Base64.getDecoder().decode(ack.get("data_key").getAsString()),
                 keyPair.getPrivate());

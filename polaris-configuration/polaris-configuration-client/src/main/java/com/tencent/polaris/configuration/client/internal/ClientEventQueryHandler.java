@@ -210,7 +210,7 @@ public class ClientEventQueryHandler {
      * Missing key or encrypt failure returns empty so Gson omits data_key; never return plaintext.
      *
      * @param plainDataKey Base64 plaintext AES key from snapshot
-     * @param publicKey PKCS1 public key from PUSH
+     * @param publicKey PKCS1 / X.509 / PEM public key from PUSH
      * @return RSA wrapped data key, or empty on failure
      */
     private String wrapAckDataKey(String plainDataKey, String publicKey) {

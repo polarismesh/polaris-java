@@ -28,6 +28,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -37,6 +38,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 /**
@@ -117,13 +119,20 @@ public class RSAUtil {
      * @return RSA public key
      */
     public static PublicKey parsePkcs1PublicKey(String pkcs1PublicKey) {
+        return parseRsaPublicKey(pkcs1PublicKey);
+    }
+
+    /**
+     * Parse an RSA public key from PKCS1 DER Base64, X.509 SPKI Base64, or PEM
+     * (optionally wrapped in an extra Base64 layer, as WatchClientEvents PUSH).
+     *
+     * @param encodedPublicKey public key material
+     * @return RSA public key
+     */
+    public static PublicKey parseRsaPublicKey(String encodedPublicKey) {
         PublicKey publicKey;
         try {
-            byte[] decoded = Base64.getDecoder().decode(pkcs1PublicKey);
-            RSAPublicKey rsaPublicKey = RSAPublicKey.getInstance(decoded);
-            RSAPublicKeySpec keySpec = new RSAPublicKeySpec(rsaPublicKey.getModulus(),
-                    rsaPublicKey.getPublicExponent());
-            publicKey = KeyFactory.getInstance("RSA").generatePublic(keySpec);
+            publicKey = doParseRsaPublicKey(encodedPublicKey);
         } catch (RuntimeException | InvalidKeySpecException | NoSuchAlgorithmException e) {
             throw new PolarisException(ErrorCode.RSA_ENCRYPT_ERROR, e.getMessage());
         }
@@ -131,15 +140,71 @@ public class RSAUtil {
     }
 
     /**
-     * Encrypt plaintext with a PKCS1 public key and return Base64 ciphertext.
+     * Encrypt plaintext with an RSA public key and return Base64 ciphertext.
      *
      * @param content plaintext
-     * @param pkcs1PublicKey PKCS1 public key in Base64
+     * @param encodedPublicKey PKCS1 / X.509 / PEM public key
      * @return RSA ciphertext in Base64
      */
-    public static String encryptToBase64(byte[] content, String pkcs1PublicKey) {
-        PublicKey publicKey = parsePkcs1PublicKey(pkcs1PublicKey);
+    public static String encryptToBase64(byte[] content, String encodedPublicKey) {
+        PublicKey publicKey = parseRsaPublicKey(encodedPublicKey);
         byte[] encrypted = encrypt(content, publicKey);
         return Base64.getEncoder().encodeToString(encrypted);
+    }
+
+    private static PublicKey doParseRsaPublicKey(String encodedPublicKey)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
+        String material = unwrapToKeyMaterial(encodedPublicKey);
+        PublicKey publicKey;
+        if (material.contains("BEGIN RSA PUBLIC KEY")) {
+            publicKey = parsePkcs1DerBytes(decodePemBody(material));
+        } else if (material.contains("BEGIN PUBLIC KEY")) {
+            publicKey = parseX509DerBytes(decodePemBody(material));
+        } else {
+            publicKey = parsePkcs1OrX509(Base64.getDecoder().decode(material.replaceAll("\\s", "")));
+        }
+        return publicKey;
+    }
+
+    private static String unwrapToKeyMaterial(String encodedPublicKey) {
+        String material = encodedPublicKey.trim();
+        if (!material.contains("BEGIN")) {
+            byte[] decoded = Base64.getDecoder().decode(material);
+            String asText = new String(decoded, StandardCharsets.US_ASCII).trim();
+            if (asText.startsWith("-----BEGIN")) {
+                material = asText;
+            }
+        }
+        return material;
+    }
+
+    private static byte[] decodePemBody(String pem) {
+        String body = pem.replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replace("-----BEGIN RSA PUBLIC KEY-----", "")
+                .replace("-----END RSA PUBLIC KEY-----", "")
+                .replaceAll("\\s", "");
+        return Base64.getDecoder().decode(body);
+    }
+
+    private static PublicKey parsePkcs1OrX509(byte[] der) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        PublicKey publicKey;
+        try {
+            publicKey = parsePkcs1DerBytes(der);
+        } catch (RuntimeException e) {
+            publicKey = parseX509DerBytes(der);
+        }
+        return publicKey;
+    }
+
+    private static PublicKey parsePkcs1DerBytes(byte[] der) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        RSAPublicKey rsaPublicKey = RSAPublicKey.getInstance(der);
+        RSAPublicKeySpec keySpec = new RSAPublicKeySpec(rsaPublicKey.getModulus(),
+                rsaPublicKey.getPublicExponent());
+        return KeyFactory.getInstance("RSA").generatePublic(keySpec);
+    }
+
+    private static PublicKey parseX509DerBytes(byte[] der) throws InvalidKeySpecException, NoSuchAlgorithmException {
+        return KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(der));
     }
 }
