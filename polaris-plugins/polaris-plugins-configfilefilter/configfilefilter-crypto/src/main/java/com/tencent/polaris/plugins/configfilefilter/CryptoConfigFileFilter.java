@@ -36,6 +36,7 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.configfilefilter.service.RSAService;
 import org.slf4j.Logger;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -81,6 +82,11 @@ public class CryptoConfigFileFilter implements ConfigFileFilter {
                             return response;
                         }
                         byte[] password = rsaService.decrypt(dataKey);
+                        // 解密前保留源内容（密文），供配置生效查询 ACK 回传——与 md5（源内容摘要）自洽，
+                        // 且避免解密明文经 ACK 回传扩大暴露面
+                        configFileResponse.setSourceContent(configFileResponse.getContent());
+                        configFileResponse.setEncryptAlgo(crypto.getName());
+                        configFileResponse.setDataKey(Base64.getEncoder().encodeToString(password));
                         crypto.doDecrypt(configFileResponse, password);
                     }
                     return response;

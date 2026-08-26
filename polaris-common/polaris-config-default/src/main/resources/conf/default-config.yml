@@ -114,6 +114,10 @@ global:
       config-watch:
         # 描述：是否在 ReportClient 请求中追加配置监听画像
         enable: true
+      # 描述：配置生效实时查询配置
+      config-effective:
+        # 描述：是否启用配置生效实时查询
+        enable: true
   # 描述：Admin相关的配置
   admin:
     # 描述：Admin的监听的IP

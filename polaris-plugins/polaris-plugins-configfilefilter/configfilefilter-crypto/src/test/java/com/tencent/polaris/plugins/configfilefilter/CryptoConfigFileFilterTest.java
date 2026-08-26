@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.function.Function;
 
@@ -68,7 +69,7 @@ public class CryptoConfigFileFilterTest {
 
             @Override
             public String getName() {
-                return null;
+                return "AES";
             }
 
             @Override
@@ -93,7 +94,7 @@ public class CryptoConfigFileFilterTest {
         };
 
         when(rsaService.getPKCS1PublicKey()).thenReturn("RSAPublicKey");
-        when(rsaService.decrypt(any())).thenReturn(null);
+        when(rsaService.decrypt(any())).thenReturn("P123456789012345".getBytes(StandardCharsets.UTF_8));
     }
 
     @Test
@@ -115,7 +116,8 @@ public class CryptoConfigFileFilterTest {
 
         String res = content + "-apply" + "-doCrypto";
         assertEquals(res, response.getConfigFile().getContent());
-        assertEquals("RSAPublicKey", configFile.getDataKey());
+        assertEquals("AES", configFile.getEncryptAlgo());
+        assertEquals("UDEyMzQ1Njc4OTAxMjM0NQ==", configFile.getDataKey());
     }
 
 }

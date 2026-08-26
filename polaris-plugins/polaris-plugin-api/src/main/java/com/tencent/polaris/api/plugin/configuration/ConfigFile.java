@@ -35,11 +35,17 @@ public class ConfigFile extends BaseEntity {
     private String fileGroup;
     private String fileName;
     private String content;
+    /**
+     * 配置源内容（加密配置为密文）。非加密配置该字段为空，源内容即 content。
+     * 加密 filter 解密前保留原文到此字段，供配置生效查询 ACK 回传（与 md5 源内容摘要自洽，不回传解密明文）。
+     */
+    private String sourceContent;
     private long version;
     private String name;
     private String md5;
     private String publicKey;
     private String dataKey;
+    private String encryptAlgo;
     private boolean encrypted = Boolean.FALSE;
     private Date releaseTime;
 
@@ -76,9 +82,16 @@ public class ConfigFile extends BaseEntity {
     public String getContent() {
         return content;
     }
-
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getSourceContent() {
+        return sourceContent;
+    }
+
+    public void setSourceContent(String sourceContent) {
+        this.sourceContent = sourceContent;
     }
 
     public long getVersion() {
@@ -127,6 +140,14 @@ public class ConfigFile extends BaseEntity {
 
     public void setDataKey(String dataKey) {
         this.dataKey = dataKey;
+    }
+
+    public String getEncryptAlgo() {
+        return encryptAlgo;
+    }
+
+    public void setEncryptAlgo(String encryptAlgo) {
+        this.encryptAlgo = encryptAlgo;
     }
 
     public Date getReleaseTime() {
