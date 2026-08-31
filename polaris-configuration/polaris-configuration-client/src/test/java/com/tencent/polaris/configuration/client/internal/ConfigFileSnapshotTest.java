@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,15 +30,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ConfigFileSnapshotTest {
 
     /**
-     * 测试目的：四元组快照各字段可读且不可变。
-     * 测试场景：构造含 version/md5/content/effectiveTime 的快照。
-     * 验证内容：四个 getter 返回构造值。
+     * 测试目的：快照各字段可读且不可变。
+     * 测试场景：构造含 version/versionName/md5/content/effectiveTime 的快照。
+     * 验证内容：getter 返回构造值。
      */
     @Test
     public void testSnapshotFields() {
-        ConfigFileSnapshot snapshot = new ConfigFileSnapshot(12, "md5abc", "k=v", 1785900000000L);
+        ConfigFileSnapshot snapshot = new ConfigFileSnapshot(12, "md5abc", "k=v", 1785900000000L, "v1.0.0");
 
         assertThat(snapshot.getVersion()).isEqualTo(12);
+        assertThat(snapshot.getVersionName()).isEqualTo("v1.0.0");
         assertThat(snapshot.getMd5()).isEqualTo("md5abc");
         assertThat(snapshot.getContent()).isEqualTo("k=v");
         assertThat(snapshot.getEffectiveTime()).isEqualTo(1785900000000L);
@@ -53,8 +55,36 @@ public class ConfigFileSnapshotTest {
         ConfigFileSnapshot snapshot = new ConfigFileSnapshot(0, "", null, 0);
 
         assertThat(snapshot.getVersion()).isZero();
+        assertThat(snapshot.getVersionName()).isNull();
         assertThat(snapshot.getMd5()).isEmpty();
         assertThat(snapshot.getContent()).isNull();
         assertThat(snapshot.getEffectiveTime()).isZero();
+    }
+
+    /**
+     * 测试目的：从 ConfigFile 构造时 version/versionName/md5/加密字段同源。
+     * 测试场景：ConfigFile 同时设置发布名与加密字段。
+     * 验证内容：快照 getter 与 ConfigFile 一致。
+     */
+    @Test
+    public void testSnapshotFromConfigFile() {
+        ConfigFile configFile = new ConfigFile("ns", "g", "f");
+        configFile.setVersion(9);
+        configFile.setName("release-9");
+        configFile.setMd5("md5fromfile");
+        configFile.setEncrypted(true);
+        configFile.setEncryptAlgo("AES");
+        configFile.setDataKey("key");
+
+        ConfigFileSnapshot snapshot = new ConfigFileSnapshot(configFile, "cipher", 123L);
+
+        assertThat(snapshot.getVersion()).isEqualTo(9);
+        assertThat(snapshot.getVersionName()).isEqualTo("release-9");
+        assertThat(snapshot.getMd5()).isEqualTo("md5fromfile");
+        assertThat(snapshot.getContent()).isEqualTo("cipher");
+        assertThat(snapshot.getEffectiveTime()).isEqualTo(123L);
+        assertThat(snapshot.isEncrypted()).isTrue();
+        assertThat(snapshot.getEncryptAlgo()).isEqualTo("AES");
+        assertThat(snapshot.getDataKey()).isEqualTo("key");
     }
 }

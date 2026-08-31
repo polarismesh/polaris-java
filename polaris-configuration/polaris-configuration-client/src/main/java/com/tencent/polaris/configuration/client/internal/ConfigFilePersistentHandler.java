@@ -252,6 +252,10 @@ public class ConfigFilePersistentHandler {
             resConfigFile.setContent(jsonMap.get("content").toString());
             resConfigFile.setMd5(jsonMap.get("md5").toString());
             resConfigFile.setVersion(Long.valueOf(String.valueOf(jsonMap.get("version"))));
+            Object name = jsonMap.get("name");
+            if (name != null) {
+                resConfigFile.setName(name.toString());
+            }
             Object sourceContent = jsonMap.get("sourceContent");
             if (sourceContent != null) {
                 resConfigFile.setSourceContent(sourceContent.toString());

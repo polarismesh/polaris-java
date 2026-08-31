@@ -43,10 +43,15 @@ public class ConfigWatchReportRequestCustomizerTest {
 
     private RemoteConfigFileRepo mockRepo(String namespace, String group, String fileName,
                                           long version, String md5) {
+        return mockRepo(namespace, group, fileName, version, md5, "");
+    }
+
+    private RemoteConfigFileRepo mockRepo(String namespace, String group, String fileName,
+                                          long version, String md5, String versionName) {
         RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
         ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespace, group, fileName);
         when(repo.getConfigFileMetadata()).thenReturn(metadata);
-        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5, null, 0));
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(version, md5, null, 0, versionName));
         return repo;
     }
 
@@ -91,7 +96,7 @@ public class ConfigWatchReportRequestCustomizerTest {
     public void testCustomizeSingleFile() throws Exception {
         enableCustomizer();
         customizer.register(mockRepo("default", "scg-test", "application.yaml", 3,
-                "e10adc3949ba59abbe56e057f20f883e"));
+                "e10adc3949ba59abbe56e057f20f883e", "v1.0.6"));
 
         ReportClientRequest request = new ReportClientRequest();
         customizer.customize(request);
@@ -102,6 +107,7 @@ public class ConfigWatchReportRequestCustomizerTest {
         assertThat(json).contains("scg-test");
         assertThat(json).contains("application.yaml");
         assertThat(json).contains("\"version\":3");
+        assertThat(json).contains("\"version_name\":\"v1.0.6\"");
         assertThat(json).contains("e10adc3949ba59abbe56e057f20f883e");
     }
 
@@ -144,6 +150,7 @@ public class ConfigWatchReportRequestCustomizerTest {
 
         assertThat(request.getConfigMetadata()).contains("\"version\":0");
         assertThat(request.getConfigMetadata()).contains("\"md5\":\"\"");
+        assertThat(request.getConfigMetadata()).contains("\"version_name\":\"\"");
     }
 
     /**

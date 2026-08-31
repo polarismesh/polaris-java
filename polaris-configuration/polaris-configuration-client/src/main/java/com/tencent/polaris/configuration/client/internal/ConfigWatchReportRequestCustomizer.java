@@ -107,18 +107,21 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
             ConfigFileMetadata metadata = entry.getKey();
             RemoteConfigFileRepo repo = entry.getValue();
             ConfigFileSnapshot snapshot = repo.getSnapshot();
-            String md5 = snapshot == null ? "" : snapshot.getMd5();
-            if (md5 == null) {
-                md5 = "";
-            }
+            String md5 = emptyIfMissing(snapshot == null ? null : snapshot.getMd5());
+            String versionName = emptyIfMissing(snapshot == null ? null : snapshot.getVersionName());
             watchList.add(new ConfigWatchInfo(
                     metadata.getNamespace(),
                     metadata.getFileGroup(),
                     metadata.getFileName(),
                     snapshot == null ? 0 : snapshot.getVersion(),
-                    md5));
+                    md5,
+                    versionName));
         }
         return gson.toJson(java.util.Collections.singletonMap("config_watch", watchList));
+    }
+
+    private String emptyIfMissing(String value) {
+        return value == null ? "" : value;
     }
 
     @Override

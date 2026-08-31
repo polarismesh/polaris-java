@@ -148,10 +148,10 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     }
 
     /**
-     * 一次性读取当前版本、MD5、源内容与生效时间。content 取源内容（sourceContent，加密配置为密文），
+     * 一次性读取当前版本、版本名、MD5、源内容与生效时间。content 取源内容（sourceContent，加密配置为密文），
      * 与 md5（源内容摘要）自洽且不回传解密明文；非加密配置源内容为空时回退 content。
      *
-     * @return 包含 version、md5、content、effectiveTime 的快照
+     * @return 包含 version、versionName、md5、content、effectiveTime 的快照
      */
     public ConfigFileSnapshot getSnapshot() {
         synchronized (snapshotLock) {
@@ -163,9 +163,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
             if (content == null) {
                 content = configFile.isEncrypted() ? "" : configFile.getContent();
             }
-            return new ConfigFileSnapshot(configFile.getVersion(), configFile.getMd5(), content,
-                    effectiveTime.get(), configFile.isEncrypted(), configFile.getEncryptAlgo(),
-                    configFile.getDataKey());
+            return new ConfigFileSnapshot(configFile, content, effectiveTime.get());
         }
     }
 
