@@ -83,6 +83,8 @@ public class RemoteConfigFileRepoTest {
         long version = 100;
         configFile.setContent(content);
         configFile.setVersion(version);
+        configFile.setName("v1.0.0");
+        configFile.setMd5("md5abc");
         ConfigFileResponse configFileResponse = new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile);
 
         when(configFileFilterChain.execute(any(), any())).thenReturn(configFileResponse);
@@ -96,6 +98,10 @@ public class RemoteConfigFileRepoTest {
 
         Assert.assertEquals(content, remoteConfigFileRepo.getContent());
         Assert.assertEquals(version, remoteConfigFileRepo.getConfigFileVersion());
+        ConfigFileSnapshot snapshot = remoteConfigFileRepo.getSnapshot();
+        assertThat(snapshot.getVersion()).isEqualTo(version);
+        assertThat(snapshot.getVersionName()).isEqualTo("v1.0.0");
+        assertThat(snapshot.getMd5()).isEqualTo("md5abc");
     }
 
     /**

@@ -26,7 +26,8 @@ import java.util.List;
  * <p>
  * 字段输出规则对齐 Go 端 client_event_ack：null 字段被省略（模拟 omitempty），
  * content 始终输出（未命中时为空串，供服务端区分"内容为空"与"未返回内容"）。
- * 加密文件的 properties 为 AES 密文字符串（与 content 同一把 data_key），非加密时为数组。
+ * 加密文件的 properties 为 AES 密文字符串（与 content 同一把 data_key），非加密时为数组；
+ * 仅在存在同名文件冲突或生效值被其他来源覆盖时输出，无冲突时省略。
  *
  * @author evelynwei
  */
@@ -40,6 +41,9 @@ class ClientEventAck {
 
     @SerializedName("version")
     private Long version;
+
+    @SerializedName("version_name")
+    private String versionName;
 
     @SerializedName("md5")
     private String md5;
@@ -96,6 +100,14 @@ class ClientEventAck {
 
     void setVersion(Long version) {
         this.version = version;
+    }
+
+    String getVersionName() {
+        return versionName;
+    }
+
+    void setVersionName(String versionName) {
+        this.versionName = versionName;
     }
 
     String getMd5() {

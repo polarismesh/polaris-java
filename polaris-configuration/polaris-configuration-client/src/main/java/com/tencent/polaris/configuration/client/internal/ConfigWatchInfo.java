@@ -17,6 +17,8 @@
 
 package com.tencent.polaris.configuration.client.internal;
 
+import com.google.gson.annotations.SerializedName;
+
 /**
  * 配置监听画像中的单个监听项快照。
  *
@@ -32,14 +34,19 @@ public class ConfigWatchInfo {
 
     private final long version;
 
+    @SerializedName("version_name")
+    private final String versionName;
+
     private final String md5;
 
-    public ConfigWatchInfo(String namespace, String group, String fileName, long version, String md5) {
+    public ConfigWatchInfo(String namespace, String group, String fileName, long version, String md5,
+            String versionName) {
         this.namespace = namespace;
         this.group = group;
         this.fileName = fileName;
         this.version = version;
         this.md5 = md5;
+        this.versionName = versionName;
     }
 
     public String getNamespace() {
@@ -56,6 +63,10 @@ public class ConfigWatchInfo {
 
     public long getVersion() {
         return version;
+    }
+
+    public String getVersionName() {
+        return versionName;
     }
 
     public String getMd5() {

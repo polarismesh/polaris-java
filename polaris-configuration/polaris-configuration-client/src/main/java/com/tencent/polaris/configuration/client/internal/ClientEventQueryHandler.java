@@ -183,9 +183,12 @@ public class ClientEventQueryHandler {
     }
 
     private void fillSnapshot(ClientEventAck ack, ConfigFileSnapshot snapshot, String publicKey) {
-        // 对齐 Go 的 omitempty:version/md5/effective_time 零值时省略字段
+        // 对齐 Go 的 omitempty: version/version_name/md5/effective_time 零值时省略字段
         if (snapshot.getVersion() > 0) {
             ack.setVersion(snapshot.getVersion());
+        }
+        if (snapshot.getVersionName() != null && !snapshot.getVersionName().isEmpty()) {
+            ack.setVersionName(snapshot.getVersionName());
         }
         if (snapshot.getMd5() != null && !snapshot.getMd5().isEmpty()) {
             ack.setMd5(snapshot.getMd5());
@@ -255,8 +258,9 @@ public class ClientEventQueryHandler {
     }
 
     /**
-     * 填充 properties。未注册 Provider 时保持 null，Gson 省略该字段，ACK 退化为与 Go 一致的形态。
-     * 单个 key 解析失败只降级该 key，不影响整体 applied=true。
+     * 填充 properties。服务端以该字段有无值判断是否存在配置冲突，因此仅在真正冲突时输出：
+     * 其他被监听文件存在同名 key，或生效值被其他来源覆盖（file_value 与 effective_value 不一致）。
+     * 无冲突时保持 null，Gson 省略该字段。未注册 Provider 时同样省略。
      * 加密文件：先组明文数组，再用快照 AES data_key 整体加密（与 content 同一把密钥、AES-CBC/IV=key[:16]），
      * ACK.properties 输出密文字符串；无密钥或加密失败则省略该字段，永不回传明文数组。
      */
@@ -280,21 +284,28 @@ public class ClientEventQueryHandler {
     private List<ClientEventAck.PropertyEntry> buildPropertyEntries(ConfigEffectiveValueProvider provider,
             List<String> keys, ConfigFileMetadata metadata) {
         List<ClientEventAck.PropertyEntry> entries = new ArrayList<>();
+        List<String> omittedKeys = new ArrayList<>();
         int serializedBytes = 2;
         for (String key : keys) {
             if (key != null) {
                 ClientEventAck.PropertyEntry entry = buildPropertyEntry(provider, key, metadata);
-                int entryBytes = gson.toJson(entry).getBytes(StandardCharsets.UTF_8).length;
-                int separatorBytes = entries.isEmpty() ? 0 : 1;
-                if (serializedBytes + separatorBytes + entryBytes > MAX_ACK_PROPERTIES_BYTES) {
-                    LOG.warn("[Config] ack properties truncated, file = {}, included = {}, total = {}, limit = {} bytes",
-                            metadata, entries.size(), keys.size(), MAX_ACK_PROPERTIES_BYTES);
-                    break;
+                boolean conflicted = hasConflict(entry);
+                if (conflicted) {
+                    int entryBytes = gson.toJson(entry).getBytes(StandardCharsets.UTF_8).length;
+                    int separatorBytes = entries.isEmpty() ? 0 : 1;
+                    if (serializedBytes + separatorBytes + entryBytes > MAX_ACK_PROPERTIES_BYTES) {
+                        LOG.warn("[Config] ack properties truncated, file = {}, included = {}, total = {}, limit = {} bytes",
+                                metadata, entries.size(), keys.size(), MAX_ACK_PROPERTIES_BYTES);
+                        break;
+                    }
+                    entries.add(entry);
+                    serializedBytes += separatorBytes + entryBytes;
+                } else {
+                    omittedKeys.add(key);
                 }
-                entries.add(entry);
-                serializedBytes += separatorBytes + entryBytes;
             }
         }
+        logPropertySelection(metadata, entries, omittedKeys);
         return entries;
     }
 
@@ -331,6 +342,35 @@ public class ClientEventQueryHandler {
             LOG.warn("[Config] resolve keys failed, file = {}", metadata);
             return null;
         }
+    }
+
+    private void logPropertySelection(ConfigFileMetadata metadata, List<ClientEventAck.PropertyEntry> entries,
+            List<String> omittedKeys) {
+        if (LOG.isDebugEnabled()) {
+            List<String> conflictedKeys = new ArrayList<>(entries.size());
+            for (ClientEventAck.PropertyEntry entry : entries) {
+                conflictedKeys.add(entry.getKey());
+            }
+            LOG.debug("[Config] ack properties, file = {}, conflicted = {}, omitted = {}",
+                    metadata, conflictedKeys, omittedKeys);
+        }
+    }
+
+    private boolean hasConflict(ClientEventAck.PropertyEntry entry) {
+        boolean conflicted = false;
+        List<ClientEventAck.ConflictEntry> conflicts = entry.getConflicts();
+        if (conflicts != null && !conflicts.isEmpty()) {
+            conflicted = true;
+        } else {
+            String fileValue = entry.getFileValue();
+            String effectiveValue = entry.getEffectiveValue();
+            if (fileValue == null) {
+                conflicted = effectiveValue != null;
+            } else {
+                conflicted = !fileValue.equals(effectiveValue);
+            }
+        }
+        return conflicted;
     }
 
     private ClientEventAck.PropertyEntry buildPropertyEntry(ConfigEffectiveValueProvider provider, String key,

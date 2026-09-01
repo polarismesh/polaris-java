@@ -88,19 +88,23 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
-     * 测试目的：合法 config 查询且文件已监听时，返回 applied=true 且带 version/md5/content/effective_time。
+     * 测试目的：合法 config 查询且文件已监听时，返回 applied=true 且带 version/version_name/md5/content。
      * 测试场景：注册监听文件后查询。
-     * 验证内容：applied、version、md5、content、effective_time、无 reason、无 properties。
+     * 验证内容：applied、version、version_name、md5、content、effective_time、无 reason、无 properties。
      */
     @Test
     public void testHandleConfigQuerySuccess() {
-        registerWatched("ns", "g", "f.yaml", "server:\n  port: 8080", 12, "md5abc", 1785900000000L);
+        RemoteConfigFileRepo repo = registerWatched("ns", "g", "f.yaml", "server:\n  port: 8080", 12, "md5abc",
+                1785900000000L);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(12, "md5abc", "server:\n  port: 8080",
+                1785900000000L, "v1.0.0"));
 
         JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
 
         assertThat(ack.get("applied").getAsBoolean()).isTrue();
         assertThat(ack.get("kind").getAsString()).isEqualTo("config");
         assertThat(ack.get("version").getAsLong()).isEqualTo(12);
+        assertThat(ack.get("version_name").getAsString()).isEqualTo("v1.0.0");
         assertThat(ack.get("md5").getAsString()).isEqualTo("md5abc");
         assertThat(ack.get("effective_time").getAsLong()).isEqualTo(1785900000000L);
         assertThat(ack.get("content").getAsString()).isEqualTo("server:\n  port: 8080");
@@ -422,7 +426,13 @@ public class ClientEventQueryHandlerTest {
             }
             return new EffectiveValue(largeValue, largeValue, "test");
         });
-        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        when(provider.resolveConflicts(any(String.class), any())).thenAnswer(invocation -> {
+            String key = invocation.getArgument(0);
+            if ("small".equals(key)) {
+                return Collections.singletonList(new ConfigKeyConflict("ns", "g", "other.yaml", "value"));
+            }
+            return Collections.singletonList(new ConfigKeyConflict("ns", "g", "other.yaml", largeValue));
+        });
         handler.registerProvider(provider);
 
         String ackJson = handler.onPush(1, pushJson("ns", "g", "f.yaml"));
@@ -435,9 +445,55 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
+     * 测试目的：无同名文件冲突且 file_value 与 effective_value 一致时省略 properties。
+     * 测试场景：Provider 返回单 key，conflicts 为空，两端值相同。
+     * 验证内容：ACK 无 properties 字段。
+     */
+    @Test
+    public void testPropertiesOmittedWhenNoConflict() {
+        registerWatched("ns", "g", "f.yaml", "aaa.bbb=123", 12, "md5abc", 1785900000000L);
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("aaa.bbb"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("123", "123", "polaris:ns/g/f.yaml"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        assertThat(ack.has("properties")).isFalse();
+    }
+
+    /**
+     * 测试目的：生效值被其他来源覆盖时仍输出 properties。
+     * 测试场景：conflicts 为空，但 file_value 与 effective_value 不同。
+     * 验证内容：properties 含该 key 及覆盖后的生效值。
+     */
+    @Test
+    public void testPropertiesPresentWhenEffectiveValueOverridden() {
+        registerWatched("ns", "g", "f.yaml", "server.port=8080", 12, "md5abc", 1785900000000L);
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("server.port"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("8080", "9090", "commandLineArgs"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
+
+        assertThat(ack.get("applied").getAsBoolean()).isTrue();
+        JsonObject prop = ack.getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.get("key").getAsString()).isEqualTo("server.port");
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("8080");
+        assertThat(prop.get("effective_value").getAsString()).isEqualTo("9090");
+        assertThat(prop.getAsJsonArray("conflicts")).isEmpty();
+    }
+
+    /**
      * 测试目的：Provider 单 key 解析抛异常时该 key 降级，整体仍 applied=true。
-     * 测试场景：resolve 抛异常。
-     * 验证内容：applied=true、properties 元素无 effective_value。
+     * 测试场景：resolve 抛异常且无文件冲突。
+     * 验证内容：applied=true，无 properties。
      */
     @Test
     public void testProviderResolveFailureDegradesSingleKey() {
@@ -451,14 +507,13 @@ public class ClientEventQueryHandlerTest {
         JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
 
         assertThat(ack.get("applied").getAsBoolean()).isTrue();
-        JsonObject prop = ack.getAsJsonArray("properties").get(0).getAsJsonObject();
-        assertThat(prop.has("effective_value")).isFalse();
+        assertThat(ack.has("properties")).isFalse();
     }
 
     /**
-     * 测试目的：Provider 返回含 null 的冲突列表时不影响整体 ACK。
-     * 测试场景：resolveConflicts 返回一个 null 元素。
-     * 验证内容：applied=true，conflicts 输出空数组。
+     * 测试目的：Provider 返回含 null 的冲突列表时视为无冲突。
+     * 测试场景：resolveConflicts 返回一个 null 元素，file_value 与 effective_value 相同。
+     * 验证内容：applied=true，无 properties。
      */
     @Test
     public void testNullConflictIsIgnored() {
@@ -473,8 +528,7 @@ public class ClientEventQueryHandlerTest {
         JsonObject ack = ackOf(handler.onPush(1, pushJson("ns", "g", "f.yaml")));
 
         assertThat(ack.get("applied").getAsBoolean()).isTrue();
-        JsonObject prop = ack.getAsJsonArray("properties").get(0).getAsJsonObject();
-        assertThat(prop.getAsJsonArray("conflicts")).isEmpty();
+        assertThat(ack.has("properties")).isFalse();
     }
 
     /**
@@ -557,6 +611,7 @@ public class ClientEventQueryHandlerTest {
         assertThat(ack.get("version").getAsLong()).isEqualTo(2L);
         assertThat(ack.has("md5")).isFalse();
         assertThat(ack.has("effective_time")).isFalse();
+        assertThat(ack.has("version_name")).isFalse();
         assertThat(ack.get("content").getAsString()).isEmpty();
     }
 
@@ -574,6 +629,7 @@ public class ClientEventQueryHandlerTest {
         assertThat(ack.get("applied").getAsBoolean()).isTrue();
         assertThat(ack.has("version")).isFalse();
         assertThat(ack.has("md5")).isFalse();
+        assertThat(ack.has("version_name")).isFalse();
     }
 
     /**
