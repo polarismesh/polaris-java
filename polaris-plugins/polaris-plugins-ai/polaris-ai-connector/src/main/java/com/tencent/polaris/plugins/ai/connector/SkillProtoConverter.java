@@ -28,7 +28,7 @@ import com.tencent.polaris.api.plugin.skill.SkillResourceVersion;
 import com.tencent.polaris.api.plugin.skill.SkillStorageInfo;
 import com.tencent.polaris.api.plugin.skill.SkillVersionInfo;
 import com.tencent.polaris.api.utils.StringUtils;
-import com.tencent.polaris.specification.api.v1.skill.manage.SkillDownloadProto;
+import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGRPCService;
 import com.tencent.polaris.specification.api.v1.skill.manage.SkillProto;
 
 import java.io.ByteArrayOutputStream;
@@ -44,8 +44,8 @@ final class SkillProtoConverter {
     private SkillProtoConverter() {
     }
 
-    static SkillDownloadProto.GetSkillRequest toGetRequest(SkillGetRequest request) {
-        SkillDownloadProto.GetSkillRequest.Builder builder = SkillDownloadProto.GetSkillRequest.newBuilder();
+    static PolarisSkillGRPCService.GetSkillRequest toGetRequest(SkillGetRequest request) {
+        PolarisSkillGRPCService.GetSkillRequest.Builder builder = PolarisSkillGRPCService.GetSkillRequest.newBuilder();
         if (StringUtils.isNotBlank(request.getName())) {
             builder.setName(request.getName());
         }
@@ -58,14 +58,14 @@ final class SkillProtoConverter {
         return builder.build();
     }
 
-    static SkillDownloadProto.ListSkillsRequest toListRequest(SkillListRequest request) {
-        SkillDownloadProto.ListSkillsRequest.Builder builder = SkillDownloadProto.ListSkillsRequest.newBuilder();
+    static PolarisSkillGRPCService.ListSkillsRequest toListRequest(SkillListRequest request) {
+        PolarisSkillGRPCService.ListSkillsRequest.Builder builder = PolarisSkillGRPCService.ListSkillsRequest.newBuilder();
         fillListRequest(builder, request);
         return builder.build();
     }
 
-    static SkillDownloadProto.DownloadSkillRequest toDownloadRequest(SkillDownloadRequest request) {
-        SkillDownloadProto.DownloadSkillRequest.Builder builder = SkillDownloadProto.DownloadSkillRequest.newBuilder();
+    static PolarisSkillGRPCService.DownloadSkillRequest toDownloadRequest(SkillDownloadRequest request) {
+        PolarisSkillGRPCService.DownloadSkillRequest.Builder builder = PolarisSkillGRPCService.DownloadSkillRequest.newBuilder();
         if (StringUtils.isNotBlank(request.getName())) {
             builder.setName(request.getName());
         }
@@ -84,7 +84,7 @@ final class SkillProtoConverter {
         return builder.build();
     }
 
-    static SkillGetResponse toGetResponse(SkillDownloadProto.GetSkillResponse proto) {
+    static SkillGetResponse toGetResponse(PolarisSkillGRPCService.GetSkillResponse proto) {
         SkillGetResponse response = new SkillGetResponse();
         response.setCode(proto.getCode());
         response.setInfo(proto.getInfo());
@@ -94,7 +94,7 @@ final class SkillProtoConverter {
         return response;
     }
 
-    static SkillListResponse toListResponse(SkillDownloadProto.ListSkillsResponse proto) {
+    static SkillListResponse toListResponse(PolarisSkillGRPCService.ListSkillsResponse proto) {
         SkillListResponse response = new SkillListResponse();
         response.setCode(proto.getCode());
         response.setInfo(proto.getInfo());
@@ -107,12 +107,12 @@ final class SkillProtoConverter {
         return response;
     }
 
-    static SkillDownloadResponse assembleDownload(Iterator<SkillDownloadProto.DownloadSkillResponse> iterator) {
+    static SkillDownloadResponse assembleDownload(Iterator<PolarisSkillGRPCService.DownloadSkillResponse> iterator) {
         SkillDownloadResponse response = new SkillDownloadResponse();
         ByteArrayOutputStream zipBuffer = new ByteArrayOutputStream();
         boolean firstFrame = true;
         while (iterator.hasNext()) {
-            SkillDownloadProto.DownloadSkillResponse frame = iterator.next();
+            PolarisSkillGRPCService.DownloadSkillResponse frame = iterator.next();
             firstFrame = fillDownloadFrame(response, zipBuffer, frame, firstFrame);
         }
         if (zipBuffer.size() > 0) {
@@ -121,7 +121,7 @@ final class SkillProtoConverter {
         return response;
     }
 
-    private static void fillListRequest(SkillDownloadProto.ListSkillsRequest.Builder builder,
+    private static void fillListRequest(PolarisSkillGRPCService.ListSkillsRequest.Builder builder,
             SkillListRequest request) {
         if (StringUtils.isNotBlank(request.getNamespace())) {
             builder.setNamespace(request.getNamespace());
@@ -152,7 +152,7 @@ final class SkillProtoConverter {
     }
 
     private static boolean fillDownloadFrame(SkillDownloadResponse response, ByteArrayOutputStream zipBuffer,
-            SkillDownloadProto.DownloadSkillResponse frame, boolean firstFrame) {
+            PolarisSkillGRPCService.DownloadSkillResponse frame, boolean firstFrame) {
         boolean stillFirst = firstFrame;
         if (firstFrame) {
             response.setCode(frame.getCode());

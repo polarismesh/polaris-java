@@ -40,7 +40,7 @@ import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
 import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGrpc;
-import com.tencent.polaris.specification.api.v1.skill.manage.SkillDownloadProto;
+import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGRPCService;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -100,7 +100,7 @@ public class PolarisSkillConnector implements SkillConnector {
         try {
             connection = connectionManager.getConnection(OP_GET_SKILL, ClusterType.SERVICE_DISCOVER_CLUSTER);
             PolarisSkillGrpc.PolarisSkillBlockingStub stub = newStub(connection);
-            SkillDownloadProto.GetSkillResponse proto = stub.getSkill(SkillProtoConverter.toGetRequest(request));
+            PolarisSkillGRPCService.GetSkillResponse proto = stub.getSkill(SkillProtoConverter.toGetRequest(request));
             result = handleGetResponse(proto);
         } catch (Throwable throwable) {
             reportFail(connection, throwable);
@@ -118,7 +118,7 @@ public class PolarisSkillConnector implements SkillConnector {
         try {
             connection = connectionManager.getConnection(OP_LIST_SKILLS, ClusterType.SERVICE_DISCOVER_CLUSTER);
             PolarisSkillGrpc.PolarisSkillBlockingStub stub = newStub(connection);
-            SkillDownloadProto.ListSkillsResponse proto = stub.getSkillList(SkillProtoConverter.toListRequest(request));
+            PolarisSkillGRPCService.ListSkillsResponse proto = stub.getSkillList(SkillProtoConverter.toListRequest(request));
             result = handleListResponse(proto);
         } catch (Throwable throwable) {
             reportFail(connection, throwable);
@@ -136,7 +136,7 @@ public class PolarisSkillConnector implements SkillConnector {
         try {
             connection = connectionManager.getConnection(OP_DOWNLOAD_SKILL, ClusterType.SERVICE_DISCOVER_CLUSTER);
             PolarisSkillGrpc.PolarisSkillBlockingStub stub = newStub(connection);
-            Iterator<SkillDownloadProto.DownloadSkillResponse> iterator =
+            Iterator<PolarisSkillGRPCService.DownloadSkillResponse> iterator =
                     stub.downloadSkill(SkillProtoConverter.toDownloadRequest(request));
             result = handleDownloadResponse(SkillProtoConverter.assembleDownload(iterator));
         } catch (Throwable throwable) {
@@ -155,7 +155,7 @@ public class PolarisSkillConnector implements SkillConnector {
         return stub;
     }
 
-    private SkillGetResponse handleGetResponse(SkillDownloadProto.GetSkillResponse proto) {
+    private SkillGetResponse handleGetResponse(PolarisSkillGRPCService.GetSkillResponse proto) {
         int code = proto.getCode();
         SkillGetResponse result;
         if (isExpectedCode(code)) {
@@ -166,7 +166,7 @@ public class PolarisSkillConnector implements SkillConnector {
         return result;
     }
 
-    private SkillListResponse handleListResponse(SkillDownloadProto.ListSkillsResponse proto) {
+    private SkillListResponse handleListResponse(PolarisSkillGRPCService.ListSkillsResponse proto) {
         int code = proto.getCode();
         SkillListResponse result;
         if (isExpectedCode(code)) {
