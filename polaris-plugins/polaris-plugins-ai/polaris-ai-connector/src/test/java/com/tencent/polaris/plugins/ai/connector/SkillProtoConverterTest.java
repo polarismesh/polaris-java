@@ -23,7 +23,7 @@ import com.tencent.polaris.api.plugin.skill.SkillDownloadRequest;
 import com.tencent.polaris.api.plugin.skill.SkillDownloadResponse;
 import com.tencent.polaris.api.plugin.skill.SkillGetRequest;
 import com.tencent.polaris.api.plugin.skill.SkillGetResponse;
-import com.tencent.polaris.specification.api.v1.skill.manage.SkillDownloadProto;
+import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGRPCService;
 import com.tencent.polaris.specification.api.v1.skill.manage.SkillProto;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +55,7 @@ public class SkillProtoConverterTest {
         request.setNamespace("default");
         request.setVersion("1.0.0");
 
-        SkillDownloadProto.GetSkillRequest proto = SkillProtoConverter.toGetRequest(request);
+        PolarisSkillGRPCService.GetSkillRequest proto = SkillProtoConverter.toGetRequest(request);
 
         assertThat(proto.getName()).isEqualTo("sql-analysis");
         assertThat(proto.getNamespace()).isEqualTo("default");
@@ -70,7 +70,7 @@ public class SkillProtoConverterTest {
      */
     @Test
     public void testToGetResponse() {
-        SkillDownloadProto.GetSkillResponse proto = SkillDownloadProto.GetSkillResponse.newBuilder()
+        PolarisSkillGRPCService.GetSkillResponse proto = PolarisSkillGRPCService.GetSkillResponse.newBuilder()
                 .setCode(ServerCodes.EXECUTE_SUCCESS)
                 .setContent("# Skill")
                 .setVersion(SkillProto.SkillResourceVersion.newBuilder().setVersion("1.0.0").build())
@@ -91,13 +91,13 @@ public class SkillProtoConverterTest {
      */
     @Test
     public void testAssembleDownloadConcatenatesZipChunks() {
-        SkillDownloadProto.DownloadSkillResponse first = SkillDownloadProto.DownloadSkillResponse.newBuilder()
+        PolarisSkillGRPCService.DownloadSkillResponse first = PolarisSkillGRPCService.DownloadSkillResponse.newBuilder()
                 .setCode(ServerCodes.EXECUTE_SUCCESS)
                 .setVersion("1.0.0")
                 .setFilename("sql-analysis-1.0.0.zip")
                 .setZipChunk(ByteString.copyFrom("hel".getBytes(StandardCharsets.UTF_8)))
                 .build();
-        SkillDownloadProto.DownloadSkillResponse second = SkillDownloadProto.DownloadSkillResponse.newBuilder()
+        PolarisSkillGRPCService.DownloadSkillResponse second = PolarisSkillGRPCService.DownloadSkillResponse.newBuilder()
                 .setZipChunk(ByteString.copyFrom("lo".getBytes(StandardCharsets.UTF_8)))
                 .build();
 
@@ -120,7 +120,7 @@ public class SkillProtoConverterTest {
         request.setNamespace("default");
         request.setFormat("markdown");
 
-        SkillDownloadProto.DownloadSkillRequest proto = SkillProtoConverter.toDownloadRequest(request);
+        PolarisSkillGRPCService.DownloadSkillRequest proto = SkillProtoConverter.toDownloadRequest(request);
 
         assertThat(proto.getFormat()).isEqualTo("markdown");
     }
