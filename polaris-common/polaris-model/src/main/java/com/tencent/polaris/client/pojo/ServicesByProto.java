@@ -20,6 +20,7 @@ package com.tencent.polaris.client.pojo;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
 import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInfo;
+import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.utils.CollectionUtils;
@@ -61,6 +62,27 @@ public class ServicesByProto implements Services, RegistryCacheValue {
         this.initialized = true;
         this.loadedFromFile = false;
         this.hashCode = 0;
+    }
+
+    /**
+     * Builds a single-service list from an INSTANCE discover result.
+     *
+     * @param serviceInstances instance cache of one service
+     * @return initialized services when the cache is ready; otherwise empty
+     */
+    public static Services fromServiceInstances(ServiceInstances serviceInstances) {
+        Services result = EMPTY_SERVICES;
+        if (serviceInstances != null && serviceInstances.isInitialized()) {
+            ServiceInfo serviceInfo = ServiceInfo.builder()
+                    .namespace(serviceInstances.getNamespace())
+                    .service(serviceInstances.getService())
+                    .metadata(serviceInstances.getMetadata())
+                    .extendedMetadata(serviceInstances.getExtendedMetadata())
+                    .revision(serviceInstances.getRevision())
+                    .build();
+            result = new ServicesByProto(Collections.singletonList(serviceInfo));
+        }
+        return result;
     }
 
     public ServicesByProto(ResponseProto.DiscoverResponse response, boolean loadFromFile) {

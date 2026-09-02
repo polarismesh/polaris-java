@@ -18,7 +18,6 @@
 package com.tencent.polaris.discovery.test.core;
 
 import static com.tencent.polaris.test.common.Consts.NAMESPACE_TEST;
-import static com.tencent.polaris.test.common.Consts.SERVICE_PROVIDER;
 import static com.tencent.polaris.test.common.TestUtils.SERVER_ADDRESS_ENV;
 
 import com.tencent.polaris.api.config.Configuration;
@@ -70,6 +69,25 @@ public class GetServicesTest {
 
             Assert.assertFalse(CollectionUtils.isEmpty(response.getServices()));
             Assert.assertEquals(5, response.getServices().size());
+        }
+    }
+
+    @Test
+    public void testGetNamedServiceUsesInstanceDiscover() {
+        Configuration configuration = TestUtils.configWithEnvAddress();
+        try (ConsumerAPI consumerAPI = DiscoveryAPIFactory.createConsumerAPIByConfig(configuration)) {
+            for (int i = 0; i < 5; i++) {
+                namingServer.getNamingService().addService(new ServiceKey(NAMESPACE_TEST, "get_services_test_" + i));
+            }
+
+            ServicesResponse response = consumerAPI.getServices(GetServicesRequest.builder()
+                    .namespace(NAMESPACE_TEST)
+                    .service("get_services_test_2")
+                    .build());
+
+            Assert.assertEquals(1, response.getServices().size());
+            Assert.assertEquals("get_services_test_2", response.getServices().get(0).getService());
+            Assert.assertEquals(NAMESPACE_TEST, response.getServices().get(0).getNamespace());
         }
     }
 }

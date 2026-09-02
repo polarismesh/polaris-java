@@ -22,13 +22,17 @@ import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.loadbalance.LoadBalancer;
 import com.tencent.polaris.api.plugin.route.RouteInfo;
 import com.tencent.polaris.api.pojo.Instance;
+import com.tencent.polaris.api.pojo.ServiceEventKey;
+import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceInstances;
+import com.tencent.polaris.api.pojo.Services;
 import com.tencent.polaris.api.rpc.InstancesResponse;
 import com.tencent.polaris.api.rpc.ServiceRuleResponse;
 import com.tencent.polaris.api.rpc.ServicesResponse;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.ResourcesResponse;
+import com.tencent.polaris.client.pojo.ServicesByProto;
 import com.tencent.polaris.discovery.client.util.DiscoveryUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -141,6 +145,11 @@ public class SyncFlow {
      */
     public ServicesResponse commonSyncGetServices(CommonServicesRequest request) throws PolarisException {
         ResourcesResponse resourcesResponse = BaseFlow.syncGetResources(extensions, false, request, request);
-        return new ServicesResponse(resourcesResponse.getServices(request.getSvcEventKey()));
+        ServiceEventKey svcEventKey = request.getSvcEventKey();
+        Services services = resourcesResponse.getServices(svcEventKey);
+        if (svcEventKey.getEventType() == EventType.INSTANCE) {
+            services = ServicesByProto.fromServiceInstances(resourcesResponse.getServiceInstances(svcEventKey));
+        }
+        return new ServicesResponse(services);
     }
 }
