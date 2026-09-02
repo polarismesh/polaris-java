@@ -20,7 +20,7 @@ package com.tencent.polaris.ai.client.flow;
 import com.tencent.polaris.ai.api.flow.SkillFlow;
 import com.tencent.polaris.ai.client.internal.SkillPersistentHandler;
 import com.tencent.polaris.annonation.JustForTest;
-import com.tencent.polaris.api.config.ai.AiConnectorConfig;
+import com.tencent.polaris.api.config.skill.SkillConnectorConfig;
 import com.tencent.polaris.api.config.global.FlowConfig;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ErrorCode;
@@ -82,7 +82,7 @@ public class DefaultSkillFlow implements SkillFlow {
 
     @Override
     public void setSDKContext(SDKContext sdkContext) {
-        AiConnectorConfig connectorConfig = sdkContext.getConfig().getAi().getServerConnector();
+        SkillConnectorConfig connectorConfig = sdkContext.getConfig().getSkill().getServerConnector();
         this.skillConnector = (SkillConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.SKILL_CONNECTOR.getBaseType(), connectorConfig.getConnectorType());
         this.fallbackToLocalCache = Boolean.TRUE.equals(connectorConfig.getFallbackToLocalCache());
@@ -246,7 +246,7 @@ public class DefaultSkillFlow implements SkillFlow {
         return namespace + "#" + name;
     }
 
-    private SkillPersistentHandler createPersistentHandler(AiConnectorConfig connectorConfig) {
+    private SkillPersistentHandler createPersistentHandler(SkillConnectorConfig connectorConfig) {
         SkillPersistentHandler handler = null;
         try {
             boolean persistEnable = Boolean.TRUE.equals(connectorConfig.getPersistEnable());

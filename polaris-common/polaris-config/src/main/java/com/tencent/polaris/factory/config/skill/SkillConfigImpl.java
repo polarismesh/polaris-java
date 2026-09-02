@@ -15,44 +15,43 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.factory.config.ai;
+package com.tencent.polaris.factory.config.skill;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.tencent.polaris.api.config.ai.AiConfig;
+import com.tencent.polaris.api.config.skill.SkillConfig;
 import com.tencent.polaris.factory.util.ConfigUtils;
 
 /**
- * Implementation of AI / Skill configuration.
+ * Implementation of Skill configuration.
  */
-public class AiConfigImpl implements AiConfig {
+public class SkillConfigImpl implements SkillConfig {
 
     @JsonProperty
-    private AiConnectorConfigImpl serverConnector;
+    private SkillConnectorConfigImpl serverConnector;
 
     @Override
     public void verify() {
-        ConfigUtils.validateNull(serverConnector, "ai server connector");
+        ConfigUtils.validateNull(serverConnector, "skill server connector");
         serverConnector.verify();
     }
 
     @Override
     public void setDefault(Object defaultObject) {
-        if (defaultObject == null) {
-            return;
+        if (defaultObject != null) {
+            SkillConfig sourceConfig = (SkillConfig) defaultObject;
+            if (serverConnector == null) {
+                serverConnector = new SkillConnectorConfigImpl();
+            }
+            serverConnector.setDefault(sourceConfig.getServerConnector());
         }
-        AiConfig sourceConfig = (AiConfig) defaultObject;
-        if (serverConnector == null) {
-            serverConnector = new AiConnectorConfigImpl();
-        }
-        serverConnector.setDefault(sourceConfig.getServerConnector());
     }
 
     @Override
-    public AiConnectorConfigImpl getServerConnector() {
+    public SkillConnectorConfigImpl getServerConnector() {
         return serverConnector;
     }
 
-    public void setServerConnector(AiConnectorConfigImpl serverConnector) {
+    public void setServerConnector(SkillConnectorConfigImpl serverConnector) {
         this.serverConnector = serverConnector;
     }
 }

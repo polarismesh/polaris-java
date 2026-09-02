@@ -35,7 +35,7 @@ import com.tencent.polaris.api.plugin.skill.SkillGetRequest;
 import com.tencent.polaris.api.plugin.skill.SkillGetResponse;
 import com.tencent.polaris.api.plugin.skill.SkillListRequest;
 import com.tencent.polaris.api.plugin.skill.SkillListResponse;
-import com.tencent.polaris.factory.config.ai.AiConnectorConfigImpl;
+import com.tencent.polaris.factory.config.skill.SkillConnectorConfigImpl;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.plugins.connector.grpc.GrpcUtil;
@@ -60,7 +60,7 @@ public class PolarisSkillConnector implements SkillConnector {
 
     private ConnectionManager connectionManager;
 
-    private AiConnectorConfigImpl connectorConfig;
+    private SkillConnectorConfigImpl connectorConfig;
 
     @Override
     public String getName() {
@@ -77,7 +77,7 @@ public class PolarisSkillConnector implements SkillConnector {
         CompletableFuture<String> readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(ClusterType.SERVICE_DISCOVER_CLUSTER, readyFuture);
-        this.connectorConfig = ctx.getConfig().getAi().getServerConnector();
+        this.connectorConfig = ctx.getConfig().getSkill().getServerConnector();
         this.connectionManager = new ConnectionManager(ctx, connectorConfig, futures);
     }
 

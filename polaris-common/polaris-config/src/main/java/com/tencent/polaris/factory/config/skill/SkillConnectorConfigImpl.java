@@ -15,13 +15,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.factory.config.ai;
+package com.tencent.polaris.factory.config.skill;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.tencent.polaris.api.config.ai.AiConnectorConfig;
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 import com.tencent.polaris.api.config.plugin.DefaultPlugins;
+import com.tencent.polaris.api.config.skill.SkillConnectorConfig;
 import com.tencent.polaris.api.config.verify.DefaultValues;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.config.global.ServerConnectorConfigImpl;
@@ -31,7 +31,7 @@ import com.tencent.polaris.factory.util.TimeStrJsonDeserializer;
 /**
  * Implementation of Skill connector configuration.
  */
-public class AiConnectorConfigImpl extends ServerConnectorConfigImpl implements AiConnectorConfig {
+public class SkillConnectorConfigImpl extends ServerConnectorConfigImpl implements SkillConnectorConfig {
 
     @JsonProperty
     private String connectorType;
@@ -57,7 +57,7 @@ public class AiConnectorConfigImpl extends ServerConnectorConfigImpl implements 
 
     @Override
     public void verify() {
-        ConfigUtils.validateString(connectorType, "aiConnectorType");
+        ConfigUtils.validateString(connectorType, "skillConnectorType");
         if (StringUtils.isBlank(persistDir)) {
             persistDir = DefaultValues.SKILL_DEFAULT_CACHE_PERSIST_DIR;
         }
@@ -69,34 +69,33 @@ public class AiConnectorConfigImpl extends ServerConnectorConfigImpl implements 
 
     @Override
     public void setDefault(Object defaultObject) {
-        if (defaultObject == null) {
-            return;
-        }
-        if (defaultObject instanceof ServerConnectorConfig) {
-            super.setDefault(defaultObject);
-        }
-        if (defaultObject instanceof AiConnectorConfig) {
-            AiConnectorConfig connectorConfig = (AiConnectorConfig) defaultObject;
-            if (connectorType == null) {
-                this.connectorType = connectorConfig.getConnectorType();
+        if (defaultObject != null) {
+            if (defaultObject instanceof ServerConnectorConfig) {
+                super.setDefault(defaultObject);
             }
-            if (persistEnable == null) {
-                this.persistEnable = connectorConfig.getPersistEnable();
-            }
-            if (StringUtils.isBlank(persistDir)) {
-                this.persistDir = connectorConfig.getPersistDir();
-            }
-            if (persistMaxWriteRetry == null) {
-                this.persistMaxWriteRetry = connectorConfig.getPersistMaxWriteRetry();
-            }
-            if (persistMaxReadRetry == null) {
-                this.persistMaxReadRetry = connectorConfig.getPersistMaxReadRetry();
-            }
-            if (persistRetryInterval == null) {
-                this.persistRetryInterval = connectorConfig.getPersistRetryInterval();
-            }
-            if (fallbackToLocalCache == null) {
-                this.fallbackToLocalCache = connectorConfig.getFallbackToLocalCache();
+            if (defaultObject instanceof SkillConnectorConfig) {
+                SkillConnectorConfig connectorConfig = (SkillConnectorConfig) defaultObject;
+                if (connectorType == null) {
+                    this.connectorType = connectorConfig.getConnectorType();
+                }
+                if (persistEnable == null) {
+                    this.persistEnable = connectorConfig.getPersistEnable();
+                }
+                if (StringUtils.isBlank(persistDir)) {
+                    this.persistDir = connectorConfig.getPersistDir();
+                }
+                if (persistMaxWriteRetry == null) {
+                    this.persistMaxWriteRetry = connectorConfig.getPersistMaxWriteRetry();
+                }
+                if (persistMaxReadRetry == null) {
+                    this.persistMaxReadRetry = connectorConfig.getPersistMaxReadRetry();
+                }
+                if (persistRetryInterval == null) {
+                    this.persistRetryInterval = connectorConfig.getPersistRetryInterval();
+                }
+                if (fallbackToLocalCache == null) {
+                    this.fallbackToLocalCache = connectorConfig.getFallbackToLocalCache();
+                }
             }
         }
     }

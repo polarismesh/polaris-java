@@ -450,10 +450,10 @@ config:
     persistRetryInterval: 500ms
     #描述: polaris server获取配置文件失败是否允许回退到本地配置文件开关
     fallbackToLocalCache: true
-# AI / Skill 默认配置
-ai:
+# Skill 默认配置
+skill:
   serverConnector:
-    id: polaris-ai
+    id: polaris-skill
     connectorType: polaris
     protocol: grpc
     connectTimeout: 500ms
