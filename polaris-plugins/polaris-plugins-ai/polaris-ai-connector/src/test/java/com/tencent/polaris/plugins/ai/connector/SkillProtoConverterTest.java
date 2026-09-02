@@ -50,13 +50,16 @@ public class SkillProtoConverterTest {
      */
     @Test
     public void testToGetRequest() {
+        // Arrange
         SkillGetRequest request = new SkillGetRequest();
         request.setName("sql-analysis");
         request.setNamespace("default");
         request.setVersion("1.0.0");
 
+        // Act
         PolarisSkillGRPCService.GetSkillRequest proto = SkillProtoConverter.toGetRequest(request);
 
+        // Assert
         assertThat(proto.getName()).isEqualTo("sql-analysis");
         assertThat(proto.getNamespace()).isEqualTo("default");
         assertThat(proto.getVersion()).isEqualTo("1.0.0");
@@ -70,14 +73,17 @@ public class SkillProtoConverterTest {
      */
     @Test
     public void testToGetResponse() {
+        // Arrange
         PolarisSkillGRPCService.GetSkillResponse proto = PolarisSkillGRPCService.GetSkillResponse.newBuilder()
                 .setCode(ServerCodes.EXECUTE_SUCCESS)
                 .setContent("# Skill")
                 .setVersion(SkillProto.SkillResourceVersion.newBuilder().setVersion("1.0.0").build())
                 .build();
 
+        // Act
         SkillGetResponse response = SkillProtoConverter.toGetResponse(proto);
 
+        // Assert
         assertThat(response.getCode()).isEqualTo(ServerCodes.EXECUTE_SUCCESS);
         assertThat(response.getContent()).isEqualTo("# Skill");
         assertThat(response.getResourceVersion().getVersion()).isEqualTo("1.0.0");
@@ -91,6 +97,7 @@ public class SkillProtoConverterTest {
      */
     @Test
     public void testAssembleDownloadConcatenatesZipChunks() {
+        // Arrange
         PolarisSkillGRPCService.DownloadSkillResponse first = PolarisSkillGRPCService.DownloadSkillResponse.newBuilder()
                 .setCode(ServerCodes.EXECUTE_SUCCESS)
                 .setVersion("1.0.0")
@@ -101,8 +108,10 @@ public class SkillProtoConverterTest {
                 .setZipChunk(ByteString.copyFrom("lo".getBytes(StandardCharsets.UTF_8)))
                 .build();
 
+        // Act
         SkillDownloadResponse response = SkillProtoConverter.assembleDownload(Arrays.asList(first, second).iterator());
 
+        // Assert
         assertThat(response.getFilename()).isEqualTo("sql-analysis-1.0.0.zip");
         assertThat(response.getZipContent()).isEqualTo("hello".getBytes(StandardCharsets.UTF_8));
     }
@@ -115,13 +124,16 @@ public class SkillProtoConverterTest {
      */
     @Test
     public void testToDownloadRequestKeepsFormat() {
+        // Arrange
         SkillDownloadRequest request = new SkillDownloadRequest();
         request.setName("sql-analysis");
         request.setNamespace("default");
         request.setFormat("markdown");
 
+        // Act
         PolarisSkillGRPCService.DownloadSkillRequest proto = SkillProtoConverter.toDownloadRequest(request);
 
+        // Assert
         assertThat(proto.getFormat()).isEqualTo("markdown");
     }
 }

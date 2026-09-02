@@ -49,13 +49,16 @@ public class SkillAPIFactoryTest {
      */
     @Test
     public void testCreateSkillAPIByContext() {
+        // Arrange
         SDKContext mockContext = mock(SDKContext.class);
         ValueContext mockValueContext = mock(ValueContext.class);
         when(mockContext.getOrInitFlow(any())).thenReturn(null);
         when(mockContext.getValueContext()).thenReturn(mockValueContext);
 
+        // Act
         SkillAPI skillAPI = SkillAPIFactory.createSkillAPIByContext(mockContext);
 
+        // Assert
         assertThat(skillAPI).isInstanceOf(DefaultSkillAPI.class);
     }
 
@@ -67,6 +70,7 @@ public class SkillAPIFactoryTest {
     @Test
     public void testCreateSkillAPIByConfig() {
         try (MockedStatic<SDKContext> sdkContextMock = mockStatic(SDKContext.class)) {
+            // Arrange
             Configuration mockConfig = mock(Configuration.class);
             SDKContext mockContext = mock(SDKContext.class);
             ValueContext mockValueContext = mock(ValueContext.class);
@@ -74,8 +78,10 @@ public class SkillAPIFactoryTest {
             when(mockContext.getOrInitFlow(any())).thenReturn(null);
             when(mockContext.getValueContext()).thenReturn(mockValueContext);
 
+            // Act
             SkillAPI skillAPI = SkillAPIFactory.createSkillAPIByConfig(mockConfig);
 
+            // Assert
             assertThat(skillAPI).isNotNull();
         }
     }
@@ -89,6 +95,7 @@ public class SkillAPIFactoryTest {
     public void testCreateSkillAPI() {
         try (MockedStatic<ConfigAPIFactory> configApiFactoryMock = mockStatic(ConfigAPIFactory.class);
                 MockedStatic<SDKContext> sdkContextMock = mockStatic(SDKContext.class)) {
+            // Arrange
             Configuration mockConfig = mock(Configuration.class);
             SDKContext mockContext = mock(SDKContext.class);
             ValueContext mockValueContext = mock(ValueContext.class);
@@ -97,8 +104,10 @@ public class SkillAPIFactoryTest {
             when(mockContext.getOrInitFlow(any())).thenReturn(null);
             when(mockContext.getValueContext()).thenReturn(mockValueContext);
 
+            // Act
             SkillAPI skillAPI = SkillAPIFactory.createSkillAPI();
 
+            // Assert
             assertThat(skillAPI).isInstanceOf(DefaultSkillAPI.class);
         }
     }

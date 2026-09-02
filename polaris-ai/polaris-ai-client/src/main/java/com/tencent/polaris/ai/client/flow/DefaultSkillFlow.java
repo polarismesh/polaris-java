@@ -126,32 +126,29 @@ public class DefaultSkillFlow implements SkillFlow {
     }
 
     private void persistGetSuccess(SkillGetRequest request, SkillGetResponse response) {
-        if (!isExecuteSuccess(response.getCode()) || persistentHandler == null) {
-            return;
+        if (isExecuteSuccess(response.getCode()) && persistentHandler != null) {
+            String version = resolveGetVersion(request, response);
+            if (StringUtils.isNotBlank(version)) {
+                getSkillCache.put(cacheKey(request.getNamespace(), request.getName(), version), response);
+                persistentHandler.asyncSaveGetSkill(request.getNamespace(), request.getName(), version, response);
+                saveActiveIfNeeded(request.getNamespace(), request.getName(), request.getVersion(), version);
+            }
         }
-        String version = resolveGetVersion(request, response);
-        if (StringUtils.isBlank(version)) {
-            return;
-        }
-        getSkillCache.put(cacheKey(request.getNamespace(), request.getName(), version), response);
-        persistentHandler.asyncSaveGetSkill(request.getNamespace(), request.getName(), version, response);
-        saveActiveIfNeeded(request.getNamespace(), request.getName(), request.getVersion(), version);
     }
 
     private void persistDownloadSuccess(SkillDownloadRequest request, SkillDownloadResponse response) {
-        if (!isExecuteSuccess(response.getCode()) || persistentHandler == null) {
-            return;
+        if (isExecuteSuccess(response.getCode()) && persistentHandler != null) {
+            String version = resolveDownloadVersion(request, response);
+            if (StringUtils.isNotBlank(version)) {
+                String format = normalizeFormat(request.getFormat());
+                if (FORMAT_MARKDOWN.equals(format)) {
+                    markdownCache.put(cacheKey(request.getNamespace(), request.getName(), version), response);
+                }
+                persistentHandler.asyncSaveDownload(request.getNamespace(), request.getName(), version, format,
+                        response);
+                saveActiveIfNeeded(request.getNamespace(), request.getName(), request.getVersion(), version);
+            }
         }
-        String version = resolveDownloadVersion(request, response);
-        if (StringUtils.isBlank(version)) {
-            return;
-        }
-        String format = normalizeFormat(request.getFormat());
-        if (FORMAT_MARKDOWN.equals(format)) {
-            markdownCache.put(cacheKey(request.getNamespace(), request.getName(), version), response);
-        }
-        persistentHandler.asyncSaveDownload(request.getNamespace(), request.getName(), version, format, response);
-        saveActiveIfNeeded(request.getNamespace(), request.getName(), request.getVersion(), version);
     }
 
     private SkillGetResponse fallbackGetSkill(SkillGetRequest request, PolarisException exception) {

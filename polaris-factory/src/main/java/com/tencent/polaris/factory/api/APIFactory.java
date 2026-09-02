@@ -243,32 +243,32 @@ public class APIFactory {
     }
 
     /**
-     * Create SkillAPI by default config.
+     * 通过默认配置创建SkillAPI
      *
-     * @return SkillAPI
-     * @throws PolarisException init error
+     * @return SkillAPI对象
+     * @throws PolarisException 初始化过程的异常
      */
     public static SkillAPI createSkillAPI() throws PolarisException {
         return SkillAPIFactory.createSkillAPI();
     }
 
     /**
-     * Create SkillAPI by SDKContext.
+     * 通过SDK上下文创建SkillAPI
      *
-     * @param context SDK context
-     * @return SkillAPI
-     * @throws PolarisException init error
+     * @param context SDK上下文，包含插件列表，配置对象等信息
+     * @return SkillAPI对象
+     * @throws PolarisException 初始化过程的异常
      */
     public static SkillAPI createSkillAPIByContext(SDKContext context) throws PolarisException {
         return SkillAPIFactory.createSkillAPIByContext(context);
     }
 
     /**
-     * Create SkillAPI by configuration.
+     * 通过配置对象创建SkillAPI
      *
-     * @param config configuration
-     * @return SkillAPI
-     * @throws PolarisException init error
+     * @param config 配置对象
+     * @return SkillAPI对象
+     * @throws PolarisException 初始化过程的异常
      */
     public static SkillAPI createSkillAPIByConfig(Configuration config) throws PolarisException {
         return SkillAPIFactory.createSkillAPIByConfig(config);
