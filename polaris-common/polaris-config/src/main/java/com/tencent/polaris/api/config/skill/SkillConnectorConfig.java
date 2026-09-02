@@ -15,14 +15,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.config.ai;
+package com.tencent.polaris.api.config.skill;
 
 import com.tencent.polaris.api.config.global.ServerConnectorConfig;
 
 /**
  * Skill connector configuration including persist options.
  */
-public interface AiConnectorConfig extends ServerConnectorConfig {
+public interface SkillConnectorConfig extends ServerConnectorConfig {
 
     /**
      * Connector plugin name.
