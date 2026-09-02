@@ -69,4 +69,62 @@ public class ServicesByProtoTest {
         Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getId())
                 .isEqualTo("skill-weather");
     }
+
+    /**
+     * 测试从 INSTANCE 缓存折成单服务列表。
+     * 测试目的：getServices(name) 走 INSTANCE 后仍能读到 extended_metadata。
+     * 测试场景：ServiceInstances 已初始化且带 AgentSkill。
+     * 验证内容：返回一条服务，revision 与 skill id 与实例缓存一致。
+     */
+    @Test
+    public void testFromServiceInstancesKeepsExtendedMetadata() {
+        // Arrange
+        ServiceInstancesByProto serviceInstances = new ServiceInstancesByProto(
+                ResponseProto.DiscoverResponse.newBuilder()
+                        .setService(ServiceProto.Service.newBuilder()
+                                .setNamespace(StringValue.newBuilder().setValue("default").build())
+                                .setName(StringValue.newBuilder().setValue("weather-agent").build())
+                                .setRevision(StringValue.newBuilder().setValue("rev-1").build())
+                                .addExtendedMetadata(ServiceProto.ExtendedMetadata.newBuilder()
+                                        .setType(ServiceProto.ExtendedMetadata.ExtendedMetadataType
+                                                .EXTENDED_METADATA_SKILL)
+                                        .setAgentSkill(ServiceProto.AgentSkill.newBuilder()
+                                                .setId("skill-weather")
+                                                .setName("weather")
+                                                .build())
+                                        .build())
+                                .build())
+                        .build(),
+                null, false);
+
+        // Act
+        ServicesByProto services = (ServicesByProto) ServicesByProto.fromServiceInstances(serviceInstances);
+        ServiceInfo serviceInfo = services.getServices().get(0);
+
+        // Assert
+        Assertions.assertThat(services.isInitialized()).isTrue();
+        Assertions.assertThat(services.getServices()).hasSize(1);
+        Assertions.assertThat(serviceInfo.getService()).isEqualTo("weather-agent");
+        Assertions.assertThat(serviceInfo.getRevision()).isEqualTo("rev-1");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata()).hasSize(1);
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getId())
+                .isEqualTo("skill-weather");
+    }
+
+    /**
+     * 测试未初始化的 INSTANCE 缓存不会折出假服务。
+     * 测试目的：空缓存返回 EMPTY_SERVICES。
+     * 测试场景：传入 EMPTY_INSTANCES。
+     * 验证内容：列表为空且未初始化。
+     */
+    @Test
+    public void testFromServiceInstancesEmptyWhenUninitialized() {
+        // Act
+        ServicesByProto services = (ServicesByProto) ServicesByProto.fromServiceInstances(
+                ServiceInstancesByProto.EMPTY_INSTANCES);
+
+        // Assert
+        Assertions.assertThat(services.isInitialized()).isFalse();
+        Assertions.assertThat(services.getServices()).isEmpty();
+    }
 }
