@@ -50,6 +50,7 @@ public class SkillPersistentHandlerTest {
      */
     @Test
     public void testSaveGetSkillKeepsMultipleVersions() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = newHandler(true);
 
         SkillGetResponse versionOne = new SkillGetResponse();
@@ -64,9 +65,11 @@ public class SkillPersistentHandlerTest {
         resourceVersionTwo.setVersion("1.1.0");
         versionTwo.setResourceVersion(resourceVersionTwo);
 
+        // Act
         handler.saveGetSkill("default", "sql-analysis", "1.0.0", versionOne);
         handler.saveGetSkill("default", "sql-analysis", "1.1.0", versionTwo);
 
+        // Assert
         assertThat(handler.loadGetSkill("default", "sql-analysis", "1.0.0").getContent()).isEqualTo("skill-v1");
         assertThat(handler.loadGetSkill("default", "sql-analysis", "1.1.0").getContent()).isEqualTo("skill-v2");
     }
@@ -79,10 +82,13 @@ public class SkillPersistentHandlerTest {
      */
     @Test
     public void testSaveActiveVersionPointer() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = newHandler(true);
 
+        // Act
         handler.saveActiveVersion("default", "sql-analysis", "1.1.0");
 
+        // Assert
         assertThat(handler.loadActiveVersion("default", "sql-analysis")).isEqualTo("1.1.0");
     }
 
@@ -94,15 +100,18 @@ public class SkillPersistentHandlerTest {
      */
     @Test
     public void testSaveDownloadZipRoundTrip() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = newHandler(true);
         SkillDownloadResponse response = new SkillDownloadResponse();
         response.setVersion("1.0.0");
         response.setFilename("sql-analysis-1.0.0.zip");
         response.setZipContent("zip-bytes".getBytes(StandardCharsets.UTF_8));
 
+        // Act
         handler.saveDownload("default", "sql-analysis", "1.0.0", "zip", response);
-
         SkillDownloadResponse loaded = handler.loadDownload("default", "sql-analysis", "1.0.0", "zip");
+
+        // Assert
         assertThat(loaded.getFilename()).isEqualTo("sql-analysis-1.0.0.zip");
         assertThat(loaded.getZipContent()).isEqualTo("zip-bytes".getBytes(StandardCharsets.UTF_8));
     }
@@ -115,11 +124,15 @@ public class SkillPersistentHandlerTest {
      */
     @Test
     public void testPersistDisableSkipsDisk() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = newHandler(false);
         SkillGetResponse response = new SkillGetResponse();
         response.setContent("skill-v1");
+
+        // Act
         handler.saveGetSkill("default", "sql-analysis", "1.0.0", response);
 
+        // Assert
         assertThat(handler.loadGetSkill("default", "sql-analysis", "1.0.0")).isNull();
     }
 

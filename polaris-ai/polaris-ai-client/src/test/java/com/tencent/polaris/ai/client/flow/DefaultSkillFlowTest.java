@@ -59,21 +59,23 @@ public class DefaultSkillFlowTest {
      */
     @Test
     public void testGetSkillFallsBackToMemoryCacheOnNetworkError() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = new SkillPersistentHandler(
                 temporaryFolder.newFolder().getAbsolutePath(), true, 1, 0, 10L);
         DefaultSkillFlow flow = new DefaultSkillFlow(skillConnector, handler, true);
-
         SkillGetRequest request = new SkillGetRequest();
         request.setNamespace("default");
         request.setName("sql-analysis");
         request.setVersion("1.0.0");
-
         SkillGetResponse remote = successResponse("skill-v1", "1.0.0");
         when(skillConnector.getSkill(request)).thenReturn(remote)
                 .thenThrow(new PolarisException(ErrorCode.NETWORK_ERROR, "down"));
 
+        // Act
         SkillGetResponse first = flow.getSkill(request);
         SkillGetResponse fallback = flow.getSkill(request);
+
+        // Assert
         assertThat(first.getContent()).isEqualTo("skill-v1");
         assertThat(fallback.getContent()).isEqualTo("skill-v1");
     }
@@ -86,21 +88,23 @@ public class DefaultSkillFlowTest {
      */
     @Test
     public void testGetSkillEmptyVersionFallsBackViaActivePointer() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = new SkillPersistentHandler(
                 temporaryFolder.newFolder().getAbsolutePath(), true, 1, 0, 10L);
         DefaultSkillFlow flow = new DefaultSkillFlow(skillConnector, handler, true);
-
         SkillGetRequest request = new SkillGetRequest();
         request.setNamespace("default");
         request.setName("sql-analysis");
         request.setVersion("");
-
         SkillGetResponse remote = successResponse("skill-active", "1.1.0");
         when(skillConnector.getSkill(request)).thenReturn(remote)
                 .thenThrow(new PolarisException(ErrorCode.NETWORK_ERROR, "down"));
 
+        // Act
         flow.getSkill(request);
         SkillGetResponse fallback = flow.getSkill(request);
+
+        // Assert
         assertThat(fallback.getContent()).isEqualTo("skill-active");
     }
 
@@ -112,20 +116,22 @@ public class DefaultSkillFlowTest {
      */
     @Test
     public void testGetSkillFallsBackToLocalCacheOnNetworkError() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = new SkillPersistentHandler(
                 temporaryFolder.newFolder().getAbsolutePath(), true, 1, 0, 10L);
         DefaultSkillFlow flow = new DefaultSkillFlow(skillConnector, handler, true);
-
         SkillGetResponse cached = successResponse("cached-skill", "1.0.0");
         handler.saveGetSkill("default", "sql-analysis", "1.0.0", cached);
-
         SkillGetRequest request = new SkillGetRequest();
         request.setNamespace("default");
         request.setName("sql-analysis");
         request.setVersion("1.0.0");
         when(skillConnector.getSkill(request)).thenThrow(new PolarisException(ErrorCode.NETWORK_ERROR, "down"));
 
+        // Act
         SkillGetResponse result = flow.getSkill(request);
+
+        // Assert
         assertThat(result.getContent()).isEqualTo("cached-skill");
     }
 
@@ -137,13 +143,12 @@ public class DefaultSkillFlowTest {
      */
     @Test
     public void testGetSkillNotFoundDoesNotFallback() throws IOException {
+        // Arrange
         SkillPersistentHandler handler = new SkillPersistentHandler(
                 temporaryFolder.newFolder().getAbsolutePath(), true, 1, 0, 10L);
         DefaultSkillFlow flow = new DefaultSkillFlow(skillConnector, handler, true);
-
         SkillGetResponse cached = successResponse("cached-skill", "1.0.0");
         handler.saveGetSkill("default", "sql-analysis", "1.0.0", cached);
-
         SkillGetRequest request = new SkillGetRequest();
         request.setNamespace("default");
         request.setName("sql-analysis");
@@ -152,7 +157,10 @@ public class DefaultSkillFlowTest {
         notFound.setCode(ServerCodes.NOT_FOUND_RESOURCE);
         when(skillConnector.getSkill(request)).thenReturn(notFound);
 
+        // Act
         SkillGetResponse result = flow.getSkill(request);
+
+        // Assert
         assertThat(result.getCode()).isEqualTo(ServerCodes.NOT_FOUND_RESOURCE);
     }
 

@@ -90,10 +90,9 @@ public class SkillPersistentHandler {
      * @param response response
      */
     public void asyncSaveGetSkill(String namespace, String name, String version, SkillGetResponse response) {
-        if (!persistEnable) {
-            return;
+        if (persistEnable) {
+            persistExecutor.execute(new SaveGetTask(namespace, name, version, response));
         }
-        persistExecutor.execute(new SaveGetTask(namespace, name, version, response));
     }
 
     /**
@@ -107,10 +106,9 @@ public class SkillPersistentHandler {
      */
     public void asyncSaveDownload(String namespace, String name, String version, String format,
             SkillDownloadResponse response) {
-        if (!persistEnable) {
-            return;
+        if (persistEnable) {
+            persistExecutor.execute(new SaveDownloadTask(namespace, name, version, format, response));
         }
-        persistExecutor.execute(new SaveDownloadTask(namespace, name, version, format, response));
     }
 
     /**
@@ -121,10 +119,9 @@ public class SkillPersistentHandler {
      * @param version resolved version
      */
     public void asyncSaveActiveVersion(String namespace, String name, String version) {
-        if (!persistEnable) {
-            return;
+        if (persistEnable) {
+            persistExecutor.execute(new SaveActiveTask(namespace, name, version));
         }
-        persistExecutor.execute(new SaveActiveTask(namespace, name, version));
     }
 
     /**
@@ -192,10 +189,9 @@ public class SkillPersistentHandler {
      * @param response response
      */
     public void saveGetSkill(String namespace, String name, String version, SkillGetResponse response) {
-        if (!persistEnable) {
-            return;
+        if (persistEnable) {
+            writeYaml(buildGetPath(namespace, name, version), response);
         }
-        writeYaml(buildGetPath(namespace, name, version), response);
     }
 
     /**
@@ -209,12 +205,11 @@ public class SkillPersistentHandler {
      */
     public void saveDownload(String namespace, String name, String version, String format,
             SkillDownloadResponse response) {
-        if (!persistEnable) {
-            return;
+        if (persistEnable) {
+            SkillDownloadResponse meta = copyDownloadMeta(response);
+            writeYaml(buildDownloadYamlPath(namespace, name, version, format), meta);
+            writeZipIfPresent(namespace, name, version, format, response);
         }
-        SkillDownloadResponse meta = copyDownloadMeta(response);
-        writeYaml(buildDownloadYamlPath(namespace, name, version, format), meta);
-        writeZipIfPresent(namespace, name, version, format, response);
     }
 
     /**
@@ -225,26 +220,23 @@ public class SkillPersistentHandler {
      * @param version resolved version
      */
     public void saveActiveVersion(String namespace, String name, String version) {
-        if (!persistEnable) {
-            return;
+        if (persistEnable) {
+            writeText(buildActivePath(namespace, name), version);
         }
-        writeText(buildActivePath(namespace, name), version);
     }
 
     private void fillZipContent(SkillDownloadResponse result, String namespace, String name, String version,
             String format) {
-        if (result == null || !"zip".equals(format)) {
-            return;
+        if (result != null && "zip".equals(format)) {
+            result.setZipContent(readBytes(buildZipPath(namespace, name, version)));
         }
-        result.setZipContent(readBytes(buildZipPath(namespace, name, version)));
     }
 
     private void writeZipIfPresent(String namespace, String name, String version, String format,
             SkillDownloadResponse response) {
-        if (!"zip".equals(format) || response.getZipContent() == null) {
-            return;
+        if ("zip".equals(format) && response.getZipContent() != null) {
+            writeBytes(buildZipPath(namespace, name, version), response.getZipContent());
         }
-        writeBytes(buildZipPath(namespace, name, version), response.getZipContent());
     }
 
     private SkillDownloadResponse copyDownloadMeta(SkillDownloadResponse response) {
