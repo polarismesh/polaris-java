@@ -60,6 +60,8 @@ public class LaneRuleContainer {
                 rules.add(laneRule);
             }
         }
+        // TSF 场景下同优先级时新规则优先，非 TSF 场景下旧规则优先
+        boolean isTsf = groups.values().stream().anyMatch(g -> "tsf".equals(g.getName()));
         rules.sort((o1, o2) -> {
             // 主调泳道入口规则优先
             boolean b1 = LaneUtils.isTrafficEntry(groups.get(o1.getGroupName()), manager, caller);
@@ -74,8 +76,8 @@ public class LaneRuleContainer {
             if (priorityResult != 0) {
                 return priorityResult;
             }
-            // 比较创建时间，越早创建的规则优先级越高
-            return o1.getCtime().compareTo(o2.getCtime());
+            // 比较创建时间：TSF 场景下越晚创建的规则优先级越高（新规则优先），非 TSF 场景下越早创建的规则优先级越高
+            return isTsf ? o2.getCtime().compareTo(o1.getCtime()) : o1.getCtime().compareTo(o2.getCtime());
         });
     }
 
