@@ -285,6 +285,9 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 retryPolicy.fail();
 
                 retryTimes++;
+                if (retryTimes == 1 && fallbackToLocalCacheOnFirstMiss(pullConfigFileReq)) {
+                    return;
+                }
                 retryPolicy.executeDelay();
                 fallbackIfNecessary(retryTimes, pullConfigFileReq);
             } catch (Throwable t) {
@@ -292,10 +295,33 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 retryPolicy.fail();
 
                 retryTimes++;
+                if (retryTimes == 1 && fallbackToLocalCacheOnFirstMiss(pullConfigFileReq)) {
+                    return;
+                }
                 retryPolicy.executeDelay();
                 fallbackIfNecessary(retryTimes, pullConfigFileReq);
             }
         }
+    }
+
+    /**
+     * 内存尚未有配置时，远端第一次失败就尝试本地缓存。命中则跳过剩余退避重试，
+     * 避免 Spring config-data 阶段（早于 banner、同步阻塞）被 1/2/4 秒三次重试拖到分钟级。
+     * 内存已有配置时不走这条捷径，仍耗尽重试再决定是否覆盖。
+     *
+     * @param configFileReq 拉取请求
+     * @return 已用本地缓存填上内存则为 true
+     */
+    private boolean fallbackToLocalCacheOnFirstMiss(ConfigFile configFileReq) {
+        if (remoteConfigFile.get() != null) {
+            return false;
+        }
+        loadLocalCache(configFileReq, true);
+        if (remoteConfigFile.get() == null) {
+            return false;
+        }
+        LOGGER.warn("[Config] skip remaining pull retries, use local cache. config file = {}", configFileMetadata);
+        return true;
     }
 
     private void fallbackIfNecessary(final int retryTimes, ConfigFile configFileReq) {

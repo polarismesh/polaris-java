@@ -218,6 +218,54 @@ public class RemoteConfigFileRepoTest {
     }
 
     /**
+     * 测试目的：内存为空且本地缓存命中时，第一次远端失败立即回落，不再走 1/2/4 秒退避。
+     * 测试场景：过滤链抛超时，持久化层返回缓存。
+     * 验证内容：只拉一次远端，业务内容来自缓存。
+     */
+    @Test
+    public void testFallbackToLocalCacheOnFirstFailure() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        ConfigFile cachedConfigFile = new ConfigFile(ConfigFileTestUtils.testNamespace,
+                ConfigFileTestUtils.testGroup, ConfigFileTestUtils.testFileName);
+        cachedConfigFile.setContent("cached-plain");
+        cachedConfigFile.setVersion(12);
+        when(configFileFilterChain.execute(any(), any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
+        when(configFilePersistHandler.loadPersistedConfigFile(any(), anyBoolean())).thenReturn(cachedConfigFile);
+
+        long startedAt = System.currentTimeMillis();
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+        long elapsedMs = System.currentTimeMillis() - startedAt;
+
+        verify(configFileFilterChain, times(1)).execute(any(), any());
+        verify(configFilePersistHandler).loadPersistedConfigFile(any(), anyBoolean());
+        assertThat(remoteConfigFileRepo.getContent()).isEqualTo("cached-plain");
+        assertThat(remoteConfigFileRepo.getConfigFileVersion()).isEqualTo(12);
+        assertThat(elapsedMs).as("must not wait exponential backoff 1+2+4s").isLessThan(2000);
+    }
+
+    /**
+     * 测试目的：无本地缓存时仍耗尽三次远端重试。
+     * 测试场景：过滤链持续失败，持久化层返回 null。
+     * 验证内容：过滤链执行三次。
+     */
+    @Test
+    public void testPullRetriesWhenLocalCacheMissing() {
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        when(configFileFilterChain.execute(any(), any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
+        when(configFilePersistHandler.loadPersistedConfigFile(any(), anyBoolean())).thenReturn(null);
+
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+
+        verify(configFileFilterChain, times(3)).execute(any(), any());
+        verify(configFilePersistHandler, times(2)).loadPersistedConfigFile(any(), anyBoolean());
+        Assert.assertNull(remoteConfigFileRepo.getContent());
+    }
+
+    /**
      * 测试目的：验证降级读本地缓存的日志不泄露正文与密钥。
      * 测试场景：远端拉取失败触发 fallback，缓存命中一个加密配置（正文为敏感串）。
      * 验证内容：成功日志只含坐标与版本，不含明文、密文与 dataKey。
