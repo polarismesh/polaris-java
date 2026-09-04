@@ -422,8 +422,10 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
                     LOGGER.info("[Config] invoke config file change listener success. listener = {}, duration = {} ms",
                             listener.getClass().getName(), System.currentTimeMillis() - startTime);
                 } catch (Throwable t) {
-                    LOGGER.error("[Config] ailed to invoke config file change listener. listener = {}, event = {}",
-                            listener.getClass().getName(), event, t);
+                    // 只输出监听器、文件坐标与变更的 key 集合：ConfigPropertyChangeInfo 含变更前后的明文值
+                    LOGGER.error("[Config] failed to invoke config file change listener. listener = {}, "
+                                    + "file = {}/{}/{}, changedKeys = {}", listener.getClass().getName(),
+                            getNamespace(), getFileGroup(), getFileName(), event.changedKeys(), t);
                 }
             });
         }

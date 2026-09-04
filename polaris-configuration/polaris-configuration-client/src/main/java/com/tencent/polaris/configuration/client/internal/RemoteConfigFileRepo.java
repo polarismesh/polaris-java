@@ -326,11 +326,15 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         if (fallbackToLocalCache) {
             ConfigFile configFileRes = configFilePersistHandler.loadPersistedConfigFile(configFileReq, needRetry);
             if (configFileRes != null) {
-                LOGGER.info("[Config] load local cache success.{}.", configFileRes);
+                LOGGER.info("[Config] load local cache success. namespace={}, fileGroup={}, fileName={}, "
+                                + "version={}, encrypted={}", configFileRes.getNamespace(),
+                        configFileRes.getFileGroup(), configFileRes.getFileName(), configFileRes.getVersion(),
+                        configFileRes.isEncrypted());
                 updateRemoteConfigFile(configFileRes);
                 return;
             }
-            LOGGER.info("[Config] load local cache fail.{}.", configFileReq);
+            LOGGER.info("[Config] load local cache fail. namespace={}, fileGroup={}, fileName={}",
+                    configFileReq.getNamespace(), configFileReq.getFileGroup(), configFileReq.getFileName());
         }
     }
 
@@ -391,6 +395,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         configFile.setPublicKey(sourceConfigFile.getPublicKey());
         configFile.setDataKey(sourceConfigFile.getDataKey());
         configFile.setEncryptAlgo(sourceConfigFile.getEncryptAlgo());
+        // 不复制 cacheEncrypted：业务内存对象恒为明文态
         return configFile;
     }
 

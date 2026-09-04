@@ -163,9 +163,14 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
         }
     }
 
+    private static int contentLength(String content) {
+        return content == null ? 0 : content.length();
+    }
+
     private void handlePush(ClientEvent event) {
-        LOG.info("[ClientEvent] received push, index = {}, clientId = {}, content = {}",
-                event.getIndex(), clientId, event.getContent());
+        // 不输出全文：ACK/PUSH 内容可能携带配置正文与属性值
+        LOG.info("[ClientEvent] received push, index = {}, clientId = {}, contentLength = {}",
+                event.getIndex(), clientId, contentLength(event.getContent()));
         String ackContent = INTERNAL_ERROR_ACK;
         try {
             String handlerAck = handler.onPush(event.getIndex(), event.getContent());
@@ -191,8 +196,8 @@ public class ClientEventStream implements StreamObserver<ClientEvent>, AutoClose
             return;
         }
         try {
-            LOG.info("[ClientEvent] send ack, index = {}, clientId = {}, content = {}",
-                    index, clientId, ackContent);
+            LOG.info("[ClientEvent] send ack, index = {}, clientId = {}, contentLength = {}",
+                    index, clientId, contentLength(ackContent));
             synchronized (clientLock) {
                 observer.onNext(ClientEvent.newBuilder()
                         .setType(ClientEvent.ClientEventType.ACK)

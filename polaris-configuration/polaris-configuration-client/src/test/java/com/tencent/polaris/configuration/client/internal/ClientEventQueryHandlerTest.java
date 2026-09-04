@@ -616,6 +616,78 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
+     * 测试目的：加密文件的值不得经由未加密文件的明文 ACK 外泄。
+     * 测试场景：未加密文件 A 与加密文件 B 均被监听且含同名 key，A 的冲突项来自 B。
+     * 验证内容：ACK 全文不含 B 的敏感值，冲突项保留来源坐标但不带 value，A 自身的 file_value 保留。
+     */
+    @Test
+    public void testConflictValueFromEncryptedFileIsStripped() {
+        // Arrange
+        String sensitiveValue = "root-password-from-encrypted-file";
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("local", "local", "polaris:ns/g/plain.yaml"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(
+                Collections.singletonList(new ConfigKeyConflict("ns", "g", "secret.yaml", sensitiveValue)));
+        handler.registerProvider(provider);
+
+        // Act
+        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+
+        // Assert
+        assertThat(ackJson).doesNotContain(sensitiveValue);
+        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+        JsonObject conflictJson = prop.getAsJsonArray("conflicts").get(0).getAsJsonObject();
+        assertThat(conflictJson.get("file_name").getAsString()).isEqualTo("secret.yaml");
+        assertThat(conflictJson.has("value")).isFalse();
+    }
+
+    /**
+     * 测试目的：生效值来自加密文件时同样不以明文进入未加密文件的 ACK。
+     * 测试场景：未加密文件 A 的 key 被加密文件 B 覆盖，effectiveValue 即 B 的敏感值。
+     * 验证内容：ACK 无 effective_value 字段且全文不含敏感值。
+     */
+    @Test
+    public void testEffectiveValueFromEncryptedFileIsStripped() {
+        // Arrange
+        String sensitiveValue = "effective-secret-from-encrypted-file";
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("local", sensitiveValue, "polaris:ns/g/secret.yaml"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(
+                Collections.singletonList(new ConfigKeyConflict("ns", "g", "secret.yaml", sensitiveValue)));
+        handler.registerProvider(provider);
+
+        // Act
+        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+
+        // Assert
+        assertThat(ackJson).doesNotContain(sensitiveValue);
+        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.has("effective_value")).isFalse();
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+    }
+
+    /**
+     * 注册一个加密态的被监听文件，仅用于校验冲突来源的加密判定。
+     */
+    private void registerEncryptedWatched(String namespace, String group, String fileName) {
+        RemoteConfigFileRepo repo = mock(RemoteConfigFileRepo.class);
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata(namespace, group, fileName);
+        when(repo.getConfigFileMetadata()).thenReturn(metadata);
+        when(repo.getSnapshot()).thenReturn(new ConfigFileSnapshot(9, "cipher-md5", "cipher-content", 100L,
+                true, "AES", "UDEyMzQ1Njc4OTAxMjM0NQ=="));
+        watchRegistry.register(repo);
+    }
+
+    /**
      * 测试目的：version=0/md5="" 时字段省略，对齐 Go 的 omitempty。
      * 测试场景：已拉取但 version=0、md5 为空。
      * 验证内容：ACK 无 version、无 md5 字段。

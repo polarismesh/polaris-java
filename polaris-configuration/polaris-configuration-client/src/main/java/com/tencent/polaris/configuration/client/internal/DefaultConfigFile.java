@@ -203,8 +203,10 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
                     LOGGER.info("[Config] invoke config file change listener success. listener = {}, duration = {} ms",
                             listener.getClass().getName(), System.currentTimeMillis() - startTime);
                 } catch (Throwable t) {
-                    LOGGER.error("[Config] failed to invoke config file change listener. listener = {}, event = {}",
-                            listener.getClass().getName(), event, t);
+                    // 只输出监听器与文件坐标、变更类型，不输出变更前后的配置正文
+                    LOGGER.error("[Config] failed to invoke config file change listener. listener = {}, "
+                                    + "file = {}/{}/{}, changeType = {}", listener.getClass().getName(),
+                            getNamespace(), getFileGroup(), getFileName(), event.getChangeType(), t);
                 }
             });
         }

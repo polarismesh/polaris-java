@@ -57,7 +57,8 @@ public class YamlParser {
     private boolean process(MatchCallback callback, Yaml yaml, String content) {
         int count = 0;
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[Config] Loading from YAML: " + content);
+            // 不输出正文：加密配置在此已是解密后的明文
+            LOGGER.debug("[Config] loading from YAML, length = {}", content == null ? 0 : content.length());
         }
         for (Object object : yaml.loadAll(content)) {
             if (object != null && process(asMap(object), callback)) {
@@ -65,8 +66,8 @@ public class YamlParser {
             }
         }
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[Config] Loaded " + count + " document" + (count > 1 ? "s" : "") + " from YAML resource: "
-                    + content);
+            LOGGER.debug("[Config] loaded {} document(s) from YAML resource, length = {}",
+                    count, content == null ? 0 : content.length());
         }
         return (count > 0);
     }
@@ -103,7 +104,8 @@ public class YamlParser {
         properties.putAll(getFlattenedMap(map));
 
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("[Config] Merging document (no matchers set): " + map);
+            // 不输出 map 内容：value 为解密后的明文，只输出 key 集合
+            LOGGER.debug("[Config] merging document (no matchers set), keys = {}", properties.keySet());
         }
         callback.process(properties, map);
         return true;

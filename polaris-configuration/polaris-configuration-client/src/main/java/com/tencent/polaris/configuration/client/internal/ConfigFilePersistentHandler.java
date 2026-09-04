@@ -20,10 +20,13 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
+import com.tencent.polaris.api.utils.ClassUtils;
+import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.factory.util.FileUtils;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
@@ -37,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +59,10 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class ConfigFilePersistentHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigFilePersistentHandler.class);
+
+    private static final String ALGO_AES = "AES";
+
+    private static final String BOUNCY_CASTLE_PROVIDER = "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
     private final String persistDirPath;
     private final int maxWriteRetry;
@@ -122,17 +130,67 @@ public class ConfigFilePersistentHandler {
      */
     public void saveConfigFile(ConfigFile configFile) {
         int retryTimes = 0;
-        LOG.info("start to save config file {}", configFile);
+        String meta = configMeta(configFile);
+        LOG.info("start to save config file {}", meta);
         while (retryTimes <= maxWriteRetry) {
             retryTimes++;
             Path path = doSaveConfigFile(configFile);
             if (null == path) {
                 continue;
             }
-            LOG.info("end to save config file {} to {}", configFile, path);
+            LOG.info("end to save config file {} to {}", meta, path);
             return;
         }
-        LOG.error("fail to persist config file {} after retry {}", configFile, retryTimes);
+        LOG.error("fail to persist config file {} after retry {}", meta, retryTimes);
+    }
+
+    /**
+     * 日志用元数据串，不含任何配置正文与密钥。
+     *
+     * @param configFile 配置文件
+     * @return 元数据串
+     */
+    private String configMeta(ConfigFile configFile) {
+        return String.format("[namespace=%s, fileGroup=%s, fileName=%s, version=%d, encrypted=%s]",
+                configFile.getNamespace(), configFile.getFileGroup(), configFile.getFileName(),
+                configFile.getVersion(), configFile.isEncrypted());
+    }
+
+    /**
+     * 创建持久化副本，与业务内存对象隔离，避免把业务正在使用的明文对象改成密文。
+     *
+     * <p>加密配置（sourceContent 与 dataKey 均非空）：content 取 sourceContent（服务端原始密文，
+     * 无需二次加密），dataKey 原样保留 Base64(明文 AES 密钥) 随文件持久化以支撑进程重启后解密，
+     * cacheEncrypted 置为 true。普通配置完全保持原有明文落盘行为。
+     *
+     * <p>判据用 sourceContent 而非 encrypted：加密 filter 在请求前就把 encrypted 置为 true 用于
+     * 向服务端声明支持加密，因此 encrypted=true 不代表服务端真的返回了加密内容；而 sourceContent
+     * 只在解密成功后被赋值，是「确实拿到并解开了密文」的可靠信号。
+     *
+     * @param source 业务内存对象
+     * @return 持久化副本
+     */
+    private ConfigFile copyForPersist(ConfigFile source) {
+        ConfigFile copy = new ConfigFile(source.getNamespace(), source.getFileGroup(), source.getFileName());
+        copy.setVersion(source.getVersion());
+        copy.setName(source.getName());
+        copy.setMd5(source.getMd5());
+        copy.setEncrypted(source.isEncrypted());
+        copy.setEncryptAlgo(source.getEncryptAlgo());
+        copy.setReleaseTime(source.getReleaseTime());
+        copy.setDataKey(source.getDataKey());
+        String cipherText = source.getSourceContent();
+        if (StringUtils.isNotBlank(cipherText) && StringUtils.isNotBlank(source.getDataKey())) {
+            // 加密配置：落盘密文态，content 与 sourceContent 一致以保持字段语义自洽
+            copy.setContent(cipherText);
+            copy.setSourceContent(cipherText);
+            copy.setCacheEncrypted(true);
+        } else {
+            copy.setContent(source.getContent());
+            copy.setSourceContent(source.getSourceContent());
+            copy.setCacheEncrypted(false);
+        }
+        return copy;
     }
 
     private static String configFileToFileName(ConfigFile configFile) {
@@ -169,8 +227,10 @@ public class ConfigFilePersistentHandler {
                 LOG.warn("tmp file {} already exists", persistTmpFile.getAbsolutePath());
             }
         }
+        // 先构造持久化副本（加密配置转为密文态），再序列化
+        ConfigFile persistCopy = copyForPersist(configFile);
         try (FileOutputStream outputFile = new FileOutputStream(persistTmpFile)) {
-            String jsonAsYaml = new YAMLMapper().writeValueAsString(configFile);
+            String jsonAsYaml = new YAMLMapper().writeValueAsString(persistCopy);
             outputFile.write(jsonAsYaml.getBytes(StandardCharsets.UTF_8));
             outputFile.flush();
         }
@@ -272,6 +332,13 @@ public class ConfigFilePersistentHandler {
             if (dataKey != null) {
                 resConfigFile.setDataKey(dataKey.toString());
             }
+            // 历史缓存无 cacheEncrypted 字段，解析为 false 后走明文分支，天然向后兼容
+            Object cacheEncrypted = jsonMap.get("cacheEncrypted");
+            boolean isCacheEncrypted = cacheEncrypted != null && Boolean.parseBoolean(cacheEncrypted.toString());
+            resConfigFile.setCacheEncrypted(isCacheEncrypted);
+            if (isCacheEncrypted) {
+                return decryptCachedContent(resConfigFile, persistFile.getName());
+            }
             return resConfigFile;
         } catch (IOException e) {
             LOG.warn("fail to read file :" + persistFile.getAbsoluteFile(), e);
@@ -291,6 +358,54 @@ public class ConfigFilePersistentHandler {
                     LOG.warn("fail to close stream for :" + persistFile.getAbsoluteFile(), e);
                 }
             }
+        }
+    }
+
+    /**
+     * 解密密文态缓存，进程重启后从磁盘取回密钥完成恢复。
+     *
+     * <p>cacheEncrypted=true 是本 SDK 自己写入的确定性标记，此时 content 一定是密文，因此任何
+     * 不确定因素一律返回 null（视为缓存不可用，由上层重试或降级），绝不把密文当明文交给业务。
+     *
+     * @param resConfigFile 已完成字段回填的缓存对象，content 为密文
+     * @param fileName 缓存文件名，仅用于日志定位
+     * @return 解密后的配置文件，失败返回 null
+     */
+    private ConfigFile decryptCachedContent(ConfigFile resConfigFile, String fileName) {
+        String dataKey = resConfigFile.getDataKey();
+        String algo = resConfigFile.getEncryptAlgo();
+        if (StringUtils.isBlank(dataKey)) {
+            LOG.error("cached config file {} marked as encrypted but dataKey is missing, discard this cache",
+                    fileName);
+            return null;
+        }
+        // 只认 AES：encryptAlgo 由本 SDK 写入，未知算法说明缓存来自不兼容版本；缺失则按 AES 兼容处理
+        if (StringUtils.isNotBlank(algo) && !ALGO_AES.equalsIgnoreCase(algo)) {
+            LOG.error("cached config file {} uses unsupported encrypt algo {}, discard this cache", fileName, algo);
+            return null;
+        }
+        // BouncyCastle 为可选依赖，缺失时加载 AESUtil 会抛 NoClassDefFoundError，须提前预判
+        if (!ClassUtils.isClassPresent(BOUNCY_CASTLE_PROVIDER)) {
+            LOG.error("cached config file {} is encrypted but bouncycastle is absent, discard this cache", fileName);
+            return null;
+        }
+        return doDecryptCachedContent(resConfigFile, fileName);
+    }
+
+    private ConfigFile doDecryptCachedContent(ConfigFile resConfigFile, String fileName) {
+        try {
+            byte[] aesKey = Base64.getDecoder().decode(resConfigFile.getDataKey());
+            String cipherText = resConfigFile.getContent();
+            String plainText = AESUtil.decrypt(cipherText, aesKey);
+            // 保留密文到 sourceContent，语义与远端拉取一致；content 交给业务的是明文
+            resConfigFile.setSourceContent(cipherText);
+            resConfigFile.setContent(plainText);
+            resConfigFile.setCacheEncrypted(false);
+            return resConfigFile;
+        } catch (Throwable t) {
+            // 捕 Throwable：密钥或算法相关失败可能以 Error 形式出现。不输出正文与密钥
+            LOG.error("fail to decrypt cached config file {}, error: {}", fileName, t.getMessage());
+            return null;
         }
     }
 

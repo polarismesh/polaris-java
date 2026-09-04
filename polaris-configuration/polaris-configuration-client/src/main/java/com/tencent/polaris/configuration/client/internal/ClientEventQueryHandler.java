@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 配置生效查询处理器，解析服务端 PUSH 指令并组装 ACK content JSON。
  * <p>
  * 任何分支都必须返回可发送的 JSON：服务端同步等待 ACK，静默会把它挂到超时。
- * 本类 INFO 只记文件坐标；PUSH/ACK 全文由连接器按 INFO 输出。
+ * 本类与连接器的日志均只记文件坐标与规模，不输出 PUSH/ACK 全文。
  *
  * @author evelynwei
  */
@@ -277,8 +277,59 @@ public class ClientEventQueryHandler {
         if (!entries.isEmpty() && snapshot.isEncrypted()) {
             setEncryptedProperties(ack, entries, snapshot);
         } else if (!entries.isEmpty()) {
-            ack.setProperties(entries);
+            // 明文 ACK：entries 是跨文件采集的，来自加密文件的值不得以明文回传或进入日志
+            ack.setProperties(stripEncryptedSourceValues(entries));
         }
+    }
+
+    /**
+     * 明文 ACK 前的脱敏。conflicts 与 effectiveValue 由 {@link ConfigEffectiveValueProvider} 跨全部
+     * 被监听文件采集，其中可能包含加密文件的值；本文件未加密时无密钥可用，只能去掉这些值，
+     * 仅保留「此处存在冲突」这一事实与来源坐标 —— 服务端定位冲突并不需要值本身。
+     *
+     * <p>局限：effectiveValue 的来源以 Spring property source 名标识，无法反查文件坐标，
+     * 因此只能在存在加密来源冲突项时一并去掉。彻底修复需采集侧（SCT provider）标记来源加密状态。
+     *
+     * @param entries 待回传的属性明细
+     * @return 原列表，元素已就地脱敏
+     */
+    private List<ClientEventAck.PropertyEntry> stripEncryptedSourceValues(
+            List<ClientEventAck.PropertyEntry> entries) {
+        for (ClientEventAck.PropertyEntry entry : entries) {
+            if (stripEncryptedConflictValues(entry)) {
+                entry.setEffectiveValue(null);
+            }
+        }
+        return entries;
+    }
+
+    private boolean stripEncryptedConflictValues(ClientEventAck.PropertyEntry entry) {
+        boolean stripped = false;
+        List<ClientEventAck.ConflictEntry> conflicts = entry.getConflicts();
+        if (conflicts != null) {
+            for (ClientEventAck.ConflictEntry conflict : conflicts) {
+                if (conflict != null && isEncryptedWatchedFile(conflict)) {
+                    conflict.setValue(null);
+                    stripped = true;
+                }
+            }
+        }
+        return stripped;
+    }
+
+    /**
+     * 判断冲突来源文件是否为加密配置。加密状态取自本地已监听文件的快照，不依赖采集侧上报。
+     */
+    private boolean isEncryptedWatchedFile(ClientEventAck.ConflictEntry conflict) {
+        ConfigFileMetadata metadata = new DefaultConfigFileMetadata(emptyIfNull(conflict.getNamespace()),
+                emptyIfNull(conflict.getGroup()), emptyIfNull(conflict.getFileName()));
+        RemoteConfigFileRepo repo = watchRegistry == null ? null : watchRegistry.getWatchedFile(metadata);
+        ConfigFileSnapshot snapshot = repo == null ? null : repo.getSnapshot();
+        return snapshot != null && snapshot.isEncrypted();
+    }
+
+    private String emptyIfNull(String value) {
+        return value == null ? "" : value;
     }
 
     private List<ClientEventAck.PropertyEntry> buildPropertyEntries(ConfigEffectiveValueProvider provider,
