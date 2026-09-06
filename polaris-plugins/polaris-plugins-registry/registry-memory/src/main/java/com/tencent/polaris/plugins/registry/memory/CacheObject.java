@@ -146,9 +146,13 @@ public class CacheObject implements EventHandler {
     /**
      * 增加监听器
      *
-     * @param notifier 实例事件监听器
+     * @param notifier 实例事件监听器，允许为 null（表示仅触发远程注册、无需回调通知）
      */
     public void addNotifier(EventCompleteNotifier notifier) {
+        // notifier 为 null 时，仅用于触发远程注册，无需加入监听列表，也无需立即通知
+        if (notifier == null) {
+            return;
+        }
         if (checkNotifyNow(notifier)) {
             return;
         }
