@@ -317,6 +317,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central-portal</publishingServerId>
+                    <deploymentName>polaris-java-${project.version}</deploymentName>
                     <excludeArtifacts>
                         <excludeArtifact>polaris-examples</excludeArtifact>
                         <excludeArtifact>circuitbreaker-example</excludeArtifact>
