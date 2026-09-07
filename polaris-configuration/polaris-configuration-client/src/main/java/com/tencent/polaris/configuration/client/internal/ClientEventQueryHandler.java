@@ -336,24 +336,27 @@ public class ClientEventQueryHandler {
     }
 
     /**
-     * 是否必须去掉生效值。
+     * 是否必须去掉生效值。按采集侧的来源归因分三种处置：
      *
-     * <p>采集侧给出了来源坐标时按坐标精确判定：仅当该来源文件确为加密配置才去掉，明文来源照常回传，
-     * 配置生效查询不受影响。
+     * <ul>
+     * <li>来源是 polaris 配置文件：按坐标精确判定，仅该文件确为加密配置才去掉，明文来源照常回传。</li>
+     * <li>来源不是 polaris 配置文件（环境变量、命令行、系统属性等）：该值不由配置中心下发，
+     * 不可能是加密配置的明文，照常回传。</li>
+     * <li>未归因（旧版本采集侧）：无从判断，退回 fail-closed —— 只要存在加密态被监听文件，
+     * 且生效值与本文件 fileValue 不一致（说明该值来自别处），就去掉。生效值等于 fileValue 时
+     * 即本文件自身的明文，保留不泄露。</li>
+     * </ul>
      *
-     * <p>坐标缺失（旧版本采集侧，或来源不是 polaris 配置文件）时无法归因，退回 fail-closed：
-     * 只要存在加密态被监听文件，且生效值与本文件 fileValue 不一致（说明该值来自别处），就去掉。
-     * 生效值等于 fileValue 时即本文件自身的明文，保留不泄露。
-     *
-     * @param resolved 属性明细及其来源坐标
+     * @param resolved 属性明细及其来源归因
      * @param encryptedSourcePossible 是否存在加密态被监听文件
      * @return 需要去掉生效值返回 true
      */
     private boolean shouldStripEffectiveValue(ResolvedEntry resolved, boolean encryptedSourcePossible) {
         boolean strip;
-        ConfigFileMetadata sourceFile = resolved.getSourceFile();
-        if (sourceFile != null) {
-            strip = isEncryptedWatchedFile(sourceFile);
+        if (resolved.getSourceKind() == EffectiveValue.SourceKind.POLARIS_FILE) {
+            strip = isEncryptedWatchedFile(resolved.getSourceFile());
+        } else if (resolved.getSourceKind() == EffectiveValue.SourceKind.EXTERNAL) {
+            strip = false;
         } else {
             strip = encryptedSourcePossible && isOverriddenByOtherSource(resolved.getEntry());
         }
@@ -509,15 +512,15 @@ public class ClientEventQueryHandler {
             ConfigFileMetadata metadata) {
         ClientEventAck.PropertyEntry entry = new ClientEventAck.PropertyEntry();
         entry.setKey(key);
-        ConfigFileMetadata sourceFile = fillEffectiveValue(provider, key, metadata, entry);
+        EffectiveValue resolved = fillEffectiveValue(provider, key, metadata, entry);
         entry.setConflicts(buildConflicts(provider, key, metadata));
-        return new ResolvedEntry(entry, sourceFile);
+        return new ResolvedEntry(entry, resolved);
     }
 
     /**
-     * 填充生效值三字段，并返回生效值来源的文件坐标（采集侧未给出时为 null）。
+     * 填充生效值三字段，并返回采集侧结果（含来源归因），采集失败时为 null。
      */
-    private ConfigFileMetadata fillEffectiveValue(ConfigEffectiveValueProvider provider, String key,
+    private EffectiveValue fillEffectiveValue(ConfigEffectiveValueProvider provider, String key,
             ConfigFileMetadata metadata, ClientEventAck.PropertyEntry entry) {
         EffectiveValue effectiveValue;
         try {
@@ -526,14 +529,12 @@ public class ClientEventQueryHandler {
             LOG.warn("[Config] resolve effective value failed, key = {}", key);
             effectiveValue = null;
         }
-        ConfigFileMetadata sourceFile = null;
         if (effectiveValue != null) {
             entry.setPropertySource(effectiveValue.getPropertySource());
             entry.setFileValue(effectiveValue.getFileValue());
             entry.setEffectiveValue(effectiveValue.getEffectiveValue());
-            sourceFile = effectiveValue.getSourceFile();
         }
-        return sourceFile;
+        return effectiveValue;
     }
 
     private List<ClientEventAck.ConflictEntry> buildConflicts(ConfigEffectiveValueProvider provider, String key,
@@ -609,9 +610,12 @@ public class ClientEventQueryHandler {
 
         private final ConfigFileMetadata sourceFile;
 
-        ResolvedEntry(ClientEventAck.PropertyEntry entry, ConfigFileMetadata sourceFile) {
+        private final EffectiveValue.SourceKind sourceKind;
+
+        ResolvedEntry(ClientEventAck.PropertyEntry entry, EffectiveValue resolved) {
             this.entry = entry;
-            this.sourceFile = sourceFile;
+            this.sourceFile = resolved == null ? null : resolved.getSourceFile();
+            this.sourceKind = resolved == null ? EffectiveValue.SourceKind.UNKNOWN : resolved.getSourceKind();
         }
 
         ClientEventAck.PropertyEntry getEntry() {
@@ -620,6 +624,10 @@ public class ClientEventQueryHandler {
 
         ConfigFileMetadata getSourceFile() {
             return sourceFile;
+        }
+
+        EffectiveValue.SourceKind getSourceKind() {
+            return sourceKind;
         }
     }
 }

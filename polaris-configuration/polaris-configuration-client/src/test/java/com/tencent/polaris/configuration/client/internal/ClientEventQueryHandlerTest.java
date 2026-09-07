@@ -815,6 +815,61 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
+     * 测试目的：来源明确不是 polaris 配置文件时保留生效值，外部覆盖的生效查询不被加密文件牵连。
+     * 测试场景：生效值来自命令行，采集侧给出 EXTERNAL 归因（无坐标），环境中存在加密文件。
+     * 验证内容：effective_value 原样保留 —— 此前该场景被 fail-closed 误伤。
+     */
+    @Test
+    public void testEffectiveValueKeptWhenSourceIsExternal() {
+        // Arrange
+        registerWatched("ns", "g", "plain.yaml", "server.port: 8080", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("server.port"));
+        when(provider.resolve(any(String.class), any())).thenReturn(new EffectiveValue("8080", "9090",
+                "commandLineArgs", null, EffectiveValue.SourceKind.EXTERNAL));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        // Act
+        JsonObject prop = ackOf(handler.onPush(1, pushJson("ns", "g", "plain.yaml")))
+                .getAsJsonArray("properties").get(0).getAsJsonObject();
+
+        // Assert
+        assertThat(prop.get("effective_value").getAsString()).isEqualTo("9090");
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("8080");
+        assertThat(prop.get("property_source").getAsString()).isEqualTo("commandLineArgs");
+    }
+
+    /**
+     * 测试目的：声明为 polaris 来源却没给坐标时不得放行，仍走 fail-closed。
+     * 测试场景：采集侧传 POLARIS_FILE 但坐标为 null，环境中存在加密文件且生效值被覆盖。
+     * 验证内容：归因被降级为 UNKNOWN，effective_value 仍被省略。
+     */
+    @Test
+    public void testEffectiveValueStrippedWhenPolarisKindMissesCoordinate() {
+        // Arrange
+        String sensitiveValue = "secret-without-coordinate";
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any())).thenReturn(new EffectiveValue("local", sensitiveValue,
+                "polaris:ns/g/secret.yaml", null, EffectiveValue.SourceKind.POLARIS_FILE));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        // Act
+        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+
+        // Assert
+        assertThat(ackJson).doesNotContain(sensitiveValue);
+        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.has("effective_value")).isFalse();
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+    }
+
+    /**
      * 注册一个加密态的被监听文件，仅用于校验冲突来源的加密判定。
      */
     private void registerEncryptedWatched(String namespace, String group, String fileName) {
