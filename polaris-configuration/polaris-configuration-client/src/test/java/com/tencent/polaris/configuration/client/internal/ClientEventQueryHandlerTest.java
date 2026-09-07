@@ -676,6 +676,145 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
+     * 测试目的：生效值被覆盖但无冲突项时，仍不以明文回传（fail-closed）。
+     * 测试场景：监听未加密文件 A 与加密文件 B，A 的 key 被覆盖，resolveConflicts 返回空列表。
+     * 验证内容：ACK 全文不含敏感值且无 effective_value，file_value 与冲突事实仍保留。
+     */
+    @Test
+    public void testEffectiveValueStrippedWhenNoConflictReported() {
+        // Arrange
+        String sensitiveValue = "overridden-secret-without-conflict";
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("local", sensitiveValue, "polaris:ns/g/secret.yaml"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        // Act
+        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+
+        // Assert
+        assertThat(ackJson).doesNotContain(sensitiveValue);
+        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.has("effective_value")).isFalse();
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+        assertThat(prop.get("property_source").getAsString()).isEqualTo("polaris:ns/g/secret.yaml");
+    }
+
+    /**
+     * 测试目的：生效值即本文件自身明文时不做脱敏，避免误伤诊断信息。
+     * 测试场景：存在加密态被监听文件，但目标 key 的生效值与 file_value 一致，冲突来自未加密文件。
+     * 验证内容：effective_value 保留，未加密来源的冲突值同样保留。
+     */
+    @Test
+    public void testEffectiveValueKeptWhenSameAsFileValue() {
+        // Arrange
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any()))
+                .thenReturn(new EffectiveValue("local", "local", "polaris:ns/g/plain.yaml"));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(
+                Collections.singletonList(new ConfigKeyConflict("ns", "g", "other.yaml", "other-plain")));
+        handler.registerProvider(provider);
+
+        // Act
+        JsonObject prop = ackOf(handler.onPush(1, pushJson("ns", "g", "plain.yaml")))
+                .getAsJsonArray("properties").get(0).getAsJsonObject();
+
+        // Assert
+        assertThat(prop.get("effective_value").getAsString()).isEqualTo("local");
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+        assertThat(prop.getAsJsonArray("conflicts").get(0).getAsJsonObject().get("value").getAsString())
+                .isEqualTo("other-plain");
+    }
+
+    /**
+     * 测试目的：采集侧给出加密来源坐标时，按坐标精确省略生效值。
+     * 测试场景：目标文件未加密，生效值来源坐标指向加密文件 secret.yaml，且无冲突项。
+     * 验证内容：ACK 全文不含敏感值且无 effective_value，file_value 与 property_source 保留。
+     */
+    @Test
+    public void testEffectiveValueStrippedBySourceFileCoordinate() {
+        // Arrange
+        String sensitiveValue = "overridden-by-encrypted-source";
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any())).thenReturn(new EffectiveValue("local", sensitiveValue,
+                "polaris:ns/g/secret.yaml", new DefaultConfigFileMetadata("ns", "g", "secret.yaml")));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        // Act
+        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+
+        // Assert
+        assertThat(ackJson).doesNotContain(sensitiveValue);
+        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
+        assertThat(prop.has("effective_value")).isFalse();
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+        assertThat(prop.get("property_source").getAsString()).isEqualTo("polaris:ns/g/secret.yaml");
+    }
+
+    /**
+     * 测试目的：来源坐标指向未加密文件时保留生效值，配置生效查询不受其他加密文件牵连。
+     * 测试场景：环境中存在加密文件 secret.yaml，但生效值来源坐标指向未加密的 other.yaml。
+     * 验证内容：effective_value 原样保留 —— 这是相对 fail-closed 的核心收益。
+     */
+    @Test
+    public void testEffectiveValueKeptWhenSourceFileNotEncrypted() {
+        // Arrange
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerWatched("ns", "g", "other.yaml", "db.password: from-other", 2, "md5-other", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any())).thenReturn(new EffectiveValue("local", "from-other",
+                "polaris:ns/g/other.yaml", new DefaultConfigFileMetadata("ns", "g", "other.yaml")));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        // Act
+        JsonObject prop = ackOf(handler.onPush(1, pushJson("ns", "g", "plain.yaml")))
+                .getAsJsonArray("properties").get(0).getAsJsonObject();
+
+        // Assert
+        assertThat(prop.get("effective_value").getAsString()).isEqualTo("from-other");
+        assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+    }
+
+    /**
+     * 测试目的：来源坐标不是被监听的 polaris 配置文件时保留生效值。
+     * 测试场景：生效值来自环境变量，坐标给出但不在被监听集合内。
+     * 验证内容：查不到快照即视为非加密，effective_value 保留。
+     */
+    @Test
+    public void testEffectiveValueKeptWhenSourceFileNotWatched() {
+        // Arrange
+        registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
+        registerEncryptedWatched("ns", "g", "secret.yaml");
+        ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
+        when(provider.getKeys(any())).thenReturn(Collections.singletonList("db.password"));
+        when(provider.resolve(any(String.class), any())).thenReturn(new EffectiveValue("local", "from-env",
+                "systemEnvironment", new DefaultConfigFileMetadata("ns", "g", "not-watched.yaml")));
+        when(provider.resolveConflicts(any(String.class), any())).thenReturn(Collections.emptyList());
+        handler.registerProvider(provider);
+
+        // Act
+        JsonObject prop = ackOf(handler.onPush(1, pushJson("ns", "g", "plain.yaml")))
+                .getAsJsonArray("properties").get(0).getAsJsonObject();
+
+        // Assert
+        assertThat(prop.get("effective_value").getAsString()).isEqualTo("from-env");
+    }
+
+    /**
      * 注册一个加密态的被监听文件，仅用于校验冲突来源的加密判定。
      */
     private void registerEncryptedWatched(String namespace, String group, String fileName) {

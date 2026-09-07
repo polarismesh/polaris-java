@@ -33,6 +33,7 @@ import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -45,6 +46,12 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private static final long INIT_VERSION = 0;
 
     private static final int PULL_CONFIG_RETRY_TIMES = 3;
+
+    /**
+     * 首次拉取失败降级本地缓存后，后台补拉的延迟秒数。留出一点时间让瞬时故障自行恢复，
+     * 同时远早于长轮询首轮（静默 5 秒起步，失败后最长退避 120 秒）。
+     */
+    private static final long CATCH_UP_PULL_DELAY_SECONDS = 3;
 
     private static ScheduledExecutorService pullExecutorService;
 
@@ -62,6 +69,8 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     private final RetryPolicy retryPolicy;
     private ConfigFilePersistentHandler configFilePersistHandler;
     private final boolean fallbackToLocalCache;
+    //是否已安排过降级后的后台补拉，保证每个配置文件最多补拉一次
+    private final AtomicBoolean catchUpPullScheduled = new AtomicBoolean(false);
 
     private String token;
 
@@ -140,6 +149,16 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         return remoteConfigFile.get() != null ? remoteConfigFile.get().getMd5() : "";
     }
 
+    /**
+     * {@code remoteConfigFile} 持有的是服务端下发的响应对象，其 encrypted 是逐文件真值，
+     * 可直接作为判据；请求侧对象会被加密过滤器无条件置 true，不可用。
+     */
+    @Override
+    public boolean isEncrypted() {
+        ConfigFile configFile = remoteConfigFile.get();
+        return configFile != null && configFile.isEncrypted();
+    }
+
     public long getConfigFileVersion() {
         if (remoteConfigFile.get() == null) {
             return INIT_VERSION;
@@ -199,6 +218,16 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
 
     @Override
     protected void doPull() {
+        doPull(PULL_CONFIG_RETRY_TIMES);
+    }
+
+    /**
+     * 拉取配置，失败后按指数退避重试至多 maxRetryTimes 次。
+     *
+     * @param maxRetryTimes 最大尝试次数。降级后的后台补拉传 1：只试一次且不退避，
+     *                      避免长时间占用所有配置文件共用的单线程拉取器
+     */
+    private void doPull(int maxRetryTimes) {
         long startTime = System.currentTimeMillis();
 
         ConfigFile pullConfigFileReq = new ConfigFile(configFileMetadata.getNamespace(),
@@ -210,7 +239,7 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 configFileMetadata, notifiedVersion.get());
 
         int retryTimes = 0;
-        while (retryTimes < PULL_CONFIG_RETRY_TIMES) {
+        while (retryTimes < maxRetryTimes) {
             try {
 
                 ConfigFileResponse response = configFileFilterChain
@@ -282,26 +311,41 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
                 //预期之外的状态码，重试
                 LOGGER.error("[Config] pull response without expected code. retry times = {}, code = {}", retryTimes,
                         response.getCode());
-                retryPolicy.fail();
 
                 retryTimes++;
-                if (retryTimes == 1 && fallbackToLocalCacheOnFirstMiss(pullConfigFileReq)) {
+                if (afterPullFailure(retryTimes, maxRetryTimes, pullConfigFileReq)) {
                     return;
                 }
-                retryPolicy.executeDelay();
-                fallbackIfNecessary(retryTimes, pullConfigFileReq);
             } catch (Throwable t) {
                 LOGGER.error("[Config] failed to pull config file. retry times = " + retryTimes, t);
-                retryPolicy.fail();
 
                 retryTimes++;
-                if (retryTimes == 1 && fallbackToLocalCacheOnFirstMiss(pullConfigFileReq)) {
+                if (afterPullFailure(retryTimes, maxRetryTimes, pullConfigFileReq)) {
                     return;
                 }
-                retryPolicy.executeDelay();
-                fallbackIfNecessary(retryTimes, pullConfigFileReq);
             }
         }
+    }
+
+    /**
+     * 单次拉取失败后的收尾：记退避、按需降级本地缓存。
+     *
+     * @param retryTimes 已尝试次数
+     * @param maxRetryTimes 最大尝试次数
+     * @param configFileReq 拉取请求
+     * @return 无需再重试返回 true
+     */
+    private boolean afterPullFailure(int retryTimes, int maxRetryTimes, ConfigFile configFileReq) {
+        retryPolicy.fail();
+        if (retryTimes == 1 && maxRetryTimes > 1 && fallbackToLocalCacheOnFirstMiss(configFileReq)) {
+            return true;
+        }
+        //只有确实还要再试才退避，否则最后一次失败后白等一轮，平白拉长启动阻塞
+        if (retryTimes < maxRetryTimes) {
+            retryPolicy.executeDelay();
+        }
+        fallbackIfNecessary(retryTimes, maxRetryTimes, configFileReq);
+        return false;
     }
 
     /**
@@ -321,15 +365,53 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
             return false;
         }
         LOGGER.warn("[Config] skip remaining pull retries, use local cache. config file = {}", configFileMetadata);
+        scheduleCatchUpPull();
         return true;
     }
 
-    private void fallbackIfNecessary(final int retryTimes, ConfigFile configFileReq) {
-        if (retryTimes >= PULL_CONFIG_RETRY_TIMES) {
-            LOGGER.info("[Config] failed to pull config file from remote.");
-            //重试次数超过上限，从本地缓存拉取
-            loadLocalCache(configFileReq, true);
+    /**
+     * 降级本地缓存后，在后台补拉一次远端配置，每个配置文件最多一次。
+     *
+     * <p>本地缓存可能已落后于服务端：启动期间可能已发布新版本，或已完成密钥轮换与旧凭据吊销。
+     * 跳过同步重试换来的启动速度，不应让客户端长期停留在旧配置上。只靠长轮询兜底不够及时——
+     * 它首轮前静默 5 秒，失败后按指数退避，最长可达 120 秒才再试一次。
+     *
+     * <p>补拉只试一次且不退避：拉取线程池是全部配置文件共用的单线程，长轮询感知到变更后也要
+     * 经它触发拉取，补拉不能把它占住。这一次没成也无妨，长轮询仍是最终兜底。
+     */
+    private void scheduleCatchUpPull() {
+        if (!catchUpPullScheduled.compareAndSet(false, true)) {
+            return;
         }
+        try {
+            pullExecutorService.schedule(this::catchUpPull, CATCH_UP_PULL_DELAY_SECONDS, TimeUnit.SECONDS);
+            LOGGER.info("[Config] catch up pull scheduled in {}s. config file = {}",
+                    CATCH_UP_PULL_DELAY_SECONDS, configFileMetadata);
+        } catch (RejectedExecutionException e) {
+            LOGGER.warn("[Config] catch up pull rejected, rely on long polling. config file = {}", configFileMetadata);
+        }
+    }
+
+    private void catchUpPull() {
+        try {
+            doPull(1);
+        } catch (Throwable t) {
+            LOGGER.warn("[Config] catch up pull failed, rely on long polling. config file = {}", configFileMetadata, t);
+        }
+    }
+
+    private void fallbackIfNecessary(final int retryTimes, int maxRetryTimes, ConfigFile configFileReq) {
+        if (retryTimes < maxRetryTimes) {
+            return;
+        }
+        //内存已有配置（含此前的降级结果），本地缓存不会比它更新，重复加载只会多发一次无意义的变更通知
+        if (remoteConfigFile.get() != null) {
+            LOGGER.info("[Config] failed to pull config file from remote, keep current config in memory.");
+            return;
+        }
+        LOGGER.info("[Config] failed to pull config file from remote.");
+        //重试次数超过上限，从本地缓存拉取
+        loadLocalCache(configFileReq, true);
     }
 
     private void fallbackIfNecessaryWhenStartingUp(ConfigFile configFileReq) {

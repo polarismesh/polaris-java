@@ -38,9 +38,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Base64;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.when;
 
 /**
@@ -58,6 +60,12 @@ public class ConfigFilePersistentHandlerTest {
     private static final String FILE_NAME = "biz-config";
 
     private static final String PLAIN_CONTENT = "jdbc.password=very-secret-value";
+
+    /**
+     * 固定的错误密钥，供「密钥不匹配」用例使用，避免随机密钥带来的偶发通过。
+     */
+    private static final byte[] MISMATCHED_AES_KEY = new byte[] {
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 
     private static final long VERSION = 100L;
 
@@ -190,12 +198,12 @@ public class ConfigFilePersistentHandlerTest {
     }
 
     /**
-     * 测试目的：验证不会产生「有密文无密钥」的不可解缓存。
+     * 测试目的：验证解开过密文却拿不到密钥时放弃落盘，绝不把明文写到磁盘。
      * 测试场景：sourceContent 非空但 dataKey 缺失（解密链路异常）。
-     * 验证内容：走明文落盘分支，cacheEncrypted 为 false，读回仍是明文。
+     * 验证内容：缓存文件根本没被创建，读回为 null，磁盘上不存在明文。
      */
     @Test
-    public void testSaveEncryptedConfigFileWithoutDataKeyFallsBackToPlain() throws IOException {
+    public void testSaveEncryptedConfigFileWithoutDataKeySkipsPersist() {
         // Arrange
         ConfigFile configFile = assembleEncryptedConfigFile();
         configFile.setDataKey(null);
@@ -205,20 +213,55 @@ public class ConfigFilePersistentHandlerTest {
         ConfigFile loaded = handler.loadPersistedConfigFile(assembleConfigFileReq(), false);
 
         // Assert
-        assertThat(readPersistedText()).contains("cacheEncrypted: false");
-        assertThat(loaded).isNotNull();
-        assertThat(loaded.getContent()).isEqualTo(PLAIN_CONTENT);
+        assertThat(cacheFilePath()).as("plaintext must not be persisted").doesNotExist();
+        assertThat(loaded).isNull();
     }
 
     /**
-     * 测试目的：验证对历史明文缓存的向后兼容。
-     * 测试场景：旧版本写入的缓存文件无 cacheEncrypted 字段，content 为明文但 dataKey 存在。
-     * 验证内容：按明文原样返回，不触发解密。
+     * 测试目的：验证缓存文件权限收紧到仅属主可读写。
+     * 测试场景：加密配置落盘，文件内同时有密文与解开它的 dataKey，等同于凭据文件。
+     * 验证内容：POSIX 文件系统下权限为 rw-------。
      */
     @Test
-    public void testLoadLegacyPlainCacheFile() throws IOException {
+    public void testPersistedCacheFileIsOwnerReadableOnly() throws IOException {
+        // Arrange
+        Path path = cacheFilePath();
+        assumeTrue(path.getFileSystem().supportedFileAttributeViews().contains("posix"));
+
+        // Act
+        handler.saveConfigFile(assembleEncryptedConfigFile());
+
+        // Assert
+        assertThat(PosixFilePermissions.toString(Files.getPosixFilePermissions(path))).isEqualTo("rw-------");
+    }
+
+    /**
+     * 测试目的：验证升级前留下的「加密配置却落明文」的缓存会被丢弃，不让明文长期留存。
+     * 测试场景：旧版本写入的缓存文件 encrypted=true、content 为明文、无 cacheEncrypted 字段。
+     * 验证内容：返回 null 且缓存文件被删除，交由后续拉取重新落成密文态。
+     */
+    @Test
+    public void testLoadLegacyPlaintextCacheOfEncryptedConfigIsDiscarded() throws IOException {
         // Arrange
         writeCacheFile(PLAIN_CONTENT, Base64.getEncoder().encodeToString(aesKey), "AES", null);
+
+        // Act
+        ConfigFile loaded = handler.loadPersistedConfigFile(assembleConfigFileReq(), false);
+
+        // Assert
+        assertThat(loaded).isNull();
+        assertThat(cacheFilePath()).as("legacy plaintext cache must be deleted").doesNotExist();
+    }
+
+    /**
+     * 测试目的：验证未开启加密的场景行为完全不变。
+     * 测试场景：历史缓存文件 encrypted=false、content 为明文、无 cacheEncrypted 字段。
+     * 验证内容：按明文原样返回，不丢弃、不删除、不触发解密。
+     */
+    @Test
+    public void testLoadLegacyPlainCacheOfPlainConfigStillLoads() throws IOException {
+        // Arrange
+        writeCacheFile(PLAIN_CONTENT, null, null, null, false);
 
         // Act
         ConfigFile loaded = handler.loadPersistedConfigFile(assembleConfigFileReq(), false);
@@ -227,6 +270,7 @@ public class ConfigFilePersistentHandlerTest {
         assertThat(loaded).isNotNull();
         assertThat(loaded.getContent()).isEqualTo(PLAIN_CONTENT);
         assertThat(loaded.isCacheEncrypted()).isFalse();
+        assertThat(cacheFilePath()).exists();
     }
 
     /**
@@ -264,11 +308,14 @@ public class ConfigFilePersistentHandlerTest {
      * 测试目的：验证密钥不匹配时不返回乱码。
      * 测试场景：缓存密文与 dataKey 由不同密钥产生。
      * 验证内容：返回 null。
+     *
+     * <p>错误密钥固定而非随机：AES-CBC 无完整性校验，随机错误密钥有约 1/256 概率恰好通过
+     * PKCS7 padding 校验从而解出乱码，会让本用例偶发失败。
      */
     @Test
     public void testLoadCacheFileWithMismatchedDataKey() throws IOException {
         // Arrange
-        writeCacheFile(cipherContent, Base64.getEncoder().encodeToString(AESUtil.generateAesKey()), "AES",
+        writeCacheFile(cipherContent, Base64.getEncoder().encodeToString(MISMATCHED_AES_KEY), "AES",
                 Boolean.TRUE);
 
         // Act & Assert
@@ -394,11 +441,19 @@ public class ConfigFilePersistentHandlerTest {
      */
     private void writeCacheFile(String content, String dataKey, String encryptAlgo, Boolean cacheEncrypted)
             throws IOException {
+        writeCacheFile(content, dataKey, encryptAlgo, cacheEncrypted, true);
+    }
+
+    /**
+     * 直接构造缓存文件，可指定 encrypted 字段，用于区分加密配置与普通配置的历史缓存。
+     */
+    private void writeCacheFile(String content, String dataKey, String encryptAlgo, Boolean cacheEncrypted,
+            boolean encrypted) throws IOException {
         StringBuilder yaml = new StringBuilder();
         yaml.append("content: \"").append(content).append("\"\n");
         yaml.append("md5: \"").append(MD5).append("\"\n");
         yaml.append("version: ").append(VERSION).append("\n");
-        yaml.append("encrypted: true\n");
+        yaml.append("encrypted: ").append(encrypted).append("\n");
         if (dataKey != null) {
             yaml.append("dataKey: \"").append(dataKey).append("\"\n");
         }

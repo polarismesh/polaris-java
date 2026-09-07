@@ -21,6 +21,8 @@ import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.configuration.client.util.YamlParser;
 import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
+import org.yaml.snakeyaml.error.Mark;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import java.util.Properties;
 
@@ -50,9 +52,29 @@ public class ConfigYamlFile extends ConfigPropertiesFile {
             String msg = String.format("[Config] failed to convert content to properties. namespace = %s, "
                             + "file group = %s, file name = %s",
                     getNamespace(), getFileGroup(), getFileName());
-            LOGGER.error(msg, t);
+            // 不把异常对象交给 logger：SnakeYAML 的 MarkedYAMLException 会把出错位置附近的原始
+            // YAML 行打进日志，加密配置在此已是解密后的明文。只输出异常类型与行列号用于定位
+            LOGGER.error("{}, error = {}", msg, describeParseFailure(t));
             throw new IllegalStateException(msg);
         }
         return properties;
+    }
+
+    /**
+     * 描述解析失败，只含异常类型与出错行列号，绝不含正文片段。
+     *
+     * @param t 解析异常
+     * @return 可安全写入日志的描述
+     */
+    private String describeParseFailure(Throwable t) {
+        String description = t.getClass().getName();
+        if (t instanceof MarkedYAMLException) {
+            Mark mark = ((MarkedYAMLException) t).getProblemMark();
+            if (mark != null) {
+                description = description + " at line " + (mark.getLine() + 1)
+                        + ", column " + (mark.getColumn() + 1);
+            }
+        }
+        return description;
     }
 }

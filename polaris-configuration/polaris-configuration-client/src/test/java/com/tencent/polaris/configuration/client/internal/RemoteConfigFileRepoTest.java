@@ -106,6 +106,57 @@ public class RemoteConfigFileRepoTest {
         assertThat(snapshot.getVersion()).isEqualTo(version);
         assertThat(snapshot.getVersionName()).isEqualTo("v1.0.0");
         assertThat(snapshot.getMd5()).isEqualTo("md5abc");
+        assertThat(remoteConfigFileRepo.isEncrypted()).isFalse();
+    }
+
+    /**
+     * 测试目的：加密标记从服务端响应对象透出到 repo，供上层框架在首次加载时判断敏感性。
+     * 测试场景：服务端返回 encrypted=true 的配置文件。
+     * 验证内容：repo.isEncrypted() 为 true，且与快照的加密标记一致。
+     */
+    @Test
+    public void testIsEncryptedReflectsServerResponse() {
+        // Arrange
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        ConfigFile configFile = new ConfigFile(ConfigFileTestUtils.testNamespace, ConfigFileTestUtils.testGroup,
+                ConfigFileTestUtils.testFileName);
+        configFile.setContent("jdbc.password=secret");
+        configFile.setVersion(100);
+        configFile.setMd5("md5abc");
+        configFile.setEncrypted(true);
+        configFile.setEncryptAlgo("AES");
+        when(configFileFilterChain.execute(any(), any()))
+                .thenReturn(new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", configFile));
+
+        // Act
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+
+        // Assert
+        assertThat(remoteConfigFileRepo.isEncrypted()).isTrue();
+        assertThat(remoteConfigFileRepo.getSnapshot().isEncrypted()).isTrue();
+    }
+
+    /**
+     * 测试目的：未拉到配置时加密标记不应误报为 true。
+     * 测试场景：服务端返回 NOT_FOUND，内存中无配置对象。
+     * 验证内容：isEncrypted() 为 false，不抛 NPE。
+     */
+    @Test
+    public void testIsEncryptedFalseWhenNoConfigPulled() {
+        // Arrange
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        when(configFileFilterChain.execute(any(), any()))
+                .thenReturn(new ConfigFileResponse(ServerCodes.NOT_FOUND_RESOURCE, "", null));
+
+        // Act
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+
+        // Assert
+        assertThat(remoteConfigFileRepo.isEncrypted()).isFalse();
     }
 
     /**
@@ -243,6 +294,68 @@ public class RemoteConfigFileRepoTest {
         assertThat(remoteConfigFileRepo.getContent()).isEqualTo("cached-plain");
         assertThat(remoteConfigFileRepo.getConfigFileVersion()).isEqualTo(12);
         assertThat(elapsedMs).as("must not wait exponential backoff 1+2+4s").isLessThan(2000);
+    }
+
+    /**
+     * 测试目的：降级本地缓存后后台补拉一次，远端恢复即收敛，不必等长轮询。
+     * 测试场景：首次拉取抛超时命中缓存，随后远端恢复返回更高版本。
+     * 验证内容：构造完成时用缓存内容，补拉执行后内容与版本更新为远端值。
+     */
+    @Test
+    public void testCatchUpPullConvergesAfterFallback() throws InterruptedException {
+        // Arrange
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        ConfigFile cachedConfigFile = new ConfigFile(ConfigFileTestUtils.testNamespace,
+                ConfigFileTestUtils.testGroup, ConfigFileTestUtils.testFileName);
+        cachedConfigFile.setContent("cached-plain");
+        cachedConfigFile.setVersion(12);
+        ConfigFile freshConfigFile = new ConfigFile(ConfigFileTestUtils.testNamespace,
+                ConfigFileTestUtils.testGroup, ConfigFileTestUtils.testFileName);
+        freshConfigFile.setContent("remote-fresh");
+        freshConfigFile.setVersion(13);
+        when(configFileFilterChain.execute(any(), any()))
+                .thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""))
+                .thenReturn(new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", freshConfigFile));
+        when(configFilePersistHandler.loadPersistedConfigFile(any(), anyBoolean())).thenReturn(cachedConfigFile);
+
+        // Act
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+
+        // Assert
+        assertThat(remoteConfigFileRepo.getContent()).isEqualTo("cached-plain");
+        TimeUnit.SECONDS.sleep(6);
+        assertThat(remoteConfigFileRepo.getContent()).isEqualTo("remote-fresh");
+        assertThat(remoteConfigFileRepo.getConfigFileVersion()).isEqualTo(13);
+    }
+
+    /**
+     * 测试目的：补拉只试一次，且失败后不重复加载已在内存中的缓存。
+     * 测试场景：远端持续失败，首次拉取降级命中缓存。
+     * 验证内容：远端共两次调用（首拉 + 补拉），持久化层只读一次，内存配置保持不变。
+     */
+    @Test
+    public void testCatchUpPullTriesOnceAndKeepsMemoryConfig() throws InterruptedException {
+        // Arrange
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        ConfigFile cachedConfigFile = new ConfigFile(ConfigFileTestUtils.testNamespace,
+                ConfigFileTestUtils.testGroup, ConfigFileTestUtils.testFileName);
+        cachedConfigFile.setContent("cached-plain");
+        cachedConfigFile.setVersion(12);
+        when(configFileFilterChain.execute(any(), any())).thenThrow(new RetriableException(ErrorCode.API_TIMEOUT, ""));
+        when(configFilePersistHandler.loadPersistedConfigFile(any(), anyBoolean())).thenReturn(cachedConfigFile);
+
+        // Act
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+        TimeUnit.SECONDS.sleep(6);
+
+        // Assert
+        verify(configFileFilterChain, times(2)).execute(any(), any());
+        verify(configFilePersistHandler, times(1)).loadPersistedConfigFile(any(), anyBoolean());
+        assertThat(remoteConfigFileRepo.getContent()).isEqualTo("cached-plain");
     }
 
     /**

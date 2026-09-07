@@ -40,6 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -129,17 +130,24 @@ public class ConfigFilePersistentHandler {
      * @param configFile config file
      */
     public void saveConfigFile(ConfigFile configFile) {
-        int retryTimes = 0;
+        // 先定副本：拒绝落盘（会写出明文）时直接放弃，不进重试循环
+        ConfigFile persistCopy = copyForPersist(configFile);
+        if (persistCopy != null) {
+            saveWithRetry(configFile, persistCopy);
+        }
+    }
+
+    private void saveWithRetry(ConfigFile configFile, ConfigFile persistCopy) {
         String meta = configMeta(configFile);
+        int retryTimes = 0;
         LOG.info("start to save config file {}", meta);
         while (retryTimes <= maxWriteRetry) {
             retryTimes++;
-            Path path = doSaveConfigFile(configFile);
-            if (null == path) {
-                continue;
+            Path path = doSaveConfigFile(configFile, persistCopy);
+            if (null != path) {
+                LOG.info("end to save config file {} to {}", meta, path);
+                return;
             }
-            LOG.info("end to save config file {} to {}", meta, path);
-            return;
         }
         LOG.error("fail to persist config file {} after retry {}", meta, retryTimes);
     }
@@ -167,28 +175,38 @@ public class ConfigFilePersistentHandler {
      * 向服务端声明支持加密，因此 encrypted=true 不代表服务端真的返回了加密内容；而 sourceContent
      * 只在解密成功后被赋值，是「确实拿到并解开了密文」的可靠信号。
      *
+     * <p>解开过密文但拿不到密钥时返回 null 表示放弃落盘：此时 content 已是明文，落盘会把明文写到
+     * 磁盘上且标记为未加密，后续加载不再尝试解密，明文将静默留存。宁可没有缓存，也不能落明文。
+     *
      * @param source 业务内存对象
-     * @return 持久化副本
+     * @return 持久化副本；不应落盘时返回 null
      */
     private ConfigFile copyForPersist(ConfigFile source) {
-        ConfigFile copy = new ConfigFile(source.getNamespace(), source.getFileGroup(), source.getFileName());
-        copy.setVersion(source.getVersion());
-        copy.setName(source.getName());
-        copy.setMd5(source.getMd5());
-        copy.setEncrypted(source.isEncrypted());
-        copy.setEncryptAlgo(source.getEncryptAlgo());
-        copy.setReleaseTime(source.getReleaseTime());
-        copy.setDataKey(source.getDataKey());
+        ConfigFile copy = null;
         String cipherText = source.getSourceContent();
-        if (StringUtils.isNotBlank(cipherText) && StringUtils.isNotBlank(source.getDataKey())) {
-            // 加密配置：落盘密文态，content 与 sourceContent 一致以保持字段语义自洽
-            copy.setContent(cipherText);
-            copy.setSourceContent(cipherText);
-            copy.setCacheEncrypted(true);
+        boolean decrypted = StringUtils.isNotBlank(cipherText);
+        if (decrypted && StringUtils.isBlank(source.getDataKey())) {
+            LOG.error("config file {} was decrypted but data key is missing, skip persisting to avoid "
+                    + "writing plaintext to disk", configMeta(source));
         } else {
-            copy.setContent(source.getContent());
-            copy.setSourceContent(source.getSourceContent());
-            copy.setCacheEncrypted(false);
+            copy = new ConfigFile(source.getNamespace(), source.getFileGroup(), source.getFileName());
+            copy.setVersion(source.getVersion());
+            copy.setName(source.getName());
+            copy.setMd5(source.getMd5());
+            copy.setEncrypted(source.isEncrypted());
+            copy.setEncryptAlgo(source.getEncryptAlgo());
+            copy.setReleaseTime(source.getReleaseTime());
+            copy.setDataKey(source.getDataKey());
+            if (decrypted) {
+                // 加密配置：落盘密文态，content 与 sourceContent 一致以保持字段语义自洽
+                copy.setContent(cipherText);
+                copy.setSourceContent(cipherText);
+                copy.setCacheEncrypted(true);
+            } else {
+                copy.setContent(source.getContent());
+                copy.setSourceContent(source.getSourceContent());
+                copy.setCacheEncrypted(false);
+            }
         }
         return copy;
     }
@@ -204,7 +222,7 @@ public class ConfigFilePersistentHandler {
         }
     }
 
-    private void writeTmpFile(File persistTmpFile, File persistLockFile, ConfigFile configFile) throws IOException {
+    private void writeTmpFile(File persistTmpFile, File persistLockFile, ConfigFile persistCopy) throws IOException {
         try (RandomAccessFile raf = new RandomAccessFile(persistLockFile, "rw");
              FileChannel channel = raf.getChannel()) {
             FileLock lock = channel.tryLock();
@@ -214,21 +232,22 @@ public class ConfigFilePersistentHandler {
             }
             //执行保存
             try {
-                doWriteTmpFile(persistTmpFile, configFile);
+                doWriteTmpFile(persistTmpFile, persistCopy);
             } finally {
                 lock.release();
             }
         }
     }
 
-    private void doWriteTmpFile(File persistTmpFile, ConfigFile configFile) throws IOException {
+    private void doWriteTmpFile(File persistTmpFile, ConfigFile persistCopy) throws IOException {
         if (!persistTmpFile.exists()) {
             if (!persistTmpFile.createNewFile()) {
                 LOG.warn("tmp file {} already exists", persistTmpFile.getAbsolutePath());
             }
         }
-        // 先构造持久化副本（加密配置转为密文态），再序列化
-        ConfigFile persistCopy = copyForPersist(configFile);
+        //先收权限再写内容：否则会出现「内容已落盘、权限仍是 umask 默认」的窗口。
+        //ATOMIC_MOVE 保留 inode 与权限，最终缓存文件同样是 0600
+        restrictToOwnerOnly(persistTmpFile);
         try (FileOutputStream outputFile = new FileOutputStream(persistTmpFile)) {
             String jsonAsYaml = new YAMLMapper().writeValueAsString(persistCopy);
             outputFile.write(jsonAsYaml.getBytes(StandardCharsets.UTF_8));
@@ -236,7 +255,30 @@ public class ConfigFilePersistentHandler {
         }
     }
 
-    private Path doSaveConfigFile(ConfigFile configFile) {
+    /**
+     * 把缓存文件权限收紧到仅属主可读写。
+     *
+     * <p>加密配置的缓存文件里同时有密文和解开它的 dataKey：RSA 密钥对由 RSAService 每进程重新生成、
+     * 不落盘，服务端下发的包裹密钥重启后必然解不开，要支持重启后仍能用缓存降级就只能落明文 AES 密钥。
+     * 所以这份文件等同于凭据文件，按 ssh 私钥的方式用文件权限保护。
+     *
+     * <p>非 POSIX 文件系统（如 Windows）静默跳过，权限收紧失败也只告警不影响落盘。
+     *
+     * @param file 待收紧权限的文件
+     */
+    private void restrictToOwnerOnly(File file) {
+        Path path = file.toPath();
+        if (!path.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+            return;
+        }
+        try {
+            Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rw-------"));
+        } catch (IOException | UnsupportedOperationException e) {
+            LOG.warn("fail to restrict permissions of cache file {}", path);
+        }
+    }
+
+    private Path doSaveConfigFile(ConfigFile configFile, ConfigFile persistCopy) {
         String fileName = configFileToFileName(configFile);
         String tmpFileName = fileName + ".tmp";
         String lockFileName = fileName + ".lock";
@@ -250,7 +292,7 @@ public class ConfigFilePersistentHandler {
                     LOG.warn("lock file {} already exists", persistLockFile.getAbsolutePath());
                 }
             }
-            writeTmpFile(persistTmpFile, persistLockFile, configFile);
+            writeTmpFile(persistTmpFile, persistLockFile, persistCopy);
             Files.move(FileSystems.getDefault().getPath(persistTmpFile.getAbsolutePath()),
                     persistPath, REPLACE_EXISTING, ATOMIC_MOVE);
         } catch (IOException e) {
@@ -332,14 +374,14 @@ public class ConfigFilePersistentHandler {
             if (dataKey != null) {
                 resConfigFile.setDataKey(dataKey.toString());
             }
-            // 历史缓存无 cacheEncrypted 字段，解析为 false 后走明文分支，天然向后兼容
+            // 历史缓存无 cacheEncrypted 字段，解析为 false 后走明文分支
             Object cacheEncrypted = jsonMap.get("cacheEncrypted");
             boolean isCacheEncrypted = cacheEncrypted != null && Boolean.parseBoolean(cacheEncrypted.toString());
             resConfigFile.setCacheEncrypted(isCacheEncrypted);
             if (isCacheEncrypted) {
                 return decryptCachedContent(resConfigFile, persistFile.getName());
             }
-            return resConfigFile;
+            return discardIfLegacyPlaintextOfEncryptedConfig(resConfigFile, encryptedValue, persistFile);
         } catch (IOException e) {
             LOG.warn("fail to read file :" + persistFile.getAbsoluteFile(), e);
             return null;
@@ -358,6 +400,41 @@ public class ConfigFilePersistentHandler {
                     LOG.warn("fail to close stream for :" + persistFile.getAbsoluteFile(), e);
                 }
             }
+        }
+    }
+
+    /**
+     * 丢弃「加密配置却落着明文」的历史缓存：本版本之前留下的文件没有 cacheEncrypted 标记，
+     * 若原样返回，明文会一直留在磁盘上。删除后由后续拉取重新落成密文态。
+     *
+     * @param resConfigFile 已完成字段回填的缓存对象
+     * @param encrypted 服务端标记的加密态
+     * @param persistFile 缓存文件
+     * @return 普通配置原样返回；加密配置的明文缓存返回 null
+     */
+    private ConfigFile discardIfLegacyPlaintextOfEncryptedConfig(ConfigFile resConfigFile, boolean encrypted,
+            File persistFile) {
+        ConfigFile result = resConfigFile;
+        if (encrypted) {
+            LOG.warn("cached config file {} is an encrypted config persisted as plaintext by an older version, "
+                    + "discard and delete it", persistFile.getName());
+            deletePlaintextCacheOfEncryptedConfig(persistFile);
+            result = null;
+        }
+        return result;
+    }
+
+    /**
+     * 删除「加密配置却落着明文」的历史缓存文件及其 lock 文件。删除失败只告警，不影响启动流程。
+     *
+     * @param persistFile 缓存文件
+     */
+    private void deletePlaintextCacheOfEncryptedConfig(File persistFile) {
+        try {
+            Files.deleteIfExists(persistFile.toPath());
+            Files.deleteIfExists(FileSystems.getDefault().getPath(persistFile.getAbsolutePath() + ".lock"));
+        } catch (IOException e) {
+            LOG.warn("fail to delete legacy plaintext cache file {}", persistFile.getName());
         }
     }
 

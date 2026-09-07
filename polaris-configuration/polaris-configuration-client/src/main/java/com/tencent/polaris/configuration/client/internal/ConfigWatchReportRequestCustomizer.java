@@ -85,6 +85,25 @@ public class ConfigWatchReportRequestCustomizer implements ReportClientRequestCu
         return watchedFiles.get(toMetadataKey(metadata));
     }
 
+    /**
+     * 是否存在处于加密态的被监听配置文件。
+     * <p>
+     * 全部被监听文件均未加密时，任何生效值都不可能源自加密配置，明文 ACK 无需对生效值脱敏。
+     *
+     * @return 任一被监听文件为加密配置返回 true
+     */
+    public boolean hasEncryptedWatchedFile() {
+        boolean encrypted = false;
+        for (RemoteConfigFileRepo repo : watchedFiles.values()) {
+            ConfigFileSnapshot snapshot = repo.getSnapshot();
+            if (snapshot != null && snapshot.isEncrypted()) {
+                encrypted = true;
+                break;
+            }
+        }
+        return encrypted;
+    }
+
     private ConfigFileMetadata toMetadataKey(ConfigFileMetadata metadata) {
         return new DefaultConfigFileMetadata(metadata.getNamespace(), metadata.getFileGroup(), metadata.getFileName());
     }

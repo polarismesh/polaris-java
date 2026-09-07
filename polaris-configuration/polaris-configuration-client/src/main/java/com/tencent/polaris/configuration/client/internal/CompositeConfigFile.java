@@ -165,6 +165,27 @@ public class CompositeConfigFile implements ConfigKVFile {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * 组内**任一**子文件为加密配置即返回 true，是组维度的聚合判据。
+     *
+     * <p>组由多个文件合并而成，可能一部分加密一部分不加密，因此该方法只适合「这一组里是否存在
+     * 敏感数据」这类保守判断。需要逐值精确归因时请遍历 {@link #getConfigKVFiles()} 自行判断，
+     * 不要用这个聚合值。
+     *
+     * @return 存在加密子文件返回 true
+     */
+    @Override
+    public boolean isEncrypted() {
+        boolean encrypted = false;
+        for (ConfigKVFile configKVFile : configKVFiles) {
+            if (configKVFile.isEncrypted()) {
+                encrypted = true;
+                break;
+            }
+        }
+        return encrypted;
+    }
+
     @Override
     public void addChangeListener(ConfigFileChangeListener listener) {
         for (ConfigKVFile configKVFile : configKVFiles) {
