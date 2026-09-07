@@ -310,13 +310,12 @@ public class ClientEventQueryHandler {
     }
 
     /**
-     * 明文 ACK 前的脱敏。conflicts 与 effectiveValue 由 {@link ConfigEffectiveValueProvider} 跨全部
-     * 被监听文件采集，其中可能包含加密文件的值；本文件未加密时无密钥可用，只能去掉这些值，
-     * 仅保留「此处存在冲突」这一事实与来源坐标 —— 服务端定位冲突并不需要值本身。
+     * 明文 ACK 前的脱敏。effectiveValue 由 {@link ConfigEffectiveValueProvider} 跨全部被监听文件
+     * 采集，其中可能包含加密文件的值；本文件未加密时无密钥可用，加密来源的生效值必须去掉。
+     * 冲突项 {@code conflicts[].value} 是冲突文件里该 key 的 file_value，控制台要原样展示，不清空。
      *
-     * <p>两个维度都按「来源文件坐标」判定加密态：conflicts 自带坐标；effectiveValue 的坐标由采集侧
-     * 经 {@link EffectiveValue#getSourceFile()} 给出。坐标缺失时退回保守策略，见
-     * {@link #shouldStripEffectiveValue}。
+     * <p>effectiveValue 的来源坐标由采集侧经 {@link EffectiveValue#getSourceFile()} 给出。
+     * 坐标缺失时退回保守策略，见 {@link #shouldStripEffectiveValue}。
      *
      * @param resolvedEntries 待回传的属性明细及其生效值来源坐标
      * @return ACK 明细列表，元素已就地脱敏
@@ -326,7 +325,6 @@ public class ClientEventQueryHandler {
         List<ClientEventAck.PropertyEntry> entries = new ArrayList<>(resolvedEntries.size());
         for (ResolvedEntry resolved : resolvedEntries) {
             ClientEventAck.PropertyEntry entry = resolved.getEntry();
-            stripEncryptedConflictValues(entry);
             if (shouldStripEffectiveValue(resolved, encryptedSourcePossible)) {
                 entry.setEffectiveValue(null);
             }
@@ -377,25 +375,6 @@ public class ClientEventQueryHandler {
             entries.add(resolved.getEntry());
         }
         return entries;
-    }
-
-    private void stripEncryptedConflictValues(ClientEventAck.PropertyEntry entry) {
-        List<ClientEventAck.ConflictEntry> conflicts = entry.getConflicts();
-        if (conflicts != null) {
-            for (ClientEventAck.ConflictEntry conflict : conflicts) {
-                if (conflict != null && isEncryptedWatchedFile(conflict)) {
-                    conflict.setValue(null);
-                }
-            }
-        }
-    }
-
-    /**
-     * 判断冲突来源文件是否为加密配置。
-     */
-    private boolean isEncryptedWatchedFile(ClientEventAck.ConflictEntry conflict) {
-        return isEncryptedWatchedFile(new DefaultConfigFileMetadata(emptyIfNull(conflict.getNamespace()),
-                emptyIfNull(conflict.getGroup()), emptyIfNull(conflict.getFileName())));
     }
 
     /**

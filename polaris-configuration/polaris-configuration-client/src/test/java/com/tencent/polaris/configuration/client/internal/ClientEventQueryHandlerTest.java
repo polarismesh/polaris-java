@@ -616,14 +616,14 @@ public class ClientEventQueryHandlerTest {
     }
 
     /**
-     * 测试目的：加密文件的值不得经由未加密文件的明文 ACK 外泄。
+     * 测试目的：配置冲突回传冲突文件该 key 的 file_value，加密来源不清空，供控制台展示。
      * 测试场景：未加密文件 A 与加密文件 B 均被监听且含同名 key，A 的冲突项来自 B。
-     * 验证内容：ACK 全文不含 B 的敏感值，冲突项保留来源坐标但不带 value，A 自身的 file_value 保留。
+     * 验证内容：冲突项保留来源坐标且 value 为 B 的 file_value；A 自身的 file_value 保留。
      */
     @Test
-    public void testConflictValueFromEncryptedFileIsStripped() {
+    public void testConflictValueFromEncryptedFileIsKept() {
         // Arrange
-        String sensitiveValue = "root-password-from-encrypted-file";
+        String secretFileValue = "root-password-from-encrypted-file";
         registerWatched("ns", "g", "plain.yaml", "db.password: local", 1, "md5-plain", 100L);
         registerEncryptedWatched("ns", "g", "secret.yaml");
         ConfigEffectiveValueProvider provider = mock(ConfigEffectiveValueProvider.class);
@@ -631,25 +631,24 @@ public class ClientEventQueryHandlerTest {
         when(provider.resolve(any(String.class), any()))
                 .thenReturn(new EffectiveValue("local", "local", "polaris:ns/g/plain.yaml"));
         when(provider.resolveConflicts(any(String.class), any())).thenReturn(
-                Collections.singletonList(new ConfigKeyConflict("ns", "g", "secret.yaml", sensitiveValue)));
+                Collections.singletonList(new ConfigKeyConflict("ns", "g", "secret.yaml", secretFileValue)));
         handler.registerProvider(provider);
 
         // Act
-        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+        JsonObject prop = ackOf(handler.onPush(1, pushJson("ns", "g", "plain.yaml")))
+                .getAsJsonArray("properties").get(0).getAsJsonObject();
 
         // Assert
-        assertThat(ackJson).doesNotContain(sensitiveValue);
-        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
         assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
         JsonObject conflictJson = prop.getAsJsonArray("conflicts").get(0).getAsJsonObject();
         assertThat(conflictJson.get("file_name").getAsString()).isEqualTo("secret.yaml");
-        assertThat(conflictJson.has("value")).isFalse();
+        assertThat(conflictJson.get("value").getAsString()).isEqualTo(secretFileValue);
     }
 
     /**
-     * 测试目的：生效值来自加密文件时同样不以明文进入未加密文件的 ACK。
-     * 测试场景：未加密文件 A 的 key 被加密文件 B 覆盖，effectiveValue 即 B 的敏感值。
-     * 验证内容：ACK 无 effective_value 字段且全文不含敏感值。
+     * 测试目的：生效值来自加密文件时不以明文进入未加密文件 ACK 的 effective_value。
+     * 测试场景：未加密文件 A 的 key 被加密文件 B 覆盖，effectiveValue 即 B 的敏感值；冲突项仍带 B 的 file_value。
+     * 验证内容：ACK 无 effective_value；conflicts 仍回传冲突文件的 file_value。
      */
     @Test
     public void testEffectiveValueFromEncryptedFileIsStripped() {
@@ -666,13 +665,14 @@ public class ClientEventQueryHandlerTest {
         handler.registerProvider(provider);
 
         // Act
-        String ackJson = handler.onPush(1, pushJson("ns", "g", "plain.yaml"));
+        JsonObject prop = ackOf(handler.onPush(1, pushJson("ns", "g", "plain.yaml")))
+                .getAsJsonArray("properties").get(0).getAsJsonObject();
 
         // Assert
-        assertThat(ackJson).doesNotContain(sensitiveValue);
-        JsonObject prop = ackOf(ackJson).getAsJsonArray("properties").get(0).getAsJsonObject();
         assertThat(prop.has("effective_value")).isFalse();
         assertThat(prop.get("file_value").getAsString()).isEqualTo("local");
+        assertThat(prop.getAsJsonArray("conflicts").get(0).getAsJsonObject().get("value").getAsString())
+                .isEqualTo(sensitiveValue);
     }
 
     /**
