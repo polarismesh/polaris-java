@@ -112,7 +112,7 @@
         <maven.deploy.plugin.version>3.0.0-M1</maven.deploy.plugin.version>
         <maven.flatten.plugin.version>1.2.5</maven.flatten.plugin.version>
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
-        <central.publishing.maven.plugin.version>0.8.0</central.publishing.maven.plugin.version>
+        <central.publishing.maven.plugin.version>0.11.0</central.publishing.maven.plugin.version>
         <okhttp.version>2.7.5</okhttp.version>
         <mockwebserver.version>4.12.0</mockwebserver.version>
         <httpclient.version>4.5.14</httpclient.version>
