@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.encrypt;
 
-import com.tencent.polaris.api.utils.ClassUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 
 public class EncryptConfig {
@@ -98,7 +97,7 @@ public class EncryptConfig {
      * @return true：需要解密；false：不需要解密
      */
     public static Boolean needDecrypt(Object content) {
-        if (null == content || !ClassUtils.isClassPresent("org.bouncycastle.jce.provider.BouncyCastleProvider")) {
+        if (null == content || !EncryptConstants.isBouncyCastlePresent()) {
             return false;
         } else {
             String stringValue = String.valueOf(content);

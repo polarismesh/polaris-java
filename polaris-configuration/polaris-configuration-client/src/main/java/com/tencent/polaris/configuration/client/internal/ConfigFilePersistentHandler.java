@@ -20,12 +20,12 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
-import com.tencent.polaris.api.utils.ClassUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.client.util.Utils;
+import com.tencent.polaris.encrypt.EncryptConstants;
 import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.factory.util.FileUtils;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -60,10 +60,6 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 public class ConfigFilePersistentHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(ConfigFilePersistentHandler.class);
-
-    private static final String ALGO_AES = "AES";
-
-    private static final String BOUNCY_CASTLE_PROVIDER = "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
     private final String persistDirPath;
     private final int maxWriteRetry;
@@ -457,12 +453,12 @@ public class ConfigFilePersistentHandler {
             return null;
         }
         // 只认 AES：encryptAlgo 由本 SDK 写入，未知算法说明缓存来自不兼容版本；缺失则按 AES 兼容处理
-        if (StringUtils.isNotBlank(algo) && !ALGO_AES.equalsIgnoreCase(algo)) {
+        if (StringUtils.isNotBlank(algo) && !EncryptConstants.ALGO_AES.equalsIgnoreCase(algo)) {
             LOG.error("cached config file {} uses unsupported encrypt algo {}, discard this cache", fileName, algo);
             return null;
         }
         // BouncyCastle 为可选依赖，缺失时加载 AESUtil 会抛 NoClassDefFoundError，须提前预判
-        if (!ClassUtils.isClassPresent(BOUNCY_CASTLE_PROVIDER)) {
+        if (!EncryptConstants.isBouncyCastlePresent()) {
             LOG.error("cached config file {} is encrypted but bouncycastle is absent, discard this cache", fileName);
             return null;
         }

@@ -19,12 +19,12 @@ package com.tencent.polaris.configuration.client.internal;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.tencent.polaris.api.utils.ClassUtils;
 import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueProvider;
 import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistration;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKeyConflict;
 import com.tencent.polaris.configuration.api.core.EffectiveValue;
+import com.tencent.polaris.encrypt.EncryptConstants;
 import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.encrypt.util.RSAUtil;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -74,11 +74,6 @@ public class ClientEventQueryHandler {
 
     /** 已监听该配置文件但尚未拉取生效（首次拉取失败/重试中）。 */
     private static final String REASON_PENDING = "pending";
-
-    /**
-     * BouncyCastle Provider 全限定名，用于在触碰 AESUtil / RSAUtil 之前预判其是否在位。
-     */
-    private static final String BOUNCY_CASTLE_PROVIDER = "org.bouncycastle.jce.provider.BouncyCastleProvider";
 
     /**
      * 序列化 ACK 自身失败时的兜底应答，避免服务端收到无法诊断的空对象。
@@ -230,7 +225,7 @@ public class ClientEventQueryHandler {
      */
     private boolean isAckCryptoAvailable(ConfigFileSnapshot snapshot) {
         return snapshot.getEncryptAlgo() != null && !snapshot.getEncryptAlgo().isEmpty()
-                && ClassUtils.isClassPresent(BOUNCY_CASTLE_PROVIDER);
+                && EncryptConstants.isBouncyCastlePresent();
     }
 
     /**

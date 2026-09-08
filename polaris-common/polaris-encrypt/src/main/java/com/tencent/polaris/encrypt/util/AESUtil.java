@@ -20,6 +20,7 @@ package com.tencent.polaris.encrypt.util;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.encrypt.EncryptConstants;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.crypto.Cipher;
@@ -48,7 +49,7 @@ public class AESUtil {
     public static byte[] generateAesKey() {
         KeyGenerator keyGenerator;
         try {
-            keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator = KeyGenerator.getInstance(EncryptConstants.ALGO_AES);
         } catch (NoSuchAlgorithmException e) {
             throw new PolarisException(ErrorCode.AES_KEY_GENERATE_ERROR, e.getMessage());
         }
@@ -66,7 +67,7 @@ public class AESUtil {
     public static byte[] generateAesKey(String seed) {
         KeyGenerator keyGenerator;
         try {
-            keyGenerator = KeyGenerator.getInstance("AES");
+            keyGenerator = KeyGenerator.getInstance(EncryptConstants.ALGO_AES);
             SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
             secureRandom.setSeed(SHA256.encode(seed));
             keyGenerator.init(256, secureRandom);
@@ -88,7 +89,8 @@ public class AESUtil {
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
             byte[] iv = new byte[cipher.getBlockSize()];
             System.arraycopy(password, 0, iv, 0, cipher.getBlockSize());
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(password, "AES"), new IvParameterSpec(iv));
+            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(password, EncryptConstants.ALGO_AES),
+                    new IvParameterSpec(iv));
             byte[] bytes = cipher.doFinal(content.getBytes());
             return Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
@@ -110,7 +112,7 @@ public class AESUtil {
         try {
             byte[] enCodeFormat = generateAesKey(password);
             // 根据给定的字节数组构造一个密钥。enCodeFormat：密钥内容；"AES"：与给定的密钥内容相关联的密钥算法的名称
-            SecretKeySpec skSpec = new SecretKeySpec(enCodeFormat, "AES");
+            SecretKeySpec skSpec = new SecretKeySpec(enCodeFormat, EncryptConstants.ALGO_AES);
             // 创建一个实现指定转换的 Cipher对象，该转换由指定的提供程序提供。
             // "AES/ECB/PKCS7Padding"：转换的名称；"BC"：提供程序的名称
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
@@ -136,7 +138,8 @@ public class AESUtil {
             Cipher cipher = Cipher.getInstance("AES/CBC/PKCS7Padding", "BC");
             byte[] iv = new byte[cipher.getBlockSize()];
             System.arraycopy(password, 0, iv, 0, cipher.getBlockSize());
-            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(password, "AES"), new IvParameterSpec(iv));
+            cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(password, EncryptConstants.ALGO_AES),
+                    new IvParameterSpec(iv));
             byte[] paddingPlaintext = cipher.doFinal(Base64.getDecoder().decode(content));
             return new String(paddingPlaintext);
         } catch (Exception e) {
@@ -158,7 +161,7 @@ public class AESUtil {
         try {
             byte[] enCodeFormat = generateAesKey(password);
             // 根据给定的字节数组构造一个密钥。enCodeFormat：密钥内容；"AES"：与给定的密钥内容相关联的密钥算法的名称
-            SecretKeySpec skSpec = new SecretKeySpec(enCodeFormat, "AES");
+            SecretKeySpec skSpec = new SecretKeySpec(enCodeFormat, EncryptConstants.ALGO_AES);
             // 创建一个实现指定转换的 Cipher对象，该转换由指定的提供程序提供。
             // "AES/ECB/PKCS7Padding"：转换的名称；"BC"：提供程序的名称
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS7Padding", "BC");
