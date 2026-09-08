@@ -338,65 +338,60 @@ public class ConfigFilePersistentHandler {
         if (null == persistFile || !persistFile.exists()) {
             return null;
         }
-        InputStream inputStream = null;
-        InputStreamReader reader = null;
-        Yaml yaml = new Yaml();
-        try {
-            inputStream = new FileInputStream(persistFile);
-            reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8);
-            ConfigFile resConfigFile = new ConfigFile(configFile.getNamespace(),
-                    configFile.getFileGroup(), configFile.getFileName());
-            Map<String, Object> jsonMap = yaml.load(reader);
-            resConfigFile.setContent(jsonMap.get("content").toString());
-            resConfigFile.setMd5(jsonMap.get("md5").toString());
-            resConfigFile.setVersion(Long.valueOf(String.valueOf(jsonMap.get("version"))));
-            Object name = jsonMap.get("name");
-            if (name != null) {
-                resConfigFile.setName(name.toString());
-            }
-            Object sourceContent = jsonMap.get("sourceContent");
-            if (sourceContent != null) {
-                resConfigFile.setSourceContent(sourceContent.toString());
-            }
-            Object encrypted = jsonMap.get("encrypted");
-            boolean encryptedValue = encrypted == null ? configFile.isEncrypted()
-                    : Boolean.parseBoolean(encrypted.toString());
-            resConfigFile.setEncrypted(encryptedValue);
-            Object encryptAlgo = jsonMap.get("encryptAlgo");
-            if (encryptAlgo != null) {
-                resConfigFile.setEncryptAlgo(encryptAlgo.toString());
-            }
-            Object dataKey = jsonMap.get("dataKey");
-            if (dataKey != null) {
-                resConfigFile.setDataKey(dataKey.toString());
-            }
-            // 历史缓存无 cacheEncrypted 字段，解析为 false 后走明文分支
-            Object cacheEncrypted = jsonMap.get("cacheEncrypted");
-            boolean isCacheEncrypted = cacheEncrypted != null && Boolean.parseBoolean(cacheEncrypted.toString());
-            resConfigFile.setCacheEncrypted(isCacheEncrypted);
-            if (isCacheEncrypted) {
-                return decryptCachedContent(resConfigFile, persistFile.getName());
-            }
-            return discardIfLegacyPlaintextOfEncryptedConfig(resConfigFile, encryptedValue, persistFile);
+        Map<String, Object> jsonMap;
+        // 先读完并关闭句柄再解析：Windows 不允许删除仍被打开的文件，历史明文缓存会删不掉
+        try (InputStream inputStream = new FileInputStream(persistFile);
+                InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+            jsonMap = new Yaml().load(reader);
         } catch (IOException e) {
             LOG.warn("fail to read file :" + persistFile.getAbsoluteFile(), e);
             return null;
-        } finally {
-            if (null != reader) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    LOG.warn("fail to close reader for :" + persistFile.getAbsoluteFile(), e);
-                }
-            }
-            if (null != inputStream) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    LOG.warn("fail to close stream for :" + persistFile.getAbsoluteFile(), e);
-                }
-            }
         }
+        return parseConfigFile(jsonMap, persistFile, configFile);
+    }
+
+    /**
+     * 把缓存文件解析结果回填成配置对象，并按缓存形态决定解密、丢弃或原样返回。
+     *
+     * @param jsonMap 缓存文件解析出的键值
+     * @param persistFile 缓存文件，此时句柄已关闭，可安全删除
+     * @param configFile 发起加载的配置坐标
+     * @return 可用的配置文件；缓存不可用时返回 null
+     */
+    private ConfigFile parseConfigFile(Map<String, Object> jsonMap, File persistFile, ConfigFile configFile) {
+        ConfigFile resConfigFile = new ConfigFile(configFile.getNamespace(),
+                configFile.getFileGroup(), configFile.getFileName());
+        resConfigFile.setContent(jsonMap.get("content").toString());
+        resConfigFile.setMd5(jsonMap.get("md5").toString());
+        resConfigFile.setVersion(Long.valueOf(String.valueOf(jsonMap.get("version"))));
+        Object name = jsonMap.get("name");
+        if (name != null) {
+            resConfigFile.setName(name.toString());
+        }
+        Object sourceContent = jsonMap.get("sourceContent");
+        if (sourceContent != null) {
+            resConfigFile.setSourceContent(sourceContent.toString());
+        }
+        Object encrypted = jsonMap.get("encrypted");
+        boolean encryptedValue = encrypted == null ? configFile.isEncrypted()
+                : Boolean.parseBoolean(encrypted.toString());
+        resConfigFile.setEncrypted(encryptedValue);
+        Object encryptAlgo = jsonMap.get("encryptAlgo");
+        if (encryptAlgo != null) {
+            resConfigFile.setEncryptAlgo(encryptAlgo.toString());
+        }
+        Object dataKey = jsonMap.get("dataKey");
+        if (dataKey != null) {
+            resConfigFile.setDataKey(dataKey.toString());
+        }
+        // 历史缓存无 cacheEncrypted 字段，解析为 false 后走明文分支
+        Object cacheEncrypted = jsonMap.get("cacheEncrypted");
+        boolean isCacheEncrypted = cacheEncrypted != null && Boolean.parseBoolean(cacheEncrypted.toString());
+        resConfigFile.setCacheEncrypted(isCacheEncrypted);
+        if (isCacheEncrypted) {
+            return decryptCachedContent(resConfigFile, persistFile.getName());
+        }
+        return discardIfLegacyPlaintextOfEncryptedConfig(resConfigFile, encryptedValue, persistFile);
     }
 
     /**
