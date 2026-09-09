@@ -24,6 +24,7 @@ import com.tencent.polaris.configuration.api.core.ConfigEffectiveValueRegistrati
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.api.core.ConfigKeyConflict;
 import com.tencent.polaris.configuration.api.core.EffectiveValue;
+import com.tencent.polaris.encrypt.EncryptConstants;
 import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.encrypt.util.RSAUtil;
 import com.tencent.polaris.logging.LoggerFactory;
@@ -43,7 +44,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * 配置生效查询处理器，解析服务端 PUSH 指令并组装 ACK content JSON。
  * <p>
  * 任何分支都必须返回可发送的 JSON：服务端同步等待 ACK，静默会把它挂到超时。
- * 本类 INFO 只记文件坐标；PUSH/ACK 全文由连接器按 INFO 输出。
+ * 本类与连接器的日志均只记文件坐标与规模，不输出 PUSH/ACK 全文。
  *
  * @author evelynwei
  */
@@ -201,7 +202,7 @@ public class ClientEventQueryHandler {
             if (snapshot.getEncryptAlgo() != null && !snapshot.getEncryptAlgo().isEmpty()) {
                 ack.setEncryptAlgo(snapshot.getEncryptAlgo());
             }
-            String wrappedDataKey = wrapAckDataKey(snapshot.getDataKey(), publicKey);
+            String wrappedDataKey = wrapAckDataKey(snapshot, publicKey);
             if (!wrappedDataKey.isEmpty()) {
                 ack.setDataKey(wrappedDataKey);
             }
@@ -209,21 +210,42 @@ public class ClientEventQueryHandler {
     }
 
     /**
+     * ACK 侧能否用快照里的 data_key 做加密，两个前提缺一不可。
+     *
+     * <p>一是密钥已被加密过滤器解包成明文 AES 密钥。判据取 encryptAlgo：它只由
+     * {@code CryptoConfigFileFilter} 在解包成功时与明文密钥一起写入，连接器只写 encrypted 和
+     * 服务端下发的包裹密钥。过滤器未启用时 dataKey 仍是 RSA 包裹态，再包一层发回去服务端解不开。
+     *
+     * <p>二是 BouncyCastle 在位。AESUtil 与 RSAUtil 的静态初始化依赖它，缺失时抛的是
+     * NoClassDefFoundError 而非 RuntimeException，不预判就会让整个 ACK 变成 internal_error；
+     * 而配置是否加密由服务端决定，与客户端有没有装 BouncyCastle 无关，这条路径确实可达。
+     *
+     * @param snapshot 配置快照
+     * @return 可以使用返回 true
+     */
+    private boolean isAckCryptoAvailable(ConfigFileSnapshot snapshot) {
+        return snapshot.getEncryptAlgo() != null && !snapshot.getEncryptAlgo().isEmpty()
+                && EncryptConstants.isBouncyCastlePresent();
+    }
+
+    /**
      * Wrap the symmetric data key with the query RSA public key.
      * Missing key or encrypt failure returns empty so Gson omits data_key; never return plaintext.
      *
-     * @param plainDataKey Base64 plaintext AES key from snapshot
+     * @param snapshot 配置快照，data_key 为 Base64 明文 AES 密钥
      * @param publicKey PKCS1 / X.509 / PEM public key from PUSH
      * @return RSA wrapped data key, or empty on failure
      */
-    private String wrapAckDataKey(String plainDataKey, String publicKey) {
+    private String wrapAckDataKey(ConfigFileSnapshot snapshot, String publicKey) {
         String wrapped = "";
-        if (plainDataKey != null && !plainDataKey.isEmpty() && publicKey != null && !publicKey.isEmpty()) {
+        String plainDataKey = snapshot.getDataKey();
+        if (plainDataKey != null && !plainDataKey.isEmpty() && publicKey != null && !publicKey.isEmpty()
+                && isAckCryptoAvailable(snapshot)) {
             try {
                 byte[] rawKey = Base64.getDecoder().decode(plainDataKey);
                 wrapped = RSAUtil.encryptToBase64(rawKey, publicKey);
-            } catch (RuntimeException e) {
-                LOG.warn("[Config] rsa wrap data_key failed: {}", e.getMessage());
+            } catch (Throwable t) {
+                LOG.warn("[Config] rsa wrap data_key failed: {}", t.getMessage());
                 wrapped = "";
             }
         }
@@ -272,33 +294,117 @@ public class ClientEventQueryHandler {
         }
     }
 
-    private void applyProperties(ClientEventAck ack, List<ClientEventAck.PropertyEntry> entries,
+    private void applyProperties(ClientEventAck ack, List<ResolvedEntry> resolvedEntries,
             ConfigFileSnapshot snapshot) {
-        if (!entries.isEmpty() && snapshot.isEncrypted()) {
-            setEncryptedProperties(ack, entries, snapshot);
-        } else if (!entries.isEmpty()) {
-            ack.setProperties(entries);
+        if (!resolvedEntries.isEmpty() && snapshot.isEncrypted()) {
+            setEncryptedProperties(ack, toPropertyEntries(resolvedEntries), snapshot);
+        } else if (!resolvedEntries.isEmpty()) {
+            // 明文 ACK：entries 是跨文件采集的，来自加密文件的值不得以明文回传或进入日志
+            ack.setProperties(stripEncryptedSourceValues(resolvedEntries));
         }
     }
 
-    private List<ClientEventAck.PropertyEntry> buildPropertyEntries(ConfigEffectiveValueProvider provider,
+    /**
+     * 明文 ACK 前的脱敏。effectiveValue 由 {@link ConfigEffectiveValueProvider} 跨全部被监听文件
+     * 采集，其中可能包含加密文件的值；本文件未加密时无密钥可用，加密来源的生效值必须去掉。
+     * 冲突项 {@code conflicts[].value} 是冲突文件里该 key 的 file_value，控制台要原样展示，不清空。
+     *
+     * <p>effectiveValue 的来源坐标由采集侧经 {@link EffectiveValue#getSourceFile()} 给出。
+     * 坐标缺失时退回保守策略，见 {@link #shouldStripEffectiveValue}。
+     *
+     * @param resolvedEntries 待回传的属性明细及其生效值来源坐标
+     * @return ACK 明细列表，元素已就地脱敏
+     */
+    private List<ClientEventAck.PropertyEntry> stripEncryptedSourceValues(List<ResolvedEntry> resolvedEntries) {
+        boolean encryptedSourcePossible = watchRegistry != null && watchRegistry.hasEncryptedWatchedFile();
+        List<ClientEventAck.PropertyEntry> entries = new ArrayList<>(resolvedEntries.size());
+        for (ResolvedEntry resolved : resolvedEntries) {
+            ClientEventAck.PropertyEntry entry = resolved.getEntry();
+            if (shouldStripEffectiveValue(resolved, encryptedSourcePossible)) {
+                entry.setEffectiveValue(null);
+            }
+            entries.add(entry);
+        }
+        return entries;
+    }
+
+    /**
+     * 是否必须去掉生效值。按采集侧的来源归因分三种处置：
+     *
+     * <ul>
+     * <li>来源是 polaris 配置文件：按坐标精确判定，仅该文件确为加密配置才去掉，明文来源照常回传。</li>
+     * <li>来源不是 polaris 配置文件（环境变量、命令行、系统属性等）：该值不由配置中心下发，
+     * 不可能是加密配置的明文，照常回传。</li>
+     * <li>未归因（旧版本采集侧）：无从判断，退回 fail-closed —— 只要存在加密态被监听文件，
+     * 且生效值与本文件 fileValue 不一致（说明该值来自别处），就去掉。生效值等于 fileValue 时
+     * 即本文件自身的明文，保留不泄露。</li>
+     * </ul>
+     *
+     * @param resolved 属性明细及其来源归因
+     * @param encryptedSourcePossible 是否存在加密态被监听文件
+     * @return 需要去掉生效值返回 true
+     */
+    private boolean shouldStripEffectiveValue(ResolvedEntry resolved, boolean encryptedSourcePossible) {
+        boolean strip;
+        if (resolved.getSourceKind() == EffectiveValue.SourceKind.POLARIS_FILE) {
+            strip = isEncryptedWatchedFile(resolved.getSourceFile());
+        } else if (resolved.getSourceKind() == EffectiveValue.SourceKind.EXTERNAL) {
+            strip = false;
+        } else {
+            strip = encryptedSourcePossible && isOverriddenByOtherSource(resolved.getEntry());
+        }
+        return strip;
+    }
+
+    /**
+     * 生效值是否来自本文件之外的来源。fileValue 为 null 时任何非空生效值都来自别处。
+     */
+    private boolean isOverriddenByOtherSource(ClientEventAck.PropertyEntry entry) {
+        String effectiveValue = entry.getEffectiveValue();
+        return effectiveValue != null && !effectiveValue.equals(entry.getFileValue());
+    }
+
+    private List<ClientEventAck.PropertyEntry> toPropertyEntries(List<ResolvedEntry> resolvedEntries) {
+        List<ClientEventAck.PropertyEntry> entries = new ArrayList<>(resolvedEntries.size());
+        for (ResolvedEntry resolved : resolvedEntries) {
+            entries.add(resolved.getEntry());
+        }
+        return entries;
+    }
+
+    /**
+     * 判断给定坐标的文件是否为加密配置。加密状态取自本地已监听文件的快照，不依赖采集侧上报。
+     */
+    private boolean isEncryptedWatchedFile(ConfigFileMetadata metadata) {
+        ConfigFileMetadata key = new DefaultConfigFileMetadata(emptyIfNull(metadata.getNamespace()),
+                emptyIfNull(metadata.getFileGroup()), emptyIfNull(metadata.getFileName()));
+        RemoteConfigFileRepo repo = watchRegistry == null ? null : watchRegistry.getWatchedFile(key);
+        ConfigFileSnapshot snapshot = repo == null ? null : repo.getSnapshot();
+        return snapshot != null && snapshot.isEncrypted();
+    }
+
+    private String emptyIfNull(String value) {
+        return value == null ? "" : value;
+    }
+
+    private List<ResolvedEntry> buildPropertyEntries(ConfigEffectiveValueProvider provider,
             List<String> keys, ConfigFileMetadata metadata) {
-        List<ClientEventAck.PropertyEntry> entries = new ArrayList<>();
+        List<ResolvedEntry> entries = new ArrayList<>();
         List<String> omittedKeys = new ArrayList<>();
         int serializedBytes = 2;
         for (String key : keys) {
             if (key != null) {
-                ClientEventAck.PropertyEntry entry = buildPropertyEntry(provider, key, metadata);
-                boolean conflicted = hasConflict(entry);
+                ResolvedEntry resolved = buildPropertyEntry(provider, key, metadata);
+                boolean conflicted = hasConflict(resolved.getEntry());
                 if (conflicted) {
-                    int entryBytes = gson.toJson(entry).getBytes(StandardCharsets.UTF_8).length;
+                    int entryBytes = gson.toJson(resolved.getEntry()).getBytes(StandardCharsets.UTF_8).length;
                     int separatorBytes = entries.isEmpty() ? 0 : 1;
                     if (serializedBytes + separatorBytes + entryBytes > MAX_ACK_PROPERTIES_BYTES) {
                         LOG.warn("[Config] ack properties truncated, file = {}, included = {}, total = {}, limit = {} bytes",
                                 metadata, entries.size(), keys.size(), MAX_ACK_PROPERTIES_BYTES);
                         break;
                     }
-                    entries.add(entry);
+                    entries.add(resolved);
                     serializedBytes += separatorBytes + entryBytes;
                 } else {
                     omittedKeys.add(key);
@@ -311,14 +417,17 @@ public class ClientEventQueryHandler {
 
     private void setEncryptedProperties(ClientEventAck ack, List<ClientEventAck.PropertyEntry> entries,
             ConfigFileSnapshot snapshot) {
+        if (!isAckCryptoAvailable(snapshot)) {
+            return;
+        }
         byte[] aesKey = decodeAckAesKey(snapshot.getDataKey());
         if (aesKey == null) {
             return;
         }
         try {
             ack.setProperties(AESUtil.encrypt(gson.toJson(entries), aesKey));
-        } catch (RuntimeException e) {
-            LOG.warn("[Config] encrypt properties failed: {}", e.getMessage());
+        } catch (Throwable t) {
+            LOG.warn("[Config] encrypt properties failed: {}", t.getMessage());
         }
     }
 
@@ -344,12 +453,12 @@ public class ClientEventQueryHandler {
         }
     }
 
-    private void logPropertySelection(ConfigFileMetadata metadata, List<ClientEventAck.PropertyEntry> entries,
+    private void logPropertySelection(ConfigFileMetadata metadata, List<ResolvedEntry> entries,
             List<String> omittedKeys) {
         if (LOG.isDebugEnabled()) {
             List<String> conflictedKeys = new ArrayList<>(entries.size());
-            for (ClientEventAck.PropertyEntry entry : entries) {
-                conflictedKeys.add(entry.getKey());
+            for (ResolvedEntry resolved : entries) {
+                conflictedKeys.add(resolved.getEntry().getKey());
             }
             LOG.debug("[Config] ack properties, file = {}, conflicted = {}, omitted = {}",
                     metadata, conflictedKeys, omittedKeys);
@@ -373,17 +482,20 @@ public class ClientEventQueryHandler {
         return conflicted;
     }
 
-    private ClientEventAck.PropertyEntry buildPropertyEntry(ConfigEffectiveValueProvider provider, String key,
+    private ResolvedEntry buildPropertyEntry(ConfigEffectiveValueProvider provider, String key,
             ConfigFileMetadata metadata) {
         ClientEventAck.PropertyEntry entry = new ClientEventAck.PropertyEntry();
         entry.setKey(key);
-        fillEffectiveValue(provider, key, metadata, entry);
+        EffectiveValue resolved = fillEffectiveValue(provider, key, metadata, entry);
         entry.setConflicts(buildConflicts(provider, key, metadata));
-        return entry;
+        return new ResolvedEntry(entry, resolved);
     }
 
-    private void fillEffectiveValue(ConfigEffectiveValueProvider provider, String key, ConfigFileMetadata metadata,
-            ClientEventAck.PropertyEntry entry) {
+    /**
+     * 填充生效值三字段，并返回采集侧结果（含来源归因），采集失败时为 null。
+     */
+    private EffectiveValue fillEffectiveValue(ConfigEffectiveValueProvider provider, String key,
+            ConfigFileMetadata metadata, ClientEventAck.PropertyEntry entry) {
         EffectiveValue effectiveValue;
         try {
             effectiveValue = provider.resolve(key, metadata);
@@ -396,6 +508,7 @@ public class ClientEventQueryHandler {
             entry.setFileValue(effectiveValue.getFileValue());
             entry.setEffectiveValue(effectiveValue.getEffectiveValue());
         }
+        return effectiveValue;
     }
 
     private List<ClientEventAck.ConflictEntry> buildConflicts(ConfigEffectiveValueProvider provider, String key,
@@ -455,6 +568,40 @@ public class ClientEventQueryHandler {
         } catch (RuntimeException e) {
             LOG.warn("[Config] marshal ack content failed: {}", e.getMessage());
             return MARSHAL_FAILED_ACK;
+        }
+    }
+
+    /**
+     * 采集结果的内部载体：ACK 明细 + 生效值来源的文件坐标。
+     *
+     * <p>坐标只用于客户端内部判定来源文件是否加密，**不放在**
+     * {@link ClientEventAck.PropertyEntry} 上，以免随 ACK 序列化外泄，或让上报报文多出一个
+     * 隐式协议字段。
+     */
+    private static final class ResolvedEntry {
+
+        private final ClientEventAck.PropertyEntry entry;
+
+        private final ConfigFileMetadata sourceFile;
+
+        private final EffectiveValue.SourceKind sourceKind;
+
+        ResolvedEntry(ClientEventAck.PropertyEntry entry, EffectiveValue resolved) {
+            this.entry = entry;
+            this.sourceFile = resolved == null ? null : resolved.getSourceFile();
+            this.sourceKind = resolved == null ? EffectiveValue.SourceKind.UNKNOWN : resolved.getSourceKind();
+        }
+
+        ClientEventAck.PropertyEntry getEntry() {
+            return entry;
+        }
+
+        ConfigFileMetadata getSourceFile() {
+            return sourceFile;
+        }
+
+        EffectiveValue.SourceKind getSourceKind() {
+            return sourceKind;
         }
     }
 }

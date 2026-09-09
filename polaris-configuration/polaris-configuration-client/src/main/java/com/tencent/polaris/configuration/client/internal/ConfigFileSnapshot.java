@@ -42,25 +42,23 @@ public class ConfigFileSnapshot {
 
     private final String dataKey;
 
-    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime) {
-        this(version, md5, content, effectiveTime, false, null, null);
-    }
-
-    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime, String versionName) {
+    /**
+     * 全量构造器，是唯一给字段赋值的地方，其余构造器一律委托至此，
+     * 避免新增字段时漏改某个重载导致静默为 null。
+     *
+     * @param version 配置版本号
+     * @param versionName 配置版本名，无则为 null
+     * @param md5 源内容摘要
+     * @param content ACK/上报使用的源内容，加密配置为密文
+     * @param effectiveTime 本地生效时间戳
+     * @param encrypted 服务端是否为加密配置
+     * @param encryptAlgo 加密算法，非加密配置为 null
+     * @param dataKey Base64 明文 AES 密钥，非加密配置为 null
+     */
+    public ConfigFileSnapshot(long version, String versionName, String md5, String content, long effectiveTime,
+            boolean encrypted, String encryptAlgo, String dataKey) {
         this.version = version;
         this.versionName = versionName;
-        this.md5 = md5;
-        this.content = content;
-        this.effectiveTime = effectiveTime;
-        this.encrypted = false;
-        this.encryptAlgo = null;
-        this.dataKey = null;
-    }
-
-    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime, boolean encrypted,
-            String encryptAlgo, String dataKey) {
-        this.version = version;
-        this.versionName = null;
         this.md5 = md5;
         this.content = content;
         this.effectiveTime = effectiveTime;
@@ -69,22 +67,30 @@ public class ConfigFileSnapshot {
         this.dataKey = dataKey;
     }
 
+    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime) {
+        this(version, null, md5, content, effectiveTime, false, null, null);
+    }
+
+    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime, String versionName) {
+        this(version, versionName, md5, content, effectiveTime, false, null, null);
+    }
+
+    public ConfigFileSnapshot(long version, String md5, String content, long effectiveTime, boolean encrypted,
+            String encryptAlgo, String dataKey) {
+        this(version, null, md5, content, effectiveTime, encrypted, encryptAlgo, dataKey);
+    }
+
     /**
      * 从同一份本地 ConfigFile 构造快照，version/versionName/md5 与加密字段同源。
+     * 生产链路只应使用该构造器，其余重载仅供测试按需拼装。
      *
      * @param configFile 本地配置
      * @param content ACK/上报使用的源内容
      * @param effectiveTime 生效时间戳
      */
     public ConfigFileSnapshot(ConfigFile configFile, String content, long effectiveTime) {
-        this.version = configFile.getVersion();
-        this.versionName = configFile.getName();
-        this.md5 = configFile.getMd5();
-        this.content = content;
-        this.effectiveTime = effectiveTime;
-        this.encrypted = configFile.isEncrypted();
-        this.encryptAlgo = configFile.getEncryptAlgo();
-        this.dataKey = configFile.getDataKey();
+        this(configFile.getVersion(), configFile.getName(), configFile.getMd5(), content, effectiveTime,
+                configFile.isEncrypted(), configFile.getEncryptAlgo(), configFile.getDataKey());
     }
 
     public long getVersion() {

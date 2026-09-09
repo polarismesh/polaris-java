@@ -52,12 +52,16 @@ public class ConfigPropertyChangeInfo {
         return changeType;
     }
 
+    /**
+     * 不输出 oldValue 与 newValue：加密配置的正文不得进入日志文件。
+     * 需要取值的业务场景请使用 getOldValue 与 getNewValue。
+     *
+     * @return 仅含属性名与变更类型的字符串
+     */
     @Override
     public String toString() {
         return "ConfigPropertyChangeInfo{" +
-               ", propertyName='" + propertyName + '\'' +
-               ", oldValue='" + oldValue + '\'' +
-               ", newValue='" + newValue + '\'' +
+               "propertyName='" + propertyName + '\'' +
                ", changeType=" + changeType +
                '}';
     }

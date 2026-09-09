@@ -127,7 +127,10 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
 
             return result;
         } catch (Throwable t) {
-            LOGGER.error("[Config] convert json file content to given class error. class type = {}", type, t);
+            // 不把异常对象交给 logger：反序列化异常的消息可能带上配置正文片段（如非法数值会
+            // 原样回显 For input string: "..."），加密配置在此已是解密后的明文
+            LOGGER.error("[Config] convert json file content to given class error. class type = {}, error = {}",
+                    type, t.getClass().getName());
         }
         return defaultValue;
     }
@@ -153,6 +156,11 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
     @Override
     public String getMd5() {
         return configFileRepo.getMd5();
+    }
+
+    @Override
+    public boolean isEncrypted() {
+        return configFileRepo.isEncrypted();
     }
 
     @Override
@@ -203,8 +211,10 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
                     LOGGER.info("[Config] invoke config file change listener success. listener = {}, duration = {} ms",
                             listener.getClass().getName(), System.currentTimeMillis() - startTime);
                 } catch (Throwable t) {
-                    LOGGER.error("[Config] failed to invoke config file change listener. listener = {}, event = {}",
-                            listener.getClass().getName(), event, t);
+                    // 只输出监听器与文件坐标、变更类型，不输出变更前后的配置正文
+                    LOGGER.error("[Config] failed to invoke config file change listener. listener = {}, "
+                                    + "file = {}/{}/{}, changeType = {}", listener.getClass().getName(),
+                            getNamespace(), getFileGroup(), getFileName(), event.getChangeType(), t);
                 }
             });
         }

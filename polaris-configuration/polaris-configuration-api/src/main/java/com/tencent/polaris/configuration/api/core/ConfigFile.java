@@ -78,4 +78,21 @@ public interface ConfigFile extends ConfigFileMetadata {
      */
     void removeChangeListener(ConfigFileChangeListener listener);
 
+    /**
+     * 该配置文件在服务端是否为加密配置。
+     *
+     * <p>供上层框架（如 Spring Cloud Tencent）在**首次加载**时就能判断敏感性：加密标记原本只出现在
+     * 变更事件携带的插件层对象上，首次加载拿不到，导致上层只能靠开关粗粒度兜底。
+     *
+     * <p>取值来自服务端下发的响应对象，是逐文件真值。注意加密过滤器会在**请求**前把该标记置为 true
+     * 用于声明客户端支持加密，因此只有响应侧对象的该字段可信。
+     *
+     * <p>default 实现返回 false：本接口有外部实现者，加密能力是可选特性，未覆写即视为非加密。
+     *
+     * @return 加密配置返回 true
+     */
+    default boolean isEncrypted() {
+        return false;
+    }
+
 }

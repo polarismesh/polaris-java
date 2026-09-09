@@ -30,4 +30,15 @@ public interface ConfigFileRepo {
 
     void removeChangeListener(ConfigFileRepoChangeListener listener);
 
+    /**
+     * 当前配置在服务端是否为加密配置。
+     *
+     * <p>default 返回 false：本地文件、consul 等数据源不涉及服务端加密，只有远端仓库需要覆写。
+     *
+     * @return 加密配置返回 true
+     */
+    default boolean isEncrypted() {
+        return false;
+    }
+
 }

@@ -47,6 +47,17 @@ public class ConfigFile extends BaseEntity {
     private String dataKey;
     private String encryptAlgo;
     private boolean encrypted = Boolean.FALSE;
+    /**
+     * 标记本对象的 content 是否为「本地缓存密文态」。
+     *
+     * <p>仅在本地缓存读写链路中有意义：写入时由持久化副本置为 true（表示 content 已是密文，
+     * dataKey 为其 Base64 AES 密钥）；读取时依据该标记决定是否解密。
+     * 内存中的业务对象该字段恒为 false。历史缓存文件无此字段，反序列化后为 false，按明文处理。
+     *
+     * <p>与 encrypted 的区别：encrypted 表示该配置在服务端是否为加密配置（业务语义，来自服务端）；
+     * cacheEncrypted 表示本地缓存文件里的 content 当前是否为密文（存储语义，本地生成）。
+     */
+    private boolean cacheEncrypted = Boolean.FALSE;
     private Date releaseTime;
 
     public ConfigFile(String namespace, String fileGroup, String fileName) {
@@ -134,6 +145,14 @@ public class ConfigFile extends BaseEntity {
         this.encrypted = encrypted;
     }
 
+    public boolean isCacheEncrypted() {
+        return cacheEncrypted;
+    }
+
+    public void setCacheEncrypted(boolean cacheEncrypted) {
+        this.cacheEncrypted = cacheEncrypted;
+    }
+
     public String getDataKey() {
         return dataKey;
     }
@@ -181,16 +200,22 @@ public class ConfigFile extends BaseEntity {
         return Objects.hash(namespace, fileGroup, fileName, content, version, md5, releaseTime);
     }
 
+    /**
+     * 不输出 content 与 sourceContent：加密配置的正文不得进入日志文件。
+     * md5 为源内容摘要，不可逆，保留以便问题定位。
+     *
+     * @return 仅含元数据的字符串
+     */
     @Override
     public String toString() {
         return "ConfigFile{" +
                "namespace='" + namespace + '\'' +
                ", fileGroup='" + fileGroup + '\'' +
                ", fileName='" + fileName + '\'' +
-               ", content='" + content + '\'' +
                ", version=" + version +
                 ", name=" + name +
                ", md5='" + md5 + '\'' +
+               ", encrypted=" + encrypted +
                ", releaseTime=" + releaseTime + '\'' +
                '}';
     }

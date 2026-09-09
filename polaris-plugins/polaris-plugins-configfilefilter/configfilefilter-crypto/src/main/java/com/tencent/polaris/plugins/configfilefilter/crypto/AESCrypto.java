@@ -25,6 +25,7 @@ import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.filter.Crypto;
+import com.tencent.polaris.encrypt.EncryptConstants;
 import com.tencent.polaris.encrypt.util.AESUtil;
 
 /**
@@ -49,7 +50,7 @@ public class AESCrypto implements Crypto {
 
     @Override
     public String getName() {
-        return "AES";
+        return EncryptConstants.ALGO_AES;
     }
 
     @Override

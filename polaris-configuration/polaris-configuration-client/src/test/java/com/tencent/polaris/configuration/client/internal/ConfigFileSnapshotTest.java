@@ -87,4 +87,43 @@ public class ConfigFileSnapshotTest {
         assertThat(snapshot.getEncryptAlgo()).isEqualTo("AES");
         assertThat(snapshot.getDataKey()).isEqualTo("key");
     }
+
+    /**
+     * 测试目的：全量构造器可同时携带版本名与加密字段。
+     * 测试场景：直接使用全量构造器。
+     * 验证内容：八个字段逐一回读一致，版本名不会被加密字段挤掉。
+     */
+    @Test
+    public void testFullSnapshotConstructor() {
+        ConfigFileSnapshot snapshot = new ConfigFileSnapshot(7, "v2.0.0", "md5full", "cipher", 456L,
+                true, "AES", "key");
+
+        assertThat(snapshot.getVersion()).isEqualTo(7);
+        assertThat(snapshot.getVersionName()).isEqualTo("v2.0.0");
+        assertThat(snapshot.getMd5()).isEqualTo("md5full");
+        assertThat(snapshot.getContent()).isEqualTo("cipher");
+        assertThat(snapshot.getEffectiveTime()).isEqualTo(456L);
+        assertThat(snapshot.isEncrypted()).isTrue();
+        assertThat(snapshot.getEncryptAlgo()).isEqualTo("AES");
+        assertThat(snapshot.getDataKey()).isEqualTo("key");
+    }
+
+    /**
+     * 测试目的：加密重载不携带版本名，普通重载不携带加密字段，各自默认值明确。
+     * 测试场景：分别使用加密七参重载与普通五参重载。
+     * 验证内容：加密快照版本名为 null，普通快照加密字段为默认值。
+     */
+    @Test
+    public void testOverloadDefaults() {
+        ConfigFileSnapshot encryptedSnapshot = new ConfigFileSnapshot(3, "md5abc", "cipher", 1L,
+                true, "AES", "key");
+        ConfigFileSnapshot plainSnapshot = new ConfigFileSnapshot(3, "md5abc", "k=v", 1L, "v1.0.0");
+
+        assertThat(encryptedSnapshot.getVersionName()).isNull();
+        assertThat(encryptedSnapshot.isEncrypted()).isTrue();
+        assertThat(plainSnapshot.getVersionName()).isEqualTo("v1.0.0");
+        assertThat(plainSnapshot.isEncrypted()).isFalse();
+        assertThat(plainSnapshot.getEncryptAlgo()).isNull();
+        assertThat(plainSnapshot.getDataKey()).isNull();
+    }
 }
