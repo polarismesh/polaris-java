@@ -220,7 +220,11 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
             CacheObject cacheObject = loadFileCache(svcEventKey);
             // 磁盘文件可用，直接通知invoker, 同时注册远程任务
             if (null != cacheObject && cacheObject.isRemoteUpdated()) {
-                notifier.complete(svcEventKey);
+                // notifier 允许为 null（外部可能直接以 null 调用），判空避免 NPE
+                if (notifier != null) {
+                    notifier.complete(svcEventKey);
+                }
+                // 传 null 表示仅需注册远程订阅，无需再通知任何监听器
                 loadRemoteValue(svcEventKey, null);
                 return;
             }
@@ -286,8 +290,10 @@ public class InMemoryRegistry extends Destroyable implements LocalRegistry {
         checkDestroyed();
         // 使用统一的方法来获取或创建CacheObject，确保并发安全
         CacheObject cacheObject = addOrGetCacheObject(svcEventKey, null);
-        //添加监听器
-        cacheObject.addNotifier(notifier);
+        // notifier 为 null 表示调用方已自行完成通知，这里只需确保远程订阅注册，无需再添加监听器
+        if (notifier != null) {
+            cacheObject.addNotifier(notifier);
+        }
         //触发往serverConnector注册
         if (cacheObject.startRegister()) {
             LOG.info("[LocalRegistry]start to register service handler for {}", svcEventKey);
