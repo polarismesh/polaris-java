@@ -17,11 +17,11 @@
 
 package com.tencent.polaris.api.config;
 
+import com.tencent.polaris.api.config.ai.AiConfig;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
 import com.tencent.polaris.api.config.global.GlobalConfig;
 import com.tencent.polaris.api.config.provider.ProviderConfig;
-import com.tencent.polaris.api.config.skill.SkillConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
 
 /**
@@ -60,9 +60,9 @@ public interface Configuration extends Verifier {
     ConfigFileConfig getConfigFile();
 
     /**
-     * skill 前缀开头的所有配置项
+     * ai 前缀开头的所有配置项
      *
-     * @return SkillConfig
+     * @return AiConfig
      */
-    SkillConfig getSkill();
+    AiConfig getAi();
 }

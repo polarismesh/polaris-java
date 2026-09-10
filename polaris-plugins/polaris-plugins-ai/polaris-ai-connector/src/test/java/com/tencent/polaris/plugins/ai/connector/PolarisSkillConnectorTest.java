@@ -26,6 +26,7 @@ import com.tencent.polaris.api.plugin.common.ValueContext;
 import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
 import com.tencent.polaris.api.plugin.skill.SkillGetRequest;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.factory.config.ai.AiConfigImpl;
 import com.tencent.polaris.factory.config.global.ClusterConfigImpl;
 import com.tencent.polaris.factory.config.skill.SkillConfigImpl;
 import com.tencent.polaris.factory.config.skill.SkillConnectorConfigImpl;
@@ -79,6 +80,8 @@ public class PolarisSkillConnectorTest {
         skillConnector.setProtocol("grpc");
         SkillConfigImpl skillConfig = new SkillConfigImpl();
         skillConfig.setServerConnector(skillConnector);
+        AiConfigImpl aiConfig = new AiConfigImpl();
+        aiConfig.setSkill(skillConfig);
         ValueContext valueContext = new ValueContext();
         valueContext.setClientId("skill-connector-test");
         ClusterConfigImpl discoverCluster = new ClusterConfigImpl();
@@ -91,7 +94,7 @@ public class PolarisSkillConnectorTest {
         when(initContext.getConfig()).thenReturn(configuration);
         when(initContext.getValueContext()).thenReturn(valueContext);
         when(initContext.getServerServices()).thenReturn(Collections.singletonList(discoverService));
-        when(configuration.getSkill()).thenReturn(skillConfig);
+        when(configuration.getAi()).thenReturn(aiConfig);
         connector = new PolarisSkillConnector();
     }
 
@@ -105,7 +108,7 @@ public class PolarisSkillConnectorTest {
     /**
      * 测试 discover 系统服务存在时仍把 Skill 地址挂到 BUILTIN 集群。
      * 测试目的：Skill 选址不得被 polaris.discover 覆盖。
-     * 测试场景：InitContext 已有 SERVICE_DISCOVER_CLUSTER，skill.addresses 为 8094。
+     * 测试场景：InitContext 已有 SERVICE_DISCOVER_CLUSTER，ai.skill.addresses 为 8094。
      * 验证内容：BUILTIN 节点端口为 8094，discover 集群仍绑定系统服务。
      */
     @Test

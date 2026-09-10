@@ -59,7 +59,7 @@ public class PolarisSkillConnector implements SkillConnector {
     private static final String OP_DOWNLOAD_SKILL = "DownloadSkill";
 
     /**
-     * Skill traffic uses skill.serverConnector.addresses, not the discover cluster.
+     * Skill traffic uses ai.skill.serverConnector.addresses, not the discover cluster.
      */
     private static final ClusterType SKILL_CLUSTER = ClusterType.BUILTIN_CLUSTER;
 
@@ -82,7 +82,7 @@ public class PolarisSkillConnector implements SkillConnector {
         CompletableFuture<String> readyFuture = new CompletableFuture<>();
         Map<ClusterType, CompletableFuture<String>> futures = new HashMap<>();
         futures.put(SKILL_CLUSTER, readyFuture);
-        this.connectorConfig = ctx.getConfig().getSkill().getServerConnector();
+        this.connectorConfig = ctx.getConfig().getAi().getSkill().getServerConnector();
         this.connectionManager = new ConnectionManager(ctx, connectorConfig, futures);
     }
 

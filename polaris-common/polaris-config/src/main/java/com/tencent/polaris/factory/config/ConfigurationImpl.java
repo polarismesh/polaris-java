@@ -23,11 +23,11 @@ import com.tencent.polaris.api.config.ConfigProvider;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.config.ai.AiConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl;
 import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
 import com.tencent.polaris.factory.config.provider.ProviderConfigImpl;
-import com.tencent.polaris.factory.config.skill.SkillConfigImpl;
 import com.tencent.polaris.factory.util.ConfigUtils;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +66,7 @@ public class ConfigurationImpl implements Configuration {
     private ConfigFileConfigImpl config;
 
     @JsonProperty
-    private SkillConfigImpl skill;
+    private AiConfigImpl ai;
 
     public ConfigurationImpl() {
         defaultConfigName = ConfigProvider.DEFAULT_CONFIG;
@@ -113,12 +113,12 @@ public class ConfigurationImpl implements Configuration {
     }
 
     @Override
-    public SkillConfigImpl getSkill() {
-        return skill;
+    public AiConfigImpl getAi() {
+        return ai;
     }
 
-    public void setSkill(SkillConfigImpl skill) {
-        this.skill = skill;
+    public void setAi(AiConfigImpl ai) {
+        this.ai = ai;
     }
 
     @Override
@@ -130,8 +130,8 @@ public class ConfigurationImpl implements Configuration {
         consumer.verify();
         provider.verify();
         config.verify();
-        if (skill != null) {
-            skill.verify();
+        if (ai != null) {
+            ai.verify();
         }
     }
 
@@ -164,8 +164,8 @@ public class ConfigurationImpl implements Configuration {
         if (null == config) {
             config = new ConfigFileConfigImpl();
         }
-        if (null == skill) {
-            skill = new SkillConfigImpl();
+        if (null == ai) {
+            ai = new AiConfigImpl();
         }
         if (null != defaultObject) {
             Configuration configuration = (Configuration) defaultObject;
@@ -173,20 +173,21 @@ public class ConfigurationImpl implements Configuration {
             consumer.setDefault(configuration.getConsumer());
             provider.setDefault(configuration.getProvider());
             config.setDefault(configuration.getConfigFile());
-            skill.setDefault(configuration.getSkill());
+            ai.setDefault(configuration.getAi());
             inheritSkillConnectorFromGlobal();
         }
     }
 
     private void inheritSkillConnectorFromGlobal() {
-        if (skill.getServerConnector() != null && global.getServerConnector() != null) {
-            if (CollectionUtils.isEmpty(skill.getServerConnector().getAddresses())
+        if (ai.getSkill() != null && ai.getSkill().getServerConnector() != null
+                && global.getServerConnector() != null) {
+            if (CollectionUtils.isEmpty(ai.getSkill().getServerConnector().getAddresses())
                     && !CollectionUtils.isEmpty(global.getServerConnector().getAddresses())) {
-                skill.getServerConnector().setAddresses(global.getServerConnector().getAddresses());
+                ai.getSkill().getServerConnector().setAddresses(global.getServerConnector().getAddresses());
             }
-            if (StringUtils.isBlank(skill.getServerConnector().getToken())
+            if (StringUtils.isBlank(ai.getSkill().getServerConnector().getToken())
                     && StringUtils.isNotBlank(global.getServerConnector().getToken())) {
-                skill.getServerConnector().setToken(global.getServerConnector().getToken());
+                ai.getSkill().getServerConnector().setToken(global.getServerConnector().getToken());
             }
         }
     }

@@ -74,7 +74,7 @@ public class DefaultSkillFlow implements SkillFlow {
 
     @Override
     public void setSDKContext(SDKContext sdkContext) {
-        SkillConnectorConfig connectorConfig = sdkContext.getConfig().getSkill().getServerConnector();
+        SkillConnectorConfig connectorConfig = sdkContext.getConfig().getAi().getSkill().getServerConnector();
         this.skillConnector = (SkillConnector) sdkContext.getExtensions().getPlugins()
                 .getPlugin(PluginTypes.SKILL_CONNECTOR.getBaseType(), connectorConfig.getConnectorType());
         this.fallbackToLocalCache = Boolean.TRUE.equals(connectorConfig.getFallbackToLocalCache());

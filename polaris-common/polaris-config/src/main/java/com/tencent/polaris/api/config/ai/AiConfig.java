@@ -15,20 +15,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package com.tencent.polaris.api.config.skill;
+package com.tencent.polaris.api.config.ai;
 
+import com.tencent.polaris.api.config.skill.SkillConfig;
 import com.tencent.polaris.api.config.verify.Verifier;
-import com.tencent.polaris.factory.config.skill.SkillConnectorConfigImpl;
 
 /**
- * ai.skill prefix configuration.
+ * AI prefix configuration.
  */
-public interface SkillConfig extends Verifier {
+public interface AiConfig extends Verifier {
 
     /**
-     * Skill connector configuration.
+     * ai.skill prefix configuration.
      *
-     * @return connector config
+     * @return SkillConfig
      */
-    SkillConnectorConfigImpl getServerConnector();
+    SkillConfig getSkill();
 }
