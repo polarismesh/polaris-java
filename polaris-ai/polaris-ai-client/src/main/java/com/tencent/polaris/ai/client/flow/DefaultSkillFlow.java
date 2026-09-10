@@ -40,8 +40,6 @@ import com.tencent.polaris.logging.LoggerFactory;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Default skill flow with persist fallback.
@@ -57,12 +55,6 @@ public class DefaultSkillFlow implements SkillFlow {
     private SkillPersistentHandler persistentHandler;
 
     private boolean fallbackToLocalCache;
-
-    private final ConcurrentMap<String, SkillGetResponse> getSkillCache = new ConcurrentHashMap<>();
-
-    private final ConcurrentMap<String, SkillDownloadResponse> markdownCache = new ConcurrentHashMap<>();
-
-    private final ConcurrentMap<String, String> activeVersionCache = new ConcurrentHashMap<>();
 
     public DefaultSkillFlow() {
     }
@@ -129,7 +121,6 @@ public class DefaultSkillFlow implements SkillFlow {
         if (isExecuteSuccess(response.getCode()) && persistentHandler != null) {
             String version = resolveGetVersion(request, response);
             if (StringUtils.isNotBlank(version)) {
-                getSkillCache.put(cacheKey(request.getNamespace(), request.getName(), version), response);
                 persistentHandler.asyncSaveGetSkill(request.getNamespace(), request.getName(), version, response);
                 saveActiveIfNeeded(request.getNamespace(), request.getName(), request.getVersion(), version);
             }
@@ -141,9 +132,6 @@ public class DefaultSkillFlow implements SkillFlow {
             String version = resolveDownloadVersion(request, response);
             if (StringUtils.isNotBlank(version)) {
                 String format = normalizeFormat(request.getFormat());
-                if (FORMAT_MARKDOWN.equals(format)) {
-                    markdownCache.put(cacheKey(request.getNamespace(), request.getName(), version), response);
-                }
                 persistentHandler.asyncSaveDownload(request.getNamespace(), request.getName(), version, format,
                         response);
                 saveActiveIfNeeded(request.getNamespace(), request.getName(), request.getVersion(), version);
@@ -156,10 +144,7 @@ public class DefaultSkillFlow implements SkillFlow {
         if (allowFallback(exception)) {
             String version = resolveFallbackVersion(request.getNamespace(), request.getName(), request.getVersion());
             if (StringUtils.isNotBlank(version)) {
-                result = getSkillCache.get(cacheKey(request.getNamespace(), request.getName(), version));
-                if (result == null) {
-                    result = persistentHandler.loadGetSkill(request.getNamespace(), request.getName(), version);
-                }
+                result = persistentHandler.loadGetSkill(request.getNamespace(), request.getName(), version);
             }
         }
         return result;
@@ -169,21 +154,10 @@ public class DefaultSkillFlow implements SkillFlow {
         SkillDownloadResponse result = null;
         if (allowFallback(exception)) {
             String version = resolveFallbackVersion(request.getNamespace(), request.getName(), request.getVersion());
-            String format = normalizeFormat(request.getFormat());
             if (StringUtils.isNotBlank(version)) {
-                result = loadDownloadCache(request.getNamespace(), request.getName(), version, format);
+                result = persistentHandler.loadDownload(request.getNamespace(), request.getName(), version,
+                        normalizeFormat(request.getFormat()));
             }
-        }
-        return result;
-    }
-
-    private SkillDownloadResponse loadDownloadCache(String namespace, String name, String version, String format) {
-        SkillDownloadResponse result = null;
-        if (FORMAT_MARKDOWN.equals(format)) {
-            result = markdownCache.get(cacheKey(namespace, name, version));
-        }
-        if (result == null) {
-            result = persistentHandler.loadDownload(namespace, name, version, format);
         }
         return result;
     }
@@ -194,7 +168,6 @@ public class DefaultSkillFlow implements SkillFlow {
 
     private void saveActiveIfNeeded(String namespace, String name, String requestVersion, String resolvedVersion) {
         if (StringUtils.isBlank(requestVersion) && StringUtils.isNotBlank(resolvedVersion)) {
-            activeVersionCache.put(activeKey(namespace, name), resolvedVersion);
             persistentHandler.asyncSaveActiveVersion(namespace, name, resolvedVersion);
         }
     }
@@ -202,10 +175,7 @@ public class DefaultSkillFlow implements SkillFlow {
     private String resolveFallbackVersion(String namespace, String name, String requestVersion) {
         String version = requestVersion;
         if (StringUtils.isBlank(version)) {
-            version = activeVersionCache.get(activeKey(namespace, name));
-            if (StringUtils.isBlank(version)) {
-                version = persistentHandler.loadActiveVersion(namespace, name);
-            }
+            version = persistentHandler.loadActiveVersion(namespace, name);
         }
         return version;
     }
@@ -236,14 +206,6 @@ public class DefaultSkillFlow implements SkillFlow {
 
     private boolean isExecuteSuccess(int code) {
         return code == ServerCodes.EXECUTE_SUCCESS || code == 0;
-    }
-
-    private String cacheKey(String namespace, String name, String version) {
-        return namespace + "#" + name + "#" + version;
-    }
-
-    private String activeKey(String namespace, String name) {
-        return namespace + "#" + name;
     }
 
     private SkillPersistentHandler createPersistentHandler(SkillConnectorConfig connectorConfig) {

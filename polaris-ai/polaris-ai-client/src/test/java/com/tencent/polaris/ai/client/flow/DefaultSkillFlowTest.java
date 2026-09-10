@@ -35,6 +35,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 
 /**
@@ -52,16 +53,16 @@ public class DefaultSkillFlowTest {
     private SkillConnector skillConnector;
 
     /**
-     * 测试远程成功后走内存缓存回退
-     * 测试目的：成功响应写入内存，网络失败时不依赖落盘完成也能回退
-     * 测试场景：connector 先成功再抛 NETWORK_ERROR
-     * 验证内容：第二次返回第一次的 content
+     * 测试关闭落盘时不走内存回退
+     * 测试目的：Skill 只降级文件缓存，不在内存里留一份
+     * 测试场景：persistEnable=false，connector 先成功再抛 NETWORK_ERROR
+     * 验证内容：第二次抛出 NETWORK_ERROR
      */
     @Test
-    public void testGetSkillFallsBackToMemoryCacheOnNetworkError() throws IOException {
+    public void testGetSkillDoesNotFallbackWhenPersistDisabled() throws IOException {
         // Arrange
         SkillPersistentHandler handler = new SkillPersistentHandler(
-                temporaryFolder.newFolder().getAbsolutePath(), true, 1, 0, 10L);
+                temporaryFolder.newFolder().getAbsolutePath(), false, 1, 0, 10L);
         DefaultSkillFlow flow = new DefaultSkillFlow(skillConnector, handler, true);
         SkillGetRequest request = new SkillGetRequest();
         request.setNamespace("default");
@@ -73,11 +74,12 @@ public class DefaultSkillFlowTest {
 
         // Act
         SkillGetResponse first = flow.getSkill(request);
-        SkillGetResponse fallback = flow.getSkill(request);
 
         // Assert
         assertThat(first.getContent()).isEqualTo("skill-v1");
-        assertThat(fallback.getContent()).isEqualTo("skill-v1");
+        assertThatThrownBy(() -> flow.getSkill(request))
+                .isInstanceOf(PolarisException.class)
+                .hasFieldOrPropertyWithValue("code", ErrorCode.NETWORK_ERROR);
     }
 
     /**
@@ -102,6 +104,7 @@ public class DefaultSkillFlowTest {
 
         // Act
         flow.getSkill(request);
+        waitUntilPersisted(handler, "default", "sql-analysis", "1.1.0");
         SkillGetResponse fallback = flow.getSkill(request);
 
         // Assert
@@ -172,5 +175,14 @@ public class DefaultSkillFlowTest {
         resourceVersion.setVersion(version);
         response.setResourceVersion(resourceVersion);
         return response;
+    }
+
+    private void waitUntilPersisted(SkillPersistentHandler handler, String namespace, String name, String version) {
+        long deadline = System.currentTimeMillis() + 2000L;
+        SkillGetResponse persisted = handler.loadGetSkill(namespace, name, version);
+        while (persisted == null && System.currentTimeMillis() < deadline) {
+            persisted = handler.loadGetSkill(namespace, name, version);
+        }
+        assertThat(persisted).isNotNull();
     }
 }
