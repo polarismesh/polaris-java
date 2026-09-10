@@ -104,4 +104,9 @@ public interface DefaultPlugins {
      * TSF证书管理插件名
      */
     String TSF_CERTIFICATE_MANAGER = "tsfCertificateManager";
+
+    /**
+     * polaris Skill 连接器插件名
+     */
+    String POLARIS_SKILL_CONNECTOR_TYPE = "polaris";
 }

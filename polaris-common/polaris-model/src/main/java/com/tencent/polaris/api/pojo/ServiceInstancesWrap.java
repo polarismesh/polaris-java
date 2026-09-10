@@ -20,6 +20,7 @@ package com.tencent.polaris.api.pojo;
 import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.pojo.Node;
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 
 import java.util.List;
 import java.util.Map;
@@ -117,7 +118,12 @@ public class ServiceInstancesWrap implements ServiceInstances {
 
     @Override
     public Map<String, String> getMetadata() {
-        return serviceInstances.getMetadata();
+        return this.serviceInstances.getMetadata();
+    }
+
+    @Override
+    public List<ServiceProto.ExtendedMetadata> getExtendedMetadata() {
+        return this.serviceInstances.getExtendedMetadata();
     }
 
     public List<Instance> getAllInstances() {

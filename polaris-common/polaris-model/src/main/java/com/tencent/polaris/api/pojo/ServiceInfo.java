@@ -17,6 +17,9 @@
 
 package com.tencent.polaris.api.pojo;
 
+import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,6 +33,8 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
     private final ServiceKey serviceKey = new ServiceKey();
 
     private Map<String, String> metadata;
+
+    private List<ServiceProto.ExtendedMetadata> extendedMetadata;
 
     private String revision;
 
@@ -68,6 +73,19 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         this.metadata = metadata;
     }
 
+    @Override
+    public List<ServiceProto.ExtendedMetadata> getExtendedMetadata() {
+        List<ServiceProto.ExtendedMetadata> result = this.extendedMetadata;
+        if (result == null) {
+            result = Collections.emptyList();
+        }
+        return result;
+    }
+
+    public void setExtendedMetadata(List<ServiceProto.ExtendedMetadata> extendedMetadata) {
+        this.extendedMetadata = extendedMetadata;
+    }
+
     public ServiceKey getServiceKey() {
         return serviceKey;
     }
@@ -98,6 +116,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         private String namespace;
         private String service;
         private Map<String, String> metadata;
+        private List<ServiceProto.ExtendedMetadata> extendedMetadata;
         private String revision;
 
         private ServiceInfoBuilder() {
@@ -118,6 +137,11 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
             return this;
         }
 
+        public ServiceInfoBuilder extendedMetadata(List<ServiceProto.ExtendedMetadata> extendedMetadata) {
+            this.extendedMetadata = extendedMetadata;
+            return this;
+        }
+
         public ServiceInfoBuilder revision(String revision) {
             this.revision = revision;
             return this;
@@ -127,8 +151,9 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
             ServiceInfo serviceInfo = new ServiceInfo();
             serviceInfo.setNamespace(namespace);
             serviceInfo.setService(service);
-            serviceInfo.setMetadata(metadata);
-            serviceInfo.setRevision(revision);
+            serviceInfo.setMetadata(this.metadata);
+            serviceInfo.setExtendedMetadata(this.extendedMetadata);
+            serviceInfo.setRevision(this.revision);
             return serviceInfo;
         }
     }
