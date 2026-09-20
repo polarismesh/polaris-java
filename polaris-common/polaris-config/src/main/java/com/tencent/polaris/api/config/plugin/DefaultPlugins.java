@@ -108,5 +108,5 @@ public interface DefaultPlugins {
     /**
      * polaris Skill 连接器插件名
      */
-    String POLARIS_SKILL_CONNECTOR_TYPE = "polaris";
+    String POLARIS_SKILL_CONNECTOR_TYPE = "polarisSkillConnector";
 }
