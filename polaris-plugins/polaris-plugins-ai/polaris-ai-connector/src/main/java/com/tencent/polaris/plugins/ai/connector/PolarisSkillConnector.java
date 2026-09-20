@@ -153,7 +153,13 @@ public class PolarisSkillConnector implements SkillConnector {
         return result;
     }
 
-    private PolarisSkillGrpc.PolarisSkillBlockingStub newStub(Connection connection) {
+    /**
+     * Build a blocking stub on the given connection.
+     *
+     * @param connection skill gRPC connection
+     * @return blocking stub
+     */
+    PolarisSkillGrpc.PolarisSkillBlockingStub newStub(Connection connection) {
         PolarisSkillGrpc.PolarisSkillBlockingStub stub = PolarisSkillGrpc.newBlockingStub(connection.getChannel());
         stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
         stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);

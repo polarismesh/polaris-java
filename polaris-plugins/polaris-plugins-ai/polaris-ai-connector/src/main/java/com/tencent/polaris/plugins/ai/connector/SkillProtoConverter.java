@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.plugins.ai.connector;
 
+import com.tencent.polaris.api.exception.ServerCodes;
 import com.tencent.polaris.api.plugin.skill.SkillDownloadRequest;
 import com.tencent.polaris.api.plugin.skill.SkillDownloadResponse;
 import com.tencent.polaris.api.plugin.skill.SkillGetRequest;
@@ -111,9 +112,11 @@ final class SkillProtoConverter {
         SkillDownloadResponse response = new SkillDownloadResponse();
         ByteArrayOutputStream zipBuffer = new ByteArrayOutputStream();
         boolean firstFrame = true;
-        while (iterator.hasNext()) {
+        boolean aborted = false;
+        while (iterator.hasNext() && !aborted) {
             PolarisSkillGRPCService.DownloadSkillResponse frame = iterator.next();
             firstFrame = fillDownloadFrame(response, zipBuffer, frame, firstFrame);
+            aborted = isDownloadFrameError(frame.getCode());
         }
         if (zipBuffer.size() > 0) {
             response.setZipContent(zipBuffer.toByteArray());
@@ -151,6 +154,10 @@ final class SkillProtoConverter {
         builder.setLimit(request.getLimit());
     }
 
+    private static boolean isDownloadFrameError(int code) {
+        return code != ServerCodes.EXECUTE_SUCCESS && code != 0;
+    }
+
     private static boolean fillDownloadFrame(SkillDownloadResponse response, ByteArrayOutputStream zipBuffer,
             PolarisSkillGRPCService.DownloadSkillResponse frame, boolean firstFrame) {
         boolean stillFirst = firstFrame;
@@ -163,11 +170,16 @@ final class SkillProtoConverter {
             response.setFilename(frame.getFilename());
             stillFirst = false;
         }
-        if (StringUtils.isNotBlank(frame.getContent())) {
-            response.setContent(frame.getContent());
-        }
-        if (!frame.getZipChunk().isEmpty()) {
-            zipBuffer.write(frame.getZipChunk().toByteArray(), 0, frame.getZipChunk().size());
+        if (isDownloadFrameError(frame.getCode())) {
+            response.setCode(frame.getCode());
+            response.setInfo(frame.getInfo());
+        } else {
+            if (StringUtils.isNotBlank(frame.getContent())) {
+                response.setContent(frame.getContent());
+            }
+            if (!frame.getZipChunk().isEmpty()) {
+                zipBuffer.write(frame.getZipChunk().toByteArray(), 0, frame.getZipChunk().size());
+            }
         }
         return stillFirst;
     }

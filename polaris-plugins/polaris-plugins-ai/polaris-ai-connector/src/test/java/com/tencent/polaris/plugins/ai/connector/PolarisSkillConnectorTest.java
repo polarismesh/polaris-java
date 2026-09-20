@@ -21,16 +21,29 @@ import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.config.global.ClusterType;
 import com.tencent.polaris.api.exception.ErrorCode;
 import com.tencent.polaris.api.exception.PolarisException;
+import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.exception.ServerErrorResponseException;
 import com.tencent.polaris.api.plugin.common.InitContext;
+import com.tencent.polaris.api.plugin.common.PluginTypes;
 import com.tencent.polaris.api.plugin.common.ValueContext;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.compose.ServerServiceInfo;
+import com.tencent.polaris.api.plugin.skill.SkillDownloadRequest;
+import com.tencent.polaris.api.plugin.skill.SkillDownloadResponse;
 import com.tencent.polaris.api.plugin.skill.SkillGetRequest;
+import com.tencent.polaris.api.plugin.skill.SkillGetResponse;
+import com.tencent.polaris.api.plugin.skill.SkillListRequest;
+import com.tencent.polaris.api.plugin.skill.SkillListResponse;
 import com.tencent.polaris.client.pojo.Node;
 import com.tencent.polaris.factory.config.ai.AiConfigImpl;
 import com.tencent.polaris.factory.config.global.ClusterConfigImpl;
 import com.tencent.polaris.factory.config.skill.SkillConfigImpl;
 import com.tencent.polaris.factory.config.skill.SkillConnectorConfigImpl;
+import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
+import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGrpc;
+import io.grpc.ManagedChannel;
+import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGRPCService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +58,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -70,6 +84,8 @@ public class PolarisSkillConnectorTest {
     private Configuration configuration;
 
     private PolarisSkillConnector connector;
+
+    private Connection lastConnection;
 
     @Before
     public void setUp() throws PolarisException {
@@ -156,10 +172,270 @@ public class PolarisSkillConnectorTest {
         verify(mockManager).getConnection("GetSkill", ClusterType.BUILTIN_CLUSTER);
     }
 
+    /**
+     * 测试目的：插件元数据
+     * 测试场景：未 init
+     * 验证内容：name/type 正确，destroy 不抛异常
+     */
+    @Test
+    public void testNameTypeAndDestroyWithoutInit() {
+        // Act
+        connector.destroy();
+
+        // Assert
+        assertThat(connector.getName()).isEqualTo("polaris");
+        assertThat(connector.getType()).isEqualTo(PluginTypes.SKILL_CONNECTOR.getBaseType());
+    }
+
+    /**
+     * 测试目的：GetSkill 成功与 NOT_FOUND 返回响应
+     * 测试场景：mock blocking stub
+     * 验证内容：content 与 code 正确
+     */
+    @Test
+    public void testGetSkillSuccessAndNotFound() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        SkillGetRequest request = new SkillGetRequest();
+        request.setNamespace("default");
+        request.setName("weather");
+        PolarisSkillGRPCService.GetSkillResponse ok = PolarisSkillGRPCService.GetSkillResponse.newBuilder()
+                .setCode(ServerCodes.EXECUTE_SUCCESS)
+                .setContent("# skill")
+                .build();
+        PolarisSkillGRPCService.GetSkillResponse missing = PolarisSkillGRPCService.GetSkillResponse.newBuilder()
+                .setCode(ServerCodes.NOT_FOUND_RESOURCE)
+                .setInfo("gone")
+                .build();
+        PolarisSkillGRPCService.GetSkillResponse zero = PolarisSkillGRPCService.GetSkillResponse.newBuilder()
+                .setCode(0)
+                .setContent("zero")
+                .build();
+        when(stub.getSkill(any())).thenReturn(ok, missing, zero);
+
+        // Act
+        SkillGetResponse success = connector.getSkill(request);
+        SkillGetResponse notFound = connector.getSkill(request);
+        SkillGetResponse codeZero = connector.getSkill(request);
+
+        // Assert
+        assertThat(success.getContent()).isEqualTo("# skill");
+        assertThat(notFound.getCode()).isEqualTo(ServerCodes.NOT_FOUND_RESOURCE);
+        assertThat(codeZero.getContent()).isEqualTo("zero");
+    }
+
+    /**
+     * 测试目的：非预期业务码抛 ServerErrorResponseException
+     * 测试场景：code=500000
+     * 验证内容：异常类型为 ServerErrorResponseException
+     */
+    @Test
+    public void testGetSkillUnexpectedCode() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        SkillGetRequest request = new SkillGetRequest();
+        request.setNamespace("default");
+        request.setName("weather");
+        when(stub.getSkill(any())).thenReturn(PolarisSkillGRPCService.GetSkillResponse.newBuilder()
+                .setCode(500000)
+                .setInfo("boom")
+                .build());
+
+        // Act & Assert
+        assertThatThrownBy(() -> connector.getSkill(request)).isInstanceOf(ServerErrorResponseException.class);
+    }
+
+    /**
+     * 测试目的：List/Download 走 BUILTIN 并组装结果
+     * 测试场景：list 成功，download 成功，download 错误码
+     * 验证内容：total 与 zip 正确，错误码抛异常
+     */
+    @Test
+    public void testListAndDownloadSkill() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        SkillListRequest listRequest = new SkillListRequest();
+        listRequest.setNamespace("default");
+        when(stub.getSkillList(any())).thenReturn(PolarisSkillGRPCService.ListSkillsResponse.newBuilder()
+                .setCode(ServerCodes.EXECUTE_SUCCESS)
+                .setTotal(4)
+                .build());
+        SkillDownloadRequest downloadRequest = new SkillDownloadRequest();
+        downloadRequest.setNamespace("default");
+        downloadRequest.setName("weather");
+        downloadRequest.setFormat("zip");
+        PolarisSkillGRPCService.DownloadSkillResponse frame = PolarisSkillGRPCService.DownloadSkillResponse.newBuilder()
+                .setCode(ServerCodes.EXECUTE_SUCCESS)
+                .setFilename("weather.zip")
+                .setZipChunk(com.google.protobuf.ByteString.copyFromUtf8("ab"))
+                .build();
+        when(stub.downloadSkill(any())).thenReturn(Collections.singletonList(frame).iterator())
+                .thenReturn(Collections.singletonList(PolarisSkillGRPCService.DownloadSkillResponse.newBuilder()
+                        .setCode(500000)
+                        .setInfo("bad")
+                        .build()).iterator());
+
+        // Act
+        SkillListResponse listResponse = connector.listSkills(listRequest);
+        SkillDownloadResponse downloadResponse = connector.downloadSkill(downloadRequest);
+
+        // Assert
+        assertThat(listResponse.getTotal()).isEqualTo(4);
+        assertThat(downloadResponse.getFilename()).isEqualTo("weather.zip");
+        assertThatThrownBy(() -> connector.downloadSkill(downloadRequest))
+                .isInstanceOf(ServerErrorResponseException.class);
+    }
+
+    /**
+     * 测试目的：ListSkills 非预期码抛异常
+     * 测试场景：code=500000
+     * 验证内容：ServerErrorResponseException
+     */
+    @Test
+    public void testListSkillsUnexpectedCode() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        when(stub.getSkillList(any())).thenReturn(PolarisSkillGRPCService.ListSkillsResponse.newBuilder()
+                .setCode(500000)
+                .setInfo("boom")
+                .build());
+
+        // Act & Assert
+        assertThatThrownBy(() -> connector.listSkills(new SkillListRequest()))
+                .isInstanceOf(ServerErrorResponseException.class);
+    }
+
+    /**
+     * 测试目的：RPC 运行时异常上报失败并包装 NETWORK_ERROR
+     * 测试场景：stub.getSkill 抛 RuntimeException
+     * 验证内容：connection.reportFail，异常 code 为 NETWORK_ERROR
+     */
+    @Test
+    public void testGetSkillReportsFailOnRuntimeException() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        when(stub.getSkill(any())).thenThrow(new RuntimeException("rpc down"));
+        SkillGetRequest request = new SkillGetRequest();
+        request.setNamespace("default");
+        request.setName("weather");
+
+        // Act & Assert
+        assertThatThrownBy(() -> connector.getSkill(request))
+                .isInstanceOf(PolarisException.class)
+                .hasFieldOrPropertyWithValue("code", ErrorCode.NETWORK_ERROR);
+        verify(lastConnection).reportFail(ErrorCode.NETWORK_ERROR);
+        verify(lastConnection).release("GetSkill");
+    }
+
+    /**
+     * 测试目的：list/download 非 Polar is 异常同样包装
+     * 测试场景：stub 抛 RuntimeException
+     * 验证内容：NETWORK_ERROR
+     */
+    @Test
+    public void testListAndDownloadWrapRuntimeException() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        when(stub.getSkillList(any())).thenThrow(new RuntimeException("list down"));
+        when(stub.downloadSkill(any())).thenThrow(new RuntimeException("download down"));
+
+        // Act & Assert
+        assertThatThrownBy(() -> connector.listSkills(new SkillListRequest()))
+                .isInstanceOf(PolarisException.class)
+                .hasFieldOrPropertyWithValue("code", ErrorCode.NETWORK_ERROR);
+        SkillDownloadRequest downloadRequest = new SkillDownloadRequest();
+        downloadRequest.setNamespace("default");
+        downloadRequest.setName("weather");
+        assertThatThrownBy(() -> connector.downloadSkill(downloadRequest))
+                .isInstanceOf(PolarisException.class)
+                .hasFieldOrPropertyWithValue("code", ErrorCode.NETWORK_ERROR);
+    }
+
+    /**
+     * 测试目的：真实 newStub 能挂到 mock channel
+     * 测试场景：init 后传入 mock Connection
+     * 验证内容：返回非空 stub
+     */
+    @Test
+    public void testNewStubOnMockChannel() throws PolarisException {
+        // Arrange
+        connector.init(initContext);
+        Connection connection = mock(Connection.class);
+        when(connection.getChannel()).thenReturn(mock(ManagedChannel.class));
+
+        // Act
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = connector.newStub(connection);
+
+        // Assert
+        assertThat(stub).isNotNull();
+    }
+
+    /**
+     * 测试目的：非 PolarisException 包装成 NETWORK_ERROR
+     * 测试场景：getConnection 抛 RuntimeException
+     * 验证内容：Retriable/PolarisException NETWORK_ERROR
+     */
+    @Test
+    public void testGetSkillWrapsUnexpectedThrowable() throws Exception {
+        // Arrange
+        connector.init(initContext);
+        ConnectionManager realManager = getPrivateField(connector, "connectionManager");
+        ConnectionManager mockManager = mock(ConnectionManager.class);
+        when(mockManager.getConnection(anyString(), eq(ClusterType.BUILTIN_CLUSTER)))
+                .thenThrow(new IllegalStateException("broken"));
+        setPrivateField(connector, "connectionManager", mockManager);
+        realManager.destroy();
+        SkillGetRequest request = new SkillGetRequest();
+        request.setNamespace("default");
+        request.setName("weather");
+
+        // Act & Assert
+        assertThatThrownBy(() -> connector.getSkill(request))
+                .isInstanceOf(PolarisException.class)
+                .hasFieldOrPropertyWithValue("code", ErrorCode.NETWORK_ERROR);
+    }
+
+    /**
+     * 测试目的：postContextInit 把 Extensions 交给 ConnectionManager
+     * 测试场景：init 后调用
+     * 验证内容：不抛异常
+     */
+    @Test
+    public void testPostContextInit() throws PolarisException {
+        // Arrange
+        connector.init(initContext);
+        Extensions extensions = mock(Extensions.class);
+
+        // Act
+        connector.postContextInit(extensions);
+
+        // Assert
+        assertThat(connector.getName()).isEqualTo("polaris");
+    }
+
+    private PolarisSkillGrpc.PolarisSkillBlockingStub prepareStub() throws Exception {
+        final PolarisSkillGrpc.PolarisSkillBlockingStub stub = mock(PolarisSkillGrpc.PolarisSkillBlockingStub.class);
+        connector.destroy();
+        connector = new PolarisSkillConnector() {
+            @Override
+            PolarisSkillGrpc.PolarisSkillBlockingStub newStub(Connection connection) {
+                return stub;
+            }
+        };
+        connector.init(initContext);
+        ConnectionManager realManager = getPrivateField(connector, "connectionManager");
+        ConnectionManager mockManager = mock(ConnectionManager.class);
+        lastConnection = mock(Connection.class);
+        when(mockManager.getConnection(anyString(), eq(ClusterType.BUILTIN_CLUSTER))).thenReturn(lastConnection);
+        setPrivateField(connector, "connectionManager", mockManager);
+        realManager.destroy();
+        return stub;
+    }
+
     @SuppressWarnings("unchecked")
     private static <T> T getPrivateField(Object object, String fieldName)
             throws NoSuchFieldException, IllegalAccessException {
-        Field field = object.getClass().getDeclaredField(fieldName);
+        Field field = findField(object.getClass(), fieldName);
         field.setAccessible(true);
         T result = (T) field.get(object);
         return result;
@@ -167,8 +443,22 @@ public class PolarisSkillConnectorTest {
 
     private static void setPrivateField(Object object, String fieldName, Object value)
             throws NoSuchFieldException, IllegalAccessException {
-        Field field = object.getClass().getDeclaredField(fieldName);
+        Field field = findField(object.getClass(), fieldName);
         field.setAccessible(true);
         field.set(object, value);
+    }
+
+    private static Field findField(Class<?> type, String fieldName) throws NoSuchFieldException {
+        Class<?> current = type;
+        NoSuchFieldException last = null;
+        while (current != null) {
+            try {
+                return current.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException exception) {
+                last = exception;
+                current = current.getSuperclass();
+            }
+        }
+        throw last;
     }
 }
