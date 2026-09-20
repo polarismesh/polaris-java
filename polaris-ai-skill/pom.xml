@@ -10,14 +10,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>polaris-ai</artifactId>
+    <artifactId>polaris-ai-skill</artifactId>
     <packaging>pom</packaging>
-    <name>Polaris AI</name>
-    <description>Polaris AI POM</description>
+    <name>Polaris AI Skill</name>
+    <description>Polaris AI Skill POM</description>
 
     <modules>
-        <module>polaris-ai-api</module>
-        <module>polaris-ai-client</module>
-        <module>polaris-ai-factory</module>
+        <module>polaris-ai-skill-api</module>
+        <module>polaris-ai-skill-client</module>
+        <module>polaris-ai-skill-factory</module>
     </modules>
 </project>

@@ -10,9 +10,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>polaris-ai-connector</artifactId>
-    <name>Polaris Plugins AI Connector</name>
-    <description>Polaris Plugins AI Connector JAR</description>
+    <artifactId>polaris-ai-skill-connector</artifactId>
+    <name>Polaris Plugins AI Skill Connector</name>
+    <description>Polaris Plugins AI Skill Connector JAR</description>
 
     <dependencies>
         <dependency>

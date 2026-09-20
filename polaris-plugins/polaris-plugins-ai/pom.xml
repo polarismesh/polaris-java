@@ -16,7 +16,7 @@
     <description>Polaris Plugins AI POM</description>
 
     <modules>
-        <module>polaris-ai-connector</module>
+        <module>polaris-ai-skill-connector</module>
     </modules>
 
     <dependencies>

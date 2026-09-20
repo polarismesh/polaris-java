@@ -3,26 +3,26 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>polaris-ai</artifactId>
+        <artifactId>polaris-ai-skill</artifactId>
         <groupId>com.tencent.polaris</groupId>
         <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>polaris-ai-factory</artifactId>
-    <name>Polaris AI Factory</name>
-    <description>Polaris AI Factory JAR</description>
+    <artifactId>polaris-ai-skill-factory</artifactId>
+    <name>Polaris AI Skill Factory</name>
+    <description>Polaris AI Skill Factory JAR</description>
 
     <dependencies>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-ai-client</artifactId>
+            <artifactId>polaris-ai-skill-client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
-            <artifactId>polaris-ai-connector</artifactId>
+            <artifactId>polaris-ai-skill-connector</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
