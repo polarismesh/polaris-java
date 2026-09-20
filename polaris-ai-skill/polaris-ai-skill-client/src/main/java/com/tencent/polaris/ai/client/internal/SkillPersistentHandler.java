@@ -41,6 +41,16 @@ import java.util.concurrent.Executors;
 
 /**
  * Persist skill payloads to local files, keyed by namespace/name/version.
+ *
+ * <p>Layout under persistDir:
+ * <ul>
+ * <li>{@code get/} YAML of GetSkill responses</li>
+ * <li>{@code download/} YAML metadata plus a sibling {@code .zip} for zip payloads</li>
+ * <li>{@code active/} last resolved version when the caller omitted one</li>
+ * </ul>
+ *
+ * <p>Writes from the flow path are async on a single-thread executor. {@code persistEnable=false}
+ * makes every save/load a no-op. YAML writes use a tmp file then atomic move, with write retries.
  */
 public class SkillPersistentHandler {
 
@@ -71,6 +81,16 @@ public class SkillPersistentHandler {
 
     private final long retryInterval;
 
+    /**
+     * Create a handler for persistDir. Directory is created or validated immediately.
+     *
+     * @param persistDir persist root directory
+     * @param persistEnable whether save and load are enabled
+     * @param maxWriteRetry extra write attempts after the first try
+     * @param maxReadRetry extra read attempts after the first try
+     * @param retryInterval sleep between read retries
+     * @throws IOException when persistDir cannot be used
+     */
     public SkillPersistentHandler(String persistDir, boolean persistEnable, int maxWriteRetry,
             int maxReadRetry, long retryInterval) throws IOException {
         this.persistEnable = persistEnable;
@@ -82,7 +102,7 @@ public class SkillPersistentHandler {
     }
 
     /**
-     * Persist GetSkill response under an explicit version.
+     * Persist GetSkill response under an explicit version. No-op when persist is disabled.
      *
      * @param namespace namespace
      * @param name skill name
@@ -96,7 +116,7 @@ public class SkillPersistentHandler {
     }
 
     /**
-     * Persist download response. Zip bytes go to a sibling .zip file.
+     * Persist download response. Zip bytes go to a sibling .zip file, not the YAML.
      *
      * @param namespace namespace
      * @param name skill name
@@ -112,7 +132,7 @@ public class SkillPersistentHandler {
     }
 
     /**
-     * Persist active version pointer when request version is empty.
+     * Persist the last resolved version so empty-version fallback can find it.
      *
      * @param namespace namespace
      * @param name skill name
@@ -125,7 +145,7 @@ public class SkillPersistentHandler {
     }
 
     /**
-     * Load persisted GetSkill response.
+     * Load persisted GetSkill response, or null when missing or persist is disabled.
      *
      * @param namespace namespace
      * @param name skill name
@@ -141,7 +161,7 @@ public class SkillPersistentHandler {
     }
 
     /**
-     * Load persisted download response.
+     * Load persisted download metadata and reattach zip bytes when format is zip.
      *
      * @param namespace namespace
      * @param name skill name
@@ -225,6 +245,9 @@ public class SkillPersistentHandler {
         }
     }
 
+    /**
+     * Attach zip bytes from the sibling file when the download format is zip.
+     */
     private void fillZipContent(SkillDownloadResponse result, String namespace, String name, String version,
             String format) {
         if (result != null && "zip".equals(format)) {
@@ -232,6 +255,9 @@ public class SkillPersistentHandler {
         }
     }
 
+    /**
+     * Write zip bytes beside the YAML metadata when format is zip.
+     */
     private void writeZipIfPresent(String namespace, String name, String version, String format,
             SkillDownloadResponse response) {
         if ("zip".equals(format) && response.getZipContent() != null) {
@@ -239,6 +265,9 @@ public class SkillPersistentHandler {
         }
     }
 
+    /**
+     * Copy download fields without zip bytes so YAML stays text-only.
+     */
     private SkillDownloadResponse copyDownloadMeta(SkillDownloadResponse response) {
         SkillDownloadResponse meta = new SkillDownloadResponse();
         meta.setCode(response.getCode());
@@ -271,6 +300,9 @@ public class SkillPersistentHandler {
                 encodePair(namespace, name)).toPath();
     }
 
+    /**
+     * Encode namespace, name, and version into a filesystem-safe filename.
+     */
     private String encodeKey(String namespace, String name, String version) {
         return encodePair(namespace, name) + "#" + encodeToken(version);
     }
@@ -289,6 +321,9 @@ public class SkillPersistentHandler {
         return encoded;
     }
 
+    /**
+     * Write YAML via a tmp file then atomic move, retrying on failure.
+     */
     private void writeYaml(Path path, Object value) {
         int retryTimes = 0;
         boolean success = false;
@@ -333,6 +368,9 @@ public class SkillPersistentHandler {
         }
     }
 
+    /**
+     * Read YAML with retries so a concurrent atomic replace can settle.
+     */
     private <T> T readYaml(Path path, Class<T> type) {
         T result = null;
         int retryTimes = 0;

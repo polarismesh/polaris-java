@@ -43,6 +43,13 @@ import java.io.IOException;
 
 /**
  * Default skill flow with persist fallback.
+ *
+ * <p>Get and download call the remote connector first. Successful payloads are written to
+ * disk asynchronously. On {@link ErrorCode#NETWORK_ERROR}, if fallback-to-local-cache is
+ * enabled, the last persisted payload is returned. List is remote-only and does not persist.
+ *
+ * <p>When the request version is empty, the resolved remote version is stored as the active
+ * pointer so later fallbacks can locate the last seen version.
  */
 public class DefaultSkillFlow implements SkillFlow {
 
@@ -82,6 +89,9 @@ public class DefaultSkillFlow implements SkillFlow {
         registerDestroyHook(sdkContext);
     }
 
+    /**
+     * Fetch a skill remotely, persist on success, or serve local cache on network error.
+     */
     @Override
     public SkillGetResponse getSkill(SkillGetRequest request) throws PolarisException {
         SkillGetResponse result;
@@ -102,6 +112,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return skillConnector.listSkills(request);
     }
 
+    /**
+     * Download a skill package remotely, persist on success, or serve local cache on network error.
+     */
     @Override
     public SkillDownloadResponse downloadSkill(SkillDownloadRequest request) throws PolarisException {
         SkillDownloadResponse result;
@@ -117,6 +130,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return result;
     }
 
+    /**
+     * Persist a successful GetSkill payload and refresh the active version when unset.
+     */
     private void persistGetSuccess(SkillGetRequest request, SkillGetResponse response) {
         if (isExecuteSuccess(response.getCode()) && persistentHandler != null) {
             String version = resolveGetVersion(request, response);
@@ -127,6 +143,9 @@ public class DefaultSkillFlow implements SkillFlow {
         }
     }
 
+    /**
+     * Persist a successful download payload and refresh the active version when unset.
+     */
     private void persistDownloadSuccess(SkillDownloadRequest request, SkillDownloadResponse response) {
         if (isExecuteSuccess(response.getCode()) && persistentHandler != null) {
             String version = resolveDownloadVersion(request, response);
@@ -139,6 +158,9 @@ public class DefaultSkillFlow implements SkillFlow {
         }
     }
 
+    /**
+     * Load GetSkill from disk when fallback is allowed; otherwise return null.
+     */
     private SkillGetResponse fallbackGetSkill(SkillGetRequest request, PolarisException exception) {
         SkillGetResponse result = null;
         if (allowFallback(exception)) {
@@ -150,6 +172,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return result;
     }
 
+    /**
+     * Load download from disk when fallback is allowed; otherwise return null.
+     */
     private SkillDownloadResponse fallbackDownload(SkillDownloadRequest request, PolarisException exception) {
         SkillDownloadResponse result = null;
         if (allowFallback(exception)) {
@@ -162,16 +187,25 @@ public class DefaultSkillFlow implements SkillFlow {
         return result;
     }
 
+    /**
+     * Fallback is limited to network errors, and only when local cache is enabled.
+     */
     private boolean allowFallback(PolarisException exception) {
         return fallbackToLocalCache && persistentHandler != null && ErrorCode.NETWORK_ERROR.equals(exception.getCode());
     }
 
+    /**
+     * Record the resolved version as active when the caller omitted a version.
+     */
     private void saveActiveIfNeeded(String namespace, String name, String requestVersion, String resolvedVersion) {
         if (StringUtils.isBlank(requestVersion) && StringUtils.isNotBlank(resolvedVersion)) {
             persistentHandler.asyncSaveActiveVersion(namespace, name, resolvedVersion);
         }
     }
 
+    /**
+     * Use the request version, or the last active pointer when the request version is empty.
+     */
     private String resolveFallbackVersion(String namespace, String name, String requestVersion) {
         String version = requestVersion;
         if (StringUtils.isBlank(version)) {
@@ -180,6 +214,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return version;
     }
 
+    /**
+     * Prefer the request version; otherwise take the version from the response resource.
+     */
     private String resolveGetVersion(SkillGetRequest request, SkillGetResponse response) {
         String version = request.getVersion();
         if (StringUtils.isBlank(version) && response.getResourceVersion() != null) {
@@ -188,6 +225,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return version;
     }
 
+    /**
+     * Prefer the request version; otherwise take the version from the download response.
+     */
     private String resolveDownloadVersion(SkillDownloadRequest request, SkillDownloadResponse response) {
         String version = request.getVersion();
         if (StringUtils.isBlank(version)) {
@@ -196,6 +236,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return version;
     }
 
+    /**
+     * Default download format is markdown when the request does not specify one.
+     */
     private String normalizeFormat(String format) {
         String result = FORMAT_MARKDOWN;
         if (StringUtils.isNotBlank(format)) {
@@ -208,6 +251,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return code == ServerCodes.EXECUTE_SUCCESS || code == 0;
     }
 
+    /**
+     * Build the persist helper; init failure is non-fatal and disables persist/fallback.
+     */
     private SkillPersistentHandler createPersistentHandler(SkillConnectorConfig connectorConfig) {
         SkillPersistentHandler handler = null;
         try {
@@ -221,6 +267,9 @@ public class DefaultSkillFlow implements SkillFlow {
         return handler;
     }
 
+    /**
+     * Stop the persist executor when the SDK context is destroyed.
+     */
     private void registerDestroyHook(SDKContext sdkContext) {
         sdkContext.registerDestroyHook(new Destroyable() {
             @Override
