@@ -17,8 +17,6 @@
 
 package com.tencent.polaris.factory.api;
 
-import com.tencent.polaris.ai.api.core.SkillAPI;
-import com.tencent.polaris.ai.factory.SkillAPIFactory;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.core.ConsumerAPI;
 import com.tencent.polaris.api.core.ProviderAPI;
@@ -242,35 +240,4 @@ public class APIFactory {
         return ConfigFileServiceFactory.createConfigFileService(config);
     }
 
-    /**
-     * 通过默认配置创建SkillAPI
-     *
-     * @return SkillAPI对象
-     * @throws PolarisException 初始化过程的异常
-     */
-    public static SkillAPI createSkillAPI() throws PolarisException {
-        return SkillAPIFactory.createSkillAPI();
-    }
-
-    /**
-     * 通过SDK上下文创建SkillAPI
-     *
-     * @param context SDK上下文，包含插件列表，配置对象等信息
-     * @return SkillAPI对象
-     * @throws PolarisException 初始化过程的异常
-     */
-    public static SkillAPI createSkillAPIByContext(SDKContext context) throws PolarisException {
-        return SkillAPIFactory.createSkillAPIByContext(context);
-    }
-
-    /**
-     * 通过配置对象创建SkillAPI
-     *
-     * @param config 配置对象
-     * @return SkillAPI对象
-     * @throws PolarisException 初始化过程的异常
-     */
-    public static SkillAPI createSkillAPIByConfig(Configuration config) throws PolarisException {
-        return SkillAPIFactory.createSkillAPIByConfig(config);
-    }
 }

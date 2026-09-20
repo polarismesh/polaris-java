@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.api.pojo;
 
-import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.Assertions;
@@ -42,15 +41,15 @@ public class ServiceInfoTest {
     @Test
     public void testBuilderKeepsExtendedMetadata() {
         // Arrange
-        ServiceProto.AgentSkill skill = ServiceProto.AgentSkill.newBuilder()
-                .setId("skill-weather")
-                .setName("weather")
-                .setDescription("Query weather")
-                .addTags("weather")
+        AgentSkill skill = AgentSkill.builder()
+                .id("skill-weather")
+                .name("weather")
+                .description("Query weather")
+                .tags(Collections.singletonList("weather"))
                 .build();
-        ServiceProto.ExtendedMetadata extendedMetadata = ServiceProto.ExtendedMetadata.newBuilder()
-                .setType(ServiceProto.ExtendedMetadata.ExtendedMetadataType.EXTENDED_METADATA_SKILL)
-                .setAgentSkill(skill)
+        ExtendedMetadata extendedMetadata = ExtendedMetadata.builder()
+                .type(ExtendedMetadata.ExtendedMetadataType.SKILL)
+                .agentSkill(skill)
                 .build();
 
         // Act
@@ -81,7 +80,7 @@ public class ServiceInfoTest {
                 .build();
 
         // Act
-        List<ServiceProto.ExtendedMetadata> extendedMetadata = serviceInfo.getExtendedMetadata();
+        List<ExtendedMetadata> extendedMetadata = serviceInfo.getExtendedMetadata();
 
         // Assert
         Assertions.assertThat(extendedMetadata).isNotNull();

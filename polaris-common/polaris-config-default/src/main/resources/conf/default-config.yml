@@ -457,6 +457,8 @@ ai:
     serverConnector:
       id: polaris-skill
       connectorType: polaris
+      addresses:
+        - 127.0.0.1:8094
       protocol: grpc
       connectTimeout: 500ms
       messageTimeout: 5s

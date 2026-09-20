@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.ConfigProvider;
 import com.tencent.polaris.api.config.Configuration;
-import com.tencent.polaris.api.utils.CollectionUtils;
 import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.factory.config.ai.AiConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
@@ -174,17 +173,13 @@ public class ConfigurationImpl implements Configuration {
             provider.setDefault(configuration.getProvider());
             config.setDefault(configuration.getConfigFile());
             ai.setDefault(configuration.getAi());
-            inheritSkillConnectorFromGlobal();
+            inheritSkillTokenFromGlobal();
         }
     }
 
-    private void inheritSkillConnectorFromGlobal() {
+    private void inheritSkillTokenFromGlobal() {
         if (ai.getSkill() != null && ai.getSkill().getServerConnector() != null
                 && global.getServerConnector() != null) {
-            if (CollectionUtils.isEmpty(ai.getSkill().getServerConnector().getAddresses())
-                    && !CollectionUtils.isEmpty(global.getServerConnector().getAddresses())) {
-                ai.getSkill().getServerConnector().setAddresses(global.getServerConnector().getAddresses());
-            }
             if (StringUtils.isBlank(ai.getSkill().getServerConnector().getToken())
                     && StringUtils.isNotBlank(global.getServerConnector().getToken())) {
                 ai.getSkill().getServerConnector().setToken(global.getServerConnector().getToken());

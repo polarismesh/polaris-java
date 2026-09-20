@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * gRPC SkillConnector against PolarisSkill.
@@ -163,6 +164,7 @@ public class PolarisSkillConnector implements SkillConnector {
         PolarisSkillGrpc.PolarisSkillBlockingStub stub = PolarisSkillGrpc.newBlockingStub(connection.getChannel());
         stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
         stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
+        stub = stub.withDeadlineAfter(connectorConfig.getMessageTimeout(), TimeUnit.MILLISECONDS);
         return stub;
     }
 

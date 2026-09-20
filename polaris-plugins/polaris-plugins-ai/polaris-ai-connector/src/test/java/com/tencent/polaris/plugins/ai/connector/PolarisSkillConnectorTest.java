@@ -42,8 +42,9 @@ import com.tencent.polaris.factory.config.skill.SkillConnectorConfigImpl;
 import com.tencent.polaris.plugins.connector.grpc.Connection;
 import com.tencent.polaris.plugins.connector.grpc.ConnectionManager;
 import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGrpc;
-import io.grpc.ManagedChannel;
 import com.tencent.polaris.specification.api.v1.skill.manage.PolarisSkillGRPCService;
+import io.grpc.Deadline;
+import io.grpc.ManagedChannel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,6 +56,7 @@ import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -92,6 +94,7 @@ public class PolarisSkillConnectorTest {
         SkillConnectorConfigImpl skillConnector = new SkillConnectorConfigImpl();
         skillConnector.setAddresses(Collections.singletonList(SKILL_ADDRESS));
         skillConnector.setConnectTimeout(1000L);
+        skillConnector.setMessageTimeout(5000L);
         skillConnector.setServerSwitchInterval(600000L);
         skillConnector.setProtocol("grpc");
         SkillConfigImpl skillConfig = new SkillConfigImpl();
@@ -352,9 +355,9 @@ public class PolarisSkillConnectorTest {
     }
 
     /**
-     * 测试目的：真实 newStub 能挂到 mock channel
+     * 测试目的：真实 newStub 能挂到 mock channel 并设置 RPC deadline
      * 测试场景：init 后传入 mock Connection
-     * 验证内容：返回非空 stub
+     * 验证内容：返回非空 stub，deadline 来自 messageTimeout
      */
     @Test
     public void testNewStubOnMockChannel() throws PolarisException {
@@ -368,6 +371,9 @@ public class PolarisSkillConnectorTest {
 
         // Assert
         assertThat(stub).isNotNull();
+        Deadline deadline = stub.getCallOptions().getDeadline();
+        assertThat(deadline).isNotNull();
+        assertThat(deadline.timeRemaining(TimeUnit.MILLISECONDS)).isBetween(1L, 5000L);
     }
 
     /**

@@ -18,6 +18,7 @@
 package com.tencent.polaris.client.pojo;
 
 import com.google.protobuf.StringValue;
+import com.tencent.polaris.api.pojo.ExtendedMetadata;
 import com.tencent.polaris.api.pojo.ServiceInfo;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
@@ -48,6 +49,12 @@ public class ServicesByProtoTest {
                 .setAgentSkill(ServiceProto.AgentSkill.newBuilder()
                         .setId("skill-weather")
                         .setName("weather")
+                        .setDescription("Query weather")
+                        .addTags("weather")
+                        .addExamples("Weather in Shenzhen")
+                        .addInputModes("text")
+                        .addOutputModes("text")
+                        .setVersion("1.0.0")
                         .build())
                 .build();
         ServiceProto.Service service = ServiceProto.Service.newBuilder()
@@ -66,7 +73,23 @@ public class ServicesByProtoTest {
 
         // Assert
         Assertions.assertThat(serviceInfo.getExtendedMetadata()).hasSize(1);
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getType())
+                .isEqualTo(ExtendedMetadata.ExtendedMetadataType.SKILL);
         Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getId())
                 .isEqualTo("skill-weather");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getName())
+                .isEqualTo("weather");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getDescription())
+                .isEqualTo("Query weather");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getTags())
+                .containsExactly("weather");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getExamples())
+                .containsExactly("Weather in Shenzhen");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getInputModes())
+                .containsExactly("text");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getOutputModes())
+                .containsExactly("text");
+        Assertions.assertThat(serviceInfo.getExtendedMetadata().get(0).getAgentSkill().getVersion())
+                .isEqualTo("1.0.0");
     }
 }

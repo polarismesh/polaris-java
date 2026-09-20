@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.client.pojo;
 
+import com.tencent.polaris.api.pojo.ExtendedMetadata;
 import com.tencent.polaris.api.pojo.Instance;
 import com.tencent.polaris.api.pojo.InstanceLocalValue;
 import com.tencent.polaris.api.pojo.RegistryCacheValue;
@@ -57,7 +58,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
 
     private final Map<String, String> metadata;
 
-    private final List<ServiceProto.ExtendedMetadata> extendedMetadata;
+    private final List<ExtendedMetadata> extendedMetadata;
 
     private final boolean initialized;
 
@@ -116,7 +117,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
         this.totalWeight = totalWeight;
         this.initialized = true;
         this.metadata = Collections.unmodifiableMap(this.service.getMetadataMap());
-        this.extendedMetadata = Collections.unmodifiableList(this.service.getExtendedMetadataList());
+        this.extendedMetadata = ServiceMetadataConverter.toExtendedMetadata(this.service.getExtendedMetadataList());
         this.loadedFromFile = loadFromFile;
     }
 
@@ -198,7 +199,7 @@ public class ServiceInstancesByProto implements ServiceInstances, RegistryCacheV
     }
 
     @Override
-    public List<ServiceProto.ExtendedMetadata> getExtendedMetadata() {
+    public List<ExtendedMetadata> getExtendedMetadata() {
         return this.extendedMetadata;
     }
 

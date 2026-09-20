@@ -215,12 +215,12 @@ public class AiConfigImplTest {
     }
 
     /**
-     * 测试目的：skill 地址/token 为空时继承 global.serverConnector
+     * 测试目的：skill 仅继承 global token，不继承 discover 地址
      * 测试场景：global 有 8091 与 token
-     * 验证内容：skill connector 地址与 token 被拷贝
+     * 验证内容：skill 地址保持为空，token 被拷贝
      */
     @Test
-    public void testConfigurationInheritsSkillConnectorFromGlobal() {
+    public void testConfigurationOnlyInheritsSkillTokenFromGlobal() {
         // Arrange
         ServerConnectorConfigImpl globalConnector = new ServerConnectorConfigImpl();
         globalConnector.setAddresses(Collections.singletonList("127.0.0.1:8091"));
@@ -244,7 +244,7 @@ public class AiConfigImplTest {
 
         // Assert
         assertThat(configuration.getAi().getSkill().getServerConnector().getAddresses())
-                .containsExactly("127.0.0.1:8091");
+                .isNull();
         assertThat(configuration.getAi().getSkill().getServerConnector().getToken()).isEqualTo("skill-token");
         configuration.setAi(aiConfig);
         assertThat(configuration.getAi()).isSameAs(aiConfig);

@@ -26,6 +26,12 @@
         </dependency>
         <dependency>
             <groupId>com.tencent.polaris</groupId>
+            <artifactId>polaris-ai-factory</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tencent.polaris</groupId>
             <artifactId>polaris-test-common</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>

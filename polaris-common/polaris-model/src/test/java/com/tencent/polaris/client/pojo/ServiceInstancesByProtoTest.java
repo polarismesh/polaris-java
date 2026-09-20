@@ -18,6 +18,7 @@
 package com.tencent.polaris.client.pojo;
 
 import com.google.protobuf.StringValue;
+import com.tencent.polaris.api.pojo.ExtendedMetadata;
 import com.tencent.polaris.api.pojo.ServiceInstances;
 import com.tencent.polaris.api.pojo.ServiceInstancesWrap;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
@@ -48,6 +49,8 @@ public class ServiceInstancesByProtoTest {
 
         // Act & Assert
         Assertions.assertThat(serviceInstances.getExtendedMetadata()).hasSize(1);
+        Assertions.assertThat(serviceInstances.getExtendedMetadata().get(0).getType())
+                .isEqualTo(ExtendedMetadata.ExtendedMetadataType.SKILL);
         Assertions.assertThat(serviceInstances.getExtendedMetadata().get(0).getAgentSkill().getId())
                 .isEqualTo("skill-weather");
     }

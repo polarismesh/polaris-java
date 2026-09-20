@@ -17,7 +17,6 @@
 
 package com.tencent.polaris.api.pojo;
 
-import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
 
     private Map<String, String> metadata;
 
-    private List<ServiceProto.ExtendedMetadata> extendedMetadata;
+    private List<ExtendedMetadata> extendedMetadata;
 
     private String revision;
 
@@ -74,15 +73,15 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
     }
 
     @Override
-    public List<ServiceProto.ExtendedMetadata> getExtendedMetadata() {
-        List<ServiceProto.ExtendedMetadata> result = this.extendedMetadata;
+    public List<ExtendedMetadata> getExtendedMetadata() {
+        List<ExtendedMetadata> result = this.extendedMetadata;
         if (result == null) {
             result = Collections.emptyList();
         }
         return result;
     }
 
-    public void setExtendedMetadata(List<ServiceProto.ExtendedMetadata> extendedMetadata) {
+    public void setExtendedMetadata(List<ExtendedMetadata> extendedMetadata) {
         this.extendedMetadata = extendedMetadata;
     }
 
@@ -116,7 +115,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
         private String namespace;
         private String service;
         private Map<String, String> metadata;
-        private List<ServiceProto.ExtendedMetadata> extendedMetadata;
+        private List<ExtendedMetadata> extendedMetadata;
         private String revision;
 
         private ServiceInfoBuilder() {
@@ -137,7 +136,7 @@ public class ServiceInfo implements ServiceMetadata, Comparable<ServiceInfo> {
             return this;
         }
 
-        public ServiceInfoBuilder extendedMetadata(List<ServiceProto.ExtendedMetadata> extendedMetadata) {
+        public ServiceInfoBuilder extendedMetadata(List<ExtendedMetadata> extendedMetadata) {
             this.extendedMetadata = extendedMetadata;
             return this;
         }
