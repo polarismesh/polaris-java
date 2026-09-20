@@ -23,7 +23,6 @@ import com.tencent.polaris.api.pojo.ServiceEventKey.EventType;
 import com.tencent.polaris.api.pojo.ServiceEventKeysProvider;
 import com.tencent.polaris.api.pojo.ServiceKey;
 import com.tencent.polaris.api.rpc.GetServicesRequest;
-import com.tencent.polaris.api.utils.StringUtils;
 import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.flow.FlowControlParam;
 
@@ -34,6 +33,8 @@ import java.util.Set;
  * 批量获取服务的封装请求
  */
 public class CommonServicesRequest implements ServiceEventKeysProvider, FlowControlParam {
+
+    private final EventType eventType = EventType.SERVICE;
 
     private long timeoutMs;
 
@@ -79,7 +80,7 @@ public class CommonServicesRequest implements ServiceEventKeysProvider, FlowCont
     }
 
     public EventType getEventType() {
-        return getSvcEventKey().getEventType();
+        return eventType;
     }
 
     public GetServicesRequest getRequest() {
@@ -102,25 +103,6 @@ public class CommonServicesRequest implements ServiceEventKeysProvider, FlowCont
 
     @Override
     public ServiceEventKey getSvcEventKey() {
-        return buildSvcEventKey(request);
-    }
-
-    /**
-     * Builds the discover key. A named service uses INSTANCE so revision and
-     * extended_metadata stay bound to that service; otherwise SERVICES lists the namespace.
-     *
-     * @param request the get-services request
-     * @return discover cache key
-     */
-    static ServiceEventKey buildSvcEventKey(GetServicesRequest request) {
-        String namespace = request.getNamespace();
-        String service = request.getService();
-        ServiceEventKey eventKey;
-        if (StringUtils.isNotBlank(service)) {
-            eventKey = new ServiceEventKey(new ServiceKey(namespace, service), EventType.INSTANCE);
-        } else {
-            eventKey = new ServiceEventKey(new ServiceKey(namespace, ""), EventType.SERVICE);
-        }
-        return eventKey;
+        return new ServiceEventKey(new ServiceKey(request.getNamespace(), ""), EventType.SERVICE);
     }
 }
