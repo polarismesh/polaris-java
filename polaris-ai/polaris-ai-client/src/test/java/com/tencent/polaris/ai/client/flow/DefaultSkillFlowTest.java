@@ -110,6 +110,7 @@ public class DefaultSkillFlowTest {
         // Act
         flow.getSkill(request);
         waitUntilPersisted(handler, "default", "sql-analysis", "1.1.0");
+        waitUntilActiveVersionPersisted(handler, "default", "sql-analysis", "1.1.0");
         SkillGetResponse fallback = flow.getSkill(request);
 
         // Assert
@@ -450,6 +451,16 @@ public class DefaultSkillFlowTest {
             persisted = handler.loadGetSkill(namespace, name, version);
         }
         assertThat(persisted).isNotNull();
+    }
+
+    private void waitUntilActiveVersionPersisted(SkillPersistentHandler handler, String namespace, String name,
+            String expectedVersion) {
+        long deadline = System.currentTimeMillis() + 2000L;
+        String activeVersion = handler.loadActiveVersion(namespace, name);
+        while (!expectedVersion.equals(activeVersion) && System.currentTimeMillis() < deadline) {
+            activeVersion = handler.loadActiveVersion(namespace, name);
+        }
+        assertThat(activeVersion).isEqualTo(expectedVersion);
     }
 
     private void waitUntilDownloadPersisted(SkillPersistentHandler handler, String namespace, String name,
