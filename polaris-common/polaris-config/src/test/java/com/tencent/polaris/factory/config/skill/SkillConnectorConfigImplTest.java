@@ -87,12 +87,14 @@ public class SkillConnectorConfigImplTest {
         source.setPersistMaxReadRetry(2);
         source.setPersistRetryInterval(200L);
         source.setFallbackToLocalCache(false);
+        source.setDownloadTimeout(45000L);
         SkillConnectorConfigImpl target = new SkillConnectorConfigImpl();
         setPrivateField(target, "persistEnable", null);
         setPrivateField(target, "persistMaxWriteRetry", null);
         setPrivateField(target, "persistMaxReadRetry", null);
         setPrivateField(target, "persistRetryInterval", null);
         setPrivateField(target, "fallbackToLocalCache", null);
+        setPrivateField(target, "downloadTimeout", null);
 
         // Act
         target.setDefault(source);
@@ -105,6 +107,7 @@ public class SkillConnectorConfigImplTest {
         assertThat(target.getPersistMaxReadRetry()).isEqualTo(2);
         assertThat(target.getPersistRetryInterval()).isEqualTo(200L);
         assertThat(target.getFallbackToLocalCache()).isFalse();
+        assertThat(target.getDownloadTimeout()).isEqualTo(45000L);
     }
 
     /**
@@ -146,6 +149,7 @@ public class SkillConnectorConfigImplTest {
         config.setPersistRetryInterval(300L);
         config.setPersistDir("./backup");
         config.setConnectorType("polaris");
+        config.setDownloadTimeout(30000L);
 
         // Assert
         assertThat(config.getPersistEnable()).isFalse();
@@ -154,6 +158,21 @@ public class SkillConnectorConfigImplTest {
         assertThat(config.getPersistMaxReadRetry()).isEqualTo(5);
         assertThat(config.getPersistRetryInterval()).isEqualTo(300L);
         assertThat(config.getPersistDir()).isEqualTo("./backup");
+        assertThat(config.getDownloadTimeout()).isEqualTo(30000L);
+    }
+
+    /**
+     * 测试目的：downloadTimeout 使用 30 秒默认值
+     * 测试场景：创建默认 Skill connector 配置
+     * 验证内容：downloadTimeout 为 30000 毫秒
+     */
+    @Test
+    public void testDefaultDownloadTimeout() {
+        // Arrange & Act
+        SkillConnectorConfigImpl config = new SkillConnectorConfigImpl();
+
+        // Assert
+        assertThat(config.getDownloadTimeout()).isEqualTo(30000L);
     }
 
     /**

@@ -61,9 +61,11 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -95,6 +97,7 @@ public class PolarisSkillConnectorTest {
         skillConnector.setAddresses(Collections.singletonList(SKILL_ADDRESS));
         skillConnector.setConnectTimeout(1000L);
         skillConnector.setMessageTimeout(5000L);
+        skillConnector.setDownloadTimeout(30000L);
         skillConnector.setServerSwitchInterval(600000L);
         skillConnector.setProtocol("grpc");
         SkillConfigImpl skillConfig = new SkillConfigImpl();
@@ -225,6 +228,7 @@ public class PolarisSkillConnectorTest {
         assertThat(success.getContent()).isEqualTo("# skill");
         assertThat(notFound.getCode()).isEqualTo(ServerCodes.NOT_FOUND_RESOURCE);
         assertThat(codeZero.getContent()).isEqualTo("zero");
+        verify(stub, times(3)).withDeadlineAfter(5000L, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -287,6 +291,36 @@ public class PolarisSkillConnectorTest {
         assertThat(downloadResponse.getFilename()).isEqualTo("weather.zip");
         assertThatThrownBy(() -> connector.downloadSkill(downloadRequest))
                 .isInstanceOf(ServerErrorResponseException.class);
+        verify(stub).withDeadlineAfter(5000L, TimeUnit.MILLISECONDS);
+        verify(stub, times(2)).withDeadlineAfter(30000L, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * 测试目的：markdown 下载继续使用普通消息超时
+     * 测试场景：DownloadSkill format=markdown
+     * 验证内容：deadline 使用 messageTimeout
+     */
+    @Test
+    public void testMarkdownDownloadUsesMessageTimeout() throws Exception {
+        // Arrange
+        PolarisSkillGrpc.PolarisSkillBlockingStub stub = prepareStub();
+        SkillDownloadRequest request = new SkillDownloadRequest();
+        request.setNamespace("default");
+        request.setName("weather");
+        request.setFormat("markdown");
+        PolarisSkillGRPCService.DownloadSkillResponse frame =
+                PolarisSkillGRPCService.DownloadSkillResponse.newBuilder()
+                        .setCode(ServerCodes.EXECUTE_SUCCESS)
+                        .setContent("# weather")
+                        .build();
+        when(stub.downloadSkill(any())).thenReturn(Collections.singletonList(frame).iterator());
+
+        // Act
+        SkillDownloadResponse response = connector.downloadSkill(request);
+
+        // Assert
+        assertThat(response.getContent()).isEqualTo("# weather");
+        verify(stub).withDeadlineAfter(5000L, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -355,9 +389,9 @@ public class PolarisSkillConnectorTest {
     }
 
     /**
-     * 测试目的：真实 newStub 能挂到 mock channel 并设置 RPC deadline
+     * 测试目的：真实 newStub 只挂 header/token，不设置统一 deadline
      * 测试场景：init 后传入 mock Connection
-     * 验证内容：返回非空 stub，deadline 来自 messageTimeout
+     * 验证内容：返回非空 stub，deadline 由具体 RPC 设置
      */
     @Test
     public void testNewStubOnMockChannel() throws PolarisException {
@@ -372,8 +406,7 @@ public class PolarisSkillConnectorTest {
         // Assert
         assertThat(stub).isNotNull();
         Deadline deadline = stub.getCallOptions().getDeadline();
-        assertThat(deadline).isNotNull();
-        assertThat(deadline.timeRemaining(TimeUnit.MILLISECONDS)).isBetween(1L, 5000L);
+        assertThat(deadline).isNull();
     }
 
     /**
@@ -421,6 +454,7 @@ public class PolarisSkillConnectorTest {
 
     private PolarisSkillGrpc.PolarisSkillBlockingStub prepareStub() throws Exception {
         final PolarisSkillGrpc.PolarisSkillBlockingStub stub = mock(PolarisSkillGrpc.PolarisSkillBlockingStub.class);
+        when(stub.withDeadlineAfter(anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(stub);
         connector.destroy();
         connector = new PolarisSkillConnector() {
             @Override

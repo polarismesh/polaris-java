@@ -32,6 +32,21 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public class DefaultConfigProviderTest {
 
+    /**
+     * 测试目的：默认 Skill 下载超时配置可被正确解析
+     * 测试场景：加载 classpath 默认配置
+     * 验证内容：downloadTimeout 为 30 秒
+     */
+    @Test
+    public void testSkillDownloadTimeoutLoaded() {
+        // Act
+        Configuration configuration = new DefaultConfigProvider().getDefaultConfig();
+
+        // Assert
+        assertThat(configuration.getAi().getSkill().getServerConnector().getDownloadTimeout())
+                .isEqualTo(30000L);
+    }
+
     @Test
     public void testReportClientRequestCustomizerPluginConfigLoaded() {
         Configuration configuration = new DefaultConfigProvider().getDefaultConfig();

@@ -462,6 +462,7 @@ ai:
       protocol: grpc
       connectTimeout: 500ms
       messageTimeout: 5s
+      downloadTimeout: 30s
       connectionIdleTimeout: 60s
       serverSwitchInterval: 10m
       reconnectInterval: 500ms

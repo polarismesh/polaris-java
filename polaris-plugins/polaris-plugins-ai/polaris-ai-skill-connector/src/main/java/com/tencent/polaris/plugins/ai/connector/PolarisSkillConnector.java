@@ -106,6 +106,7 @@ public class PolarisSkillConnector implements SkillConnector {
         try {
             connection = connectionManager.getConnection(OP_GET_SKILL, SKILL_CLUSTER);
             PolarisSkillGrpc.PolarisSkillBlockingStub stub = newStub(connection);
+            stub = withDeadline(stub, connectorConfig.getMessageTimeout());
             PolarisSkillGRPCService.GetSkillResponse proto = stub.getSkill(SkillProtoConverter.toGetRequest(request));
             result = handleGetResponse(proto);
         } catch (Throwable throwable) {
@@ -124,6 +125,7 @@ public class PolarisSkillConnector implements SkillConnector {
         try {
             connection = connectionManager.getConnection(OP_LIST_SKILLS, SKILL_CLUSTER);
             PolarisSkillGrpc.PolarisSkillBlockingStub stub = newStub(connection);
+            stub = withDeadline(stub, connectorConfig.getMessageTimeout());
             PolarisSkillGRPCService.ListSkillsResponse proto = stub.getSkillList(SkillProtoConverter.toListRequest(request));
             result = handleListResponse(proto);
         } catch (Throwable throwable) {
@@ -142,6 +144,7 @@ public class PolarisSkillConnector implements SkillConnector {
         try {
             connection = connectionManager.getConnection(OP_DOWNLOAD_SKILL, SKILL_CLUSTER);
             PolarisSkillGrpc.PolarisSkillBlockingStub stub = newStub(connection);
+            stub = withDeadline(stub, getDownloadTimeout(request));
             Iterator<PolarisSkillGRPCService.DownloadSkillResponse> iterator =
                     stub.downloadSkill(SkillProtoConverter.toDownloadRequest(request));
             result = handleDownloadResponse(SkillProtoConverter.assembleDownload(iterator));
@@ -164,8 +167,20 @@ public class PolarisSkillConnector implements SkillConnector {
         PolarisSkillGrpc.PolarisSkillBlockingStub stub = PolarisSkillGrpc.newBlockingStub(connection.getChannel());
         stub = GrpcUtil.attachRequestHeader(stub, GrpcUtil.nextInstanceRegisterReqId());
         stub = GrpcUtil.attachAccessToken(connectorConfig.getToken(), stub);
-        stub = stub.withDeadlineAfter(connectorConfig.getMessageTimeout(), TimeUnit.MILLISECONDS);
         return stub;
+    }
+
+    private PolarisSkillGrpc.PolarisSkillBlockingStub withDeadline(
+            PolarisSkillGrpc.PolarisSkillBlockingStub stub, long timeout) {
+        return stub.withDeadlineAfter(timeout, TimeUnit.MILLISECONDS);
+    }
+
+    private long getDownloadTimeout(SkillDownloadRequest request) {
+        long timeout = connectorConfig.getMessageTimeout();
+        if ("zip".equalsIgnoreCase(request.getFormat())) {
+            timeout = connectorConfig.getDownloadTimeout();
+        }
+        return timeout;
     }
 
     private SkillGetResponse handleGetResponse(PolarisSkillGRPCService.GetSkillResponse proto) {

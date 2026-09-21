@@ -37,6 +37,10 @@ public class SkillConnectorConfigImpl extends ServerConnectorConfigImpl implemen
     private String connectorType;
 
     @JsonProperty
+    @JsonDeserialize(using = TimeStrJsonDeserializer.class)
+    private Long downloadTimeout = 30000L;
+
+    @JsonProperty
     private Boolean persistEnable = true;
 
     @JsonProperty
@@ -64,6 +68,7 @@ public class SkillConnectorConfigImpl extends ServerConnectorConfigImpl implemen
         if (!StringUtils.equals(connectorType, DefaultPlugins.POLARIS_SKILL_CONNECTOR_TYPE)) {
             throw new IllegalArgumentException(String.format("Unsupported skill data source [%s]", connectorType));
         }
+        ConfigUtils.validateInterval(downloadTimeout, "skillConnector.downloadTimeout");
         super.verify();
     }
 
@@ -77,6 +82,9 @@ public class SkillConnectorConfigImpl extends ServerConnectorConfigImpl implemen
                 SkillConnectorConfig connectorConfig = (SkillConnectorConfig) defaultObject;
                 if (connectorType == null) {
                     this.connectorType = connectorConfig.getConnectorType();
+                }
+                if (downloadTimeout == null) {
+                    this.downloadTimeout = connectorConfig.getDownloadTimeout();
                 }
                 if (persistEnable == null) {
                     this.persistEnable = connectorConfig.getPersistEnable();
@@ -107,6 +115,15 @@ public class SkillConnectorConfigImpl extends ServerConnectorConfigImpl implemen
 
     public void setConnectorType(String connectorType) {
         this.connectorType = connectorType;
+    }
+
+    @Override
+    public Long getDownloadTimeout() {
+        return downloadTimeout;
+    }
+
+    public void setDownloadTimeout(Long downloadTimeout) {
+        this.downloadTimeout = downloadTimeout;
     }
 
     @Override

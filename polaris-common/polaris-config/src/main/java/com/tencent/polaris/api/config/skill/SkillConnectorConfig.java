@@ -32,6 +32,13 @@ public interface SkillConnectorConfig extends ServerConnectorConfig {
     String getConnectorType();
 
     /**
+     * ZIP download timeout in milliseconds.
+     *
+     * @return download timeout
+     */
+    Long getDownloadTimeout();
+
+    /**
      * Whether persist is enabled.
      *
      * @return persist enable
