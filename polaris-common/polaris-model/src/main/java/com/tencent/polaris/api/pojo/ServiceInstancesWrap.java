@@ -117,7 +117,12 @@ public class ServiceInstancesWrap implements ServiceInstances {
 
     @Override
     public Map<String, String> getMetadata() {
-        return serviceInstances.getMetadata();
+        return this.serviceInstances.getMetadata();
+    }
+
+    @Override
+    public List<ExtendedMetadata> getExtendedMetadata() {
+        return this.serviceInstances.getExtendedMetadata();
     }
 
     public List<Instance> getAllInstances() {

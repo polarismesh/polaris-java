@@ -17,6 +17,7 @@
 
 package com.tencent.polaris.api.config;
 
+import com.tencent.polaris.api.config.ai.AiConfig;
 import com.tencent.polaris.api.config.configuration.ConfigFileConfig;
 import com.tencent.polaris.api.config.consumer.ConsumerConfig;
 import com.tencent.polaris.api.config.global.GlobalConfig;
@@ -57,4 +58,11 @@ public interface Configuration extends Verifier {
      * @return ConfigFileConfig
      */
     ConfigFileConfig getConfigFile();
+
+    /**
+     * ai 前缀开头的所有配置项
+     *
+     * @return AiConfig
+     */
+    AiConfig getAi();
 }

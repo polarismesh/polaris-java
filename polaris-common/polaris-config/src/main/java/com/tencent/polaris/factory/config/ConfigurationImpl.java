@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tencent.polaris.api.config.ConfigProvider;
 import com.tencent.polaris.api.config.Configuration;
 import com.tencent.polaris.api.utils.StringUtils;
+import com.tencent.polaris.factory.config.ai.AiConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.consumer.ConsumerConfigImpl;
 import com.tencent.polaris.factory.config.global.GlobalConfigImpl;
@@ -62,6 +63,9 @@ public class ConfigurationImpl implements Configuration {
 
     @JsonProperty
     private ConfigFileConfigImpl config;
+
+    @JsonProperty
+    private AiConfigImpl ai;
 
     public ConfigurationImpl() {
         defaultConfigName = ConfigProvider.DEFAULT_CONFIG;
@@ -108,6 +112,15 @@ public class ConfigurationImpl implements Configuration {
     }
 
     @Override
+    public AiConfigImpl getAi() {
+        return ai;
+    }
+
+    public void setAi(AiConfigImpl ai) {
+        this.ai = ai;
+    }
+
+    @Override
     public void verify() {
         ConfigUtils.validateNull(global, "global");
         ConfigUtils.validateNull(consumer, "consumer");
@@ -116,6 +129,9 @@ public class ConfigurationImpl implements Configuration {
         consumer.verify();
         provider.verify();
         config.verify();
+        if (ai != null) {
+            ai.verify();
+        }
     }
 
     private Configuration getDefaultConfig() {
@@ -147,12 +163,27 @@ public class ConfigurationImpl implements Configuration {
         if (null == config) {
             config = new ConfigFileConfigImpl();
         }
+        if (null == ai) {
+            ai = new AiConfigImpl();
+        }
         if (null != defaultObject) {
             Configuration configuration = (Configuration) defaultObject;
             global.setDefault(configuration.getGlobal());
             consumer.setDefault(configuration.getConsumer());
             provider.setDefault(configuration.getProvider());
             config.setDefault(configuration.getConfigFile());
+            ai.setDefault(configuration.getAi());
+            inheritSkillTokenFromGlobal();
+        }
+    }
+
+    private void inheritSkillTokenFromGlobal() {
+        if (ai.getSkill() != null && ai.getSkill().getServerConnector() != null
+                && global.getServerConnector() != null) {
+            if (StringUtils.isBlank(ai.getSkill().getServerConnector().getToken())
+                    && StringUtils.isNotBlank(global.getServerConnector().getToken())) {
+                ai.getSkill().getServerConnector().setToken(global.getServerConnector().getToken());
+            }
         }
     }
 

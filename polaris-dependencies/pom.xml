@@ -185,6 +185,27 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-ai-skill-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-ai-skill-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-ai-skill-factory</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tencent.polaris</groupId>
+                <artifactId>polaris-ai-skill-connector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- polaris-assembly-->
             <dependency>
                 <groupId>com.tencent.polaris</groupId>
