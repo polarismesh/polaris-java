@@ -179,13 +179,17 @@ public class SkillPersistentHandlerTest {
         handler.asyncSaveActiveVersion("default", "sql-analysis", "1.2.0");
         long deadline = System.currentTimeMillis() + 2000L;
         SkillGetResponse loaded = handler.loadGetSkill("default", "sql-analysis", "1.2.0");
+        String activeVersion = handler.loadActiveVersion("default", "sql-analysis");
         while (loaded == null && System.currentTimeMillis() < deadline) {
             loaded = handler.loadGetSkill("default", "sql-analysis", "1.2.0");
+        }
+        while (!"1.2.0".equals(activeVersion) && System.currentTimeMillis() < deadline) {
+            activeVersion = handler.loadActiveVersion("default", "sql-analysis");
         }
 
         // Assert
         assertThat(loaded.getContent()).isEqualTo("async-skill");
-        assertThat(handler.loadActiveVersion("default", "sql-analysis")).isEqualTo("1.2.0");
+        assertThat(activeVersion).isEqualTo("1.2.0");
         handler.doDestroy();
     }
 
