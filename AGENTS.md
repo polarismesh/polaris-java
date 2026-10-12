@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+本文件为 AI 编码工具（Claude Code、Cursor、Codex、CodeBuddy 等）提供 polaris-java 的项目上下文与开发规范。
 
 ## 项目简介
 
@@ -21,16 +21,16 @@ polaris-java 是 [Polaris](https://github.com/polarismesh/polaris)（腾讯开�
 
 流程：
 
-1. 使用 superpowers 提供的相关 skill 完成方案设计：
-   - `superpowers:brainstorming` — 探索用户意图、需求边界与设计空间（创意/新功能场景）
-   - `superpowers:systematic-debugging` — 系统化定位 bug 根因（疑难 bug 场景）
-   - `superpowers:writing-plans` — 把方案写成可执行的多步实施计划
+1. 用当前工具可用的方案设计手段（skill、subagent 或手动流程均可）完成方案设计：
+   - 需求探索：澄清用户意图、需求边界与设计空间（创意/新功能场景）
+   - 根因定位：系统化定位 bug 根因（疑难 bug 场景）
+   - 计划编写：把方案写成可执行的多步实施计划
 2. 方案文档及相关材料保存到 `specs/<YYYY-MM-DD-short-topic>/` 子目录下，按需求/bugfix 一个子目录隔离：
    - `specs/<YYYY-MM-DD-short-topic>/design.md` — 主设计文档，包含：背景、目标、非目标、方案对比、最终选型、影响面、实施步骤、回滚策略、测试计划
    - 同目录下放置该需求相关的其他材料：调研笔记、时序图、抓包/日志样本、PoC 代码片段、参考资料链接等
    - 例：`specs/2026-05-13-ratelimit-multi-window/design.md`、`specs/2026-05-13-ratelimit-multi-window/benchmark.md`
    - 注：`specs/` 已在 `.gitignore` 中（仅本地 / AI 工作目录使用，不入库），无需也不要提交到远程仓库
-3. 与用户确认方案后，再用 `superpowers:executing-plans` 或 `superpowers:test-driven-development` 进入实现阶段。
+3. 与用户确认方案后，再进入实现阶段：按计划的步骤逐步推进，或采用测试驱动（先写失败测试，再写实现）。
 
 小改动（typo、单文件局部修复、纯文档调整）可直接进入实现。
 
@@ -222,9 +222,274 @@ gh pr create --repo polarismesh/polaris-java --title "..." --body "..."
 
 ## Git 提交规范
 
-详见 @.claude/rules/git-commit.md
+### Commit Message 格式
+
+使用 [Conventional Commits](https://www.conventionalcommits.org/) 格式：
+
+```
+<type>: <subject>
+```
+
+常用 type：
+
+| type     | 含义           |
+|----------|--------------|
+| feat     | 新增功能         |
+| fix      | 修复 bug       |
+| refactor | 重构（不改变外部行为）  |
+| test     | 仅测试代码改动      |
+| docs     | 仅文档改动        |
+| chore    | 构建脚本、依赖、杂项改动 |
+
+变量名、commit message 必须使用英文。
+
+### 必须包含的元数据
+
+每次 commit **必须**包含尾注。按实际执行提交的 Agent 填写，不要混用：
+
+1. **Signed-off-by**（DCO 签名）：使用 `git commit -s` 自动添加。这是 polarismesh 上游 DCO 检查的硬性要求，缺失 PR 无法合并。
+2. **Co-Authored-By**：根据本次实际使用的工具填写，二选一，不要同时写两条：
+   - **Cursor**：不要手写。Agent 创建 commit 时会自动追加 `Co-authored-by: Cursor <cursoragent@cursor.com>`。禁止填写 `noreply@anthropic.com`。
+   - **Claude Code**：根据实际使用的模型、版本和上下文长度填写：
+
+     ```
+     Co-Authored-By: <模型名> <版本> (<上下文长度>) <noreply@anthropic.com>
+     ```
+
+     例如：
+
+     ```
+     Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+     ```
+
+   - **其他工具**（Codex、CodeBuddy 等）：按工具实际生成的署名行填写；不确定时只写工具名。本仓库历史提交中的实际写法：
+
+     ```
+     Co-Authored-By: kimi-k3 <noreply@moonshot.cn>
+     Co-Authored-By: Cursor <cursoragent@cursor.com>
+     Co-Authored-By: CodeBuddy Code
+     ```
+
+     模型名与参数以当次会话实际使用的为准，不要凭记忆填。
+
+### 提交命令模板
+
+为保证 message 多行格式正确，使用 HEREDOC 传入。`git commit -s` 会自动追加 `Signed-off-by`：
+
+```bash
+git commit -s -m "$(cat <<'EOF'
+docs: short subject in english
+
+Optional body explaining the why.
+
+Co-Authored-By: <工具名/模型名> (<参数>) <noreply 邮箱>
+EOF
+)"
+```
+
+只有单行 message 时也可简写：
+
+```bash
+git commit -s -m "fix: avoid NPE in ConsumerAPI.getInstances"
+```
+
+### Git 操作禁令
+
+- **禁止**使用 `git cherry-pick`
+- **禁止**使用 `git commit --amend`
+- **禁止**使用 `--no-verify` / `--no-gpg-sign` 绕过 hook 与签名，除非用户明确要求
+- 不得在 commit 中包含 `.env`、凭据、密钥等敏感文件
 
 ## 单元测试规范
 
-详见 @.claude/rules/unit-test.md
+所有新增/修改的单元测试代码均须遵循。
+
+### 测试框架
+
+- **JUnit 4**
+    - 核心注解：@Test, @Before
+    - 运行器：@RunWith(MockitoJUnitRunner.class)（推荐）
+
+### Mock 框架
+
+- **Mockito**
+    - 核心注解：@Mock, @InjectMocks
+    - 核心方法：when(), verify()
+- 对外部调用、随机数、时间等使用 Mockito 进行 mock
+- 不要在测试代码中重新实现被测试方法
+- 对静态方法使用 mockStatic 进行 mock
+
+### 测试代码规范
+
+- 注释以简单的中文呈现
+- 代码生成完，自动执行设置代码格式、优化 import、重新排列代码、删除单元测试类内部的无用方法
+
+### 代码结构
+
+```java
+/**
+ * Test for {@link 测试类名称}.
+ *
+ * @author {{git的user.name}}
+ */
+@RunWith(MockitoJUnitRunner.class)
+public class XxxTest {
+
+    // 测试常量定义
+    private static final String TEST_VALUE = "test";
+
+    // 测试对象实例
+    @InjectMocks
+    private Xxx testInstance;
+
+    // 测试前的初始化
+    @Before
+    public void setUp() {
+        // 如有额外初始化可写在这里
+    }
+
+    // 具体测试方法
+    @Test
+    public void testMethod() {
+        // 测试实现
+    }
+}
+```
+
+### 测试方法结构
+
+```java
+@Test
+public void testMethod() {
+    // Arrange：准备测试数据和环境
+
+    // Act：执行被测试的方法
+
+    // Assert：验证测试结果
+}
+```
+
+### 断言使用
+
+- 使用 org.assertj.core.api.Assertions 下的断言方法
+- 使用恰当的断言方法
+- 提供清晰的错误信息
+- 验证所有关键结果
+- 常用断言方法：
+  ```java
+  assertThat(Predicate<T> actual)
+  assertThatCode(ThrowableAssert.ThrowingCallable shouldRaiseOrNotThrowable)
+  assertThatThrownBy(ThrowableAssert.ThrowingCallable shouldRaiseThrowable)
+  ```
+
+### 静态方法 mock
+
+- 使用方法：
+  ```
+  org.mockito.Mockito#mockStatic(java.lang.Class<T>)
+  org.mockito.MockedStatic#when(Verification verification)
+  ```
+- 实例：
+  ```
+  try (MockedStatic<Xxx> mockedApplicationContextAwareUtils = Mockito.mockStatic(Xxx.class)) {
+            // Arrange：准备测试数据和环境
+			mockedApplicationContextAwareUtils.when(() -> Xxx.xxmethod(anyString()))
+					.thenReturn(xxresult);
+
+			// Act：执行被测试的方法
+
+            // Assert：验证测试结果
+		}
+  ```
+
+### 私有属性访问
+
+- 私有属性不能直接访问，需要使用反射辅助方法，设置属性为可访问
+- 参考代码：
+  ```java
+    public static <T> T getPrivateField(Object object, String fieldName)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = object.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        T result = (T) field.get(object);
+        return result;
+    }
+
+    public static void setPrivateField(Object object, String fieldName, Object value)
+            throws NoSuchFieldException, IllegalAccessException {
+        Field field = object.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(object, value);
+    }
+  ```
+
+### 复杂数据类型测试
+
+- 对于处理多种数据类型的方法，应该为每种类型创建单独的测试方法
+- 测试方法名应该清晰地表明测试的数据类型
+- 对于 JSON 数据的测试，应该包含：
+    1. 正确格式数据测试
+    2. 错误格式数据测试
+    3. 边界条件测试（空值、null 等）
+- 示例命名：
+  ```java
+  testMethodName_BasicTypes()     // 基本类型测试
+  testMethodName_ComplexTypes()   // 复杂类型测试
+  testMethodName_InvalidData()    // 非法数据测试
+  ```
+- 尝试构造有实际意义的测试数据
+
+```java
+// 示例：使用有意义的测试数据
+@Test
+public void testMethod() {
+    // 使用有意义的业务标识符
+    statistics.setTenantId("tenant123");
+    statistics.setBizId("biz123");
+    // 使用符合实际场景的数据
+    statistics.setUniqueId(123L);
+}
+```
+
+- **Setter 方法调用规范**：
+    - 在准备测试数据（Arrange 阶段）时，如果需要调用多个 setter 方法为对象设置属性，请**避免使用链式调用**。
+    - 每个 setter 方法的调用都应该**独立成行**，以提高代码的可读性和可维护性。
+    - **反例（不推荐）**：
+      ```java
+      // 不推荐的链式调用，可读性较差
+      statistics.setTenantId("tenant123")
+                .setBizId("biz123")
+                .setUniqueId(123L);
+      ```
+    - **正例（推荐）**：
+      ```java
+      // 推荐的独立调用，每个属性设置一目了然
+      statistics.setTenantId("tenant123");
+      statistics.setBizId("biz123");
+      statistics.setUniqueId(123L);
+      ```
+
+### 注释规范
+
+- 在编写每个用例时都要添加说明注释
+
+```java
+/**
+ * 测试方法的中文注释
+ * 包含以下内容：
+ * 1. 测试目的：说明这个测试用例要验证什么
+ * 2. 测试场景：说明测试的具体场景
+ * 3. 验证内容：说明需要验证的具体内容
+ */
+```
+
+### 导入依赖
+
+- 需要把原始类中的所有 import 语句拷贝到测试类中，确保测试类中不会缺少引入必要的依赖类
+- 需要优化 import 导入
+
+### Git
+
+- 自动将新生成代码文件进行 git add
 

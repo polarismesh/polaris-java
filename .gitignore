@@ -46,6 +46,11 @@ docs/
 lib/
 backup/
 .arthas/
-.codebuddy/
 specs/
 */tls
+
+# AI
+.claude/
+CLAUDE.md
+.codebuddy/
+CODEBUDDY.md
