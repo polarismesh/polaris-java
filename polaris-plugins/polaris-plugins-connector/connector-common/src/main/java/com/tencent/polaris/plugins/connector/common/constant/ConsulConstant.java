@@ -53,6 +53,11 @@ public interface ConsulConstant {
         String WAIT_TIME_KEY = "waitTime";
 
         String CONSUL_ERROR_SLEEP_KEY = "consulErrorSleep";
+
+        /**
+         * Thread pool size of the refresh executor in each consul service (one pool per event type).
+         */
+        String REFRESH_THREAD_POOL_SIZE_KEY = "refreshThreadPoolSize";
     }
 
 }

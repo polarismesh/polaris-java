@@ -254,6 +254,7 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
                 LOG.warn("delay string {} is not integer.", consulErrorSleepStr, e);
             }
         }
+        consulContext.setRefreshThreadPoolSize(parseRefreshThreadPoolSize(metadata));
 
         // init consul service
         consulServiceMap.put(ServiceEventKey.EventType.INSTANCE, new InstanceService(consulClient, consulRawClient, consulContext, "consul-instance", mapper));
@@ -268,6 +269,34 @@ public class ConsulAPIConnector extends DestroyableServerConnector {
         consulServiceMap.put(ServiceEventKey.EventType.TRAFFIC_MIRRORING, new MirroringService(consulClient, consulRawClient, consulContext, "consul-mirror", mapper));
         consulServiceMap.put(ServiceEventKey.EventType.FAULT_INJECTION, new FaultService(consulClient, consulRawClient, consulContext, "consul-fault", mapper));
         initialized = true;
+    }
+
+    /**
+     * Parse refresh thread pool size from connector metadata. Missing, blank, non-integer
+     * or non-positive values fall back to {@link ConsulContext#DEFAULT_REFRESH_THREAD_POOL_SIZE}.
+     *
+     * @param metadata connector metadata
+     * @return refresh thread pool size
+     */
+    static int parseRefreshThreadPoolSize(Map<String, String> metadata) {
+        int poolSize = ConsulContext.DEFAULT_REFRESH_THREAD_POOL_SIZE;
+        if (metadata != null && metadata.containsKey(REFRESH_THREAD_POOL_SIZE_KEY)
+                && StringUtils.isNotBlank(metadata.get(REFRESH_THREAD_POOL_SIZE_KEY))) {
+            String poolSizeStr = metadata.get(REFRESH_THREAD_POOL_SIZE_KEY);
+            try {
+                int parsed = Integer.parseInt(poolSizeStr.trim());
+                if (parsed > 0) {
+                    poolSize = parsed;
+                } else {
+                    LOG.warn("refresh thread pool size {} is not positive, use default {}.", poolSizeStr,
+                            ConsulContext.DEFAULT_REFRESH_THREAD_POOL_SIZE);
+                }
+            } catch (NumberFormatException e) {
+                LOG.warn("refresh thread pool size {} is not integer, use default {}.", poolSizeStr,
+                        ConsulContext.DEFAULT_REFRESH_THREAD_POOL_SIZE);
+            }
+        }
+        return poolSize;
     }
 
     @Override
