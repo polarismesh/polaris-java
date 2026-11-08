@@ -30,6 +30,11 @@ import java.util.List;
  */
 public class ConsulContext {
 
+    /**
+     * Default thread pool size of the refresh executor in each consul service.
+     */
+    public static final int DEFAULT_REFRESH_THREAD_POOL_SIZE = 8;
+
     private ServerConnectorConfig connectorConfig;
 
     private String namespace;
@@ -66,6 +71,14 @@ public class ConsulContext {
      */
     private int waitTime;
 
+    /**
+     * The thread pool size of the refresh executor, defaults to 8. Each consul service
+     * (one per event type) holds its own pool. A blocking query occupies a thread for up
+     * to {@link #waitTime} seconds, so once the number of subscribed services exceeds this
+     * value, new refresh tasks have to wait in the queue.
+     */
+    private int refreshThreadPoolSize;
+
     public ConsulContext() {
         namespace = "";
         serviceName = "";
@@ -80,6 +93,7 @@ public class ConsulContext {
         queryPassing = true;
         consulErrorSleep = 60000L;
         waitTime = 55;
+        refreshThreadPoolSize = DEFAULT_REFRESH_THREAD_POOL_SIZE;
         namespaceType = "";
     }
 
@@ -193,6 +207,14 @@ public class ConsulContext {
 
     public void setWaitTime(int waitTime) {
         this.waitTime = waitTime;
+    }
+
+    public int getRefreshThreadPoolSize() {
+        return refreshThreadPoolSize;
+    }
+
+    public void setRefreshThreadPoolSize(int refreshThreadPoolSize) {
+        this.refreshThreadPoolSize = refreshThreadPoolSize;
     }
 
     public String getNamespaceType() {

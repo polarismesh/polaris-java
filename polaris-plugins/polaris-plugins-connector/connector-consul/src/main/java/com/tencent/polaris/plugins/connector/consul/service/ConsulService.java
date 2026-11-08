@@ -59,7 +59,12 @@ public abstract class ConsulService extends Destroyable {
         this.consulContext = consulContext;
         this.mapper = mapper;
         NamedThreadFactory threadFactory = new NamedThreadFactory(threadName);
-        this.refreshExecutor = Executors.newFixedThreadPool(8, threadFactory);
+        int poolSize = ConsulContext.DEFAULT_REFRESH_THREAD_POOL_SIZE;
+        if (consulContext != null && consulContext.getRefreshThreadPoolSize() > 0) {
+            poolSize = consulContext.getRefreshThreadPoolSize();
+        }
+        LOG.debug("Consul service {} refresh thread pool size is {}.", threadName, poolSize);
+        this.refreshExecutor = Executors.newFixedThreadPool(poolSize, threadFactory);
     }
 
     public void asyncSendRequest(ServiceUpdateTask serviceUpdateTask) {
