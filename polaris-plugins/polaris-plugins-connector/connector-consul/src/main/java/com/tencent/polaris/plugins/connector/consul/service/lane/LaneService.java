@@ -59,6 +59,8 @@ import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
+import java.sql.Timestamp;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +81,7 @@ public class LaneService extends ConsulService {
 
     public static final LaneProto.LaneRule.LaneMatchMode TSF_LANE_MATCH_MODE = LaneProto.LaneRule.LaneMatchMode.STRICT;
     public static final String TSF_LANE_GROUP_NAME = "tsf";
+    private static final DateTimeFormatter LANE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final Logger LOG = LoggerFactory.getLogger(LaneService.class);
     private final Map<LaneService.LaneRuleKey, Long> laneInfoConsulIndexMap = new ConcurrentHashMap<>();
 
@@ -259,8 +262,8 @@ public class LaneService extends ConsulService {
             laneRuleBuilder.setMatchMode(TSF_LANE_MATCH_MODE);
             laneRuleBuilder.setPriority(laneRule.getPriority());
             laneRuleBuilder.setLabelKey(TSF_GROUP_ID);
-            laneRuleBuilder.setCtime(laneRule.getCreateTime().toString());
-            laneRuleBuilder.setMtime(laneRule.getUpdateTime().toString());
+            laneRuleBuilder.setCtime(formatLaneTime(laneRule.getCreateTime()));
+            laneRuleBuilder.setMtime(formatLaneTime(laneRule.getUpdateTime()));
             // set TrafficMatchRule
             LaneProto.TrafficMatchRule.Builder trafficMatchRuleBuilder = LaneProto.TrafficMatchRule.newBuilder();
             trafficMatchRuleBuilder.setMatchMode(parseTrafficMatchMode(laneRule.getRuleTagRelationship()));
@@ -298,6 +301,19 @@ public class LaneService extends ConsulService {
 
         laneGroupList.add(laneGroupBuilder.build());
         return laneGroupList;
+    }
+
+    /**
+     * 将泳道规则的创建/更新时间转换为 Polaris 泳道规则使用的时间字符串。
+     *
+     * @param timestamp 时间戳，Consul 侧数据缺失时可能为 null
+     * @return 格式为 yyyy-MM-dd HH:mm:ss 的时间字符串，入参为 null 时返回空字符串
+     */
+    private String formatLaneTime(Timestamp timestamp) {
+        if (Objects.isNull(timestamp)) {
+            return "";
+        }
+        return LANE_TIME_FORMATTER.format(timestamp.toLocalDateTime());
     }
 
     private LaneProto.TrafficMatchRule.TrafficMatchMode parseTrafficMatchMode(RuleTagRelationship ruleTagRelationship) {
