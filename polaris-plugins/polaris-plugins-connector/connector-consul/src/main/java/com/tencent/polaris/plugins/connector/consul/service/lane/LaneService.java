@@ -17,6 +17,12 @@
 
 package com.tencent.polaris.plugins.connector.consul.service.lane;
 
+import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
+import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_APPLICATION_ID;
+import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_GROUP_ID;
+import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_NAMESPACE_ID;
+import static com.tencent.polaris.plugins.connector.consul.service.common.TagConditionUtil.parseMatchStringType;
+
 import com.ecwid.consul.SingleUrlParameters;
 import com.ecwid.consul.UrlParameters;
 import com.ecwid.consul.json.GsonFactory;
@@ -43,15 +49,18 @@ import com.tencent.polaris.logging.LoggerFactory;
 import com.tencent.polaris.plugins.connector.common.ServiceUpdateTask;
 import com.tencent.polaris.plugins.connector.consul.ConsulContext;
 import com.tencent.polaris.plugins.connector.consul.service.ConsulService;
-import com.tencent.polaris.plugins.connector.consul.service.lane.entity.*;
+import com.tencent.polaris.plugins.connector.consul.service.lane.entity.LaneGroup;
+import com.tencent.polaris.plugins.connector.consul.service.lane.entity.LaneInfo;
+import com.tencent.polaris.plugins.connector.consul.service.lane.entity.LaneRule;
+import com.tencent.polaris.plugins.connector.consul.service.lane.entity.LaneRuleTag;
+import com.tencent.polaris.plugins.connector.consul.service.lane.entity.RuleTagRelationship;
 import com.tencent.polaris.specification.api.v1.model.ModelProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ResponseProto;
 import com.tencent.polaris.specification.api.v1.service.manage.ServiceProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.LaneProto;
 import com.tencent.polaris.specification.api.v1.traffic.manage.RoutingProto;
-import org.slf4j.Logger;
-import org.yaml.snakeyaml.Yaml;
-
+import java.sql.Timestamp;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -62,30 +71,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.tencent.polaris.api.config.plugin.DefaultPlugins.SERVER_CONNECTOR_CONSUL;
-import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_APPLICATION_ID;
-import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_GROUP_ID;
-import static com.tencent.polaris.metadata.core.constant.TsfMetadataConstants.TSF_NAMESPACE_ID;
-import static com.tencent.polaris.plugins.connector.consul.service.common.TagConditionUtil.parseMatchStringType;
+import org.slf4j.Logger;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * @author Haotian Zhang
  */
 public class LaneService extends ConsulService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LaneService.class);
-
     public static final LaneProto.LaneRule.LaneMatchMode TSF_LANE_MATCH_MODE = LaneProto.LaneRule.LaneMatchMode.STRICT;
-
     public static final String TSF_LANE_GROUP_NAME = "tsf";
-
+    private static final DateTimeFormatter LANE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final Logger LOG = LoggerFactory.getLogger(LaneService.class);
     private final Map<LaneService.LaneRuleKey, Long> laneInfoConsulIndexMap = new ConcurrentHashMap<>();
 
     private final Map<LaneService.LaneRuleKey, Long> laneRuleConsulIndexMap = new ConcurrentHashMap<>();
 
     public LaneService(ConsulClient consulClient, ConsulRawClient consulRawClient, ConsulContext consulContext,
-                       String threadName, ObjectMapper mapper) {
+            String threadName, ObjectMapper mapper) {
         super(consulClient, consulRawClient, consulContext, threadName, mapper);
     }
 
@@ -166,8 +169,10 @@ public class LaneService extends ConsulService {
             ResponseProto.DiscoverResponse.Builder newDiscoverResponseBuilder = ResponseProto.DiscoverResponse.newBuilder();
             if (laneInfoResponse != null && laneRuleResponse != null) {
                 code = ServerCodes.EXECUTE_SUCCESS;
-                newServiceBuilder.setRevision(StringValue.of(laneInfoResponse.getIndex() + "-" + laneRuleResponse.getIndex()));
-                List<LaneProto.LaneGroup> laneGroupList = parseResponse(laneInfoResponse, laneRuleResponse, namespace, service);
+                newServiceBuilder.setRevision(
+                        StringValue.of(laneInfoResponse.getIndex() + "-" + laneRuleResponse.getIndex()));
+                List<LaneProto.LaneGroup> laneGroupList = parseResponse(laneInfoResponse, laneRuleResponse, namespace,
+                        service);
                 if (CollectionUtils.isNotEmpty(laneGroupList)) {
                     newDiscoverResponseBuilder.addAllLanes(laneGroupList);
                 }
@@ -175,7 +180,8 @@ public class LaneService extends ConsulService {
             newDiscoverResponseBuilder.setCode(UInt32Value.of(code));
             newDiscoverResponseBuilder.setService(newServiceBuilder);
             newDiscoverResponseBuilder.setType(ResponseProto.DiscoverResponse.DiscoverResponseType.LANE);
-            ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
+            ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(),
+                    newDiscoverResponseBuilder.build(), null, SERVER_CONNECTOR_CONSUL);
             boolean svcDeleted = serviceUpdateTask.notifyServerEvent(serverEvent);
             // 重写index
             if (laneInfoResponse != null && laneRuleResponse != null) {
@@ -194,7 +200,8 @@ public class LaneService extends ConsulService {
             }
             PolarisException error = ServerErrorResponseException.build(ErrorCode.NETWORK_ERROR.getCode(),
                     "Get lane sync failed.");
-            ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error, SERVER_CONNECTOR_CONSUL);
+            ServerEvent serverEvent = new ServerEvent(serviceUpdateTask.getServiceEventKey(), null, error,
+                    SERVER_CONNECTOR_CONSUL);
             serviceUpdateTask.notifyServerEvent(serverEvent);
         } finally {
             if (!executorService.isShutdown() || !executorService.isTerminated()) {
@@ -204,7 +211,7 @@ public class LaneService extends ConsulService {
     }
 
     private List<LaneProto.LaneGroup> parseResponse(LaneInfoResponse laneInfoResponse,
-                                                    LaneRuleResponse laneRuleResponse, String namespace, String service) {
+            LaneRuleResponse laneRuleResponse, String namespace, String service) {
         List<LaneProto.LaneGroup> laneGroupList = new ArrayList<>();
 
         LaneProto.LaneGroup.Builder laneGroupBuilder = LaneProto.LaneGroup.newBuilder();
@@ -222,8 +229,10 @@ public class LaneService extends ConsulService {
                 if (laneGroup.isEntrance()) {
                     entranceList.add(laneGroup.getGroupId());
                 }
-                if (StringUtils.isNotEmpty(laneGroup.getNamespaceId()) && StringUtils.isNotEmpty(laneGroup.getApplicationId())) {
-                    laneGroupBuilder.putMetadata(laneGroup.getNamespaceId() + "," + laneGroup.getApplicationId(), TSF_NAMESPACE_ID + "," + TSF_APPLICATION_ID);
+                if (StringUtils.isNotEmpty(laneGroup.getNamespaceId()) && StringUtils.isNotEmpty(
+                        laneGroup.getApplicationId())) {
+                    laneGroupBuilder.putMetadata(laneGroup.getNamespaceId() + "," + laneGroup.getApplicationId(),
+                            TSF_NAMESPACE_ID + "," + TSF_APPLICATION_ID);
                 }
             }
         }
@@ -253,6 +262,8 @@ public class LaneService extends ConsulService {
             laneRuleBuilder.setMatchMode(TSF_LANE_MATCH_MODE);
             laneRuleBuilder.setPriority(laneRule.getPriority());
             laneRuleBuilder.setLabelKey(TSF_GROUP_ID);
+            laneRuleBuilder.setCtime(formatLaneTime(laneRule.getCreateTime()));
+            laneRuleBuilder.setMtime(formatLaneTime(laneRule.getUpdateTime()));
             // set TrafficMatchRule
             LaneProto.TrafficMatchRule.Builder trafficMatchRuleBuilder = LaneProto.TrafficMatchRule.newBuilder();
             trafficMatchRuleBuilder.setMatchMode(parseTrafficMatchMode(laneRule.getRuleTagRelationship()));
@@ -290,6 +301,19 @@ public class LaneService extends ConsulService {
 
         laneGroupList.add(laneGroupBuilder.build());
         return laneGroupList;
+    }
+
+    /**
+     * 将泳道规则的创建/更新时间转换为 Polaris 泳道规则使用的时间字符串。
+     *
+     * @param timestamp 时间戳，Consul 侧数据缺失时可能为 null
+     * @return 格式为 yyyy-MM-dd HH:mm:ss 的时间字符串，入参为 null 时返回空字符串
+     */
+    private String formatLaneTime(Timestamp timestamp) {
+        if (Objects.isNull(timestamp)) {
+            return "";
+        }
+        return LANE_TIME_FORMATTER.format(timestamp.toLocalDateTime());
     }
 
     private LaneProto.TrafficMatchRule.TrafficMatchMode parseTrafficMatchMode(RuleTagRelationship ruleTagRelationship) {
@@ -499,6 +523,7 @@ public class LaneService extends ConsulService {
     }
 
     static class LaneRuleKey {
+
         private String namespace = "";
         private String service = "";
 
@@ -520,10 +545,15 @@ public class LaneService extends ConsulService {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             LaneRuleKey that = (LaneRuleKey) o;
-            return Objects.equals(getNamespace(), that.getNamespace()) && Objects.equals(getService(), that.getService());
+            return Objects.equals(getNamespace(), that.getNamespace()) && Objects.equals(getService(),
+                    that.getService());
         }
 
         @Override
@@ -541,6 +571,7 @@ public class LaneService extends ConsulService {
     }
 
     static class LaneInfoResponse {
+
         private Long index = -1L;
 
         private int code = ServerCodes.EXECUTE_SUCCESS;
@@ -573,6 +604,7 @@ public class LaneService extends ConsulService {
     }
 
     static class LaneRuleResponse {
+
         private Long index = -1L;
 
         private int code = ServerCodes.EXECUTE_SUCCESS;
