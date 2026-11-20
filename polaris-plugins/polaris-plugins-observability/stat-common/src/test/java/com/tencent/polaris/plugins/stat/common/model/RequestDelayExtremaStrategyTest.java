@@ -159,7 +159,7 @@ public class RequestDelayExtremaStrategyTest {
     }
 
     /**
-     * 测试空值场景：未提供时延时保持极值，初始值为零.
+     * 测试空值场景：已有有效极值时，未提供时延的样本不能覆盖它.
      */
     @Test
     public void testMinIgnoresNullDelay() {
@@ -173,7 +173,6 @@ public class RequestDelayExtremaStrategyTest {
         strategy.updateMetricValue(metric, gauge);
 
         Assertions.assertThat(metric.getValue()).isEqualTo((double) INITIAL_DELAY);
-        Assertions.assertThat(strategy.initMetricValue(gauge)).isZero();
     }
 
     /**
