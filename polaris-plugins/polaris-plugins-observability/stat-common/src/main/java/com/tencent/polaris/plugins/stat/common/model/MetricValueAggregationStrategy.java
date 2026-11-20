@@ -24,6 +24,16 @@ package com.tencent.polaris.plugins.stat.common.model;
  */
 public interface MetricValueAggregationStrategy<T> {
     /**
+     * Determine whether this sample can contribute to the metric.
+     *
+     * @param dataSource aggregation sample
+     * @return whether the sample should be collected
+     */
+    default boolean shouldCollect(T dataSource) {
+        return true;
+    }
+
+    /**
      * 返回策略的描述信息
      *
      * @return 描述信息

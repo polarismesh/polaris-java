@@ -186,6 +186,11 @@ public class MetricValueAggregationStrategyCollections {
     public static class UpstreamRequestMinTimeoutStrategy implements MetricValueAggregationStrategy<InstanceGauge> {
 
         @Override
+        public boolean shouldCollect(InstanceGauge dataSource) {
+            return dataSource.getDelay() != null;
+        }
+
+        @Override
         public String getStrategyDescription() {
             return "minimum request delay per period";
         }
