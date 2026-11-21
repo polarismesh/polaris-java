@@ -25,6 +25,7 @@ import com.tencent.polaris.encrypt.util.AESUtil;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
 import com.tencent.polaris.factory.config.configuration.ConfigFileConfigImpl;
 import com.tencent.polaris.factory.config.configuration.ConnectorConfigImpl;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import javax.crypto.BadPaddingException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -62,7 +64,7 @@ public class ConfigFilePersistentHandlerTest {
     private static final String PLAIN_CONTENT = "jdbc.password=very-secret-value";
 
     /**
-     * 固定的错误密钥，供「密钥不匹配」用例使用，避免随机密钥带来的偶发通过。
+     * 固定的错误密钥，与用例内固定的加密密钥配对使用。
      */
     private static final byte[] MISMATCHED_AES_KEY = new byte[] {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
@@ -305,20 +307,24 @@ public class ConfigFilePersistentHandlerTest {
     }
 
     /**
-     * 测试目的：验证密钥不匹配时不返回乱码。
-     * 测试场景：缓存密文与 dataKey 由不同密钥产生。
-     * 验证内容：返回 null。
+     * 测试目的：验证解密失败时丢弃缓存。
+     * 测试场景：使用固定的正确密钥生成密文，再用固定的错误密钥读取缓存。
+     * 验证内容：确认该密钥组合产生 padding 错误，缓存加载返回 null。
      *
-     * <p>错误密钥固定而非随机：AES-CBC 无完整性校验，随机错误密钥有约 1/256 概率恰好通过
-     * PKCS7 padding 校验从而解出乱码，会让本用例偶发失败。
+     * <p>AES-CBC 无完整性校验，错误密钥并不保证解密抛异常，因此正确密钥和错误密钥都必须固定。
      */
     @Test
     public void testLoadCacheFileWithMismatchedDataKey() throws IOException {
-        // Arrange
-        writeCacheFile(cipherContent, Base64.getEncoder().encodeToString(MISMATCHED_AES_KEY), "AES",
+        // Arrange：固定密钥组合，避免随机密文偶尔通过 padding 校验
+        byte[] sourceKey = new byte[] {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1};
+        String mismatchedCipherContent = AESUtil.encrypt(PLAIN_CONTENT, sourceKey);
+        Assertions.assertThatThrownBy(() -> AESUtil.decrypt(mismatchedCipherContent, MISMATCHED_AES_KEY))
+                .as("固定密钥组合必须触发 padding 错误")
+                .hasRootCauseInstanceOf(BadPaddingException.class);
+        writeCacheFile(mismatchedCipherContent, Base64.getEncoder().encodeToString(MISMATCHED_AES_KEY), "AES",
                 Boolean.TRUE);
 
-        // Act & Assert
+        // Act & Assert：解密异常由缓存加载器处理，返回不可用缓存
         assertThat(handler.loadPersistedConfigFile(assembleConfigFileReq(), false)).isNull();
     }
 
