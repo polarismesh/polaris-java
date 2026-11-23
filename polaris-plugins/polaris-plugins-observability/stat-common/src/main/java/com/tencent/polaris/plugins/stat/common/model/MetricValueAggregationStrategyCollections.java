@@ -156,17 +156,16 @@ public class MetricValueAggregationStrategyCollections {
 
         @Override
         public void updateMetricValue(StatMetric targetValue, InstanceGauge dataSource) {
-            if (null == dataSource.getDelay()) {
-                return;
-            }
-
-            while (true) {
-                if (dataSource.getDelay() > targetValue.getValue()) {
-                    if (targetValue.compareAndSet((long) targetValue.getValue(), dataSource.getDelay())) {
-                        return;
+            Long delay = dataSource.getDelay();
+            if (delay != null) {
+                boolean updated = false;
+                while (!updated) {
+                    long currentValue = (long) targetValue.getValue();
+                    if (delay > currentValue) {
+                        updated = targetValue.compareAndSet(currentValue, delay);
+                    } else {
+                        updated = true;
                     }
-                } else {
-                    return;
                 }
             }
         }
@@ -187,6 +186,11 @@ public class MetricValueAggregationStrategyCollections {
     public static class UpstreamRequestMinTimeoutStrategy implements MetricValueAggregationStrategy<InstanceGauge> {
 
         @Override
+        public boolean shouldCollect(InstanceGauge dataSource) {
+            return dataSource.getDelay() != null;
+        }
+
+        @Override
         public String getStrategyDescription() {
             return "minimum request delay per period";
         }
@@ -198,17 +202,16 @@ public class MetricValueAggregationStrategyCollections {
 
         @Override
         public void updateMetricValue(StatMetric targetValue, InstanceGauge dataSource) {
-            if (null == dataSource.getDelay()) {
-                return;
-            }
-
-            while (true) {
-                if (dataSource.getDelay() < targetValue.getValue()) {
-                    if (targetValue.compareAndSet((long) targetValue.getValue(), dataSource.getDelay())) {
-                        return;
+            Long delay = dataSource.getDelay();
+            if (delay != null) {
+                boolean updated = false;
+                while (!updated) {
+                    long currentValue = (long) targetValue.getValue();
+                    if (delay < currentValue) {
+                        updated = targetValue.compareAndSet(currentValue, delay);
+                    } else {
+                        updated = true;
                     }
-                } else {
-                    return;
                 }
             }
         }

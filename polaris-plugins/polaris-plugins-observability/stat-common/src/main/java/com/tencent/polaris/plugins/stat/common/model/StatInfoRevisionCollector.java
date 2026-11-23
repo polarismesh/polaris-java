@@ -51,6 +51,9 @@ public class StatInfoRevisionCollector<T> extends AbstractSignatureStatInfoColle
         if (null != strategies) {
             String metricName;
             for (MetricValueAggregationStrategy<T> strategy : strategies) {
+                if (!strategy.shouldCollect(info)) {
+                    continue;
+                }
                 metricName = strategy.getStrategyName();
                 Map<String, String> labels = new HashMap<>(metricLabels);
                 Long signature = getSignature(metricName, labels);
