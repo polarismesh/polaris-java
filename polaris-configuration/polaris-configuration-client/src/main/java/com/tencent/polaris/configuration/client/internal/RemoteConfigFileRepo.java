@@ -20,16 +20,21 @@ package com.tencent.polaris.configuration.client.internal;
 import com.tencent.polaris.annonation.JustForTest;
 import com.tencent.polaris.api.control.Destroyable;
 import com.tencent.polaris.api.exception.ServerCodes;
+import com.tencent.polaris.api.plugin.compose.Extensions;
 import com.tencent.polaris.api.plugin.configuration.ConfigFile;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileConnector;
 import com.tencent.polaris.api.plugin.configuration.ConfigFileResponse;
+import com.tencent.polaris.api.plugin.event.ConfigEvent;
+import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.api.utils.ThreadPoolUtils;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.client.util.NamedThreadFactory;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.util.ConfigFileUtils;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -115,9 +120,41 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
         registerRepoDestroyHook(sdkContext);
         //同步从远程仓库拉取一次
         pull();
+        //首次加载到内存后上报配置轨迹，覆盖应用启动前已发布的配置
+        reportInitialLoadEvent();
         //加入到长轮询的池子里
         addToLongPollingPool(pullService, configFileMetadata);
         startCheckVersionTask();
+    }
+
+    /**
+     * 首次加载（远端拉取成功或降级本地缓存）后上报一次配置轨迹。
+     *
+     * <p>之后的变更仍由上层框架（SCT、dubbo 插件）在配置生效后上报，这里不重复上报。
+     * 远端不存在、首次加载失败时内存为空，不上报。上报失败只打日志，不影响配置加载。
+     */
+    private void reportInitialLoadEvent() {
+        ConfigFile configFile = remoteConfigFile.get();
+        Extensions extensions = sdkContext.getExtensions();
+        if (configFile != null && extensions != null) {
+            try {
+                ConfigEvent configEvent = new ConfigEvent.Builder()
+                        .withTimestamp(LocalDateTime.now())
+                        .withEventType(EventConstants.EventType.CONFIG)
+                        .withEventName(EventConstants.EventName.ConfigUpdated)
+                        .withClientId(extensions.getValueContext().getClientId())
+                        .withClientIp(extensions.getValueContext().getHost())
+                        .withNamespace(configFileMetadata.getNamespace())
+                        .withConfigGroup(configFileMetadata.getFileGroup())
+                        .withConfigFileName(configFileMetadata.getFileName())
+                        .withConfigVersion(configFile.getName())
+                        .build();
+                BaseFlow.reportConfigEvent(extensions, configEvent);
+            } catch (Throwable t) {
+                LOGGER.warn("[Config] report config initial load event failed. config file = {}",
+                        configFileMetadata, t);
+            }
+        }
     }
 
     private static void createPullExecutorService() {
@@ -157,6 +194,12 @@ public class RemoteConfigFileRepo extends AbstractConfigFileRepo {
     public boolean isEncrypted() {
         ConfigFile configFile = remoteConfigFile.get();
         return configFile != null && configFile.isEncrypted();
+    }
+
+    @Override
+    public String getVersionName() {
+        ConfigFile configFile = remoteConfigFile.get();
+        return configFile != null ? configFile.getName() : null;
     }
 
     public long getConfigFileVersion() {

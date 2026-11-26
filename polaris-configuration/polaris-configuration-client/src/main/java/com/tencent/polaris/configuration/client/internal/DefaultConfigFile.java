@@ -163,6 +163,19 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
         return configFileRepo.isEncrypted();
     }
 
+    /**
+     * 返回当前生效配置的版本名。
+     *
+     * <p>父类元数据里的版本在构造时固定为 null，这里改为跟随仓库中的配置，
+     * 便于上层框架在没有变更事件时（如启动期间补齐错过的变更）也能拿到版本名。
+     *
+     * @return 版本名，内存中没有配置时返回 null
+     */
+    @Override
+    public String getFileVersion() {
+        return configFileRepo.getVersionName();
+    }
+
     @Override
     public void addChangeListener(ConfigFileChangeListener listener) {
         if (!listeners.contains(listener)) {
