@@ -31,6 +31,7 @@ import com.tencent.polaris.api.plugin.event.EventConstants;
 import com.tencent.polaris.api.plugin.event.EventReporter;
 import com.tencent.polaris.api.plugin.filter.ConfigFileFilterChain;
 import com.tencent.polaris.client.api.SDKContext;
+import com.tencent.polaris.client.flow.BaseFlow;
 import com.tencent.polaris.configuration.api.core.ConfigFileMetadata;
 import com.tencent.polaris.configuration.client.ConfigFileTestUtils;
 import com.tencent.polaris.factory.config.ConfigurationImpl;
@@ -47,9 +48,11 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -247,7 +250,36 @@ public class RemoteConfigFileRepoEventTest {
     }
 
     /**
-     * 测试目的：验证配置文件对象的 getFileVersion 跟随仓库中当前生效配置的版本名，
+     * 测试目的：验证关闭事件上报时首次加载不报错，配置正常加载。
+     * 测试场景：global.eventReporter.enable=false，上报器列表未初始化为 null。
+     * 验证内容：BaseFlow.reportConfigEvent 直接返回不抛异常，配置内容可读。
+     */
+    @Test
+    public void testNotReportEventWhenEventReporterDisabled() {
+        // Arrange
+        ConfigFileMetadata configFileMetadata = ConfigFileTestUtils.assembleDefaultConfigFileMeta();
+        when(configFileFilterChain.execute(any(), any())).thenReturn(
+                new ConfigFileResponse(ServerCodes.EXECUTE_SUCCESS, "", buildConfigFile(100, "v1.0.0")));
+        when(extensions.getEventReporterList()).thenReturn(null);
+        ConfigEvent configEvent = new ConfigEvent.Builder()
+                .withEventType(EventConstants.EventType.CONFIG)
+                .withEventName(EventConstants.EventName.ConfigUpdated)
+                .build();
+
+        // Act
+        RemoteConfigFileRepo remoteConfigFileRepo =
+                new RemoteConfigFileRepo(sdkContext, configFileLongPollingService, configFileFilterChain,
+                        configFileConnector, configFileMetadata, configFilePersistHandler);
+        Throwable thrown = catchThrowable(() -> BaseFlow.reportConfigEvent(extensions, configEvent));
+
+        // Assert
+        assertThat(thrown).isNull();
+        assertThat(remoteConfigFileRepo.getContent()).isEqualTo("hello world");
+        verify(eventReporter, never()).reportEvent(any());
+    }
+
+    /**
+     * 测试目的：验证配置文件对象的 getFileVersion 跟随当前生效配置的版本名，
      * 上层框架在没有变更事件时（如启动期间补齐错过的变更）也能拿到版本名。
      * 测试场景：首次加载 v1.0.0，随后长轮询拉到 v1.0.1。
      * 验证内容：KV 文件对象的 getFileVersion 先返回 v1.0.0，变更后返回 v1.0.1。
@@ -298,6 +330,61 @@ public class RemoteConfigFileRepoEventTest {
 
         // Assert
         assertThat(remoteConfigFileRepo.getVersionName()).isNull();
+        assertThat(configFile.getFileVersion()).isNull();
+    }
+
+    /**
+     * 测试目的：验证 KV 文件的版本名与 properties 来自同一次发布，不会先于 properties 变成新版本。
+     * 测试场景：仓库已替换为 v1.0.1（getVersionName 返回新版本名），但尚未通知 KV 文件；随后通知变更。
+     * 验证内容：通知前版本名与属性都还是 v1.0.0 的；通知后两者同时变为 v1.0.1 的。
+     */
+    @Test
+    public void testFileVersionConsistentWithProperties() {
+        // Arrange
+        ConfigFileRepo configFileRepo = mock(ConfigFileRepo.class);
+        when(configFileRepo.getContent()).thenReturn("k1=v1");
+        when(configFileRepo.getVersionName()).thenReturn("v1.0.0");
+        ConfigPropertiesFile configKVFile = new ConfigPropertiesFile(ConfigFileTestUtils.testNamespace,
+                ConfigFileTestUtils.testGroup, ConfigFileTestUtils.testFileName, configFileRepo,
+                new ConfigFileConfigImpl());
+        ConfigFile newConfigFile = buildConfigFile(101, "v1.0.1");
+        newConfigFile.setContent("k1=v2");
+
+        // Act
+        // 模拟仓库已替换为新配置、但还没通知 KV 文件：此时 KV 文件不应读仓库，故用 lenient
+        lenient().when(configFileRepo.getContent()).thenReturn("k1=v2");
+        lenient().when(configFileRepo.getVersionName()).thenReturn("v1.0.1");
+        String versionBeforeNotified = configKVFile.getFileVersion();
+        String propertyBeforeNotified = configKVFile.getProperty("k1", null);
+        configKVFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), newConfigFile);
+
+        // Assert
+        assertThat(versionBeforeNotified).isEqualTo("v1.0.0");
+        assertThat(propertyBeforeNotified).isEqualTo("v1");
+        assertThat(configKVFile.getFileVersion()).isEqualTo("v1.0.1");
+        assertThat(configKVFile.getProperty("k1", null)).isEqualTo("v2");
+    }
+
+    /**
+     * 测试目的：验证配置被删除后版本名随内容一起清空。
+     * 测试场景：已加载 v1.0.0，随后仓库通知配置被删除（configFile 为 null）。
+     * 验证内容：内容与版本名均为 null。
+     */
+    @Test
+    public void testFileVersionClearedWhenConfigFileDeleted() {
+        // Arrange
+        ConfigFileRepo configFileRepo = mock(ConfigFileRepo.class);
+        when(configFileRepo.getContent()).thenReturn("hello world");
+        when(configFileRepo.getVersionName()).thenReturn("v1.0.0");
+        DefaultConfigFile configFile = new DefaultConfigFile(ConfigFileTestUtils.testNamespace,
+                ConfigFileTestUtils.testGroup, ConfigFileTestUtils.testFileName, configFileRepo,
+                new ConfigFileConfigImpl());
+
+        // Act
+        configFile.onChange(ConfigFileTestUtils.assembleDefaultConfigFileMeta(), null);
+
+        // Assert
+        assertThat(configFile.getContent()).isNull();
         assertThat(configFile.getFileVersion()).isNull();
     }
 

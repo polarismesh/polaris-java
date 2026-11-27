@@ -52,6 +52,8 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
     private final ConfigFileRepo configFileRepo;
     protected final ConfigFileConfig configFileConfig;
     private String content;
+    //与 content 同一次发布的版本名，随 content 一起更新
+    private volatile String fileVersion;
 
     private volatile Cache<String, Object> objectCache;
     private final AtomicLong cacheVersion;
@@ -73,6 +75,7 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
 
     protected void initialize() {
         content = configFileRepo.getContent();
+        fileVersion = configFileRepo.getVersionName();
 
         //监听远端变更事件
         configFileRepo.addChangeListener(this);
@@ -166,14 +169,16 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
     /**
      * 返回当前生效配置的版本名。
      *
-     * <p>父类元数据里的版本在构造时固定为 null，这里改为跟随仓库中的配置，
+     * <p>父类元数据里的版本在构造时固定为 null，这里改为跟随生效的配置，
      * 便于上层框架在没有变更事件时（如启动期间补齐错过的变更）也能拿到版本名。
+     * 版本名在 {@link #onChange} 中与 content 一起更新，而不是直接读仓库：仓库先替换配置再通知变更，
+     * 直接读仓库会在通知完成前拿到新版本名，与仍是旧值的 content 不一致。
      *
      * @return 版本名，内存中没有配置时返回 null
      */
     @Override
     public String getFileVersion() {
-        return configFileRepo.getVersionName();
+        return fileVersion;
     }
 
     @Override
@@ -193,6 +198,7 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
         String oldContent = this.content;
         String newContent = Optional.ofNullable(configFile).map(com.tencent.polaris.api.plugin.configuration.ConfigFile::getContent).orElse(null);
         this.content = newContent;
+        publishFileVersion(configFile);
 
         ChangeType changeType = ChangeType.MODIFIED;
         if (oldContent == null) {
@@ -211,6 +217,16 @@ public class DefaultConfigFile extends DefaultConfigFileMetadata implements Conf
         }
 
         fireChangeEvent(new ConfigFileChangeEvent(configFileMetadata, oldContent, newContent, changeType));
+    }
+
+    /**
+     * 发布新配置的版本名，须在该配置的内容对读取方可见之后调用，保证读到新版本名时内容也已是新的。
+     *
+     * @param configFile 新配置，删除时为 null
+     */
+    protected void publishFileVersion(com.tencent.polaris.api.plugin.configuration.ConfigFile configFile) {
+        this.fileVersion = Optional.ofNullable(configFile)
+                .map(com.tencent.polaris.api.plugin.configuration.ConfigFile::getName).orElse(null);
     }
 
     private void fireChangeEvent(ConfigFileChangeEvent event) {
