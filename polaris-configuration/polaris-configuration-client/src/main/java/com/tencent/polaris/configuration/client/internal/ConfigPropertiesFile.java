@@ -333,6 +333,8 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
 
         //更新缓存的 properties 值
         this.properties.set(newProperties);
+        //properties 更新后再发布版本名
+        super.publishFileVersion(configFile);
 
         Map<String, ConfigPropertyChangeInfo> changeInfos = Maps.newHashMap();
 
@@ -362,6 +364,13 @@ public class ConfigPropertiesFile extends DefaultConfigFile implements ConfigKVF
         ConfigKVFileChangeEvent event = new ConfigKVFileChangeEvent(changeInfos, configFile);
 
         fireChangeEvent(event);
+    }
+
+    /**
+     * 父类在更新 content 时调用，此时 properties 还是旧值，这里不发布，改在 {@link #onChange} 更新 properties 后发布。
+     */
+    @Override
+    protected void publishFileVersion(ConfigFile configFile) {
     }
 
     protected Properties convertToProperties(String content) {

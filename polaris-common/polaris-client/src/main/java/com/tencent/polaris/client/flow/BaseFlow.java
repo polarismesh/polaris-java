@@ -382,6 +382,10 @@ public class BaseFlow {
 
     public static void reportConfigEvent(Extensions extensions, ConfigEvent flowEvent) {
         List<EventReporter> eventReporterList = extensions.getEventReporterList();
+        // 关闭事件上报（global.eventReporter.enable=false）时上报器列表未初始化，为 null
+        if (CollectionUtils.isEmpty(eventReporterList)) {
+            return;
+        }
         if (LOG.isDebugEnabled()) {
             LOG.debug("Reporting config event: {}", flowEvent);
         }

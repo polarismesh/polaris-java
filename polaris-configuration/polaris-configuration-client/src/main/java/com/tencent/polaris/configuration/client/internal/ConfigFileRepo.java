@@ -41,4 +41,15 @@ public interface ConfigFileRepo {
         return false;
     }
 
+    /**
+     * 当前生效配置的版本名（服务端发布时的 release name）。
+     *
+     * <p>default 返回 null：本地文件、consul 等数据源没有版本名，只有远端仓库需要覆写。
+     *
+     * @return 版本名，内存中没有配置时返回 null
+     */
+    default String getVersionName() {
+        return null;
+    }
+
 }
